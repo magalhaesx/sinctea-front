@@ -1,0 +1,114 @@
+@import "tailwindcss";
+
+/* ------------------------------------------------------------------
+   Tokens do SINCTEA
+   A paleta de areas foi validada por calculo para deficiencia de visao
+   de cores: separacao >= 8 em deuteranopia e tritanopia, piso de visao
+   normal >= 15, contraste >= 3:1 contra a superficie.
+   Nao altere estes valores sem revalidar.
+------------------------------------------------------------------ */
+@theme {
+  --font-sans: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+
+  --color-fundo: #f2f6f6;
+  --color-sup: #ffffff;
+  --color-sup2: #e9f0f0;
+  --color-linha: #d2dfe0;
+  --color-tinta: #132226;
+  --color-tinta2: #4e656b;
+  --color-tinta3: #6f868b;
+
+  --color-cli: #00a2af;
+  --color-cli-ink: #0a6c75;
+  --color-cli-sup: #e2f4f6;
+  --color-fam: #c8402e;
+  --color-fam-ink: #96301f;
+  --color-fam-sup: #fbeae6;
+  --color-esc: #bf8506;
+  --color-esc-ink: #8a5f04;
+  --color-esc-sup: #fbf1dc;
+
+  --color-ok: #1f7a4d;
+  --color-ok-sup: #e4f2ea;
+  --color-at: #9a6800;
+  --color-at-sup: #fbf0d8;
+  --color-cr: #b22e22;
+  --color-cr-sup: #fbe9e6;
+
+  --color-cromo: #16272b;
+  --color-cromo2: #1e3338;
+  --color-cromo-linha: #2c464c;
+  --color-cromo-tinta: #e8f1f2;
+  --color-cromo-tinta2: #9db6ba;
+}
+
+:root { --escala-texto: 1; }
+
+html { font-size: calc(16px * var(--escala-texto)); }
+
+body {
+  margin: 0;
+  background: var(--color-cromo);
+  color: var(--color-tinta);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Foco visivel em todo elemento operavel — e-MAG 4.4 / WCAG 2.4.7 */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 3px solid var(--color-cli-ink);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Modo de alto contraste — preferencia oferecida pelo proprio produto */
+.contraste {
+  --color-fundo: #ffffff;
+  --color-sup: #ffffff;
+  --color-sup2: #f0f0f0;
+  --color-linha: #1a1a1a;
+  --color-tinta: #000000;
+  --color-tinta2: #1a1a1a;
+  --color-tinta3: #262626;
+  --color-cli: #005c66;
+  --color-cli-ink: #00434a;
+  --color-cli-sup: #ffffff;
+  --color-fam: #93261a;
+  --color-fam-ink: #6e1c13;
+  --color-fam-sup: #ffffff;
+  --color-esc: #6b4a00;
+  --color-esc-ink: #4d3500;
+  --color-esc-sup: #ffffff;
+  --color-ok: #0b5030;
+  --color-ok-sup: #ffffff;
+  --color-at: #6b4a00;
+  --color-at-sup: #ffffff;
+  --color-cr: #8c1c13;
+  --color-cr-sup: #ffffff;
+}
+
+/* Reducao de movimento: preferencia do sistema e preferencia do produto */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+.sem-animacao *, .sem-animacao *::before, .sem-animacao *::after {
+  animation-duration: 0.01ms !important;
+  transition-duration: 0.01ms !important;
+}
+
+/* Link de salto — e-MAG 1.5 / WCAG 2.4.1 */
+.pular {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 60;
+  background: #fff;
+  color: var(--color-cli-ink);
+  padding: 0.75rem 1.125rem;
+  font-weight: 700;
+  border-radius: 0 0 0.5rem 0;
+}
+.pular:focus { left: 0; }
