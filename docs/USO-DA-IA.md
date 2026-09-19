@@ -62,3 +62,25 @@ reproduzido em `PROMPT.md`, é longo justamente porque carrega esse material.
 
 Trocada a ordem — prompt primeiro, projeto depois — o resultado seria uma interface
 bonita e sem fundamento.
+
+## A página de acessibilidade era inacessível
+
+O documento de IHC afirma que o contraste foi "verificado por cálculo". Durante a
+implementação a verificação foi refeita sobre o código real, e reprovou dois dos três
+botões primários: texto branco sobre a cor de marca da clínica dá 3,09:1 e sobre a da
+escola 3,19:1 — abaixo dos 4,5:1 exigidos pelo critério 1.4.3 da WCAG. O texto do
+botão tem 15px em negrito e não se qualifica como texto grande.
+
+A causa foi omissão de especificação. O design system definiu duas famílias de cor por
+área, mas não disse qual delas preenche um botão. Sem a regra, a implementação escolheu
+a de marca — validada para 3:1 contra a superfície, que é o piso de elemento não
+textual, e nunca pensada para receber texto em cima.
+
+O caso mais revelador estava na própria página que declara conformidade com a WCAG: os
+círculos numerados dos quatro princípios usavam a mesma combinação reprovada.
+
+Ficam duas lições registradas. Afirmar conformidade não é cumpri-la — o documento dizia
+a coisa certa e o código fazia outra, e só a medição sobre o código real revelou a
+diferença. E especificação incompleta produz defeito, não pergunta, a menos que se peça
+a pergunta: foi a regra "pare e avise quando algo conflitar", escrita no CLAUDE.md, que
+fez a contradição chegar à decisão humana em vez de ser resolvida em silêncio.

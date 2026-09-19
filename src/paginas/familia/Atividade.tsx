@@ -44,7 +44,7 @@ export function Atividade() {
         <ol className="mt-3 flex flex-col gap-3">
           {atividade.passos.map((p, i) => (
             <li key={p} className="flex items-baseline gap-3">
-              <span className="grid h-7 w-7 flex-none place-items-center rounded-full bg-fam text-[13px] font-bold text-white" aria-hidden="true">
+              <span className="grid h-7 w-7 flex-none place-items-center rounded-full bg-fam-ink text-[13px] font-bold text-white" aria-hidden="true">
                 {i + 1}
               </span>
               <span>{p}</span>

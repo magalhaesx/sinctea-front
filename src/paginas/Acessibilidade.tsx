@@ -60,7 +60,7 @@ export function Acessibilidade() {
         {principios.map((p) => (
           <Cartao key={p.n}>
             <div className="flex items-center gap-2.5">
-              <span className="grid h-7 w-7 place-items-center rounded-full bg-cli text-sm font-bold text-white" aria-hidden="true">
+              <span className="grid h-7 w-7 place-items-center rounded-full bg-cli-ink text-sm font-bold text-white" aria-hidden="true">
                 {p.n}
               </span>
               <h3 className="font-bold">{p.nome}</h3>

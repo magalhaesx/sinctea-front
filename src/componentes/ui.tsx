@@ -2,10 +2,30 @@ import type { ReactNode } from 'react'
 
 export type Area = 'cli' | 'fam' | 'esc'
 
-export const acento: Record<Area, { bg: string; texto: string; borda: string; sup: string }> = {
-  cli: { bg: 'bg-cli', texto: 'text-cli-ink', borda: 'border-cli', sup: 'bg-cli-sup' },
-  fam: { bg: 'bg-fam', texto: 'text-fam-ink', borda: 'border-fam', sup: 'bg-fam-sup' },
-  esc: { bg: 'bg-esc', texto: 'text-esc-ink', borda: 'border-esc', sup: 'bg-esc-sup' },
+/**
+ * Duas familias por area (docs/02, secao 1 — "Dois papeis, duas familias"):
+ * `bg` e a cor de MARCA, so para manchas sem texto em cima (barras, pontos,
+ * faixas); `preenchido` e a cor de TINTA, para superficies que recebem texto
+ * branco. A marca reprova como fundo de texto (3,09:1 na clinica).
+ */
+export const acento: Record<Area, {
+  bg: string; preenchido: string; preenchidoHover: string; texto: string; borda: string; sup: string
+}> = {
+  cli: {
+    bg: 'bg-cli', preenchido: 'bg-cli-ink',
+    preenchidoHover: 'hover:bg-[color-mix(in_oklab,var(--color-cli-ink),black_18%)]',
+    texto: 'text-cli-ink', borda: 'border-cli', sup: 'bg-cli-sup',
+  },
+  fam: {
+    bg: 'bg-fam', preenchido: 'bg-fam-ink',
+    preenchidoHover: 'hover:bg-[color-mix(in_oklab,var(--color-fam-ink),black_18%)]',
+    texto: 'text-fam-ink', borda: 'border-fam', sup: 'bg-fam-sup',
+  },
+  esc: {
+    bg: 'bg-esc', preenchido: 'bg-esc-ink',
+    preenchidoHover: 'hover:bg-[color-mix(in_oklab,var(--color-esc-ink),black_18%)]',
+    texto: 'text-esc-ink', borda: 'border-esc', sup: 'bg-esc-sup',
+  },
 }
 
 export function Cartao({ children, className = '' }: { children: ReactNode; className?: string }) {
@@ -34,7 +54,7 @@ export function Botao({
     'font-bold rounded-lg min-h-11 inline-flex items-center justify-center gap-2 cursor-pointer border-2 transition-colors'
   const estilo =
     variante === 'primaria'
-      ? `${base} px-4 py-2.5 ${a.bg} text-white border-transparent hover:brightness-90`
+      ? `${base} px-4 py-2.5 ${a.preenchido} ${a.preenchidoHover} text-white border-transparent`
       : variante === 'secundaria'
         ? `${base} px-4 py-2.5 bg-sup ${a.texto} border-current hover:bg-sup2`
         : `${base} w-full px-4 py-4 text-left justify-start bg-sup border-linha text-tinta aria-pressed:border-current`

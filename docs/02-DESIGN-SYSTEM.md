@@ -22,6 +22,24 @@ contraste contra a superfície.
 
 Separação mínima: ΔE 14,7 sob deuteranopia, 15,9 na visão normal.
 
+### Dois papéis, duas famílias
+
+Cada área tem duas cores, e elas não são intercambiáveis:
+
+| Família | Onde se usa | Piso que cumpre |
+|---|---|---|
+| Marca (`#00A2AF`, `#C8402E`, `#BF8506`) | Manchas de identidade sem texto em cima: trilhos, barras de medidor, pontos de legenda, faixas laterais, ícones | 3:1 contra a superfície e separação para daltonismo |
+| Tinta (`#0A6C75`, `#96301F`, `#8A5F04`) | Qualquer superfície que receba texto, inclusive fundo de botão preenchido, e texto colorido sobre fundo claro | 4,5:1 com texto branco |
+
+A cor de marca reprova como fundo de botão: `#00A2AF` dá 3,09:1 e `#BF8506` dá
+3,19:1 com texto branco, abaixo do critério 1.4.3 da WCAG. O texto de botão tem
+15px em negrito e não se qualifica como texto grande.
+
+A família de tinta não substitui a de marca em gráficos e etiquetas onde a cor
+carrega identidade sozinha: entre si, `#96301F` e `#8A5F04` separam apenas ΔE 6,0
+sob deuteranopia. Em botões isso não é problema porque o rótulo em texto já
+distingue.
+
 > A primeira combinação, escolhida esteticamente, **reprovou** no teste. Se você
 > precisar de uma quarta cor de área, revalide o conjunto inteiro antes de usar.
 
