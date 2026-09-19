@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import { Route, Routes, useLocation } from 'react-router-dom'
 import { Layout } from './componentes/Layout'
 import { Entrada } from './paginas/Entrada'
@@ -14,6 +14,12 @@ import { Consentimento } from './paginas/familia/Consentimento'
 import { CartaoEstrategias } from './paginas/escola/Cartao'
 import { Ocorrencia } from './paginas/escola/Ocorrencia'
 
+/* Vitrine de componentes: so existe em desenvolvimento. No build de producao
+   a condicao vira `false` e o modulo nem entra no pacote. */
+const VitrineEstados = import.meta.env.DEV
+  ? lazy(() => import('./paginas/VitrineEstados').then((m) => ({ default: m.VitrineEstados })))
+  : null
+
 const titulos: Record<string, string> = {
   '/': 'Entrada',
   '/sobre': 'A solução',
@@ -27,6 +33,7 @@ const titulos: Record<string, string> = {
   '/escola': 'Cartão de estratégias',
   '/escola/ocorrencia': 'Registrar ocorrência',
   '/acessibilidade': 'Acessibilidade e ajuda',
+  '/dev/estados': 'Vitrine de estados',
 }
 
 export function App() {
@@ -52,6 +59,9 @@ export function App() {
         <Route path="/escola" element={<CartaoEstrategias />} />
         <Route path="/escola/ocorrencia" element={<Ocorrencia />} />
         <Route path="/acessibilidade" element={<Acessibilidade />} />
+        {VitrineEstados && (
+          <Route path="/dev/estados" element={<Suspense><VitrineEstados /></Suspense>} />
+        )}
         <Route path="*" element={<Entrada />} />
       </Route>
     </Routes>
