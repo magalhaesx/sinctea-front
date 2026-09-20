@@ -21,6 +21,7 @@ function consentimento(parcial: Partial<Consentimento> = {}): Consentimento {
     concedidoEm: dias(-10),
     validadeAte: dias(60),
     revogadoEm: null,
+    escolaId: 'e1',
     hashTermo: 'sha256:ficticio',
     ...parcial,
   }
@@ -188,12 +189,12 @@ describe('verificarAcessoEscola (UC21)', () => {
 
 describe('validarNovoConsentimento', () => {
   it('exige escopo, escola e validade futura', () => {
-    const erros = validarNovoConsentimento({ pacienteId: 'p1', escopos: [], validadeAte: dias(-1) }, AGORA)
-    expect(Object.keys(erros).sort()).toEqual(['escopos', 'validadeAte'])
+    const erros = validarNovoConsentimento({ pacienteId: 'p1', escolaId: '', escopos: [], validadeAte: dias(-1) }, AGORA)
+    expect(Object.keys(erros).sort()).toEqual(['escolaId', 'escopos', 'validadeAte'])
   })
 
   it('aceita pedido completo', () => {
-    expect(validarNovoConsentimento({ pacienteId: 'p1', escopos: ['CARTAO_ESTRATEGIA'], validadeAte: dias(90) }, AGORA)).toEqual({})
+    expect(validarNovoConsentimento({ pacienteId: 'p1', escolaId: 'e1', escopos: ['CARTAO_ESTRATEGIA'], validadeAte: dias(90) }, AGORA)).toEqual({})
   })
 })
 

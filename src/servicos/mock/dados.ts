@@ -105,11 +105,9 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
 
   const professores: ProfessorAEE[] = [
     { tipo: 'PROFESSOR_AEE', id: 'u-profe-1', nome: 'Carla Nunes', email: 'carla.nunes@escola.example',
-      perfis: ['PROFESSOR'], ativo: true, ultimoAcessoEm: em(0, 9),
-      atuacao: 'Professora regente' },
+      perfis: ['PROFESSOR'], ativo: true, ultimoAcessoEm: em(0, 9) },
     { tipo: 'PROFESSOR_AEE', id: 'u-profe-2', nome: 'Tiago Rezende', email: 'tiago.rezende@escola.example',
-      perfis: ['PROFESSOR'], ativo: true, ultimoAcessoEm: em(4, 10),
-      atuacao: 'Atendimento educacional especializado' },
+      perfis: ['PROFESSOR'], ativo: true, ultimoAcessoEm: em(4, 10) },
   ]
 
   // ------------------------------------------------------------ Pacientes
@@ -270,27 +268,27 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
 
   // ------------------------------------------------------------ Consentimentos e vinculos
 
-  const consentimento = (id: string, responsavelId: string, pacienteId: string,
+  const consentimento = (id: string, responsavelId: string, pacienteId: string, escolaId: string,
     escopos: Consentimento['escopos'], concedidoEm: string, validadeAte: string,
     revogadoEm: string | null = null): Consentimento =>
     // Hash ficticio: no servidor sera a impressao digital do termo aceito.
-    ({ id, responsavelId, pacienteId, escopos, concedidoEm, validadeAte, revogadoEm,
+    ({ id, responsavelId, pacienteId, escolaId, escopos, concedidoEm, validadeAte, revogadoEm,
       hashTermo: `sha256:ficticio-${id}` })
 
   const ambos: Consentimento['escopos'] = ['CARTAO_ESTRATEGIA', 'REGISTRO_OCORRENCIA']
   const consentimentos: Consentimento[] = [
     // Vigente, com os dois escopos: a demonstracao principal da area da escola.
-    consentimento('c-001', 'u-resp-1', 'p-001', ambos, em(45, 19), em(-120, 23, 59)),
+    consentimento('c-001', 'u-resp-1', 'p-001', 'esc-1', ambos, em(45, 19), em(-120, 23, 59)),
     // Vigente so para o cartao, vencendo em menos de 30 dias.
-    consentimento('c-002', 'u-resp-2', 'p-003', ['CARTAO_ESTRATEGIA'], em(40, 20), em(-20, 23, 59)),
+    consentimento('c-002', 'u-resp-2', 'p-003', 'esc-2', ['CARTAO_ESTRATEGIA'], em(40, 20), em(-20, 23, 59)),
     // Revogado ha 3 dias: a professora continua tentando e e negada.
-    consentimento('c-003', 'u-resp-3', 'p-004', ambos, em(50, 18), em(-100, 23, 59), em(3, 21)),
+    consentimento('c-003', 'u-resp-3', 'p-004', 'esc-1', ambos, em(50, 18), em(-100, 23, 59), em(3, 21)),
     // Expirado.
-    consentimento('c-004', 'u-resp-4', 'p-005', ['CARTAO_ESTRATEGIA'], em(200, 18), em(5, 23, 59)),
+    consentimento('c-004', 'u-resp-4', 'p-005', 'esc-2', ['CARTAO_ESTRATEGIA'], em(200, 18), em(5, 23, 59)),
     // Os tres a seguir servem aos estados do convite (tela 2).
-    consentimento('c-005', 'u-resp-1', 'p-002', ambos, horasAtras(1), em(-90, 23, 59)),
-    consentimento('c-006', 'u-resp-1', 'p-002', ['CARTAO_ESTRATEGIA'], em(5, 10), em(-90, 23, 59)),
-    consentimento('c-007', 'u-resp-4', 'p-005', ambos, em(1, 10), em(-90, 23, 59), horasAtras(2)),
+    consentimento('c-005', 'u-resp-1', 'p-002', 'esc-1', ambos, horasAtras(1), em(-90, 23, 59)),
+    consentimento('c-006', 'u-resp-1', 'p-002', 'esc-2', ['CARTAO_ESTRATEGIA'], em(5, 10), em(-90, 23, 59)),
+    consentimento('c-007', 'u-resp-4', 'p-005', 'esc-1', ambos, em(1, 10), em(-90, 23, 59), horasAtras(2)),
   ]
 
   const [c1, c2, c3, c4, c5, c6, c7] = consentimentos
@@ -314,17 +312,18 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
     convite('cv-007', c7, 'demo-convite-revogado', null),
   ]
 
-  const vinculo = (id: string, cv: ConviteEscolar, c: Consentimento, escolaId: string,
-    professorId: string, turma: string, turno: string): VinculoEscolar => ({
-    id, consentimentoId: c.id, conviteId: cv.id, pacienteId: c.pacienteId, escolaId, professorId,
-    turma, turno, status: c.revogadoEm === null ? 'ATIVO' : 'ENCERRADO',
+  const vinculo = (id: string, cv: ConviteEscolar, c: Consentimento, professorId: string,
+    turma: string, turno: string, atuacao: string): VinculoEscolar => ({
+    id, consentimentoId: c.id, conviteId: cv.id, pacienteId: c.pacienteId, professorId,
+    turma, turno, atuacao, status: c.revogadoEm === null ? 'ATIVO' : 'ENCERRADO',
   })
 
   const vinculos: VinculoEscolar[] = [
-    vinculo('v-001', convites[0], c1, 'esc-1', 'u-profe-1', '2º ano B', 'Matutino'),
-    vinculo('v-002', convites[1], c2, 'esc-2', 'u-profe-2', '4º ano A', 'Vespertino'),
-    vinculo('v-003', convites[2], c3, 'esc-1', 'u-profe-1', '1º ano C', 'Matutino'),
-    vinculo('v-004', convites[3], c4, 'esc-2', 'u-profe-2', '3º ano B', 'Vespertino'),
+    vinculo('v-001', convites[0], c1, 'u-profe-1', '2º ano B', 'Matutino', 'Professora regente'),
+    vinculo('v-002', convites[1], c2, 'u-profe-2', '4º ano A', 'Vespertino', 'Atendimento educacional especializado'),
+    // A mesma professora, outra atuacao com outro aluno.
+    vinculo('v-003', convites[2], c3, 'u-profe-1', '1º ano C', 'Matutino', 'Atendimento educacional especializado'),
+    vinculo('v-004', convites[3], c4, 'u-profe-2', '3º ano B', 'Vespertino', 'Professor regente'),
   ]
 
   // ------------------------------------------------------------ Cartoes de estrategia
@@ -455,7 +454,8 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
     const resp = responsaveis.find((r) => r.id === c.responsavelId)!
     auditar({ ocorridoEm: c.concedidoEm, usuarioId: resp.id, usuarioNome: resp.nome, perfil: 'RESPONSAVEL',
       acao: 'CONCESSAO_ACESSO', entidade: 'Consentimento', idEntidade: c.id, pacienteId: c.pacienteId,
-      origem: 'FAMILIA', ipOrigem: null, detalhe: `Escopos: ${c.escopos.join(', ')}` })
+      origem: 'FAMILIA', ipOrigem: null,
+      detalhe: `Escola: ${escolas.find((e) => e.id === c.escolaId)?.nome ?? '—'} · escopos: ${c.escopos.join(', ')}` })
     if (c.revogadoEm) {
       auditar({ ocorridoEm: c.revogadoEm, usuarioId: resp.id, usuarioNome: resp.nome, perfil: 'RESPONSAVEL',
         acao: 'REVOGACAO_ACESSO', entidade: 'Consentimento', idEntidade: c.id, pacienteId: c.pacienteId,

@@ -1,7 +1,7 @@
 import {
   createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode,
 } from 'react'
-import { servicos, type Perfil, type SessaoUsuario, type Usuario } from '../servicos'
+import { servicos, type AceiteConvite, type Perfil, type SessaoUsuario, type Usuario } from '../servicos'
 
 /**
  * Sessao do usuario autenticado e perfil ativo.
@@ -27,6 +27,8 @@ interface Ctx {
   perfilAtivo: Perfil | null
   entrar(email: string, senha: string): Promise<void>
   entrarDemonstracao(perfil: PerfilDemonstracao): Promise<void>
+  /** Aceite de convite: cria a conta do professor e ja abre a sessao. */
+  entrarComConvite(token: string, dados: AceiteConvite): Promise<void>
   trocarPerfil(perfil: Perfil): Promise<void>
   sair(): Promise<void>
 }
@@ -57,6 +59,10 @@ export function ProvedorSessao({ children }: { children: ReactNode }) {
     setEstado(autenticado(await servicos.autenticacao.entrarDemonstracao(perfil)))
   }, [])
 
+  const entrarComConvite = useCallback(async (token: string, dados: AceiteConvite) => {
+    setEstado(autenticado(await servicos.convites.aceitar(token, dados)))
+  }, [])
+
   const trocarPerfil = useCallback(async (perfil: Perfil) => {
     setEstado(autenticado(await servicos.autenticacao.trocarPerfil(perfil)))
   }, [])
@@ -74,8 +80,8 @@ export function ProvedorSessao({ children }: { children: ReactNode }) {
     estado,
     usuario: estado.situacao === 'AUTENTICADO' ? estado.usuario : null,
     perfilAtivo: estado.situacao === 'AUTENTICADO' ? estado.perfilAtivo : null,
-    entrar, entrarDemonstracao, trocarPerfil, sair,
-  }), [estado, entrar, entrarDemonstracao, trocarPerfil, sair])
+    entrar, entrarDemonstracao, entrarComConvite, trocarPerfil, sair,
+  }), [estado, entrar, entrarDemonstracao, entrarComConvite, trocarPerfil, sair])
 
   return <SessaoCtx.Provider value={valor}>{children}</SessaoCtx.Provider>
 }

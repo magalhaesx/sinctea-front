@@ -91,22 +91,27 @@ Nada de vocabulário interpretativo ou culpabilizante na área da escola.
 
 ## 4. Modelo de dados
 
-20 classes. Diagrama completo em `docs/uml/`.
+21 classes. Diagrama completo em `docs/uml/`.
 
 ```
 Usuario ◁── Profissional | Responsavel | ProfessorAEE      (herança: autenticação única)
-Usuario 1─* RegistroAuditoria
+Usuario 0..1─* RegistroAuditoria
+Responsavel 1─* VinculoFamiliar *─1 Paciente               (parentesco é da relação)
 Paciente 1─* Sessao        Sessao *─1 Profissional          ("conduzida por")
-Paciente 1─* PlanoTerapeutico
+Paciente 1─* PlanoTerapeutico *─1 Profissional              ("autor")
+Paciente *─1 Profissional     ("responsável pelo caso")
+Paciente *─1..* Profissional  ("equipe")
 PlanoTerapeutico ◆─* Objetivo        (composição: objetivo não existe sem plano)
 Objetivo ◆─1 CriterioDominio
 Objetivo 1─* AtividadeCasa | CartaoEstrategia
 AtividadeCasa 1─* ExecucaoAtividadeCasa *─1 Responsavel
-Responsavel 1─* Consentimento 1─* VinculoEscolar 1─* OcorrenciaEscolar
-VinculoEscolar *─1 Escola | ProfessorAEE
+Sessao ◆─* RegistroAtividade *─1 Objetivo
+Paciente 1─* OcorrenciaComportamental *─0..1 Sessao
+Responsavel 1─* Consentimento *─1 Escola | 1─1 Paciente
+Consentimento 1─1..* ConviteEscolar 1─0..1 VinculoEscolar 1─* OcorrenciaEscolar
+VinculoEscolar *─1 ProfessorAEE
 OcorrenciaEscolar ⇢ OcorrenciaComportamental   («gera»)
-Paciente 1─* OcorrenciaComportamental
-Sessao 1─* RegistroAtividade *─1 Objetivo
+Perfil é enumeração, não classe.
 ```
 
 A cadeia `Consentimento → ConviteEscolar → VinculoEscolar → OcorrenciaEscolar` é o
@@ -122,6 +127,12 @@ serviços e **não entram no diagrama**.
 
 Atributo de persistência que nunca trafega — `senhaHash` — **permanece no diagrama
 e fica fora dos tipos do front-end**.
+
+**O nome da operação na fachada de serviços pode diferir do nome no diagrama.** O
+diagrama nomeia a operação de domínio; o serviço nomeia a chamada como ela se lê no
+código. `CartaoEstrategia.iniciarDe(objetivo)` no diagrama é
+`servicos.planos.iniciarCartao(objetivoId)` na fachada. Isso não é divergência — é a
+mesma separação que mantém chave estrangeira fora do diagrama.
 
 ## 5. Stack
 
@@ -166,6 +177,13 @@ Qualidade: ISO/IEC 25010:2023. Método: Kanban com limites de trabalho em progre
 - S05 — C4 nos três níveis, diagrama de estados do Objetivo, segundo diagrama de
   sequência (sincronização offline)
 - S06 — DER, dicionário de dados, publicação em nuvem
+
+**Revisão do modelo em 20/09/2026**
+- `Perfil` deixou de ser classe e virou enumeração
+- `VinculoFamiliar` e `ConviteEscolar` criados
+- `atuacao` desceu de `ProfessorAEE` para `VinculoEscolar`
+- a família nomeia a escola no `Consentimento`; o professor declara turma, turno e
+  atuação ao aceitar o convite
 
 **Pendências conhecidas do modelo**
 - Não existe entidade de registro funcional; a justificativa da meta 8.5 da ODS 8

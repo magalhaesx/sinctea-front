@@ -321,10 +321,11 @@ export const ocorrenciasMock: ServicoOcorrencia = {
       .sort((a, b) => b.registradaEm.localeCompare(a.registradaEm))
       .map((o) => {
         const vinculo = banco.vinculos.find((v) => v.id === o.vinculoId)
+        const consentimento = banco.consentimentos.find((c) => c.id === vinculo?.consentimentoId)
         return {
           ocorrenciaId: o.id,
           paciente: { id: o.pacienteId, nome: banco.pacientes.find((p) => p.id === o.pacienteId)?.nome ?? '—' },
-          escola: banco.escolas.find((e) => e.id === vinculo?.escolaId)?.nome ?? '—',
+          escola: banco.escolas.find((e) => e.id === consentimento?.escolaId)?.nome ?? '—',
           registradaEm: o.registradaEm,
           tipo: o.tipo,
           intensidade: o.intensidade,

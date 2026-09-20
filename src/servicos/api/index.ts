@@ -79,6 +79,7 @@ export const servicosApi: Servicos = {
   consentimentos: {
     listarPorPaciente: (pacienteId, filtro) => r('GET', q(`/pacientes/${id(pacienteId)}/consentimentos`, filtro)),
     conceder: (dados) => r('POST', '/consentimentos', dados),
+    reemitirConvite: (consentimentoId) => r('POST', `/consentimentos/${id(consentimentoId)}/convites`),
     revogar: (consentimentoId) => r('POST', `/consentimentos/${id(consentimentoId)}/revogacao`),
   },
 

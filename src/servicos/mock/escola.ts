@@ -92,6 +92,7 @@ export const areaEscolaMock: ServicoAreaEscola = {
           nome: banco.pacientes.find((p) => p.id === v.pacienteId)!.nome.split(' ')[0],
           turma: v.turma,
           turno: v.turno,
+          escola: banco.escolas.find((e) => e.id === c.escolaId)?.nome ?? '—',
           situacao,
           // Sem acesso vigente, nem o que foi autorizado precisa sair daqui.
           escopos: situacao === 'VIGENTE' ? c.escopos : [],

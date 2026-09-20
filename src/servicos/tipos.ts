@@ -74,10 +74,13 @@ export interface Responsavel extends Usuario {
   telefone: string
 }
 
+/**
+ * Sem atributo proprio, de proposito: as associacoes e que a distinguem — e a
+ * unica que participa de VinculoEscolar e assina OcorrenciaEscolar, e a conta
+ * dela so nasce de convite.
+ */
 export interface ProfessorAEE extends Usuario {
   tipo: 'PROFESSOR_AEE'
-  /** Como atua: regente, AEE, acompanhante. A escola vem pelo VinculoEscolar. */
-  atuacao: string
 }
 
 export type UsuarioQualquer = Profissional | Responsavel | ProfessorAEE
@@ -417,6 +420,12 @@ export interface Consentimento {
   id: string
   responsavelId: string
   pacienteId: string
+  /**
+   * A familia nomeia a instituicao no ato da concessao: consentimento precisa
+   * ser especifico e informado (LGPD, art. 7 e 8). Outra escola exige outro
+   * consentimento, com validade e revogacao proprias.
+   */
+  escolaId: string
   escopos: EscopoAcesso[]
   concedidoEm: DataIso
   validadeAte: DataIso
@@ -450,10 +459,12 @@ export interface VinculoEscolar {
   consentimentoId: string
   conviteId: string
   pacienteId: string
-  escolaId: string
+  /** A escola vem do Consentimento e nunca e copiada para ca. */
   professorId: string
   turma: string
   turno: string
+  /** Como atua com ESTE aluno: regente de um, AEE de outro. */
+  atuacao: string
   /**
    * Situacao do vinculo escolar (ano letivo). NAO e controle de acesso:
    * quem autoriza a leitura e sempre o Consentimento, consultado a cada vez.
@@ -463,9 +474,10 @@ export interface VinculoEscolar {
 
 export interface ConsentimentoDetalhe extends Consentimento {
   situacao: SituacaoConsentimento
-  /** Só existe depois que o professor aceita o convite. */
+  /** Conhecida desde a concessao. */
+  escola: string
+  /** Os tres a seguir so existem depois que o professor aceita o convite. */
   vinculoId: string | null
-  escola: string | null
   professor: string | null
   turma: string | null
   conviteAceito: boolean
@@ -473,6 +485,7 @@ export interface ConsentimentoDetalhe extends Consentimento {
 
 export interface NovoConsentimento {
   pacienteId: string
+  escolaId: string
   escopos: EscopoAcesso[]
   validadeAte: DataIso
 }
@@ -498,14 +511,13 @@ export interface ConvitePublico {
 }
 
 /**
- * O professor se identifica e declara onde e como atua: e no aceite que o
- * VinculoEscolar nasce, com escola, turma e turno.
+ * O professor se identifica e declara como atua na rotina. A escola ja foi
+ * nomeada pela familia no consentimento: ele nao a informa.
  */
 export interface AceiteConvite {
   nome: string
   email: string
   senha: string
-  escolaId: string
   turma: string
   turno: string
   /** Como atua com o aluno: regente, AEE, acompanhante. */
@@ -518,6 +530,7 @@ export interface AlunoEscola {
   nome: string
   turma: string
   turno: string
+  escola: string
   /** Situacao agora. Só VIGENTE abre o cartao (tela 22). */
   situacao: SituacaoConsentimento
   /** Vazio quando o acesso nao esta vigente. */

@@ -55,7 +55,7 @@ function detalhe(p: Paciente): PacienteDetalhe {
         const c = banco.consentimentos.find((x) => x.id === v.consentimentoId)!
         return {
           vinculoId: v.id,
-          escola: banco.escolas.find((e) => e.id === v.escolaId)?.nome ?? '—',
+          escola: banco.escolas.find((e) => e.id === c.escolaId)?.nome ?? '—',
           turma: v.turma,
           turno: v.turno,
           professor: banco.professores.find((u) => u.id === v.professorId)?.nome ?? '—',

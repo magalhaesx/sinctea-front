@@ -6,8 +6,8 @@ import {
   type ConviteEscolar, type ExecucaoAtividadeCasa, type ProfessorAEE, type VinculoEscolar,
 } from '../tipos'
 import {
-  calcularExpiracaoConvite, idadeEmAnos, situacaoConsentimento, situacaoConvite,
-  validarNovoConsentimento,
+  calcularExpiracaoConvite, consentimentoVigente, idadeEmAnos, situacaoConsentimento,
+  situacaoConvite, validarNovoConsentimento,
 } from '../../dominio/regras'
 import {
   ehResponsavelDe, exigirPacienteClinico, exigirPacienteClinicoOuFamilia, exigirPacienteDaFamilia,
@@ -122,19 +122,48 @@ export const familiaMock: ServicoFamilia = {
 
 // ---------------------------------------------------------------- Consentimento
 
-/** Escola, professor e turma so existem depois que o convite e aceito. */
+/**
+ * A escola e conhecida desde a concessao; professor e turma so existem depois
+ * que alguem aceita o convite. Vale sempre o convite mais recente.
+ */
 function detalharConsentimento(c: Consentimento): ConsentimentoDetalhe {
-  const convite = banco.convites.find((cv) => cv.consentimentoId === c.id)
+  const convite = conviteAtual(c.id)
   const vinculo = banco.vinculos.find((v) => v.consentimentoId === c.id)
   return {
     ...c,
     situacao: situacaoConsentimento(c, relogio.agora()),
+    escola: banco.escolas.find((e) => e.id === c.escolaId)?.nome ?? '—',
     vinculoId: vinculo?.id ?? null,
-    escola: vinculo ? banco.escolas.find((e) => e.id === vinculo.escolaId)?.nome ?? '—' : null,
     professor: vinculo ? banco.professores.find((p) => p.id === vinculo.professorId)?.nome ?? '—' : null,
     turma: vinculo?.turma ?? null,
     conviteAceito: convite?.usadoEm != null,
   }
+}
+
+/** O ultimo convite emitido para o consentimento. */
+function conviteAtual(consentimentoId: string): ConviteEscolar | undefined {
+  return banco.convites
+    .filter((cv) => cv.consentimentoId === consentimentoId)
+    .sort((a, b) => a.criadoEm.localeCompare(b.criadoEm))
+    .pop()
+}
+
+/** Emite um convite novo e derruba o anterior que ainda nao foi usado. */
+function emitirConvite(consentimento: Consentimento, agora: Date): ConviteEscolar {
+  for (const anterior of banco.convites.filter((cv) => cv.consentimentoId === consentimento.id)) {
+    // Nunca dois tokens validos ao mesmo tempo: o antigo vence agora.
+    if (anterior.usadoEm === null) anterior.expiraEm = agora.toISOString()
+  }
+  const convite: ConviteEscolar = {
+    id: gerarId('cv'),
+    consentimentoId: consentimento.id,
+    token: gerarToken(),
+    criadoEm: agora.toISOString(),
+    expiraEm: calcularExpiracaoConvite(agora).toISOString(),
+    usadoEm: null,
+  }
+  banco.convites.push(convite)
+  return convite
 }
 
 function gerarToken(): string {
@@ -158,12 +187,15 @@ export const consentimentosMock: ServicoConsentimento = {
     exigirPerfil(['RESPONSAVEL'], 'Consentimento', dados.pacienteId)
     const { sessao } = exigirPacienteDaFamilia(dados.pacienteId, 'Consentimento')
     const agora = relogio.agora()
-    exigirValido(validarNovoConsentimento(dados, agora))
+    const erros = validarNovoConsentimento(dados, agora)
+    if (dados.escolaId && !banco.escolas.some((e) => e.id === dados.escolaId)) erros.escolaId = 'Escola não encontrada.'
+    exigirValido(erros)
 
     const consentimento: Consentimento = {
       id: gerarId('c'),
       responsavelId: sessao.usuario.id,
       pacienteId: dados.pacienteId,
+      escolaId: dados.escolaId,
       escopos: [...new Set(dados.escopos)],
       concedidoEm: agora.toISOString(),
       validadeAte: dados.validadeAte,
@@ -171,21 +203,36 @@ export const consentimentosMock: ServicoConsentimento = {
       // No servidor, a impressao digital do termo que o responsavel aceitou.
       hashTermo: `sha256:${gerarToken()}`,
     }
-    // Sem consentimento nao ha convite. O vinculo so nasce quando o professor aceita:
-    // e ele quem declara escola, turma e turno.
-    const convite: ConviteEscolar = {
-      id: gerarId('cv'),
-      consentimentoId: consentimento.id,
-      token: gerarToken(),
-      criadoEm: agora.toISOString(),
-      expiraEm: calcularExpiracaoConvite(agora).toISOString(),
-      usadoEm: null,
-    }
     banco.consentimentos.push(consentimento)
-    banco.convites.push(convite)
+    // Sem consentimento nao ha convite. O vinculo so nasce quando o professor
+    // aceita: e ele quem declara turma, turno e atuacao.
+    const convite = emitirConvite(consentimento, agora)
+    const escola = banco.escolas.find((e) => e.id === consentimento.escolaId)?.nome ?? '—'
     auditar(sessao, {
       acao: 'CONCESSAO_ACESSO', entidade: 'Consentimento', idEntidade: consentimento.id,
-      pacienteId: dados.pacienteId, detalhe: `Escopos: ${consentimento.escopos.join(', ')}`,
+      pacienteId: dados.pacienteId,
+      // E este registro que prova o que a familia autorizou.
+      detalhe: `Escola: ${escola} · escopos: ${consentimento.escopos.join(', ')}`,
+    })
+    return {
+      consentimento: detalharConsentimento(consentimento),
+      tokenConvite: convite.token,
+      conviteExpiraEm: convite.expiraEm,
+    }
+  }),
+
+  reemitirConvite: (consentimentoId) => responder(() => {
+    const consentimento = banco.consentimentos.find((c) => c.id === consentimentoId) ?? naoEncontrado('Consentimento')
+    exigirPerfil(['RESPONSAVEL'], 'ConviteEscolar', consentimento.pacienteId)
+    const { sessao } = exigirPacienteDaFamilia(consentimento.pacienteId, 'ConviteEscolar')
+    const agora = relogio.agora()
+    if (!consentimentoVigente(consentimento, agora)) {
+      throw new ErroServico('CONFLITO', 'Este acesso não está mais vigente. Autorize de novo para gerar um convite.')
+    }
+    const convite = emitirConvite(consentimento, agora)
+    auditar(sessao, {
+      acao: 'CRIACAO', entidade: 'ConviteEscolar', idEntidade: convite.id,
+      pacienteId: consentimento.pacienteId, detalhe: 'Novo convite emitido; o anterior deixou de valer.',
     })
     return {
       consentimento: detalharConsentimento(consentimento),
@@ -239,8 +286,7 @@ export const convitesMock: ServicoConvite = {
       situacao,
       responsavel: banco.responsaveis.find((r) => r.id === consentimento.responsavelId)?.nome ?? null,
       aluno: paciente.nome.split(' ')[0],
-      // A escola so e conhecida quando o professor aceita e a declara.
-      escola: null,
+      escola: banco.escolas.find((e) => e.id === consentimento.escolaId)?.nome ?? null,
       escopos: consentimento.escopos,
       validadeAte: consentimento.validadeAte,
       expiraEm: convite.expiraEm,
@@ -264,7 +310,6 @@ export const convitesMock: ServicoConvite = {
     if (!dados.nome.trim()) erros.nome = 'Informe seu nome.'
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(dados.email.trim())) erros.email = 'Informe um e-mail válido.'
     if (dados.senha.length < 8) erros.senha = 'A senha precisa ter ao menos 8 caracteres.'
-    if (!banco.escolas.some((e) => e.id === dados.escolaId)) erros.escolaId = 'Escolha a escola onde você atua.'
     if (!dados.turma.trim()) erros.turma = 'Informe a turma do aluno.'
     if (!dados.turno.trim()) erros.turno = 'Informe o turno.'
     exigirValido(erros)
@@ -284,7 +329,6 @@ export const convitesMock: ServicoConvite = {
       perfis: ['PROFESSOR'],
       ativo: true,
       ultimoAcessoEm: agora.toISOString(),
-      atuacao: dados.atuacao.trim() || 'Professor',
     }
     banco.professores.push(professor)
 
@@ -295,10 +339,12 @@ export const convitesMock: ServicoConvite = {
       consentimentoId: consentimento.id,
       conviteId: convite.id,
       pacienteId: consentimento.pacienteId,
-      escolaId: dados.escolaId,
       professorId: professor.id,
       turma: dados.turma.trim(),
       turno: dados.turno.trim(),
+      // Atuacao e da relacao: a mesma professora pode ser regente de um aluno
+      // e professora de AEE de outro.
+      atuacao: dados.atuacao.trim() || 'Professor',
       status: 'ATIVO',
     }
     banco.vinculos.push(vinculo)

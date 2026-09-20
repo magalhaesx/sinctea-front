@@ -180,6 +180,8 @@ export function validarNovoConsentimento(dados: NovoConsentimento, agora: Date):
   const validade = ms(dados.validadeAte)
   if (Number.isNaN(validade)) erros.validadeAte = 'Informe até quando o acesso vale.'
   else if (validade <= agora.getTime()) erros.validadeAte = 'A validade precisa ser uma data futura.'
+  // A familia nomeia a instituicao: consentimento tem de ser especifico.
+  if (!dados.escolaId) erros.escolaId = 'Escolha a escola.'
   return erros
 }
 

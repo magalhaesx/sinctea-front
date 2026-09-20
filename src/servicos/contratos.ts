@@ -99,6 +99,12 @@ export interface ServicoConsentimento {
   listarPorPaciente(pacienteId: string, filtro?: FiltroPaginacao): Promise<Pagina<ConsentimentoDetalhe>>
   /** Somente o Responsavel concede. Gera o convite de uso unico para o professor. */
   conceder(dados: NovoConsentimento): Promise<ConsentimentoConcedido>
+  /**
+   * Novo token para um consentimento vigente. Invalida imediatamente qualquer
+   * convite anterior ainda nao usado: nunca existe mais de um token valido por
+   * consentimento ao mesmo tempo.
+   */
+  reemitirConvite(consentimentoId: string): Promise<ConsentimentoConcedido>
   /** Efeito imediato: a proxima leitura da escola ja e negada. */
   revogar(consentimentoId: string): Promise<ConsentimentoDetalhe>
 }

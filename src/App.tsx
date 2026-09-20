@@ -5,6 +5,7 @@ import { usarSessao } from './contexto/Sessao'
 import type { Perfil } from './servicos'
 import { Ajuda } from './app/Ajuda'
 import { Conta } from './app/Conta'
+import { Convite } from './app/Convite'
 import { Entrar } from './app/Entrar'
 import { LayoutApp } from './app/LayoutApp'
 import { PAINEL_DO_PERFIL } from './app/perfis'
@@ -34,6 +35,7 @@ const TODOS: Perfil[] = ['TERAPEUTA', 'COORDENADOR', 'ADMINISTRADOR', 'RESPONSAV
 const titulos: [padrao: string, titulo: string][] = [
   ['/sobre', 'A solução'],
   ['/app/entrar', 'Entrar'],
+  ['/app/convite/:token', 'Aceitar convite'],
   ['/app/clinica', 'Painel do terapeuta'],
   ['/app/clinica/pacientes/:id/plano', 'Plano Terapêutico Individual'],
   ['/app/clinica/pacientes/:id/sessao', 'Registro de sessão'],
@@ -82,6 +84,8 @@ export function App() {
       <Route path="/sobre" element={<Solta><Sobre /></Solta>} />
 
       <Route path="/app/entrar" element={<Entrar />} />
+      {/* Publica: o professor ainda nao tem conta quando abre o convite. */}
+      <Route path="/app/convite/:token" element={<Convite />} />
 
       <Route path="/app" element={protegida(TODOS, <LayoutApp />)}>
         <Route index element={<RaizDoApp />} />
