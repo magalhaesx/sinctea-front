@@ -214,6 +214,9 @@ export const sessoesMock: ServicoSessao = {
       }
       agendada.situacao = 'EM_ANDAMENTO'
       agendada.inicio ??= agora
+      // Enquanto nao ha back-end (S06), nada subiu a lugar nenhum: o registro
+      // aberto agora fica pendente, e a tela diz isso com estas palavras.
+      agendada.statusSync = 'PENDENTE'
       return agendada
     }
     const nova: Sessao = {
@@ -226,7 +229,8 @@ export const sessoesMock: ServicoSessao = {
       fim: null,
       local: 'Clínica',
       situacao: 'EM_ANDAMENTO',
-      statusSync: 'SINCRONIZADO',
+      // Idem: sessao aberta agora nasce pendente de sincronizacao.
+      statusSync: 'PENDENTE',
       registros: [],
     }
     banco.sessoes.push(nova)

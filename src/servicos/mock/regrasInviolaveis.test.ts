@@ -158,6 +158,29 @@ describe('camada simulada', () => {
     expect(vazio).toMatchObject({ total: 0, itens: [] })
   })
 
+  it('trocar de objetivo nao perde registro, e desfazer tira o ultimo da sessao', async () => {
+    await entrarComo('TERAPEUTA')
+    const sessao = await chamar(s.sessoes.iniciar('p-003'))
+    // Sessao aberta agora nao foi a lugar nenhum: nasce pendente.
+    expect(sessao.statusSync).toBe('PENDENTE')
+
+    await chamar(s.sessoes.registrarAtividade(sessao.id, 'o-006', 'INDEPENDENTE'))
+    await chamar(s.sessoes.registrarAtividade(sessao.id, 'o-006', 'AJUDA_GESTUAL'))
+    await chamar(s.sessoes.registrarAtividade(sessao.id, 'o-007', 'SEM_RESPOSTA'))
+
+    const contar = (sessao: { registros: { objetivoId: string }[] }, objetivoId: string) =>
+      sessao.registros.filter((r) => r.objetivoId === objetivoId).length
+
+    const cheia = await chamar(s.sessoes.obter(sessao.id))
+    expect([contar(cheia, 'o-006'), contar(cheia, 'o-007')]).toEqual([2, 1])
+
+    // Desfazer age sobre a sessao: sai o ultimo registro, que e do o-007.
+    const depois = await chamar(s.sessoes.desfazerUltimoRegistro(sessao.id))
+    expect([contar(depois, 'o-006'), contar(depois, 'o-007')]).toEqual([2, 0])
+
+    await chamar(s.sessoes.encerrar(sessao.id))
+  })
+
   it('a busca ignora acentos', async () => {
     await entrarComo('COORDENADOR')
     expect((await chamar(s.pacientes.listar({ busca: 'brandao' }))).itens.map((p) => p.nome)).toEqual(['Heitor Brandão'])
