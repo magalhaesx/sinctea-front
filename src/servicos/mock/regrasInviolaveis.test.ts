@@ -78,6 +78,8 @@ describe('camada simulada', () => {
     expect(new Set(ids).size).toBe(14)
 
     // O terapeuta ve so os pacientes que acompanha; o coordenador, todos.
+    // O toBeLessThan sozinho passaria com lista vazia.
+    expect(doTerapeuta.total).toBeGreaterThan(0)
     expect(doTerapeuta.total).toBeLessThan(primeira.total)
     expect(doTerapeuta.itens.every((p) => ids.includes(p.id))).toBe(true)
   })

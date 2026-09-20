@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { Tela } from '../LayoutApp'
-import { Botao } from '../../ui/Botao'
+import { BotaoLink } from '../../ui/Botao'
 import { Titulo } from '../../ui/Titulo'
 import { usarSessao } from '../../contexto/Sessao'
 import { servicos, type CartaoEscola } from '../../servicos'
@@ -111,9 +111,9 @@ export function CartaoEstrategias() {
                 Autorizado pela família até {new Date(estado.cartao.validadeAte).toLocaleDateString('pt-BR')}.
                 <br />Sua consulta fica registrada.
               </span>
-              <Link to={`/app/escola/${pacienteId}/ocorrencia`}>
-                <Botao area="esc">Registrar uma ocorrência</Botao>
-              </Link>
+              <BotaoLink para={`/app/escola/${pacienteId}/ocorrencia`} area="esc">
+                Registrar uma ocorrência
+              </BotaoLink>
             </div>
           </>
         )

@@ -216,7 +216,7 @@ turma sob responsabilidade.
 
 ## 6. Acessibilidade — o piso de toda tela nova
 
-Antes de considerar qualquer tela pronta, verifique os onze itens:
+Antes de considerar qualquer tela pronta, verifique os doze itens:
 
 1. `lang="pt-BR"` no elemento que contém a aplicação
 2. Link "Pular para o conteúdo" como primeiro elemento focalizável
@@ -229,6 +229,9 @@ Antes de considerar qualquer tela pronta, verifique os onze itens:
 9. Nenhuma informação apenas por cor
 10. Sem rolagem horizontal a 400px de largura
 11. `prefers-reduced-motion` respeitado, além da preferência do produto
+12. Rolagem lateral: em 320px, rode `window.scrollTo(9999, 0)` e confira que
+    `window.scrollX` é 0. Medir o recipiente não substitui esta verificação: o
+    recipiente pode rolar corretamente enquanto a página inteira rola.
 
 ### Preferências do usuário
 

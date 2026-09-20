@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { Tela } from '../LayoutApp'
 import { DEMONSTRACAO } from '../perfis'
 import { Aviso } from '../../ui/Aviso'
-import { Botao } from '../../ui/Botao'
+import { BotaoLink } from '../../ui/Botao'
 import { Cartao } from '../../ui/Cartao'
 import { Etiqueta } from '../../ui/Etiqueta'
 import { Medidor } from '../../ui/Medidor'
@@ -39,9 +39,9 @@ export function PainelFamilia() {
           ))}
         </ul>
         <div className="mt-4">
-          <Link to={`/app/familia/atividades/${DEMONSTRACAO.atividade}`}>
-            <Botao area="fam" className="w-full">Abrir a atividade que falta</Botao>
-          </Link>
+          <BotaoLink para={`/app/familia/atividades/${DEMONSTRACAO.atividade}`} area="fam" className="w-full">
+            Abrir a atividade que falta
+          </BotaoLink>
         </div>
       </Cartao>
 

@@ -64,9 +64,18 @@ export function Tabela<T>({
 
   return (
     <div className="flex min-w-0 max-w-full flex-col gap-1.5">
+      {/*
+        `relative` nao e enfeite: sem ele a pagina inteira rola de lado.
+        O texto so para leitor de tela (`sr-only`) e position:absolute; sem um
+        ancestral posicionado, o bloco de contencao dele e a pagina, e o
+        `overflow` daqui NAO o recorta. Ele fica na coordenada da tabela
+        transbordada e estica a area rolavel do documento — reprovando o
+        criterio 1.4.10 da WCAG. Com `relative`, este recipiente passa a ser o
+        bloco de contencao e o recorte volta a valer.
+      */}
       <div
         ref={recipiente}
-        className="min-w-0 max-w-full overflow-x-auto rounded-xl border border-linha bg-sup"
+        className="relative min-w-0 max-w-full overflow-x-auto rounded-xl border border-linha bg-sup"
         {...(transborda
           ? { role: 'region', 'aria-labelledby': idLegenda, 'aria-describedby': idDica, tabIndex: 0 }
           : {})}
