@@ -47,6 +47,7 @@ export const servicosApi: Servicos = {
   sessoes: {
     listarAgenda: (filtro) => r('GET', q('/agenda', filtro)),
     listarPorPaciente: (pacienteId, filtro) => r('GET', q(`/pacientes/${id(pacienteId)}/sessoes`, filtro)),
+    listarPendentesDeSincronizacao: (filtro) => r('GET', q('/sessoes/pendentes', filtro)),
     obter: (sessaoId) => r('GET', `/sessoes/${id(sessaoId)}`),
     iniciar: (pacienteId, sessaoAgendadaId) => r('POST', '/sessoes', { pacienteId, sessaoAgendadaId }),
     registrarAtividade: (sessaoId, objetivoId, resultado) =>

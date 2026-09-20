@@ -360,6 +360,12 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
   ;[55, 60, 65, 70].forEach((v, i) => encerrada('p-012', 'u-prof-3', 28 - i * 7, { 'o-016': v }, 8))
   ;[40, 50].forEach((v, i) => encerrada('p-014', 'u-prof-2', 9 - i * 7, { 'o-018': v }, 17))
 
+  /* Tres registros da Ana feitos sem conexao: alimentam o bloco de
+     sincronizacao do painel. Zero registros pendentes esconde o bloco. */
+  for (const s of sessoes.filter((x) => x.profissionalId === 'u-prof-1').slice(-3)) {
+    s.statusSync = 'PENDENTE'
+  }
+
   // Agenda de hoje.
   const agendada = (id: string, pacienteId: string, profissionalId: string, hora: number, minuto = 0) => {
     const numero = sessoes.filter((s) => s.pacienteId === pacienteId).length + 1

@@ -185,6 +185,15 @@ export const sessoesMock: ServicoSessao = {
     return paginar(itens, filtro)
   }),
 
+  listarPendentesDeSincronizacao: (filtro = {}) => responder(() => {
+    const autenticada = exigirPerfil(['TERAPEUTA', 'COORDENADOR'], 'Sessao')
+    // Sao os registros de quem conduziu, nao os da clinica inteira.
+    const itens = banco.sessoes
+      .filter((s) => s.profissionalId === autenticada.usuario.id && s.statusSync === 'PENDENTE')
+      .sort((a, b) => (b.inicio ?? b.inicioPrevistoEm).localeCompare(a.inicio ?? a.inicioPrevistoEm))
+    return paginar(itens, filtro)
+  }),
+
   obter: (id) => responder(() => {
     const sessao = buscarSessao(id)
     exigirPacienteClinico(sessao.pacienteId, 'Sessao')

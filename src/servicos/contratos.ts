@@ -65,6 +65,11 @@ export interface ServicoPlano {
 export interface ServicoSessao {
   listarAgenda(filtro?: FiltroAgenda): Promise<Pagina<ItemAgenda>>
   listarPorPaciente(pacienteId: string, filtro?: FiltroSessao): Promise<Pagina<Sessao>>
+  /**
+   * Registros feitos sem conexao que ainda nao subiram, do profissional
+   * autenticado. O painel mostra a contagem; nada se perde enquanto isso.
+   */
+  listarPendentesDeSincronizacao(filtro?: FiltroPaginacao): Promise<Pagina<Sessao>>
   obter(id: string): Promise<Sessao>
   /** Inicia uma sessao agendada ou cria uma nova, conduzida pelo usuario atual. */
   iniciar(pacienteId: string, sessaoAgendadaId?: string): Promise<Sessao>

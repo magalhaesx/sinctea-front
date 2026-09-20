@@ -133,6 +133,31 @@ describe('camada simulada', () => {
     expect(nivelInvalido.campos.nome).toBeUndefined()
   })
 
+  it('os registros pendentes sao de quem conduziu, nao da clinica', async () => {
+    await entrarComo('TERAPEUTA')
+    const daAna = await chamar(s.sessoes.listarPendentesDeSincronizacao({ porPagina: 100 }))
+    expect(daAna.total).toBeGreaterThan(0)
+    expect(daAna.itens.every((x) => x.statusSync === 'PENDENTE' && x.profissionalId === 'u-prof-1')).toBe(true)
+
+    // A coordenadora nao herda os registros pendentes da equipe.
+    await entrarComo('COORDENADOR')
+    const daJuliana = await chamar(s.sessoes.listarPendentesDeSincronizacao({ porPagina: 100 }))
+    expect(daJuliana.itens.some((x) => x.profissionalId === 'u-prof-1')).toBe(false)
+  })
+
+  it('a agenda do dia so traz os atendimentos de quem esta logado', async () => {
+    await entrarComo('TERAPEUTA')
+    const hoje = new Date()
+    const dia = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`
+    const agenda = await chamar(s.sessoes.listarAgenda({ dia }))
+    expect(agenda.total).toBeGreaterThan(0)
+    expect(agenda.itens.every((i) => i.profissional.id === 'u-prof-1')).toBe(true)
+
+    // Dia sem atendimento devolve pagina vazia, nao erro.
+    const vazio = await chamar(s.sessoes.listarAgenda({ dia: '2020-01-01' }))
+    expect(vazio).toMatchObject({ total: 0, itens: [] })
+  })
+
   it('a busca ignora acentos', async () => {
     await entrarComo('COORDENADOR')
     expect((await chamar(s.pacientes.listar({ busca: 'brandao' }))).itens.map((p) => p.nome)).toEqual(['Heitor Brandão'])

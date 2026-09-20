@@ -1,59 +1,248 @@
+import { useEffect, useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { Tela } from '../LayoutApp'
+import { NOME_DO_PERFIL } from '../perfis'
 import { Aviso } from '../../ui/Aviso'
-import { Botao, BotaoLink } from '../../ui/Botao'
+import { BotaoLink } from '../../ui/Botao'
+import { Cartao } from '../../ui/Cartao'
 import { Etiqueta } from '../../ui/Etiqueta'
 import { Titulo } from '../../ui/Titulo'
+import { EstadoCarregando } from '../../ui/EstadoCarregando'
+import { EstadoErro } from '../../ui/EstadoErro'
+import { Paginacao } from '../../ui/Paginacao'
+import { usarSessao } from '../../contexto/Sessao'
+import {
+  servicos, type AvisoOcorrenciaEscolar, type ItemAgenda, type Pagina, type SituacaoSessao,
+} from '../../servicos'
 
-/* A agenda ainda e fixa: a etapa 5 liga este painel a agenda do servico.
-   Ate la, cada item leva a lista de pacientes, que e navegacao de verdade. */
-const agenda = [
-  { hora: '08h00', nome: 'Miguel Santana', idade: 7, estado: 'concluida' as const },
-  { hora: '09h00', nome: 'Helena Duarte', idade: 5, estado: 'concluida' as const },
-  { hora: '14h00', nome: 'Rafael Lins', idade: 9, estado: 'aberta' as const },
-  { hora: '15h00', nome: 'Bruna Alencar', idade: 6, estado: 'agendada' as const },
-]
+/**
+ * Tela 3 · Painel do terapeuta · /app/clinica (UC10, UC04, UC06)
+ *
+ * Agenda e avisos vem da camada de servicos, cada bloco com os seus quatro
+ * estados. O aviso da escola e lista: pode haver mais de um no mesmo dia.
+ */
+
+const SITUACAO: Record<SituacaoSessao, { rotulo: string; tom: 'ok' | 'at' | 'neutro'; simbolo: string }> = {
+  ENCERRADA: { rotulo: 'Concluída', tom: 'ok', simbolo: '✓' },
+  EM_ANDAMENTO: { rotulo: 'Em aberto', tom: 'at', simbolo: '●' },
+  PAUSADA: { rotulo: 'Pausada', tom: 'at', simbolo: '▲' },
+  AGENDADA: { rotulo: 'Agendada', tom: 'neutro', simbolo: '○' },
+  CANCELADA: { rotulo: 'Cancelada', tom: 'neutro', simbolo: '○' },
+}
+
+const POR_PAGINA = 10
+
+type Estado<T> =
+  | { tipo: 'carregando' }
+  | { tipo: 'erro'; erro: unknown }
+  | { tipo: 'pronto'; dados: T }
+
+/** AAAA-MM-DD no fuso de quem usa, que e como a agenda e pedida. */
+const diaDeHoje = () => {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+const hora = (iso: string) =>
+  new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+
+const quando = (iso: string) => {
+  const data = new Date(iso)
+  const hoje = new Date()
+  const mesmoDia = data.toDateString() === hoje.toDateString()
+  return mesmoDia
+    ? `hoje, ${hora(iso)}`
+    : `${data.toLocaleDateString('pt-BR')}, ${hora(iso)}`
+}
 
 export function PainelClinica() {
+  const { usuario, perfilAtivo } = usarSessao()
+  const [params, setParams] = useSearchParams()
+  const dia = params.get('dia') ?? diaDeHoje()
+  const pagina = Math.max(1, Number(params.get('pagina') ?? 1) || 1)
+
+  const [agenda, setAgenda] = useState<Estado<Pagina<ItemAgenda>>>({ tipo: 'carregando' })
+  const [avisos, setAvisos] = useState<Estado<Pagina<AvisoOcorrenciaEscolar>>>({ tipo: 'carregando' })
+  const [pendentes, setPendentes] = useState(0)
+  const [tentativaAgenda, setTentativaAgenda] = useState(0)
+  const [tentativaAvisos, setTentativaAvisos] = useState(0)
+
+  useEffect(() => {
+    let ativo = true
+    setAgenda({ tipo: 'carregando' })
+    servicos.sessoes.listarAgenda({ dia, pagina, porPagina: POR_PAGINA })
+      .then((dados) => { if (ativo) setAgenda({ tipo: 'pronto', dados }) })
+      .catch((erro) => { if (ativo) setAgenda({ tipo: 'erro', erro }) })
+    return () => { ativo = false }
+  }, [dia, pagina, tentativaAgenda])
+
+  useEffect(() => {
+    let ativo = true
+    setAvisos({ tipo: 'carregando' })
+    servicos.ocorrencias.listarAvisosDaEscola({ porPagina: 5 })
+      .then((dados) => { if (ativo) setAvisos({ tipo: 'pronto', dados }) })
+      .catch((erro) => { if (ativo) setAvisos({ tipo: 'erro', erro }) })
+    return () => { ativo = false }
+  }, [tentativaAvisos])
+
+  useEffect(() => {
+    let ativo = true
+    servicos.sessoes.listarPendentesDeSincronizacao({ porPagina: 1 })
+      .then((p) => { if (ativo) setPendentes(p.total) })
+      .catch(() => { if (ativo) setPendentes(0) })
+    return () => { ativo = false }
+  }, [tentativaAgenda])
+
+  const ehHoje = dia === diaDeHoje()
+  const dataPorExtenso = new Date(`${dia}T12:00:00`).toLocaleDateString('pt-BR', {
+    weekday: 'long', day: 'numeric', month: 'long',
+  })
+  const totalNaAgenda = agenda.tipo === 'pronto' ? agenda.dados.total : null
+  const totalAvisos = avisos.tipo === 'pronto' ? avisos.dados.total : 0
+
+  const resumo = totalNaAgenda === null
+    ? 'Carregando a agenda'
+    : `${totalNaAgenda === 0 ? 'Nenhum atendimento' : totalNaAgenda === 1 ? '1 atendimento' : `${totalNaAgenda} atendimentos`}` +
+      `${ehHoje ? ' hoje' : ''} · ${totalAvisos === 0 ? 'nenhum aviso novo' : totalAvisos === 1 ? '1 aviso novo' : `${totalAvisos} avisos novos`}`
+
   return (
-    <Tela area="cli" nome="Ana Lúcia Ferraz" papel="Terapeuta ocupacional · CREFITO 12345-TO" caminho={['Início']}>
-      <Titulo sub="Quatro atendimentos hoje · 1 aviso novo">Segunda-feira, 14 de setembro</Titulo>
+    <Tela
+      area="cli"
+      nome={usuario?.nome}
+      papel={perfilAtivo ? NOME_DO_PERFIL[perfilAtivo] : undefined}
+      caminho={['Área clínica', 'Painel do terapeuta']}
+    >
+      <Titulo sub={resumo}>{dataPorExtenso}</Titulo>
 
-      <Aviso tom="at" titulo="A escola registrou uma ocorrência">
-        <p>Miguel S. · ontem, 14h20 · relatado por Prof.ª Carla Nunes (EMEF Jardim das Palmeiras)</p>
-        <div className="mt-3 flex flex-wrap gap-2">
-          <Botao area="cli">Ver a ocorrência</Botao>
-          <Botao area="cli" variante="secundaria">Marcar como lida</Botao>
-        </div>
-      </Aviso>
+      {!ehHoje && (
+        <p className="text-sm">
+          Você está vendo a agenda de outro dia.{' '}
+          <Link to="/app/clinica" className="font-bold text-cli-ink underline">Voltar para hoje</Link>
+        </p>
+      )}
 
-      <section aria-labelledby="h-agenda">
-        <h2 id="h-agenda" className="mb-3 text-lg font-bold">Agenda de hoje</h2>
-        <ul className="flex flex-col gap-2.5">
-          {agenda.map((a) => (
-            <li key={a.hora} className="flex flex-wrap items-center justify-between gap-2.5 rounded-xl border border-linha bg-sup px-3.5 py-3">
-              <span>
-                <b className="tabular-nums">{a.hora}</b> · {a.nome}{' '}
-                <span className="text-sm text-tinta2">— {a.idade} anos</span>
-              </span>
-              {a.estado === 'concluida' && <Etiqueta tom="ok" simbolo="✓">Concluída</Etiqueta>}
-              {a.estado === 'agendada' && <Etiqueta simbolo="○">Agendada</Etiqueta>}
-              {a.estado === 'aberta' && (
-                <span className="flex flex-wrap items-center gap-2.5">
-                  <Etiqueta tom="at" simbolo="●">Em aberto</Etiqueta>
-                  <BotaoLink para={`/app/clinica/pacientes?busca=${encodeURIComponent(a.nome)}`} area="cli">
-                    Abrir o paciente
-                  </BotaoLink>
-                </span>
-              )}
-            </li>
-          ))}
-        </ul>
+      <section aria-labelledby="h-avisos" className="flex flex-col gap-3">
+        <h2 id="h-avisos" className="text-lg font-bold">Avisos da escola</h2>
+
+        {avisos.tipo === 'carregando' && (
+          <EstadoCarregando forma="texto" linhas={2} rotulo="Carregando os avisos da escola" />
+        )}
+
+        {avisos.tipo === 'erro' && (
+          <EstadoErro
+            erro={avisos.erro}
+            oQue="os avisos da escola"
+            nivel={3}
+            aoTentarDeNovo={() => setTentativaAvisos((t) => t + 1)}
+          />
+        )}
+
+        {avisos.tipo === 'pronto' && (
+          avisos.dados.total === 0 ? (
+            <Cartao><p className="text-tinta2">Nenhum aviso novo da escola nos últimos sete dias.</p></Cartao>
+          ) : (
+            <ul className="flex flex-col gap-2.5">
+              {avisos.dados.itens.map((a) => (
+                <li key={a.ocorrenciaId}>
+                  <Aviso tom="at" titulo="A escola registrou uma ocorrência">
+                    <p>
+                      {a.paciente.nome} · {quando(a.registradaEm)} · {a.escola}
+                    </p>
+                    <p className="mt-1">
+                      Relato: {a.tipo} · intensidade {a.intensidade} de 5. A leitura clínica é sua.
+                    </p>
+                    <p className="mt-3">
+                      {/* A ficha e o ponto de entrada: de la se escolhe o que abrir. */}
+                      <BotaoLink para={`/app/clinica/pacientes/${a.paciente.id}`} area="cli">
+                        Abrir a ficha de {a.paciente.nome.split(' ')[0]}
+                      </BotaoLink>
+                    </p>
+                  </Aviso>
+                </li>
+              ))}
+            </ul>
+          )
+        )}
       </section>
 
-      <Aviso titulo="3 registros aguardando sincronização">
-        Foram feitos sem conexão e serão enviados assim que a rede voltar. Nada se perde — você pode
-        continuar registrando normalmente.
-      </Aviso>
+      <section aria-labelledby="h-agenda" className="flex flex-col gap-3">
+        <h2 id="h-agenda" className="text-lg font-bold">Agenda do dia</h2>
+
+        {agenda.tipo === 'carregando' && (
+          <EstadoCarregando forma="lista" linhas={3} rotulo="Carregando a agenda do dia" />
+        )}
+
+        {agenda.tipo === 'erro' && (
+          <EstadoErro
+            erro={agenda.erro}
+            oQue="a agenda do dia"
+            nivel={3}
+            aoTentarDeNovo={() => setTentativaAgenda((t) => t + 1)}
+          />
+        )}
+
+        {agenda.tipo === 'pronto' && (
+          agenda.dados.total === 0 ? (
+            // Sem EstadoVazio: a acao que ele ofereceria — ir para a lista de
+            // pacientes — ja esta nos atalhos e no menu (docs/02, secao 4).
+            <Cartao>
+              <p className="text-tinta2">
+                {ehHoje
+                  ? 'Nenhum atendimento agendado para hoje.'
+                  : 'Nenhum atendimento agendado para este dia.'}
+              </p>
+            </Cartao>
+          ) : (
+            <>
+              <ul className="flex flex-col gap-2.5">
+                {agenda.dados.itens.map((i) => {
+                  const s = SITUACAO[i.situacao]
+                  return (
+                    <li
+                      key={i.sessaoId}
+                      className="flex flex-wrap items-center justify-between gap-2.5 rounded-xl border border-linha bg-sup px-3.5 py-3"
+                    >
+                      <span>
+                        <b className="tabular-nums">{hora(i.inicioPrevistoEm)}</b> ·{' '}
+                        <Link to={`/app/clinica/pacientes/${i.paciente.id}`} className="text-cli-ink underline">
+                          {i.paciente.nome}
+                        </Link>
+                      </span>
+                      <span className="flex flex-wrap items-center gap-2.5">
+                        <Etiqueta tom={s.tom} simbolo={s.simbolo}>{s.rotulo}</Etiqueta>
+                        <BotaoLink para={`/app/clinica/pacientes/${i.paciente.id}/sessao`} area="cli">
+                          {i.situacao === 'ENCERRADA' ? 'Ver a sessão' : 'Abrir a sessão'}
+                        </BotaoLink>
+                      </span>
+                    </li>
+                  )
+                })}
+              </ul>
+
+              <Paginacao
+                pagina={agenda.dados.pagina}
+                porPagina={agenda.dados.porPagina}
+                total={agenda.dados.total}
+                aoMudar={(p) => {
+                  const proximos = new URLSearchParams(params)
+                  proximos.set('pagina', String(p))
+                  setParams(proximos)
+                }}
+                rotulo="Páginas da agenda do dia"
+                nomeItens={{ singular: 'atendimento', plural: 'atendimentos' }}
+              />
+            </>
+          )
+        )}
+      </section>
+
+      {/* Bloco que so diz "nada aqui" gasta atencao: sem pendencia, sem bloco. */}
+      {pendentes > 0 && (
+        <Aviso titulo={`${pendentes} ${pendentes === 1 ? 'registro aguardando' : 'registros aguardando'} sincronização`}>
+          Foram feitos sem conexão e serão enviados assim que a rede voltar. Nada se perde — você
+          pode continuar registrando normalmente.
+        </Aviso>
+      )}
 
       <div className="flex flex-wrap gap-2">
         <BotaoLink para="/app/clinica/pacientes" area="cli" variante="secundaria">Ver meus pacientes</BotaoLink>
