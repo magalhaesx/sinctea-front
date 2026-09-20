@@ -1,6 +1,10 @@
 import { useState } from 'react'
 import { Tela } from '../LayoutApp'
-import { Botao, Cartao, Etiqueta, Medidor, Titulo } from '../../componentes/ui'
+import { Botao } from '../../ui/Botao'
+import { Cartao } from '../../ui/Cartao'
+import { Etiqueta } from '../../ui/Etiqueta'
+import { Medidor } from '../../ui/Medidor'
+import { Titulo } from '../../ui/Titulo'
 import { objetivos, paciente } from '../../dados/exemplo'
 
 export function Plano() {

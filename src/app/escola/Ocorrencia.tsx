@@ -1,6 +1,8 @@
 import { useRef, useState } from 'react'
 import { Tela } from '../LayoutApp'
-import { Aviso, Botao, Titulo } from '../../componentes/ui'
+import { Aviso } from '../../ui/Aviso'
+import { Botao } from '../../ui/Botao'
+import { Titulo } from '../../ui/Titulo'
 
 const tipos = ['Saiu da sala', 'Tapou os ouvidos', 'Recusou a tarefa', 'Chorou', 'Agrediu-se', 'Outro']
 const intensidades = ['1', '2', '3', '4', '5']

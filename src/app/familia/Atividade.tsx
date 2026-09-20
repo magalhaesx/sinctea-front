@@ -1,6 +1,10 @@
 import { useState } from 'react'
 import { Tela } from '../LayoutApp'
-import { Aviso, Botao, Campo, Cartao, Titulo } from '../../componentes/ui'
+import { Aviso } from '../../ui/Aviso'
+import { Botao } from '../../ui/Botao'
+import { Campo } from '../../ui/Campo'
+import { Cartao } from '../../ui/Cartao'
+import { Titulo } from '../../ui/Titulo'
 import { atividades } from '../../dados/exemplo'
 import type { Desempenho } from '../../tipos/dominio'
 

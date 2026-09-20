@@ -1,7 +1,10 @@
 import { Link } from 'react-router-dom'
 import { Tela } from '../LayoutApp'
 import { DEMONSTRACAO } from '../perfis'
-import { Aviso, Botao, Etiqueta, Titulo } from '../../componentes/ui'
+import { Aviso } from '../../ui/Aviso'
+import { Botao } from '../../ui/Botao'
+import { Etiqueta } from '../../ui/Etiqueta'
+import { Titulo } from '../../ui/Titulo'
 
 const agenda = [
   { hora: '08h00', nome: 'Miguel Santana', idade: 7, estado: 'concluida' as const },

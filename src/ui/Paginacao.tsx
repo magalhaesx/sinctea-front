@@ -1,4 +1,4 @@
-import { acento, type Area } from '../componentes/ui'
+import { acento, type Area } from './area'
 
 /**
  * Paginacao de listagens (toda listagem e paginada — docs/01, secao 4).

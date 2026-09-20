@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { Sessao } from '../tipos/dominio'
-import { Botao } from './ui'
+import { Botao } from '../ui/Botao'
 
 /**
  * Serie unica: nao usa legenda (o titulo nomeia a serie) e traz linha de

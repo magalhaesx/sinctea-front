@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import { Tela } from '../LayoutApp'
-import { Botao, Cartao, Etiqueta, Titulo } from '../../componentes/ui'
+import { Botao } from '../../ui/Botao'
+import { Cartao } from '../../ui/Cartao'
+import { Etiqueta } from '../../ui/Etiqueta'
+import { Titulo } from '../../ui/Titulo'
 import type { Resultado } from '../../tipos/dominio'
 
 const respostas: { valor: Resultado; rotulo: string }[] = [

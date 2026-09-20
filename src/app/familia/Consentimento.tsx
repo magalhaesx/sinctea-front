@@ -1,6 +1,11 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Tela } from '../LayoutApp'
-import { Aviso, Botao, Campo, Cartao, Etiqueta, Titulo } from '../../componentes/ui'
+import { Aviso } from '../../ui/Aviso'
+import { Botao } from '../../ui/Botao'
+import { Campo } from '../../ui/Campo'
+import { Cartao } from '../../ui/Cartao'
+import { Etiqueta } from '../../ui/Etiqueta'
+import { Titulo } from '../../ui/Titulo'
 import {
   servicos, type ConsentimentoConcedido, type ConsentimentoDetalhe, type Escola,
   type EscopoAcesso, type FilhoResumo,

@@ -1,4 +1,5 @@
-import { Botao, type Area } from '../componentes/ui'
+import { Botao } from './Botao'
+import { type Area } from './area'
 import { ErroServico } from '../servicos'
 
 /**

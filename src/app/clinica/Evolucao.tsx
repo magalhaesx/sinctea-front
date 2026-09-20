@@ -1,5 +1,7 @@
 import { Tela } from '../LayoutApp'
-import { Aviso, Cartao, Titulo } from '../../componentes/ui'
+import { Aviso } from '../../ui/Aviso'
+import { Cartao } from '../../ui/Cartao'
+import { Titulo } from '../../ui/Titulo'
 import { GraficoEvolucao } from '../../componentes/GraficoEvolucao'
 import { objetivos, sessoes } from '../../dados/exemplo'
 

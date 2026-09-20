@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom'
-import { Aviso, Cartao, Titulo } from '../../componentes/ui'
+import { Aviso } from '../../ui/Aviso'
+import { Cartao } from '../../ui/Cartao'
+import { Titulo } from '../../ui/Titulo'
 import { Tela } from '../LayoutApp'
 
 /**

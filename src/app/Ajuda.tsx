@@ -1,5 +1,6 @@
 import { Tela } from './LayoutApp'
-import { Cartao, Titulo } from '../componentes/ui'
+import { Cartao } from '../ui/Cartao'
+import { Titulo } from '../ui/Titulo'
 import { BarraPreferencias } from '../componentes/BarraPreferencias'
 
 const principios = [

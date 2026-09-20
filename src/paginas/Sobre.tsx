@@ -1,5 +1,6 @@
 import { Tela } from '../app/LayoutApp'
-import { Cartao, Titulo } from '../componentes/ui'
+import { Cartao } from '../ui/Cartao'
+import { Titulo } from '../ui/Titulo'
 
 const numeros = [
   { valor: '2,4 mi', texto: 'pessoas com TEA no Brasil, segundo o Censo 2022 (IBGE, 2025)' },
