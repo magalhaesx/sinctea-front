@@ -104,9 +104,11 @@ export function validarNovoObjetivo(dados: NovoObjetivo): Record<string, string>
   if (!dados.dominio.trim()) erros.dominio = 'Informe o domínio do objetivo.'
   if (!dados.descricaoTecnica.trim()) erros.descricaoTecnica = 'Informe a descrição técnica, usada pela equipe.'
   if (!dados.descricaoAcessivel.trim()) {
+    // A mensagem explica por que o campo existe. Regra 4 do CLAUDE.md: nao ha
+    // geracao, copia nem sugestao a partir da redacao tecnica.
     erros.descricaoAcessivel =
-      'Escreva a descrição acessível. É ela que a família e a escola leem: sem ela, ' +
-      'o objetivo não chega a quem convive com a criança fora da clínica.'
+      'A descrição acessível é o que a família e a escola vão ler. ' +
+      'Ela não é gerada a partir da técnica — quem escreve é você.'
   }
   const { percentualMinimo, sessoesConsecutivas } = dados.criterio
   if (!Number.isFinite(percentualMinimo) || percentualMinimo < 1 || percentualMinimo > 100) {
