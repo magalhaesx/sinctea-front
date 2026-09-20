@@ -82,6 +82,55 @@ describe('camada simulada', () => {
     expect(doTerapeuta.itens.every((p) => ids.includes(p.id))).toBe(true)
   })
 
+  it('a ficha de paciente de outro profissional e negada ao terapeuta', async () => {
+    await entrarComo('COORDENADOR')
+    const todos = (await chamar(s.pacientes.listar({ porPagina: 100 }))).itens.map((p) => p.id)
+
+    await entrarComo('TERAPEUTA')
+    const meus = (await chamar(s.pacientes.listar({ porPagina: 100 }))).itens.map((p) => p.id)
+    const deOutro = todos.find((id) => !meus.includes(id))!
+
+    // O que o terapeuta acompanha, ele abre.
+    expect((await chamar(s.pacientes.obter(meus[0]))).id).toBe(meus[0])
+    // O que nao acompanha, nao: e a negativa fica na auditoria.
+    expect((await erroDe(s.pacientes.obter(deOutro))).codigo).toBe('ACESSO_NEGADO')
+    expect(await ultimaAuditoria()).toMatchObject({ acao: 'ACESSO_NEGADO', entidade: 'Paciente', pacienteId: deOutro })
+  })
+
+  it('filtro combinado com paginacao devolve pagina coerente', async () => {
+    await entrarComo('COORDENADOR')
+    const filtro = { nivelSuporte: 2 as const, porPagina: 2 }
+    const primeira = await chamar(s.pacientes.listar(filtro))
+    const segunda = await chamar(s.pacientes.listar({ ...filtro, pagina: 2 }))
+
+    // O total e o do recorte filtrado, nao o da clinica inteira.
+    const todos = await chamar(s.pacientes.listar({ porPagina: 100 }))
+    expect(primeira.total).toBeLessThan(todos.total)
+    expect(primeira.total).toBe(todos.itens.filter((p) => p.nivelSuporte === 2).length)
+    expect(primeira.itens.every((p) => p.nivelSuporte === 2)).toBe(true)
+
+    // A pagina 2 nao repete item da pagina 1.
+    const ids = [...primeira.itens, ...segunda.itens].map((p) => p.id)
+    expect(new Set(ids).size).toBe(ids.length)
+  })
+
+  it('cadastro sem nome ou com nivel fora de 1 a 3 e recusado no campo certo', async () => {
+    await entrarComo('TERAPEUTA')
+    const semNome = await erroDe(s.pacientes.criar({
+      nome: '   ', dataNascimento: '2019-04-02', nivelSuporte: 2, profissionalResponsavelId: 'u-prof-1',
+    }))
+    expect(semNome.codigo).toBe('VALIDACAO')
+    expect(semNome.campos.nome).toBeTruthy()
+
+    const nivelInvalido = await erroDe(s.pacientes.criar({
+      nome: 'Paciente Fictício', dataNascimento: '2019-04-02',
+      nivelSuporte: 4 as unknown as 1 | 2 | 3, profissionalResponsavelId: 'u-prof-1',
+    }))
+    expect(nivelInvalido.codigo).toBe('VALIDACAO')
+    expect(nivelInvalido.campos.nivelSuporte).toBeTruthy()
+    expect(nivelInvalido.campos.nome).toBeUndefined()
+  })
+
   it('a busca ignora acentos', async () => {
     await entrarComo('COORDENADOR')
     expect((await chamar(s.pacientes.listar({ busca: 'brandao' }))).itens.map((p) => p.nome)).toEqual(['Heitor Brandão'])

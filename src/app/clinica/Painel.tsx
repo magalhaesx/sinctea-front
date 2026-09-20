@@ -1,11 +1,11 @@
-import { Link } from 'react-router-dom'
 import { Tela } from '../LayoutApp'
-import { DEMONSTRACAO } from '../perfis'
 import { Aviso } from '../../ui/Aviso'
-import { Botao } from '../../ui/Botao'
+import { Botao, BotaoLink } from '../../ui/Botao'
 import { Etiqueta } from '../../ui/Etiqueta'
 import { Titulo } from '../../ui/Titulo'
 
+/* A agenda ainda e fixa: a etapa 5 liga este painel a agenda do servico.
+   Ate la, cada item leva a lista de pacientes, que e navegacao de verdade. */
 const agenda = [
   { hora: '08h00', nome: 'Miguel Santana', idade: 7, estado: 'concluida' as const },
   { hora: '09h00', nome: 'Helena Duarte', idade: 5, estado: 'concluida' as const },
@@ -40,9 +40,9 @@ export function PainelClinica() {
               {a.estado === 'aberta' && (
                 <span className="flex flex-wrap items-center gap-2.5">
                   <Etiqueta tom="at" simbolo="●">Em aberto</Etiqueta>
-                  <Link to={`/app/clinica/pacientes/${DEMONSTRACAO.paciente}/sessao`}>
-                    <Botao area="cli">Iniciar sessão</Botao>
-                  </Link>
+                  <BotaoLink para={`/app/clinica/pacientes?busca=${encodeURIComponent(a.nome)}`} area="cli">
+                    Abrir o paciente
+                  </BotaoLink>
                 </span>
               )}
             </li>
@@ -56,8 +56,7 @@ export function PainelClinica() {
       </Aviso>
 
       <div className="flex flex-wrap gap-2">
-        <Link to={`/app/clinica/pacientes/${DEMONSTRACAO.paciente}/plano`}><Botao area="cli" variante="secundaria">Abrir o plano do Miguel</Botao></Link>
-        <Link to={`/app/clinica/pacientes/${DEMONSTRACAO.paciente}/evolucao`}><Botao area="cli" variante="secundaria">Ver evolução por objetivo</Botao></Link>
+        <BotaoLink para="/app/clinica/pacientes" area="cli" variante="secundaria">Ver meus pacientes</BotaoLink>
       </div>
     </Tela>
   )

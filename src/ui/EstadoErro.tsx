@@ -55,14 +55,25 @@ export interface PropsEstadoErro {
   erro: unknown
   /** Complemento da frase, com artigo: "a lista de pacientes", "o plano terapêutico". */
   oQue: string
-  aoTentarDeNovo: () => void
+  /**
+   * Sem esta funcao, o botao nao aparece: ha falhas em que tentar de novo nao
+   * muda nada, como abrir a ficha de um paciente que nao e seu.
+   */
+  aoTentarDeNovo?: () => void
+  /** Sobrescrevem o texto derivado do erro, quando a tela sabe dizer melhor. */
+  titulo?: string
+  texto?: string
   /** Nivel do titulo, para nao saltar a hierarquia da tela. Padrao: 2. */
   nivel?: 2 | 3
   area?: Area
 }
 
-export function EstadoErro({ erro, oQue, aoTentarDeNovo, nivel = 2, area = 'cli' }: PropsEstadoErro) {
-  const { titulo, texto } = descreverErro(erro, oQue)
+export function EstadoErro({
+  erro, oQue, aoTentarDeNovo, titulo: tituloDado, texto: textoDado, nivel = 2, area = 'cli',
+}: PropsEstadoErro) {
+  const derivado = descreverErro(erro, oQue)
+  const titulo = tituloDado ?? derivado.titulo
+  const texto = textoDado ?? derivado.texto
   const Titulo = nivel === 2 ? 'h2' : 'h3'
   return (
     <section role="alert" className="flex flex-col items-start gap-3 rounded-xl border border-linha border-l-4 border-l-cr bg-cr-sup p-5 sm:p-6">
@@ -71,7 +82,9 @@ export function EstadoErro({ erro, oQue, aoTentarDeNovo, nivel = 2, area = 'cli'
         {titulo}
       </Titulo>
       <p className="max-w-[65ch] text-tinta">{texto}</p>
-      <Botao variante="secundaria" area={area} onClick={aoTentarDeNovo}>Tentar de novo</Botao>
+      {aoTentarDeNovo && (
+        <Botao variante="secundaria" area={area} onClick={aoTentarDeNovo}>Tentar de novo</Botao>
+      )}
     </section>
   )
 }

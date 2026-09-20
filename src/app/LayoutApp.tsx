@@ -18,7 +18,6 @@ const CLI = '#00a2af'
 const FAM = '#c8402e'
 const ESC = '#bf8506'
 const NEUTRO = '#9db6ba'
-const pac = DEMONSTRACAO.paciente
 
 const menu: Grupo[] = [
   {
@@ -26,9 +25,8 @@ const menu: Grupo[] = [
     perfis: ['TERAPEUTA', 'COORDENADOR'],
     itens: [
       { para: '/app/clinica', nome: 'Painel do terapeuta', uc: 'UC10', cor: CLI, fim: true },
-      { para: `/app/clinica/pacientes/${pac}/plano`, nome: 'Plano Terapêutico', uc: 'UC02', cor: CLI },
-      { para: `/app/clinica/pacientes/${pac}/sessao`, nome: 'Registro de sessão', uc: 'UC04', cor: CLI },
-      { para: `/app/clinica/pacientes/${pac}/evolucao`, nome: 'Evolução por objetivo', uc: 'UC08', cor: CLI },
+      // Plano, sessao e evolucao se abrem pela ficha, com o paciente escolhido.
+      { para: '/app/clinica/pacientes', nome: 'Pacientes', uc: 'UC01', cor: CLI },
     ],
   },
   {

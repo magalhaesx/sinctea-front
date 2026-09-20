@@ -19,11 +19,11 @@ export const PAINEL_DO_PERFIL: Record<Perfil, string> = {
 }
 
 /**
- * Identificadores usados enquanto a lista de pacientes (tela 4) e a lista de
- * atividades (tela 9) nao existem. As etapas 4 e 5 substituem estes atalhos
- * por navegacao real; nenhum outro lugar do codigo fixa identificador.
+ * Identificador usado enquanto a lista de atividades (tela 9) nao existe.
+ * A etapa 7 substitui este atalho por navegacao real; nenhum outro lugar do
+ * codigo fixa identificador.
  */
-export const DEMONSTRACAO = { paciente: 'p-001', atividade: 'a-003' } as const
+export const DEMONSTRACAO = { atividade: 'a-003' } as const
 
 /** Area visual de cada perfil (docs/02, secao 1). */
 export const AREA_DO_PERFIL: Record<Perfil, 'cli' | 'fam' | 'esc'> = {

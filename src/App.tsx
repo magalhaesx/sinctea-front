@@ -10,6 +10,9 @@ import { Entrar } from './app/Entrar'
 import { LayoutApp } from './app/LayoutApp'
 import { PAINEL_DO_PERFIL } from './app/perfis'
 import { PainelClinica } from './app/clinica/Painel'
+import { Pacientes } from './app/clinica/Pacientes'
+import { NovoPaciente } from './app/clinica/NovoPaciente'
+import { Ficha } from './app/clinica/Ficha'
 import { Plano } from './app/clinica/Plano'
 import { RegistroSessao } from './app/clinica/Sessao'
 import { Evolucao } from './app/clinica/Evolucao'
@@ -37,6 +40,9 @@ const titulos: [padrao: string, titulo: string][] = [
   ['/app/entrar', 'Entrar'],
   ['/app/convite/:token', 'Aceitar convite'],
   ['/app/clinica', 'Painel do terapeuta'],
+  ['/app/clinica/pacientes', 'Lista de pacientes'],
+  ['/app/clinica/pacientes/novo', 'Cadastrar paciente'],
+  ['/app/clinica/pacientes/:id', 'Ficha do paciente'],
   ['/app/clinica/pacientes/:id/plano', 'Plano Terapêutico Individual'],
   ['/app/clinica/pacientes/:id/sessao', 'Registro de sessão'],
   ['/app/clinica/pacientes/:id/evolucao', 'Evolução por objetivo'],
@@ -91,6 +97,9 @@ export function App() {
         <Route index element={<RaizDoApp />} />
 
         <Route path="clinica" element={protegida(CLINICA, <PainelClinica />)} />
+        <Route path="clinica/pacientes" element={protegida(CLINICA, <Pacientes />)} />
+        <Route path="clinica/pacientes/novo" element={protegida(CLINICA, <NovoPaciente />)} />
+        <Route path="clinica/pacientes/:id" element={protegida(CLINICA, <Ficha />)} />
         <Route path="clinica/pacientes/:id/plano" element={protegida(CLINICA, <Plano />)} />
         <Route path="clinica/pacientes/:id/sessao" element={protegida(CLINICA, <RegistroSessao />)} />
         <Route path="clinica/pacientes/:id/evolucao" element={protegida(CLINICA, <Evolucao />)} />
