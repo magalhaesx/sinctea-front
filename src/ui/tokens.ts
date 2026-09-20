@@ -1,5 +1,8 @@
 export type Area = 'cli' | 'fam' | 'esc'
 
+/** Tons de estado (docs/02, secao 1). Reservados: nunca servem de cor de area. */
+export type Tom = 'ok' | 'at' | 'cr' | 'neutro'
+
 /**
  * Duas familias por area (docs/02, secao 1 — "Dois papeis, duas familias"):
  * `bg` e a cor de MARCA, so para manchas sem texto em cima (barras, pontos,

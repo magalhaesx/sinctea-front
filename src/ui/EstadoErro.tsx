@@ -1,5 +1,5 @@
 import { Botao } from './Botao'
-import { type Area } from './area'
+import { type Area } from './tokens'
 import { ErroServico } from '../servicos'
 
 /**

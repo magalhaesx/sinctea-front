@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { acento, type Area } from './area'
+import { acento, type Area } from './tokens'
 
 /** Altura minima de 44px: o dobro dos 24px exigidos pelo criterio 2.5.8 da
  *  WCAG 2.2. Terapeuta e professor operam com atencao dividida. */

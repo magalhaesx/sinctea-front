@@ -1,4 +1,4 @@
-import { acento, type Area } from './area'
+import { acento, type Area } from './tokens'
 
 /**
  * Paginacao de listagens (toda listagem e paginada — docs/01, secao 4).

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import type { Tom } from './Etiqueta'
+import type { Tom } from './tokens'
 
 export function Aviso({ tom = 'neutro', titulo, children }: {
   tom?: Tom; titulo?: string; children: ReactNode

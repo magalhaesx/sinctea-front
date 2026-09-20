@@ -1,4 +1,4 @@
-import { acento, type Area } from './area'
+import { acento, type Area } from './tokens'
 
 export function Medidor({ valor, area = 'cli', rotulo }: { valor: number; area?: Area; rotulo: string }) {
   return (

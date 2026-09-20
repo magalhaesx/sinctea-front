@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react'
-
-export type Tom = 'ok' | 'at' | 'cr' | 'neutro'
+import type { Tom } from './tokens'
 
 const tons: Record<Tom, string> = {
   ok: 'text-ok bg-ok-sup border-ok',

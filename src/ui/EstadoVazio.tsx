@@ -1,6 +1,6 @@
 import { isValidElement, type ReactElement, type ReactNode } from 'react'
 import { Botao } from './Botao'
-import { type Area } from './area'
+import { type Area } from './tokens'
 
 /**
  * Estado vazio: diz o que e a lista, por que esta vazia e qual a acao para
