@@ -94,6 +94,26 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
       perfis: ['RESPONSAVEL'], ativo: true, ultimoAcessoEm: em(5, 20), telefone: '(92) 90000-0003' },
     { tipo: 'RESPONSAVEL', id: 'u-resp-4', nome: 'Marcos Oliveira Reis', email: 'marcos.reis@familia.example',
       perfis: ['RESPONSAVEL'], ativo: true, ultimoAcessoEm: null, telefone: '(92) 90000-0004' },
+    { tipo: 'RESPONSAVEL', id: 'u-resp-5', nome: 'Vanessa Moreno', email: 'vanessa.moreno@familia.example',
+      perfis: ['RESPONSAVEL'], ativo: true, ultimoAcessoEm: em(6, 19), telefone: '(92) 90000-0005' },
+    { tipo: 'RESPONSAVEL', id: 'u-resp-6', nome: 'Paulo Vasconcelos', email: 'paulo.vasconcelos@familia.example',
+      perfis: ['RESPONSAVEL'], ativo: true, ultimoAcessoEm: em(2, 22), telefone: '(92) 90000-0006' },
+    { tipo: 'RESPONSAVEL', id: 'u-resp-7', nome: 'Sandra Quirino', email: 'sandra.quirino@familia.example',
+      perfis: ['RESPONSAVEL'], ativo: true, ultimoAcessoEm: null, telefone: '(92) 90000-0007' },
+    { tipo: 'RESPONSAVEL', id: 'u-resp-8', nome: 'Elaine Bastos', email: 'elaine.bastos@familia.example',
+      perfis: ['RESPONSAVEL'], ativo: true, ultimoAcessoEm: em(9, 20), telefone: '(92) 90000-0008' },
+    { tipo: 'RESPONSAVEL', id: 'u-resp-9', nome: 'Tarcísio Palmeira', email: 'tarcisio.palmeira@familia.example',
+      perfis: ['RESPONSAVEL'], ativo: true, ultimoAcessoEm: null, telefone: '(92) 90000-0009' },
+    { tipo: 'RESPONSAVEL', id: 'u-resp-10', nome: 'Norma Nogueira', email: 'norma.nogueira@familia.example',
+      perfis: ['RESPONSAVEL'], ativo: true, ultimoAcessoEm: em(15, 18), telefone: '(92) 90000-0010' },
+    { tipo: 'RESPONSAVEL', id: 'u-resp-11', nome: 'Célia Aragão', email: 'celia.aragao@familia.example',
+      perfis: ['RESPONSAVEL'], ativo: true, ultimoAcessoEm: em(1, 21), telefone: '(92) 90000-0011' },
+    { tipo: 'RESPONSAVEL', id: 'u-resp-12', nome: 'Marta Peixoto', email: 'marta.peixoto@familia.example',
+      perfis: ['RESPONSAVEL'], ativo: true, ultimoAcessoEm: null, telefone: '(92) 90000-0012' },
+    { tipo: 'RESPONSAVEL', id: 'u-resp-13', nome: 'Rosa Ferrer', email: 'rosa.ferrer@familia.example',
+      perfis: ['RESPONSAVEL'], ativo: true, ultimoAcessoEm: em(4, 20), telefone: '(92) 90000-0013' },
+    { tipo: 'RESPONSAVEL', id: 'u-resp-14', nome: 'Gustavo Ferrer', email: 'gustavo.ferrer@familia.example',
+      perfis: ['RESPONSAVEL'], ativo: true, ultimoAcessoEm: null, telefone: '(92) 90000-0014' },
   ]
 
   // ------------------------------------------------------------ Escolas
@@ -123,6 +143,24 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
       profissionalResponsavelId: 'u-prof-3', equipeIds: ['u-prof-3', 'u-prof-1'], ativo: true, },
     { id: 'p-005', nome: 'Laura Reis', dataNascimento: '2018-05-14', nivelSuporte: 1,
       profissionalResponsavelId: 'u-prof-2', equipeIds: ['u-prof-2', 'u-prof-3'], ativo: true, },
+    { id: 'p-006', nome: 'Alice Moreno', dataNascimento: '2019-08-21', nivelSuporte: 1,
+      profissionalResponsavelId: 'u-prof-1', equipeIds: ['u-prof-1', 'u-prof-2'], ativo: true },
+    { id: 'p-007', nome: 'Théo Vasconcelos', dataNascimento: '2020-05-09', nivelSuporte: 2,
+      profissionalResponsavelId: 'u-prof-2', equipeIds: ['u-prof-2'], ativo: true },
+    { id: 'p-008', nome: 'Ravi Quirino', dataNascimento: '2016-02-17', nivelSuporte: 3,
+      profissionalResponsavelId: 'u-prof-3', equipeIds: ['u-prof-3', 'u-prof-2'], ativo: true },
+    { id: 'p-009', nome: 'Manuela Bastos', dataNascimento: '2018-10-03', nivelSuporte: 2,
+      profissionalResponsavelId: 'u-prof-3', equipeIds: ['u-prof-3'], ativo: true },
+    { id: 'p-010', nome: 'Enzo Palmeira', dataNascimento: '2021-01-26', nivelSuporte: 1,
+      profissionalResponsavelId: 'u-prof-1', equipeIds: ['u-prof-1'], ativo: true },
+    { id: 'p-011', nome: 'Cecília Nogueira', dataNascimento: '2017-06-30', nivelSuporte: 3,
+      profissionalResponsavelId: 'u-prof-2', equipeIds: ['u-prof-2', 'u-prof-1'], ativo: true },
+    { id: 'p-012', nome: 'Bento Aragão', dataNascimento: '2019-12-11', nivelSuporte: 2,
+      profissionalResponsavelId: 'u-prof-3', equipeIds: ['u-prof-3', 'u-prof-1'], ativo: true },
+    { id: 'p-013', nome: 'Isadora Peixoto', dataNascimento: '2020-09-15', nivelSuporte: 1,
+      profissionalResponsavelId: 'u-prof-1', equipeIds: ['u-prof-1', 'u-prof-3'], ativo: true },
+    { id: 'p-014', nome: 'Noah Ferrer', dataNascimento: '2018-03-05', nivelSuporte: 3,
+      profissionalResponsavelId: 'u-prof-2', equipeIds: ['u-prof-2', 'u-prof-3'], ativo: true },
   ]
 
   /** Parentesco e responsabilidade legal sao da relacao, nao da pessoa. */
@@ -132,6 +170,17 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
     { id: 'vf-003', responsavelId: 'u-resp-2', pacienteId: 'p-003', parentesco: 'Pai', responsavelLegal: true },
     { id: 'vf-004', responsavelId: 'u-resp-3', pacienteId: 'p-004', parentesco: 'Mãe', responsavelLegal: true },
     { id: 'vf-005', responsavelId: 'u-resp-4', pacienteId: 'p-005', parentesco: 'Avô', responsavelLegal: true },
+    { id: 'vf-006', responsavelId: 'u-resp-5', pacienteId: 'p-006', parentesco: 'Mãe', responsavelLegal: true },
+    { id: 'vf-007', responsavelId: 'u-resp-6', pacienteId: 'p-007', parentesco: 'Pai', responsavelLegal: true },
+    { id: 'vf-008', responsavelId: 'u-resp-7', pacienteId: 'p-008', parentesco: 'Mãe', responsavelLegal: true },
+    { id: 'vf-009', responsavelId: 'u-resp-8', pacienteId: 'p-009', parentesco: 'Mãe', responsavelLegal: true },
+    { id: 'vf-010', responsavelId: 'u-resp-9', pacienteId: 'p-010', parentesco: 'Pai', responsavelLegal: true },
+    { id: 'vf-011', responsavelId: 'u-resp-10', pacienteId: 'p-011', parentesco: 'Avó', responsavelLegal: true },
+    { id: 'vf-012', responsavelId: 'u-resp-11', pacienteId: 'p-012', parentesco: 'Mãe', responsavelLegal: true },
+    { id: 'vf-013', responsavelId: 'u-resp-12', pacienteId: 'p-013', parentesco: 'Mãe', responsavelLegal: true },
+    // Noah tem os dois responsaveis: so um responde legalmente.
+    { id: 'vf-014', responsavelId: 'u-resp-13', pacienteId: 'p-014', parentesco: 'Mãe', responsavelLegal: true },
+    { id: 'vf-015', responsavelId: 'u-resp-14', pacienteId: 'p-014', parentesco: 'Pai', responsavelLegal: false },
   ]
 
   // ------------------------------------------------------------ Planos e objetivos
@@ -202,6 +251,60 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
     },
   ]
 
+  /**
+   * Planos dos demais pacientes, com um objetivo cada. Variam de proposito:
+   * dois pacientes ficam SEM plano (p-010 e p-011) e varios sem nenhuma sessao,
+   * para que lista, filtro e estado vazio tenham o que exercitar.
+   */
+  const planoEnxuto = (
+    numero: string, autorId: string, status: PlanoTerapeutico['status'],
+    diasInicio: number, dominio: string, tecnica: string, acessivel: string,
+    statusObjetivo: Objetivo['status'], percentual: number,
+    observacaoValidacao: string | null = null,
+    ultimaRevisaoEm: string | null = null,
+  ): PlanoTerapeutico => {
+    const id = `pl-${numero}`
+    return {
+      id, pacienteId: `p-${numero}`, autorId, status,
+      dataInicio: em(diasInicio, 9), dataRevisao: em(diasInicio - 180, 9),
+      ultimaRevisaoEm, observacaoValidacao,
+      objetivos: [objetivo(`o-0${10 + Number(numero) - 6}`, id, dominio, tecnica, acessivel, statusObjetivo, percentual)],
+    }
+  }
+
+  planos.push(
+    planoEnxuto('006', 'u-prof-1', 'VIGENTE', 90,
+      'Comunicação funcional',
+      'Combinar duas palavras para pedir item preferido em 7 de 10 oportunidades.',
+      'Juntar duas palavras para pedir o que quer.', 'EM_AQUISICAO', 55, null, em(20, 9)),
+    planoEnxuto('007', 'u-prof-2', 'VIGENTE', 7,
+      'Regulação sensorial',
+      'Tolerar textura nova à mesa por 2 minutos, com dessensibilização gradual.',
+      'Ficar à mesa com um alimento novo por perto, sem precisar comer.', 'NAO_INICIADO', 0),
+    planoEnxuto('008', 'u-prof-3', 'RASCUNHO', 2,
+      'Autocuidado',
+      'Vestir a blusa em 4 etapas com encadeamento anterógrado.',
+      'Vestir a blusa sozinho, com o passo a passo.', 'NAO_INICIADO', 0),
+    planoEnxuto('009', 'u-prof-3', 'AGUARDANDO_VALIDACAO', 10,
+      'Interação com pares',
+      'Revezar turno em jogo de mesa por 4 rodadas, com mediação verbal.',
+      'Esperar a vez no jogo, até o fim da partida.', 'EM_AQUISICAO', 45),
+    // Plano sem revisão há mais de 90 dias: alimenta o alerta da coordenação.
+    planoEnxuto('012', 'u-prof-3', 'VIGENTE', 240,
+      'Transição entre ambientes',
+      'Entrar na sala de atendimento sem esquiva após aviso antecedente.',
+      'Entrar na sala quando avisam que chegou a hora.', 'EM_AQUISICAO', 70, null, em(150, 9)),
+    planoEnxuto('013', 'u-prof-1', 'DEVOLVIDO', 9,
+      'Comunicação alternativa',
+      'Selecionar pictograma de necessidade básica em prancha de 6 opções.',
+      'Mostrar na prancha o que está precisando.', 'NAO_INICIADO', 0,
+      'Faltou o critério de domínio do objetivo. Complete e reenvie.'),
+    planoEnxuto('014', 'u-prof-2', 'VIGENTE', 150,
+      'Tolerância à espera',
+      'Aguardar atendimento na recepção por 5 minutos com apoio visual.',
+      'Esperar na recepção olhando o quadro de rotina.', 'EM_AQUISICAO', 60, null, em(40, 9)),
+  )
+
   // ------------------------------------------------------------ Sessoes
 
   const erros: Resultado[] = ['AJUDA_GESTUAL', 'AJUDA_FISICA', 'SEM_RESPOSTA']
@@ -250,6 +353,12 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
   // Laura: ultima sessao ha 20 dias — aparece no alerta "sem sessao ha mais de 15 dias".
   ;[20, 30].forEach((p, i) => encerrada('p-005', 'u-prof-2', 27 - i * 7, { 'o-009': p }, 16))
   // Sofia: plano ainda em validacao, nenhuma sessao encerrada.
+
+  // Quatro dos novos pacientes ja tem historico; os demais ficam sem sessao.
+  ;[40, 50, 60].forEach((v, i) => encerrada('p-006', 'u-prof-1', 20 - i * 7, { 'o-010': v }, 11))
+  ;[30, 45].forEach((v, i) => encerrada('p-009', 'u-prof-3', 12 - i * 7, { 'o-013': v }, 14))
+  ;[55, 60, 65, 70].forEach((v, i) => encerrada('p-012', 'u-prof-3', 28 - i * 7, { 'o-016': v }, 8))
+  ;[40, 50].forEach((v, i) => encerrada('p-014', 'u-prof-2', 9 - i * 7, { 'o-018': v }, 17))
 
   // Agenda de hoje.
   const agendada = (id: string, pacienteId: string, profissionalId: string, hora: number, minuto = 0) => {

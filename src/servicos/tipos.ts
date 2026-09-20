@@ -149,6 +149,8 @@ export interface PacienteDetalhe extends Paciente {
     turma: string
     turno: string
     professor: string
+    /** Regente, AEE ou acompanhante: nome sem funcao nao diz nada a equipe. */
+    atuacao: string
     situacaoConsentimento: SituacaoConsentimento
   }>
   situacaoPlano: SituacaoPlano

@@ -64,13 +64,22 @@ describe('camada simulada', () => {
 
   it('listagem paginada e alcance por perfil', async () => {
     await entrarComo('TERAPEUTA')
-    const doTerapeuta = await chamar(s.pacientes.listar())
-    expect(doTerapeuta.total).toBe(3)
+    const doTerapeuta = await chamar(s.pacientes.listar({ porPagina: 100 }))
 
     await entrarComo('COORDENADOR')
-    const pagina = await chamar(s.pacientes.listar({ porPagina: 2, pagina: 3 }))
-    expect(pagina).toMatchObject({ total: 5, pagina: 3, porPagina: 2 })
-    expect(pagina.itens).toHaveLength(1)
+    const primeira = await chamar(s.pacientes.listar({ porPagina: 10 }))
+    expect(primeira).toMatchObject({ total: 14, pagina: 1, porPagina: 10 })
+    expect(primeira.itens).toHaveLength(10)
+
+    // Segunda pagina de verdade: paginador que nunca passa da primeira nao foi testado.
+    const segunda = await chamar(s.pacientes.listar({ porPagina: 10, pagina: 2 }))
+    expect(segunda.itens).toHaveLength(4)
+    const ids = [...primeira.itens, ...segunda.itens].map((p) => p.id)
+    expect(new Set(ids).size).toBe(14)
+
+    // O terapeuta ve so os pacientes que acompanha; o coordenador, todos.
+    expect(doTerapeuta.total).toBeLessThan(primeira.total)
+    expect(doTerapeuta.itens.every((p) => ids.includes(p.id))).toBe(true)
   })
 
   it('a busca ignora acentos', async () => {

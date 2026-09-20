@@ -58,6 +58,7 @@ function detalhe(p: Paciente): PacienteDetalhe {
           escola: banco.escolas.find((e) => e.id === c.escolaId)?.nome ?? '—',
           turma: v.turma,
           turno: v.turno,
+          atuacao: v.atuacao,
           professor: banco.professores.find((u) => u.id === v.professorId)?.nome ?? '—',
           situacaoConsentimento: situacaoConsentimento(c, agora),
         }
