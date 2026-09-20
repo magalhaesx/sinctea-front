@@ -97,15 +97,17 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
   // ------------------------------------------------------------ Escolas
 
   const escolas: Escola[] = [
-    { id: 'esc-1', nome: 'EMEF Jardim das Palmeiras', municipio: 'Manaus' },
-    { id: 'esc-2', nome: 'Escola Municipal Vitória-Régia', municipio: 'Manaus' },
+    { id: 'esc-1', nome: 'EMEF Jardim das Palmeiras', rede: 'Municipal', municipio: 'Manaus' },
+    { id: 'esc-2', nome: 'Escola Municipal Vitória-Régia', rede: 'Municipal', municipio: 'Manaus' },
   ]
 
   const professores: ProfessorAEE[] = [
     { tipo: 'PROFESSOR_AEE', id: 'u-profe-1', nome: 'Carla Nunes', email: 'carla.nunes@escola.example',
-      perfis: ['PROFESSOR'], ativo: true, ultimoAcessoEm: em(0, 9), escolaId: 'esc-1' },
+      perfis: ['PROFESSOR'], ativo: true, ultimoAcessoEm: em(0, 9), escolaId: 'esc-1',
+      atuacao: 'Professora regente' },
     { tipo: 'PROFESSOR_AEE', id: 'u-profe-2', nome: 'Tiago Rezende', email: 'tiago.rezende@escola.example',
-      perfis: ['PROFESSOR'], ativo: true, ultimoAcessoEm: em(4, 10), escolaId: 'esc-2' },
+      perfis: ['PROFESSOR'], ativo: true, ultimoAcessoEm: em(4, 10), escolaId: 'esc-2',
+      atuacao: 'Atendimento educacional especializado' },
   ]
 
   // ------------------------------------------------------------ Pacientes
@@ -137,8 +139,8 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
 
   const planos: PlanoTerapeutico[] = [
     {
-      id: 'pl-001', pacienteId: 'p-001', autorId: 'u-prof-1', situacao: 'VIGENTE',
-      inicioEm: em(120, 9), revisaoPrevistaEm: em(-60, 9), ultimaRevisaoEm: em(30, 9), observacaoValidacao: null,
+      id: 'pl-001', pacienteId: 'p-001', autorId: 'u-prof-1', status: 'VIGENTE',
+      dataInicio: em(120, 9), dataRevisao: em(-60, 9), ultimaRevisaoEm: em(30, 9), observacaoValidacao: null,
       objetivos: [
         objetivo('o-001', 'pl-001', 'Comunicação funcional',
           'Emitir mando por item preferido em 8 de 10 tentativas, com ajuda gestual desvanecida.',
@@ -152,8 +154,8 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
       ],
     },
     {
-      id: 'pl-002', pacienteId: 'p-002', autorId: 'u-prof-2', situacao: 'AGUARDANDO_VALIDACAO',
-      inicioEm: em(5, 9), revisaoPrevistaEm: em(-85, 9), ultimaRevisaoEm: null, observacaoValidacao: null,
+      id: 'pl-002', pacienteId: 'p-002', autorId: 'u-prof-2', status: 'AGUARDANDO_VALIDACAO',
+      dataInicio: em(5, 9), dataRevisao: em(-85, 9), ultimaRevisaoEm: null, observacaoValidacao: null,
       objetivos: [
         objetivo('o-004', 'pl-002', 'Atenção compartilhada',
           'Responder ao chamado pelo nome com orientação do olhar em 4 de 5 oportunidades.',
@@ -164,8 +166,8 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
       ],
     },
     {
-      id: 'pl-003', pacienteId: 'p-003', autorId: 'u-prof-1', situacao: 'VIGENTE',
-      inicioEm: em(200, 9), revisaoPrevistaEm: em(10, 9), ultimaRevisaoEm: em(100, 9), observacaoValidacao: null,
+      id: 'pl-003', pacienteId: 'p-003', autorId: 'u-prof-1', status: 'VIGENTE',
+      dataInicio: em(200, 9), dataRevisao: em(10, 9), ultimaRevisaoEm: em(100, 9), observacaoValidacao: null,
       objetivos: [
         objetivo('o-006', 'pl-003', 'Comunicação alternativa',
           'Selecionar pictograma correspondente ao item desejado em prancha de 4 opções, com ajuda física parcial.',
@@ -176,8 +178,8 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
       ],
     },
     {
-      id: 'pl-004', pacienteId: 'p-004', autorId: 'u-prof-3', situacao: 'VIGENTE',
-      inicioEm: em(60, 9), revisaoPrevistaEm: em(-30, 9), ultimaRevisaoEm: null, observacaoValidacao: null,
+      id: 'pl-004', pacienteId: 'p-004', autorId: 'u-prof-3', status: 'VIGENTE',
+      dataInicio: em(60, 9), dataRevisao: em(-30, 9), ultimaRevisaoEm: null, observacaoValidacao: null,
       objetivos: [
         objetivo('o-008', 'pl-004', 'Tolerância à espera',
           'Aguardar a vez em atividade de mesa por até 2 minutos com temporizador visual.',
@@ -185,8 +187,8 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
       ],
     },
     {
-      id: 'pl-005', pacienteId: 'p-005', autorId: 'u-prof-2', situacao: 'DEVOLVIDO',
-      inicioEm: em(12, 9), revisaoPrevistaEm: em(-78, 9), ultimaRevisaoEm: null,
+      id: 'pl-005', pacienteId: 'p-005', autorId: 'u-prof-2', status: 'DEVOLVIDO',
+      dataInicio: em(12, 9), dataRevisao: em(-78, 9), ultimaRevisaoEm: null,
       observacaoValidacao: 'O critério do objetivo de interação está sem número de sessões. Rever antes de reenviar.',
       objetivos: [
         objetivo('o-009', 'pl-005', 'Interação com pares',
@@ -205,8 +207,9 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
     return Array.from({ length: 10 }, (_, i) => ({
       id: `${sessaoId}-${objetivoId}-${i + 1}`,
       objetivoId,
+      ordem: i + 1,
       resultado: i < independentes ? 'INDEPENDENTE' : erros[i % erros.length],
-      registradoEm: new Date(Date.parse(quando) + (i + 1) * 90_000).toISOString(),
+      ocorridoEm: new Date(Date.parse(quando) + (i + 1) * 90_000).toISOString(),
     }))
   }
 
@@ -218,9 +221,11 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
     const inicio = em(diasAtras, hora)
     sessoes.push({
       id, pacienteId, profissionalId, numero,
-      inicioPrevistoEm: inicio, iniciadaEm: inicio,
-      encerradaEm: new Date(Date.parse(inicio) + 50 * 60_000).toISOString(),
+      inicioPrevistoEm: inicio, inicio,
+      fim: new Date(Date.parse(inicio) + 50 * 60_000).toISOString(),
+      local: 'Clínica · sala 2',
       situacao: 'ENCERRADA',
+      statusSync: 'SINCRONIZADO',
       registros: Object.entries(porObjetivo).flatMap(([obj, p]) => tentativas(id, obj, p, inicio)),
     })
   }
@@ -247,8 +252,8 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
     const numero = sessoes.filter((s) => s.pacienteId === pacienteId).length + 1
     sessoes.push({
       id, pacienteId, profissionalId, numero,
-      inicioPrevistoEm: em(0, hora, minuto), iniciadaEm: null, encerradaEm: null,
-      situacao: 'AGENDADA', registros: [],
+      inicioPrevistoEm: em(0, hora, minuto), inicio: null, fim: null,
+      local: 'Clínica · sala 2', situacao: 'AGENDADA', statusSync: 'SINCRONIZADO', registros: [],
     })
   }
   agendada('s-hoje-1', 'p-001', 'u-prof-1', 8)
@@ -262,7 +267,9 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
   const consentimento = (id: string, responsavelId: string, pacienteId: string,
     escopos: Consentimento['escopos'], concedidoEm: string, validadeAte: string,
     revogadoEm: string | null = null): Consentimento =>
-    ({ id, responsavelId, pacienteId, escopos, concedidoEm, validadeAte, revogadoEm })
+    // Hash ficticio: no servidor sera a impressao digital do termo aceito.
+    ({ id, responsavelId, pacienteId, escopos, concedidoEm, validadeAte, revogadoEm,
+      hashTermo: `sha256:ficticio-${id}` })
 
   const ambos: Consentimento['escopos'] = ['CARTAO_ESTRATEGIA', 'REGISTRO_OCORRENCIA']
   const consentimentos: Consentimento[] = [
@@ -281,8 +288,9 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
   ]
 
   const vinculo = (id: string, c: Consentimento, escolaId: string, professorId: string | null,
-    token: string, usadoEm: string | null): VinculoEscolar => ({
+    token: string, usadoEm: string | null, turma = '2º ano B', turno = 'Matutino'): VinculoEscolar => ({
     id, consentimentoId: c.id, pacienteId: c.pacienteId, escolaId, professorId,
+    turma, turno, status: c.revogadoEm === null ? 'ATIVO' : 'ENCERRADO',
     tokenConvite: token, conviteCriadoEm: c.concedidoEm,
     conviteExpiraEm: calcularExpiracaoConvite(new Date(c.concedidoEm)).toISOString(),
     conviteUsadoEm: usadoEm,
@@ -292,9 +300,9 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
 
   const vinculos: VinculoEscolar[] = [
     vinculo('v-001', c1, 'esc-1', 'u-profe-1', 'demo-convite-usado', depoisDe(c1.concedidoEm, 14)),
-    vinculo('v-002', c2, 'esc-2', 'u-profe-2', 'demo-convite-davi', depoisDe(c2.concedidoEm, 20)),
-    vinculo('v-003', c3, 'esc-1', 'u-profe-1', 'demo-convite-heitor', depoisDe(c3.concedidoEm, 16)),
-    vinculo('v-004', c4, 'esc-2', 'u-profe-2', 'demo-convite-laura', depoisDe(c4.concedidoEm, 30)),
+    vinculo('v-002', c2, 'esc-2', 'u-profe-2', 'demo-convite-davi', depoisDe(c2.concedidoEm, 20), '4º ano A', 'Vespertino'),
+    vinculo('v-003', c3, 'esc-1', 'u-profe-1', 'demo-convite-heitor', depoisDe(c3.concedidoEm, 16), '1º ano C', 'Matutino'),
+    vinculo('v-004', c4, 'esc-2', 'u-profe-2', 'demo-convite-laura', depoisDe(c4.concedidoEm, 30), '3º ano B', 'Vespertino'),
     vinculo('v-005', c5, 'esc-1', null, 'demo-convite-valido', null),
     vinculo('v-006', c6, 'esc-2', null, 'demo-convite-expirado', null),
     vinculo('v-007', c7, 'esc-1', null, 'demo-convite-revogado', null),
@@ -305,6 +313,7 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
   const cartoes: CartaoEstrategia[] = [
     {
       id: 'ce-001', objetivoId: 'o-002', atualizadoEm: em(12, 11),
+      tituloSimples: 'Quando o barulho incomoda',
       oQueFazer: [
         'Avise 5 minutos antes de mudar de atividade.',
         'Use o quadro de rotina: ele se organiza melhor vendo a sequência.',
@@ -321,6 +330,7 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
     },
     {
       id: 'ce-002', objetivoId: 'o-006', atualizadoEm: em(20, 11),
+      tituloSimples: 'Escolher pela prancha de figuras',
       oQueFazer: [
         'Deixe a prancha de figuras sempre ao alcance dele na mesa.',
         'Espere alguns segundos depois de perguntar: ele precisa de tempo para escolher.',
@@ -333,6 +343,7 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
     },
     {
       id: 'ce-003', objetivoId: 'o-008', atualizadoEm: em(15, 11),
+      tituloSimples: 'Esperar a vez na mesa',
       oQueFazer: ['Mostre o relógio de areia antes de pedir que ele espere.'],
       oQueEvitar: ['Não aumente o tempo de espera sem avisar.'],
       sinalAlerta: 'Levantar da cadeira repetidas vezes costuma indicar que a espera ficou longa demais.',
@@ -343,16 +354,18 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
 
   const ocorrenciasEscolares: OcorrenciaEscolar[] = []
   const ocorrenciasComportamentais: OcorrenciaComportamental[] = []
-  const ocorrenciaEscolar = (id: string, v: VinculoEscolar, registradaEm: string, oQueAconteceu: string,
-    intensidade: Intensidade, momento: string, observacao = '') => {
+  const ocorrenciaEscolar = (id: string, v: VinculoEscolar, registradaEm: string, tipo: string,
+    intensidade: Intensidade, contexto: string, observacao = '') => {
     ocorrenciasEscolares.push({
-      id, vinculoId: v.id, pacienteId: v.pacienteId, professorId: v.professorId!, registradaEm,
-      corrigidaEm: null, oQueAconteceu, intensidade, momento, observacao,
+      id, vinculoId: v.id, pacienteId: v.pacienteId, professorId: v.professorId!,
+      // Na demonstracao o professor registra logo depois do que observou.
+      ocorridoEm: registradaEm, registradaEm,
+      corrigidaEm: null, tipo, intensidade, contexto, observacao,
     })
     // «gera»: a ocorrencia da escola entra na clinica como evento preliminar.
     ocorrenciasComportamentais.push({
       id: `oc-${id}`, pacienteId: v.pacienteId, origem: 'ESCOLA', ocorridaEm: registradaEm,
-      antecedente: `Momento: ${momento}`, comportamento: oQueAconteceu,
+      antecedente: `Contexto: ${contexto}`, comportamento: tipo,
       consequencia: observacao || 'Não informado pela escola.', intensidade,
       preliminar: true, sessaoId: null, ocorrenciaEscolarId: id,
     })
@@ -367,7 +380,7 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
 
   const sessaoMiguel = sessoes.find((s) => s.pacienteId === 'p-001' && s.numero === 7)!
   ocorrenciasComportamentais.push({
-    id: 'oc-clin-001', pacienteId: 'p-001', origem: 'CLINICA', ocorridaEm: sessaoMiguel.iniciadaEm!,
+    id: 'oc-clin-001', pacienteId: 'p-001', origem: 'CLINICA', ocorridaEm: sessaoMiguel.inicio!,
     antecedente: 'Liquidificador ligado na sala ao lado.', comportamento: 'Tapou os ouvidos e deitou no chão.',
     consequencia: 'Ofertado abafador e pausa de 3 minutos; retomou a atividade.', intensidade: 3,
     preliminar: false, sessaoId: sessaoMiguel.id, ocorrenciaEscolarId: null,
@@ -379,10 +392,12 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
     { id: 'a-001', pacienteId: 'p-001', objetivoId: 'o-001', titulo: 'Escolher o lanche apontando',
       descricao: 'Na hora do lanche, mostre duas opções e espere ele apontar ou pedir.',
       passos: ['Mostre duas opções de lanche, uma em cada mão.', 'Espere alguns segundos sem falar.', 'Entregue o que ele apontar ou pedir.'],
+      dicas: 'Se ele não escolher, aproxime as duas opções do rosto dele e espere mais um pouco.',
       frequenciaSemanal: 3, urlVideo: null, ativa: true, prescritaEm: em(35, 11) },
     { id: 'a-002', pacienteId: 'p-001', objetivoId: 'o-001', titulo: 'Pedir ajuda para abrir a embalagem',
       descricao: 'Entregue o pacote fechado e espere ele pedir ajuda.',
       passos: ['Entregue a embalagem fechada.', 'Espere ele olhar para você ou pedir.', 'Abra junto com ele.'],
+      dicas: 'Vale qualquer forma de pedir: olhar, apontar, som ou palavra.',
       frequenciaSemanal: 2, urlVideo: null, ativa: true, prescritaEm: em(35, 11) },
     { id: 'a-003', pacienteId: 'p-001', objetivoId: 'o-002', titulo: 'Avisar quando o barulho incomoda',
       descricao: 'Ensina que avisar funciona: quando ele pede, a pausa acontece.',
@@ -391,10 +406,12 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
         'Quando começar um barulho forte, liquidificador ou aspirador, mostre o cartão.',
         'Se ele apontar ou pedir, leve-o ao canto calmo na hora. Isso ensina que avisar funciona.',
       ],
+      dicas: 'Nos primeiros dias, mostre o cartão antes de o barulho começar.',
       frequenciaSemanal: 2, urlVideo: null, ativa: true, prescritaEm: em(28, 11) },
     { id: 'a-004', pacienteId: 'p-003', objetivoId: 'o-007', titulo: 'Lavar as mãos com o passo a passo',
       descricao: 'Cole os desenhos perto da pia e acompanhe a sequência junto com ele.',
       passos: ['Cole os seis desenhos na parede da pia.', 'Aponte cada desenho antes de fazer.', 'Comemore quando terminar.'],
+      dicas: 'Se ele pular uma etapa, aponte o desenho em vez de falar o passo.',
       frequenciaSemanal: 5, urlVideo: null, ativa: true, prescritaEm: em(30, 11) },
   ]
 
@@ -402,13 +419,13 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
   const desempenhos: ExecucaoAtividadeCasa['desempenho'][] = ['COM_AJUDA', 'COM_AJUDA', 'NAO_QUIS', 'COM_AJUDA', 'SOZINHO', 'SOZINHO', 'SOZINHO']
   ;[31, 27, 24, 20, 13, 9, 4].forEach((d, i) =>
     execucoes.push({ id: `ex-${i + 1}`, atividadeId: 'a-001', responsavelId: 'u-resp-1',
-      realizadaEm: em(d, 12), desempenho: desempenhos[i], observacao: null }))
+      dataRealizacao: em(d, 12), desempenho: desempenhos[i], observacao: null }))
   ;[22, 15, 8].forEach((d, i) =>
     execucoes.push({ id: `ex-${i + 8}`, atividadeId: 'a-003', responsavelId: 'u-resp-1',
-      realizadaEm: em(d, 18), desempenho: i === 2 ? 'SOZINHO' : 'COM_AJUDA', observacao: null }))
+      dataRealizacao: em(d, 18), desempenho: i === 2 ? 'SOZINHO' : 'COM_AJUDA', observacao: null }))
   ;[20, 12, 5].forEach((d, i) =>
     execucoes.push({ id: `ex-${i + 11}`, atividadeId: 'a-004', responsavelId: 'u-resp-2',
-      realizadaEm: em(d, 19), desempenho: 'COM_AJUDA', observacao: null }))
+      dataRealizacao: em(d, 19), desempenho: 'COM_AJUDA', observacao: null }))
 
   // ------------------------------------------------------------ Auditoria inicial
 
@@ -418,17 +435,17 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
   for (const c of consentimentos) {
     const resp = responsaveis.find((r) => r.id === c.responsavelId)!
     auditar({ ocorridoEm: c.concedidoEm, usuarioId: resp.id, usuarioNome: resp.nome, perfil: 'RESPONSAVEL',
-      acao: 'CONCESSAO_ACESSO', entidade: 'Consentimento', entidadeId: c.id, pacienteId: c.pacienteId,
-      origem: 'FAMILIA', detalhe: `Escopos: ${c.escopos.join(', ')}` })
+      acao: 'CONCESSAO_ACESSO', entidade: 'Consentimento', idEntidade: c.id, pacienteId: c.pacienteId,
+      origem: 'FAMILIA', ipOrigem: null, detalhe: `Escopos: ${c.escopos.join(', ')}` })
     if (c.revogadoEm) {
       auditar({ ocorridoEm: c.revogadoEm, usuarioId: resp.id, usuarioNome: resp.nome, perfil: 'RESPONSAVEL',
-        acao: 'REVOGACAO_ACESSO', entidade: 'Consentimento', entidadeId: c.id, pacienteId: c.pacienteId,
-        origem: 'FAMILIA', detalhe: 'Revogado pelo responsável.' })
+        acao: 'REVOGACAO_ACESSO', entidade: 'Consentimento', idEntidade: c.id, pacienteId: c.pacienteId,
+        origem: 'FAMILIA', ipOrigem: null, detalhe: 'Revogado pelo responsável.' })
     }
   }
   auditar({ ocorridoEm: em(2, 9, 10), usuarioId: 'u-profe-1', usuarioNome: 'Carla Nunes', perfil: 'PROFESSOR',
-    acao: 'ACESSO_NEGADO', entidade: 'CartaoEstrategia', entidadeId: null, pacienteId: 'p-004',
-    origem: 'ESCOLA', detalhe: 'Consentimento revogado.' })
+    acao: 'ACESSO_NEGADO', entidade: 'CartaoEstrategia', idEntidade: null, pacienteId: 'p-004',
+    origem: 'ESCOLA', ipOrigem: null, detalhe: 'Consentimento revogado.' })
   // Numeracao em ordem cronologica, como o servidor faria.
   const auditoria: RegistroAuditoria[] = semId
     .sort((a, b) => a.ocorridoEm.localeCompare(b.ocorridoEm))

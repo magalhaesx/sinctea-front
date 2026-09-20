@@ -76,7 +76,10 @@ export interface Responsavel extends Usuario {
 
 export interface ProfessorAEE extends Usuario {
   tipo: 'PROFESSOR_AEE'
+  /** Instituicao onde atua. O diagrama guarda o nome; aqui e a chave de Escola. */
   escolaId: string
+  /** Como atua: regente, AEE, acompanhante. */
+  atuacao: string
 }
 
 export type UsuarioQualquer = Profissional | Responsavel | ProfessorAEE
@@ -136,6 +139,8 @@ export interface PacienteDetalhe extends Paciente {
   vinculosEscolares: Array<{
     vinculoId: string
     escola: string
+    turma: string
+    turno: string
     professor: string | null
     situacaoConsentimento: SituacaoConsentimento
   }>
@@ -194,9 +199,9 @@ export interface PlanoTerapeutico {
   id: string
   pacienteId: string
   autorId: string
-  situacao: Exclude<SituacaoPlano, 'SEM_PLANO'>
-  inicioEm: DataIso
-  revisaoPrevistaEm: DataIso
+  status: Exclude<SituacaoPlano, 'SEM_PLANO'>
+  dataInicio: DataIso
+  dataRevisao: DataIso
   ultimaRevisaoEm: DataIso | null
   observacaoValidacao: string | null
   /** Composicao: objetivo nao existe sem plano. */
@@ -219,9 +224,14 @@ export type SituacaoSessao = 'AGENDADA' | 'EM_ANDAMENTO' | 'PAUSADA' | 'ENCERRAD
 export interface RegistroAtividade {
   id: string
   objetivoId: string
+  /** Numero da tentativa dentro da sessao, a partir de 1. */
+  ordem: number
   resultado: Resultado
-  registradoEm: DataIso
+  ocorridoEm: DataIso
 }
+
+/** Estado de sincronizacao do registro feito sem conexao. */
+export type StatusSync = 'PENDENTE' | 'SINCRONIZADO'
 
 /** Sessao 0..* — 1 Profissional ("conduzida por"). */
 export interface Sessao {
@@ -230,9 +240,12 @@ export interface Sessao {
   profissionalId: string
   numero: number
   inicioPrevistoEm: DataIso
-  iniciadaEm: DataIso | null
-  encerradaEm: DataIso | null
+  inicio: DataIso | null
+  fim: DataIso | null
+  /** Onde a sessao aconteceu: sala, domicilio, escola. */
+  local: string
   situacao: SituacaoSessao
+  statusSync: StatusSync
   registros: RegistroAtividade[]
 }
 
@@ -287,18 +300,23 @@ export interface OcorrenciaEscolar {
   vinculoId: string
   pacienteId: string
   professorId: string
+  /** Quando aconteceu na escola. */
+  ocorridoEm: DataIso
+  /** Quando o registro foi feito: e dele que corre a janela de correcao. */
   registradaEm: DataIso
   corrigidaEm: DataIso | null
-  oQueAconteceu: string
+  /** O que foi observado, em vocabulario nao interpretativo. */
+  tipo: string
   intensidade: Intensidade
-  momento: string
+  /** Em que momento da rotina: entrada, recreio, troca de atividade. */
+  contexto: string
   observacao: string
 }
 
 export interface NovaOcorrenciaEscolar {
-  oQueAconteceu: string
+  tipo: string
   intensidade: Intensidade
-  momento: string
+  contexto: string
   observacao?: string
 }
 
@@ -307,7 +325,7 @@ export interface AvisoOcorrenciaEscolar {
   paciente: { id: string; nome: string }
   escola: string
   registradaEm: DataIso
-  oQueAconteceu: string
+  tipo: string
   intensidade: Intensidade
 }
 
@@ -328,6 +346,8 @@ export interface AtividadeCasa {
   titulo: string
   descricao: string
   passos: string[]
+  /** O que ajuda quando nao sai de primeira. Linguagem da familia. */
+  dicas: string
   frequenciaSemanal: number
   urlVideo: string | null
   ativa: boolean
@@ -340,6 +360,7 @@ export interface NovaAtividadeCasa {
   titulo: string
   descricao: string
   passos: string[]
+  dicas: string
   frequenciaSemanal: number
   urlVideo: string | null
 }
@@ -348,7 +369,7 @@ export interface ExecucaoAtividadeCasa {
   id: string
   atividadeId: string
   responsavelId: string
-  realizadaEm: DataIso
+  dataRealizacao: DataIso
   desempenho: Desempenho
   observacao: string | null
 }
@@ -377,6 +398,8 @@ export type SituacaoConsentimento = 'VIGENTE' | 'REVOGADO' | 'EXPIRADO' | 'AGUAR
 export interface Escola {
   id: string
   nome: string
+  /** Rede de ensino: municipal, estadual, federal ou particular. */
+  rede: string
   municipio: string
 }
 
@@ -392,6 +415,8 @@ export interface Consentimento {
   concedidoEm: DataIso
   validadeAte: DataIso
   revogadoEm: DataIso | null
+  /** Impressao digital do termo aceito, para prova de consentimento (LGPD). */
+  hashTermo: string
 }
 
 /**
@@ -399,12 +424,21 @@ export interface Consentimento {
  * O convite de uso unico vive no proprio vinculo: o professor so e associado
  * quando aceita o convite.
  */
+export type StatusVinculo = 'ATIVO' | 'ENCERRADO'
+
 export interface VinculoEscolar {
   id: string
   consentimentoId: string
   pacienteId: string
   escolaId: string
   professorId: string | null
+  turma: string
+  turno: string
+  /**
+   * Situacao do vinculo escolar (ano letivo). NAO e controle de acesso:
+   * quem autoriza a leitura e sempre o Consentimento, consultado a cada vez.
+   */
+  status: StatusVinculo
   tokenConvite: string
   conviteCriadoEm: DataIso
   conviteExpiraEm: DataIso
@@ -424,6 +458,9 @@ export interface NovoConsentimento {
   escolaId: string
   escopos: EscopoAcesso[]
   validadeAte: DataIso
+  /** Turma e turno do ano letivo; o responsavel informa ao autorizar. */
+  turma?: string
+  turno?: string
 }
 
 export interface ConsentimentoConcedido {
@@ -450,12 +487,16 @@ export interface AceiteConvite {
   nome: string
   email: string
   senha: string
+  /** Como atua com o aluno: regente, AEE, acompanhante. */
+  atuacao?: string
 }
 
 export interface AlunoEscola {
   pacienteId: string
   /** Apenas o primeiro nome: minimizacao de dados. */
   nome: string
+  turma: string
+  turno: string
   /** Situacao agora. Só VIGENTE abre o cartao (tela 22). */
   situacao: SituacaoConsentimento
   /** Vazio quando o acesso nao esta vigente. */
@@ -470,8 +511,11 @@ export interface AlunoEscola {
 export interface CartaoEscola {
   pacienteId: string
   nome: string
+  turma: string
+  turno: string
   validadeAte: DataIso
   estrategias: Array<{
+    titulo: string
     /** Redacao acessivel do objetivo, escrita pelo terapeuta. */
     paraQue: string
     oQueFazer: string[]
@@ -485,6 +529,8 @@ export interface CartaoEscola {
 export interface CartaoEstrategia {
   id: string
   objetivoId: string
+  /** Titulo em linguagem simples, para a escola e a familia. */
+  tituloSimples: string
   oQueFazer: string[]
   oQueEvitar: string[]
   sinalAlerta: string
@@ -512,9 +558,11 @@ export interface RegistroAuditoria {
   readonly perfil: Perfil | null
   readonly acao: AcaoAuditoria
   readonly entidade: string
-  readonly entidadeId: string | null
+  readonly idEntidade: string | null
   readonly pacienteId: string | null
   readonly origem: OrigemAuditoria
+  /** Origem da requisicao. So o servidor sabe; no mock fica nulo. */
+  readonly ipOrigem: string | null
   readonly detalhe: string
 }
 

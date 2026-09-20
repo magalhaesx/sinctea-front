@@ -21,6 +21,7 @@ function consentimento(parcial: Partial<Consentimento> = {}): Consentimento {
     concedidoEm: dias(-10),
     validadeAte: dias(60),
     revogadoEm: null,
+    hashTermo: 'sha256:ficticio',
     ...parcial,
   }
 }
@@ -30,13 +31,14 @@ function sessao(numero: number, independentes: number, total = 10, situacao: Ses
   const registros: RegistroAtividade[] = Array.from({ length: total }, (_, i) => ({
     id: `r${numero}-${i}`,
     objetivoId: 'o1',
+    ordem: i + 1,
     resultado: (i < independentes ? 'INDEPENDENTE' : 'AJUDA_GESTUAL') as Resultado,
-    registradoEm: dias(-30 + numero),
+    ocorridoEm: dias(-30 + numero),
   }))
   return {
     id: `s${numero}`, pacienteId: 'p1', profissionalId: 'u1', numero,
-    inicioPrevistoEm: dias(-30 + numero), iniciadaEm: dias(-30 + numero), encerradaEm: dias(-30 + numero),
-    situacao, registros,
+    inicioPrevistoEm: dias(-30 + numero), inicio: dias(-30 + numero), fim: dias(-30 + numero),
+    local: 'Sala 2', situacao, statusSync: 'SINCRONIZADO', registros,
   }
 }
 
@@ -61,9 +63,9 @@ describe('descricaoNivelSuporte', () => {
 describe('percentualIndependente', () => {
   it('calcula apenas sobre as tentativas do objetivo', () => {
     const registros: RegistroAtividade[] = [
-      { id: '1', objetivoId: 'o1', resultado: 'INDEPENDENTE', registradoEm: dias(0) },
-      { id: '2', objetivoId: 'o1', resultado: 'AJUDA_FISICA', registradoEm: dias(0) },
-      { id: '3', objetivoId: 'o2', resultado: 'INDEPENDENTE', registradoEm: dias(0) },
+      { id: '1', objetivoId: 'o1', ordem: 1, resultado: 'INDEPENDENTE', ocorridoEm: dias(0) },
+      { id: '2', objetivoId: 'o1', ordem: 2, resultado: 'AJUDA_FISICA', ocorridoEm: dias(0) },
+      { id: '3', objetivoId: 'o2', ordem: 3, resultado: 'INDEPENDENTE', ocorridoEm: dias(0) },
     ]
     expect(percentualIndependente(registros, 'o1')).toBe(50)
     expect(percentualIndependente(registros, 'o3')).toBeNull()
@@ -258,9 +260,9 @@ describe('coordenacao', () => {
   })
 
   it('plano precisa de revisao depois de 90 dias', () => {
-    expect(planoPrecisaRevisao({ inicioEm: dias(-200), ultimaRevisaoEm: dias(-91) }, AGORA)).toBe(true)
-    expect(planoPrecisaRevisao({ inicioEm: dias(-200), ultimaRevisaoEm: dias(-89) }, AGORA)).toBe(false)
-    expect(planoPrecisaRevisao({ inicioEm: dias(-100), ultimaRevisaoEm: null }, AGORA)).toBe(true)
+    expect(planoPrecisaRevisao({ dataInicio: dias(-200), ultimaRevisaoEm: dias(-91) }, AGORA)).toBe(true)
+    expect(planoPrecisaRevisao({ dataInicio: dias(-200), ultimaRevisaoEm: dias(-89) }, AGORA)).toBe(false)
+    expect(planoPrecisaRevisao({ dataInicio: dias(-100), ultimaRevisaoEm: null }, AGORA)).toBe(true)
   })
 
   it('paciente sem sessao ha mais de 15 dias, ou nunca atendido, pede atencao', () => {

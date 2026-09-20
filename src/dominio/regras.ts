@@ -268,10 +268,10 @@ export function validarDevolucaoPlano(observacao: string): string | null {
 }
 
 export function planoPrecisaRevisao(
-  plano: Pick<PlanoTerapeutico, 'inicioEm' | 'ultimaRevisaoEm'>,
+  plano: Pick<PlanoTerapeutico, 'dataInicio' | 'ultimaRevisaoEm'>,
   agora: Date,
 ): boolean {
-  const referencia = ms(plano.ultimaRevisaoEm ?? plano.inicioEm)
+  const referencia = ms(plano.ultimaRevisaoEm ?? plano.dataInicio)
   return agora.getTime() - referencia > LIMIARES_ATENCAO.diasSemRevisaoPlano * MS_DIA
 }
 

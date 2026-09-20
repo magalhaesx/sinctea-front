@@ -148,7 +148,7 @@ describe('regras 2 e 3 — escola so le o cartao, com consentimento', () => {
     await chamar(s.autenticacao.sair())
     // Tiago tem apenas CARTAO_ESTRATEGIA para Davi; entra pelo e-mail com a senha de demonstracao.
     await chamar(s.autenticacao.entrar('tiago.rezende@escola.example', 'demonstracao'))
-    const erro = await erroDe(s.areaEscola.registrarOcorrencia('p-003', { oQueAconteceu: 'Chorou', intensidade: 2, momento: 'Recreio' }))
+    const erro = await erroDe(s.areaEscola.registrarOcorrencia('p-003', { tipo: 'Chorou', intensidade: 2, contexto: 'Recreio' }))
     expect(erro.codigo).toBe('ACESSO_NEGADO')
     expect(erro.campos.motivo).toBe('FORA_DO_ESCOPO')
   })
@@ -263,7 +263,7 @@ describe('outras regras de tela aplicadas no servico', () => {
   it('atividade em casa sem objetivo do plano nao existe', async () => {
     await entrarComo('TERAPEUTA')
     const erro = await erroDe(s.atividades.prescrever({
-      pacienteId: 'p-001', objetivoId: 'o-inexistente', titulo: 'Teste', descricao: '', passos: ['a'],
+      pacienteId: 'p-001', objetivoId: 'o-inexistente', titulo: 'Teste', descricao: '', passos: ['a'], dicas: '',
       frequenciaSemanal: 2, urlVideo: null,
     }))
     expect(erro.campos.objetivoId).toBeTruthy()

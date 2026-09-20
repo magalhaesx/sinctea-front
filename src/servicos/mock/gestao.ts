@@ -63,7 +63,7 @@ export const usuariosMock: ServicoUsuario = {
       throw new ErroServico('CONFLITO', 'Você não pode retirar o próprio perfil de administrador.')
     }
     usuario.perfis = unicos
-    auditar(sessao, { acao: 'ALTERACAO', entidade: 'Usuario', entidadeId: usuario.id, detalhe: `Perfis: ${unicos.join(', ')}` })
+    auditar(sessao, { acao: 'ALTERACAO', entidade: 'Usuario', idEntidade: usuario.id, detalhe: `Perfis: ${unicos.join(', ')}` })
     return publico(usuario)
   }),
 
@@ -74,7 +74,7 @@ export const usuariosMock: ServicoUsuario = {
     }
     const usuario = buscarUsuario(usuarioId)
     usuario.ativo = false
-    auditar(sessao, { acao: 'ALTERACAO', entidade: 'Usuario', entidadeId: usuario.id, detalhe: 'Usuário desativado.' })
+    auditar(sessao, { acao: 'ALTERACAO', entidade: 'Usuario', idEntidade: usuario.id, detalhe: 'Usuário desativado.' })
     return publico(usuario)
   }),
 
@@ -82,7 +82,7 @@ export const usuariosMock: ServicoUsuario = {
     const sessao = exigirPerfil(['ADMINISTRADOR'], 'Usuario')
     const usuario = buscarUsuario(usuarioId)
     usuario.ativo = true
-    auditar(sessao, { acao: 'ALTERACAO', entidade: 'Usuario', entidadeId: usuario.id, detalhe: 'Usuário reativado.' })
+    auditar(sessao, { acao: 'ALTERACAO', entidade: 'Usuario', idEntidade: usuario.id, detalhe: 'Usuário reativado.' })
     return publico(usuario)
   }),
 }

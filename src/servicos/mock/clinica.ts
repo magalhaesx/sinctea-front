@@ -26,7 +26,7 @@ function exigirPlanoEditavel(planoId: string): { sessao: SessaoServidor; plano: 
 function exigirPlanoAguardando(planoId: string): { sessao: SessaoServidor; plano: PlanoTerapeutico } {
   const plano = buscarPlano(planoId)
   const sessao = exigirPerfil(['COORDENADOR'], 'PlanoTerapeutico', plano.pacienteId)
-  if (plano.situacao !== 'AGUARDANDO_VALIDACAO') {
+  if (plano.status !== 'AGUARDANDO_VALIDACAO') {
     throw new ErroServico('CONFLITO', 'Este plano não está aguardando validação.')
   }
   return { sessao, plano }
@@ -36,7 +36,7 @@ export const planosMock: ServicoPlano = {
   obterPorPaciente: (pacienteId) => responder(() => {
     const { sessao } = exigirPacienteClinico(pacienteId, 'PlanoTerapeutico')
     const plano = banco.planos.find((p) => p.pacienteId === pacienteId) ?? naoEncontrado('Plano terapêutico')
-    auditar(sessao, { acao: 'LEITURA_AUTORIZADA', entidade: 'PlanoTerapeutico', entidadeId: plano.id, pacienteId, detalhe: 'Leitura do plano.' })
+    auditar(sessao, { acao: 'LEITURA_AUTORIZADA', entidade: 'PlanoTerapeutico', idEntidade: plano.id, pacienteId, detalhe: 'Leitura do plano.' })
     return plano
   }),
 
@@ -55,7 +55,7 @@ export const planosMock: ServicoPlano = {
       criterio: { ...dados.criterio },
     }
     plano.objetivos.push(objetivo)
-    auditar(sessao, { acao: 'CRIACAO', entidade: 'Objetivo', entidadeId: objetivo.id, pacienteId: plano.pacienteId, detalhe: `Objetivo em ${objetivo.dominio}.` })
+    auditar(sessao, { acao: 'CRIACAO', entidade: 'Objetivo', idEntidade: objetivo.id, pacienteId: plano.pacienteId, detalhe: `Objetivo em ${objetivo.dominio}.` })
     return objetivo
   }),
 
@@ -64,22 +64,22 @@ export const planosMock: ServicoPlano = {
     if (plano.objetivos.length === 0) {
       throw new ErroServico('VALIDACAO', 'Adicione ao menos um objetivo antes de enviar o plano.')
     }
-    if (plano.situacao === 'AGUARDANDO_VALIDACAO') throw new ErroServico('CONFLITO', 'O plano já aguarda validação.')
-    plano.situacao = 'AGUARDANDO_VALIDACAO'
-    auditar(sessao, { acao: 'ALTERACAO', entidade: 'PlanoTerapeutico', entidadeId: plano.id, pacienteId: plano.pacienteId, detalhe: 'Enviado para validação.' })
+    if (plano.status === 'AGUARDANDO_VALIDACAO') throw new ErroServico('CONFLITO', 'O plano já aguarda validação.')
+    plano.status = 'AGUARDANDO_VALIDACAO'
+    auditar(sessao, { acao: 'ALTERACAO', entidade: 'PlanoTerapeutico', idEntidade: plano.id, pacienteId: plano.pacienteId, detalhe: 'Enviado para validação.' })
     return plano
   }),
 
   listarAguardandoValidacao: (filtro = {}) => responder(() => {
     exigirPerfil(['COORDENADOR'], 'PlanoTerapeutico')
     const itens = banco.planos
-      .filter((p) => p.situacao === 'AGUARDANDO_VALIDACAO')
+      .filter((p) => p.status === 'AGUARDANDO_VALIDACAO')
       .map((p) => ({
         planoId: p.id,
         paciente: { id: p.pacienteId, nome: banco.pacientes.find((x) => x.id === p.pacienteId)?.nome ?? '—' },
         autor: { id: p.autorId, nome: banco.profissionais.find((x) => x.id === p.autorId)?.nome ?? '—' },
         // O mock nao guarda a data do envio; usa o inicio do plano como aproximacao.
-        enviadoEm: p.inicioEm,
+        enviadoEm: p.dataInicio,
         totalObjetivos: p.objetivos.length,
       }))
       .sort((a, b) => a.enviadoEm.localeCompare(b.enviadoEm))
@@ -88,10 +88,10 @@ export const planosMock: ServicoPlano = {
 
   aprovar: (planoId) => responder(() => {
     const { sessao, plano } = exigirPlanoAguardando(planoId)
-    plano.situacao = 'VIGENTE'
+    plano.status = 'VIGENTE'
     plano.observacaoValidacao = null
     plano.ultimaRevisaoEm = relogio.agora().toISOString()
-    auditar(sessao, { acao: 'ALTERACAO', entidade: 'PlanoTerapeutico', entidadeId: plano.id, pacienteId: plano.pacienteId, detalhe: 'Plano aprovado.' })
+    auditar(sessao, { acao: 'ALTERACAO', entidade: 'PlanoTerapeutico', idEntidade: plano.id, pacienteId: plano.pacienteId, detalhe: 'Plano aprovado.' })
     return plano
   }),
 
@@ -99,9 +99,9 @@ export const planosMock: ServicoPlano = {
     const { sessao, plano } = exigirPlanoAguardando(planoId)
     const erro = validarDevolucaoPlano(observacao)
     if (erro) exigirValido({ observacao: erro })
-    plano.situacao = 'DEVOLVIDO'
+    plano.status = 'DEVOLVIDO'
     plano.observacaoValidacao = observacao.trim()
-    auditar(sessao, { acao: 'ALTERACAO', entidade: 'PlanoTerapeutico', entidadeId: plano.id, pacienteId: plano.pacienteId, detalhe: 'Plano devolvido com observação.' })
+    auditar(sessao, { acao: 'ALTERACAO', entidade: 'PlanoTerapeutico', idEntidade: plano.id, pacienteId: plano.pacienteId, detalhe: 'Plano devolvido com observação.' })
     return plano
   }),
 }
@@ -180,7 +180,7 @@ export const sessoesMock: ServicoSessao = {
         throw new ErroServico('CONFLITO', 'Esta sessão já foi encerrada.')
       }
       agendada.situacao = 'EM_ANDAMENTO'
-      agendada.iniciadaEm ??= agora
+      agendada.inicio ??= agora
       return agendada
     }
     const nova: Sessao = {
@@ -189,13 +189,15 @@ export const sessoesMock: ServicoSessao = {
       profissionalId: autenticada.usuario.id,
       numero: banco.sessoes.filter((s) => s.pacienteId === pacienteId).length + 1,
       inicioPrevistoEm: agora,
-      iniciadaEm: agora,
-      encerradaEm: null,
+      inicio: agora,
+      fim: null,
+      local: 'Clínica',
       situacao: 'EM_ANDAMENTO',
+      statusSync: 'SINCRONIZADO',
       registros: [],
     }
     banco.sessoes.push(nova)
-    auditar(autenticada, { acao: 'CRIACAO', entidade: 'Sessao', entidadeId: nova.id, pacienteId, detalhe: 'Sessão iniciada.' })
+    auditar(autenticada, { acao: 'CRIACAO', entidade: 'Sessao', idEntidade: nova.id, pacienteId, detalhe: 'Sessão iniciada.' })
     return nova
   }),
 
@@ -206,7 +208,13 @@ export const sessoesMock: ServicoSessao = {
     if (!plano?.objetivos.some((o) => o.id === objetivoId)) {
       throw new ErroServico('VALIDACAO', 'O objetivo não pertence ao plano deste paciente.')
     }
-    const registro = { id: gerarId('ra'), objetivoId, resultado, registradoEm: relogio.agora().toISOString() }
+    const registro = {
+      id: gerarId('ra'),
+      objetivoId,
+      ordem: sessao.registros.length + 1,
+      resultado,
+      ocorridoEm: relogio.agora().toISOString(),
+    }
     sessao.registros.push(registro)
     return registro
   }),
@@ -231,8 +239,8 @@ export const sessoesMock: ServicoSessao = {
       throw new ErroServico('CONFLITO', 'A sessão não está aberta.')
     }
     sessao.situacao = 'ENCERRADA'
-    sessao.encerradaEm = relogio.agora().toISOString()
-    auditar(exigirSessao(), { acao: 'ALTERACAO', entidade: 'Sessao', entidadeId: sessao.id, pacienteId: sessao.pacienteId, detalhe: `Sessão encerrada com ${sessao.registros.length} registros.` })
+    sessao.fim = relogio.agora().toISOString()
+    auditar(exigirSessao(), { acao: 'ALTERACAO', entidade: 'Sessao', idEntidade: sessao.id, pacienteId: sessao.pacienteId, detalhe: `Sessão encerrada com ${sessao.registros.length} registros.` })
     return sessao
   }),
 }
@@ -294,7 +302,7 @@ export const ocorrenciasMock: ServicoOcorrencia = {
           paciente: { id: o.pacienteId, nome: banco.pacientes.find((p) => p.id === o.pacienteId)?.nome ?? '—' },
           escola: banco.escolas.find((e) => e.id === vinculo?.escolaId)?.nome ?? '—',
           registradaEm: o.registradaEm,
-          oQueAconteceu: o.oQueAconteceu,
+          tipo: o.tipo,
           intensidade: o.intensidade,
         }
       })

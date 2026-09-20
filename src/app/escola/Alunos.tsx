@@ -80,6 +80,8 @@ export function Alunos() {
                       aluno.nome
                     )}
                   </h2>
+                  {/* Turma e turno vem do VinculoEscolar. */}
+                  <p className="text-sm text-tinta2">{aluno.turma} · {aluno.turno}</p>
 
                   {aluno.situacao === 'VIGENTE' ? (
                     <>

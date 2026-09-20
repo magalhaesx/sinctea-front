@@ -128,7 +128,7 @@ export function origemDoPerfil(perfil: Perfil | null): RegistroAuditoria['origem
 interface EventoAuditoria {
   acao: RegistroAuditoria['acao']
   entidade: string
-  entidadeId?: string | null
+  idEntidade?: string | null
   pacienteId?: string | null
   detalhe: string
 }
@@ -144,9 +144,11 @@ export function auditar(sessao: SessaoServidor | null, evento: EventoAuditoria):
     perfil,
     acao: evento.acao,
     entidade: evento.entidade,
-    entidadeId: evento.entidadeId ?? null,
+    idEntidade: evento.idEntidade ?? null,
     pacienteId: evento.pacienteId ?? null,
     origem: origemDoPerfil(perfil),
+    // So o servidor conhece o IP de origem; no mock nao existe requisicao.
+    ipOrigem: null,
     detalhe: evento.detalhe,
   })
   banco.auditoria.push(registro)

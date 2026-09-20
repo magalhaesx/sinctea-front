@@ -62,7 +62,7 @@ export const atividadesMock: ServicoAtividadeCasa = {
       prescritaEm: relogio.agora().toISOString(),
     }
     banco.atividades.push(atividade)
-    auditar(sessao, { acao: 'CRIACAO', entidade: 'AtividadeCasa', entidadeId: atividade.id, pacienteId: atividade.pacienteId, detalhe: atividade.titulo })
+    auditar(sessao, { acao: 'CRIACAO', entidade: 'AtividadeCasa', idEntidade: atividade.id, pacienteId: atividade.pacienteId, detalhe: atividade.titulo })
     return atividade
   }),
 
@@ -74,7 +74,7 @@ export const atividadesMock: ServicoAtividadeCasa = {
       id: gerarId('ex'),
       atividadeId,
       responsavelId: sessao.usuario.id,
-      realizadaEm: relogio.agora().toISOString(),
+      dataRealizacao: relogio.agora().toISOString(),
       desempenho,
       observacao: observacao?.trim() || null,
     }
@@ -87,7 +87,7 @@ export const atividadesMock: ServicoAtividadeCasa = {
     exigirPacienteClinicoOuFamilia(atividade.pacienteId, 'ExecucaoAtividadeCasa')
     const itens = banco.execucoes
       .filter((e) => e.atividadeId === atividadeId)
-      .sort((a, b) => b.realizadaEm.localeCompare(a.realizadaEm))
+      .sort((a, b) => b.dataRealizacao.localeCompare(a.dataRealizacao))
     return paginar(itens, filtro)
   }),
 }
@@ -107,7 +107,7 @@ export const familiaMock: ServicoFamilia = {
 
   listarObjetivos: (pacienteId, filtro = {}) => responder(() => {
     const { sessao } = exigirPacienteDaFamilia(pacienteId, 'Objetivo')
-    const plano = banco.planos.find((p) => p.pacienteId === pacienteId && p.situacao === 'VIGENTE')
+    const plano = banco.planos.find((p) => p.pacienteId === pacienteId && p.status === 'VIGENTE')
     auditar(sessao, { acao: 'LEITURA_AUTORIZADA', entidade: 'Objetivo', pacienteId, detalhe: 'Evolução em linguagem acessível.' })
     // Projecao: so a redacao acessivel. A tecnica e o dominio nao saem daqui.
     const itens = (plano?.objetivos ?? []).map((o) => ({
@@ -167,6 +167,8 @@ export const consentimentosMock: ServicoConsentimento = {
       concedidoEm: agora.toISOString(),
       validadeAte: dados.validadeAte,
       revogadoEm: null,
+      // No servidor, a impressao digital do termo que o responsavel aceitou.
+      hashTermo: `sha256:${gerarToken()}`,
     }
     // Sem consentimento nao ha vinculo: o vinculo nasce aqui, sem professor, com o convite.
     const vinculo: VinculoEscolar = {
@@ -175,6 +177,10 @@ export const consentimentosMock: ServicoConsentimento = {
       pacienteId: dados.pacienteId,
       escolaId: dados.escolaId,
       professorId: null,
+      // Turma e turno chegam com o aceite do convite, quando o professor os informa.
+      turma: dados.turma ?? '',
+      turno: dados.turno ?? '',
+      status: 'ATIVO',
       tokenConvite: gerarToken(),
       conviteCriadoEm: agora.toISOString(),
       conviteExpiraEm: calcularExpiracaoConvite(agora).toISOString(),
@@ -183,7 +189,7 @@ export const consentimentosMock: ServicoConsentimento = {
     banco.consentimentos.push(consentimento)
     banco.vinculos.push(vinculo)
     auditar(sessao, {
-      acao: 'CONCESSAO_ACESSO', entidade: 'Consentimento', entidadeId: consentimento.id,
+      acao: 'CONCESSAO_ACESSO', entidade: 'Consentimento', idEntidade: consentimento.id,
       pacienteId: dados.pacienteId, detalhe: `Escopos: ${consentimento.escopos.join(', ')}`,
     })
     return {
@@ -202,7 +208,7 @@ export const consentimentosMock: ServicoConsentimento = {
       // consulta este registro de novo.
       consentimento.revogadoEm = relogio.agora().toISOString()
       auditar(sessao, {
-        acao: 'REVOGACAO_ACESSO', entidade: 'Consentimento', entidadeId: consentimento.id,
+        acao: 'REVOGACAO_ACESSO', entidade: 'Consentimento', idEntidade: consentimento.id,
         pacienteId: consentimento.pacienteId, detalhe: 'Revogado pelo responsável.',
       })
     }
@@ -246,7 +252,7 @@ export const convitesMock: ServicoConvite = {
     const agora = relogio.agora()
     const situacao = situacaoConvite(vinculo, consentimento, agora)
     if (situacao !== 'VALIDO') {
-      auditar(null, { acao: 'ACESSO_NEGADO', entidade: 'VinculoEscolar', entidadeId: vinculo.id, pacienteId: vinculo.pacienteId, detalhe: `Convite ${situacao.toLowerCase()}.` })
+      auditar(null, { acao: 'ACESSO_NEGADO', entidade: 'VinculoEscolar', idEntidade: vinculo.id, pacienteId: vinculo.pacienteId, detalhe: `Convite ${situacao.toLowerCase()}.` })
       throw new ErroServico('CONFLITO', 'Este convite não pode mais ser usado.')
     }
 
@@ -272,6 +278,7 @@ export const convitesMock: ServicoConvite = {
       ativo: true,
       ultimoAcessoEm: agora.toISOString(),
       escolaId: vinculo.escolaId,
+      atuacao: dados.atuacao?.trim() || 'Professor',
     }
     banco.professores.push(professor)
 
@@ -280,7 +287,7 @@ export const convitesMock: ServicoConvite = {
     vinculo.conviteUsadoEm = agora.toISOString()
     gravarSessao({ usuarioId: professor.id, perfilAtivo: 'PROFESSOR' })
     const sessao = { usuario: professor, perfilAtivo: 'PROFESSOR' as const }
-    auditar(sessao, { acao: 'CONCESSAO_ACESSO', entidade: 'VinculoEscolar', entidadeId: vinculo.id, pacienteId: vinculo.pacienteId, detalhe: 'Convite aceito pelo professor.' })
+    auditar(sessao, { acao: 'CONCESSAO_ACESSO', entidade: 'VinculoEscolar', idEntidade: vinculo.id, pacienteId: vinculo.pacienteId, detalhe: 'Convite aceito pelo professor.' })
     return paraSessaoUsuario(sessao)
   }),
 }

@@ -10,13 +10,13 @@ const normalizar = (texto: string) =>
   texto.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase()
 
 export function situacaoPlanoDe(pacienteId: string): SituacaoPlano {
-  return banco.planos.find((p) => p.pacienteId === pacienteId)?.situacao ?? 'SEM_PLANO'
+  return banco.planos.find((p) => p.pacienteId === pacienteId)?.status ?? 'SEM_PLANO'
 }
 
 export function ultimaSessaoDe(pacienteId: string): string | null {
   const datas = banco.sessoes
-    .filter((s) => s.pacienteId === pacienteId && s.situacao === 'ENCERRADA' && s.iniciadaEm)
-    .map((s) => s.iniciadaEm!)
+    .filter((s) => s.pacienteId === pacienteId && s.situacao === 'ENCERRADA' && s.inicio)
+    .map((s) => s.inicio!)
     .sort()
   return datas[datas.length - 1] ?? null
 }
@@ -54,6 +54,8 @@ function detalhe(p: Paciente): PacienteDetalhe {
         return {
           vinculoId: v.id,
           escola: banco.escolas.find((e) => e.id === v.escolaId)?.nome ?? '—',
+          turma: v.turma,
+          turno: v.turno,
           professor: banco.professores.find((u) => u.id === v.professorId)?.nome ?? null,
           situacaoConsentimento: situacaoConsentimento(c, agora),
         }
@@ -81,7 +83,7 @@ export const pacientesMock: ServicoPaciente = {
 
   obter: (id) => responder(() => {
     const { sessao, paciente } = exigirPacienteClinico(id, 'Paciente')
-    auditar(sessao, { acao: 'LEITURA_AUTORIZADA', entidade: 'Paciente', entidadeId: id, pacienteId: id, detalhe: 'Ficha do paciente.' })
+    auditar(sessao, { acao: 'LEITURA_AUTORIZADA', entidade: 'Paciente', idEntidade: id, pacienteId: id, detalhe: 'Ficha do paciente.' })
     return detalhe(paciente)
   }),
 
@@ -107,7 +109,7 @@ export const pacientesMock: ServicoPaciente = {
       ativo: true,
     }
     banco.pacientes.push(paciente)
-    auditar(sessao, { acao: 'CRIACAO', entidade: 'Paciente', entidadeId: paciente.id, pacienteId: paciente.id, detalhe: 'Cadastro de paciente.' })
+    auditar(sessao, { acao: 'CRIACAO', entidade: 'Paciente', idEntidade: paciente.id, pacienteId: paciente.id, detalhe: 'Cadastro de paciente.' })
     return detalhe(paciente)
   }),
 }
