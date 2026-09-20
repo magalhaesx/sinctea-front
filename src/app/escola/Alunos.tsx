@@ -72,18 +72,39 @@ export function Alunos() {
               <li key={aluno.pacienteId}>
                 <Cartao>
                   <h2 className="text-lg font-bold">
-                    <Link to={`/app/escola/${aluno.pacienteId}`} className="text-esc-ink underline">
-                      {aluno.nome}
-                    </Link>
+                    {aluno.situacao === 'VIGENTE' ? (
+                      <Link to={`/app/escola/${aluno.pacienteId}`} className="text-esc-ink underline">
+                        {aluno.nome}
+                      </Link>
+                    ) : (
+                      aluno.nome
+                    )}
                   </h2>
-                  <ul className="mt-2 flex flex-wrap gap-2">
-                    {aluno.escopos.map((e) => (
-                      <li key={e}><Etiqueta tom="ok" simbolo="✓">{ESCOPO[e]}</Etiqueta></li>
-                    ))}
-                  </ul>
-                  <p className="mt-2 text-sm text-tinta2">
-                    Acesso autorizado até {new Date(aluno.validadeAte).toLocaleDateString('pt-BR')}.
-                  </p>
+
+                  {aluno.situacao === 'VIGENTE' ? (
+                    <>
+                      <ul className="mt-2 flex flex-wrap gap-2">
+                        {aluno.escopos.map((e) => (
+                          <li key={e}><Etiqueta tom="ok" simbolo="✓">{ESCOPO[e]}</Etiqueta></li>
+                        ))}
+                      </ul>
+                      <p className="mt-2 text-sm text-tinta2">
+                        Acesso autorizado até {new Date(aluno.validadeAte).toLocaleDateString('pt-BR')}.
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      {/* Tom neutro: encerrar o acesso e decisao legitima da familia,
+                          nao erro. A linha permanece para que o professor saiba o que
+                          aconteceu, sem caminho de entrada. */}
+                      <p className="mt-2"><Etiqueta simbolo="○">Acesso encerrado pela família</Etiqueta></p>
+                      <p className="mt-2 max-w-[65ch] text-sm text-tinta2">
+                        {aluno.situacao === 'EXPIRADO'
+                          ? 'O prazo que a família autorizou terminou. Para voltar a ver o cartão, peça a ela um novo convite.'
+                          : 'A família encerrou este acesso. Para voltar a ver o cartão, peça a ela um novo convite.'}
+                      </p>
+                    </>
+                  )}
                 </Cartao>
               </li>
             ))}

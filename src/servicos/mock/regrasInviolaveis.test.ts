@@ -197,7 +197,17 @@ describe('regra 5 — revogacao com efeito imediato', () => {
     expect(erro.codigo).toBe('ACESSO_NEGADO')
     expect(erro.campos.motivo).toBe('REVOGADO')
     expect(await ultimaAuditoria()).toMatchObject({ acao: 'ACESSO_NEGADO', entidade: 'CartaoEstrategia', pacienteId: 'p-001' })
-    expect((await chamar(s.areaEscola.listarAlunos())).itens.map((a) => a.pacienteId)).not.toContain('p-001')
+    // Tela 22: a linha permanece, marcada, mas sem escopo nem caminho de entrada.
+    const aluno = (await chamar(s.areaEscola.listarAlunos())).itens.find((a) => a.pacienteId === 'p-001')
+    expect(aluno).toMatchObject({ situacao: 'REVOGADO', escopos: [] })
+  })
+
+  it('a lista de alunos nao mostra quem nunca concedeu, e a consulta e auditada', async () => {
+    await entrarComo('PROFESSOR')
+    const itens = (await chamar(s.areaEscola.listarAlunos())).itens
+    // Carla so tem vinculo com Miguel (p-001) e Heitor (p-004).
+    expect(itens.map((a) => a.pacienteId).sort()).toEqual(['p-001', 'p-004'])
+    expect(await ultimaAuditoria()).toMatchObject({ acao: 'LEITURA_AUTORIZADA', entidade: 'VinculoEscolar' })
   })
 
   it('revogacao feita durante a latencia de uma leitura ja vale para ela', async () => {

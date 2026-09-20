@@ -456,6 +456,9 @@ export interface AlunoEscola {
   pacienteId: string
   /** Apenas o primeiro nome: minimizacao de dados. */
   nome: string
+  /** Situacao agora. Só VIGENTE abre o cartao (tela 22). */
+  situacao: SituacaoConsentimento
+  /** Vazio quando o acesso nao esta vigente. */
   escopos: EscopoAcesso[]
   validadeAte: DataIso
 }

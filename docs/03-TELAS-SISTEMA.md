@@ -316,6 +316,32 @@ Já existe. Muda: ganha as perguntas frequentes por perfil.
 **Conteúdo:** dados da conta · troca de perfil ativo, quando houver mais de um ·
 preferências sensoriais persistidas · sair.
 
+## 22 · Meus alunos ✗
+`/app/escola` · Professor / AEE · UC15 · UC21
+
+Destino de entrada do professor. Sem ela, quem entra pelo perfil escolar não tem
+para onde ir.
+
+**Conteúdo:** os alunos para os quais este professor recebeu autorização, com nome,
+turma e situação do acesso. Cada linha ativa leva ao cartão de estratégias.
+
+**Regras de visibilidade:**
+
+- Aparece o aluno cuja família já concedeu acesso a este professor, em algum
+  momento.
+- Consentimento vigente: linha ativa, leva ao cartão.
+- Consentimento revogado ou expirado: a linha permanece, marcada como "Acesso
+  encerrado pela família", sem caminho de entrada.
+- Aluno que nunca concedeu não aparece, em hipótese alguma.
+
+Manter a linha revogada não vaza informação: o professor já sabia que aquele aluno
+está na sua turma e já tivera acesso. Sumir sem explicação o faria supor defeito no
+sistema — e o passo 27 do diagrama de sequência determina que ele seja informado do
+encerramento.
+
+**Aceitação:** professor sem nenhuma autorização vê estado vazio explicando que o
+acesso depende da família · a consulta à lista entra na trilha de auditoria.
+
 ---
 
 ## Ordem sugerida de construção

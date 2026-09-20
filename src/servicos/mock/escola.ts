@@ -1,10 +1,11 @@
 import type { ServicoAreaEscola } from '../contratos'
 import {
-  ErroServico, type CartaoEscola, type EscopoAcesso, type NovaOcorrenciaEscolar,
-  type OcorrenciaEscolar, type VinculoEscolar,
+  ErroServico, type CartaoEscola, type Consentimento, type EscopoAcesso,
+  type NovaOcorrenciaEscolar, type OcorrenciaEscolar, type VinculoEscolar,
 } from '../tipos'
 import {
-  consentimentoVigente, podeCorrigirOcorrencia, verificarAcessoEscola, type MotivoNegacao,
+  consentimentoVigente, podeCorrigirOcorrencia, situacaoConsentimento, verificarAcessoEscola,
+  type MotivoNegacao,
 } from '../../dominio/regras'
 import {
   auditar, banco, exigirPerfil, exigirValido, gerarId, naoEncontrado, paginar, relogio, responder,
@@ -61,21 +62,46 @@ function validarOcorrencia(dados: NovaOcorrenciaEscolar): void {
 }
 
 export const areaEscolaMock: ServicoAreaEscola = {
+  /**
+   * Tela 22. Aparece quem ja concedeu acesso a este professor em algum
+   * momento: a linha revogada permanece, marcada, porque sumir sem
+   * explicacao faria o professor supor defeito no sistema (passo 27 do
+   * diagrama de sequencia). Quem nunca concedeu nao aparece.
+   */
   listarAlunos: (filtro = {}) => responder(() => {
     const sessao = exigirPerfil(['PROFESSOR'], 'VinculoEscolar')
     const agora = relogio.agora()
-    const itens = banco.vinculos
-      .filter((v) => v.professorId === sessao.usuario.id)
-      .map((v) => ({ v, c: banco.consentimentos.find((c) => c.id === v.consentimentoId)! }))
-      .filter(({ c }) => consentimentoVigente(c, agora))
-      .map(({ v, c }) => ({
-        pacienteId: v.pacienteId,
-        // Minimizacao: so o primeiro nome.
-        nome: banco.pacientes.find((p) => p.id === v.pacienteId)!.nome.split(' ')[0],
-        escopos: c.escopos,
-        validadeAte: c.validadeAte,
-      }))
+
+    const porPaciente = new Map<string, { v: VinculoEscolar; c: Consentimento }>()
+    for (const v of banco.vinculos.filter((x) => x.professorId === sessao.usuario.id)) {
+      const c = banco.consentimentos.find((x) => x.id === v.consentimentoId)!
+      const atual = porPaciente.get(v.pacienteId)
+      // Com mais de uma autorizacao para o mesmo aluno, vale a vigente; sem
+      // nenhuma vigente, a mais recente.
+      const melhor = !atual || consentimentoVigente(c, agora) ||
+        (!consentimentoVigente(atual.c, agora) && c.concedidoEm > atual.c.concedidoEm)
+      if (melhor) porPaciente.set(v.pacienteId, { v, c })
+    }
+
+    const itens = [...porPaciente.values()]
+      .map(({ v, c }) => {
+        const situacao = situacaoConsentimento(c, agora)
+        return {
+          pacienteId: v.pacienteId,
+          // Minimizacao: so o primeiro nome.
+          nome: banco.pacientes.find((p) => p.id === v.pacienteId)!.nome.split(' ')[0],
+          situacao,
+          // Sem acesso vigente, nem o que foi autorizado precisa sair daqui.
+          escopos: situacao === 'VIGENTE' ? c.escopos : [],
+          validadeAte: c.validadeAte,
+        }
+      })
       .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
+
+    auditar(sessao, {
+      acao: 'LEITURA_AUTORIZADA', entidade: 'VinculoEscolar',
+      detalhe: `Consulta da lista de alunos (${itens.length}).`,
+    })
     return paginar(itens, filtro)
   }),
 
