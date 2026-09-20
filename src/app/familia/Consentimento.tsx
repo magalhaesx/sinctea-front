@@ -131,6 +131,11 @@ export function Consentimento() {
 
   const campo = 'min-h-11 w-full rounded-lg border-2 border-linha bg-sup px-3 py-2.5 text-tinta'
 
+  // Linguagem da familia: o filho e chamado pelo primeiro nome.
+  const primeiroNome = estado.tipo === 'pronto'
+    ? estado.filhos.find((f) => f.id === pacienteId)?.nome.split(' ')[0] ?? 'seu filho'
+    : 'seu filho'
+
   return (
     <Tela
       area="fam"
@@ -257,11 +262,13 @@ export function Consentimento() {
           <section aria-labelledby="ativos" className="flex flex-col gap-3">
             <h2 id="ativos" className="text-lg font-bold">Autorizações deste filho</h2>
 
+            {/* Sem EstadoVazio aqui: a acao que ele ofereceria — autorizar uma
+                escola — ja esta visivel logo acima (docs/02, secao 4). */}
             {estado.consentimentos.length === 0 && (
               <Cartao>
                 <p className="text-tinta2">
-                  Nenhuma escola foi autorizada ainda. Use o formulário acima quando quiser
-                  incluir a escola no acompanhamento.
+                  Nenhuma escola tem acesso aos dados de {primeiroNome}. Quando você quiser
+                  autorizar uma, use o formulário acima.
                 </p>
               </Cartao>
             )}

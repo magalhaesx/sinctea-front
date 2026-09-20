@@ -1,0 +1,454 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1990" height="1510" viewBox="0 0 1990 1510" font-family="Carlito">
+<defs>
+  <marker id="heranca" viewBox="0 0 14 14" refX="13.2" refY="7" markerWidth="14"
+          markerHeight="14" orient="auto" markerUnits="userSpaceOnUse">
+    <path d="M13.2,7 L0.8,0.8 L0.8,13.2 Z" fill="#FFFFFF" stroke="#5C7479" stroke-width="1.3"
+          stroke-linejoin="round"/>
+  </marker>
+  <marker id="composicao" viewBox="0 0 17 10" refX="0.8" refY="5" markerWidth="17"
+          markerHeight="10" orient="auto" markerUnits="userSpaceOnUse">
+    <path d="M0.8,5 L8.4,1.1 L16.2,5 L8.4,8.9 Z" fill="#5C7479" stroke="#5C7479"
+          stroke-width="1.1" stroke-linejoin="round"/>
+  </marker>
+  <marker id="agregacao" viewBox="0 0 17 10" refX="0.8" refY="5" markerWidth="17"
+          markerHeight="10" orient="auto" markerUnits="userSpaceOnUse">
+    <path d="M0.8,5 L8.4,1.1 L16.2,5 L8.4,8.9 Z" fill="#FFFFFF" stroke="#5C7479"
+          stroke-width="1.2" stroke-linejoin="round"/>
+  </marker>
+  <marker id="seta" viewBox="0 0 11 10" refX="10" refY="5" markerWidth="11"
+          markerHeight="10" orient="auto" markerUnits="userSpaceOnUse">
+    <path d="M0.6,0.9 L10,5 L0.6,9.1" fill="none" stroke="#5C7479" stroke-width="1.35"
+          stroke-linecap="round" stroke-linejoin="round"/>
+  </marker>
+  <marker id="setacheia" viewBox="0 0 11 10" refX="10" refY="5" markerWidth="11"
+          markerHeight="10" orient="auto" markerUnits="userSpaceOnUse">
+    <path d="M0.6,0.9 L10,5 L0.6,9.1 Z" fill="#5C7479" stroke="#5C7479" stroke-width="1"
+          stroke-linejoin="round"/>
+  </marker>
+</defs>
+<rect width="1990" height="1510" fill="#FFFFFF"/>
+<path d="M348.0,99.5 L324.0,99.5" fill="none" stroke="#5C7479" stroke-width="1.35"/>
+<path d="M348.0,461.0 L324.0,461.0" fill="none" stroke="#5C7479" stroke-width="1.35"/>
+<path d="M348.0,1012.5 L324.0,1012.5" fill="none" stroke="#5C7479" stroke-width="1.35"/>
+<path d="M324.0,99.5 L324.0,1012.5" fill="none" stroke="#5C7479" stroke-width="1.35"/>
+<path d="M324.0,403.0 L304.0,403.0" fill="none" stroke="#5C7479" stroke-width="1.35" marker-end="url(#heranca)"/>
+<path d="M42.0,450.1 L22.0,450.1 L22.0,1000.5 L42.0,1000.5" fill="none" stroke="#5C7479" stroke-width="1.35" stroke-linejoin="round" stroke-dasharray="none"/>
+<path d="M173.0,510.0 L173.0,700.0" fill="none" stroke="#5C7479" stroke-width="1.35" stroke-linejoin="round" stroke-dasharray="6 4" marker-end="url(#seta)"/>
+<path d="M115.4,936.0 L115.4,845.0" fill="none" stroke="#5C7479" stroke-width="1.35" stroke-linejoin="round" stroke-dasharray="6 4" marker-end="url(#seta)"/>
+<path d="M610.0,99.5 L634.0,99.5 L634.0,104.6 L654.0,104.6" fill="none" stroke="#5C7479" stroke-width="1.35" stroke-linejoin="round" stroke-dasharray="none"/>
+<path d="M510.4,139.0 L510.4,352.0 L1091.0,352.0 L1091.0,430.0" fill="none" stroke="#5C7479" stroke-width="1.35" stroke-linejoin="round" stroke-dasharray="none"/>
+<path d="M395.2,139.0 L395.2,186.0 L640.0,186.0 L640.0,462.6 L654.0,462.6" fill="none" stroke="#5C7479" stroke-width="1.35" stroke-linejoin="round" stroke-dasharray="none"/>
+<path d="M458.0,139.0 L458.0,214.0 L620.0,214.0 L620.0,524.5 L654.0,524.5" fill="none" stroke="#5C7479" stroke-width="1.35" stroke-linejoin="round" stroke-dasharray="none"/>
+<path d="M785.0,430.0 L785.0,308.0" fill="none" stroke="#5C7479" stroke-width="1.35" stroke-linejoin="round" stroke-dasharray="none"/>
+<path d="M916.0,482.2 L940.0,482.2 L940.0,477.1 L960.0,477.1" fill="none" stroke="#5C7479" stroke-width="1.35" stroke-linejoin="round" stroke-dasharray="none"/>
+<path d="M1185.3,430.0 L1185.3,300.0 L1397.0,300.0 L1397.0,240.0" fill="none" stroke="#5C7479" stroke-width="1.35" stroke-linejoin="round" stroke-dasharray="none" marker-start="url(#composicao)"/>
+<path d="M1528.0,132.0 L1552.0,132.0 L1552.0,99.5 L1572.0,99.5" fill="none" stroke="#5C7479" stroke-width="1.35" stroke-linejoin="round" stroke-dasharray="none" marker-start="url(#composicao)"/>
+<path d="M916.0,139.4 L940.0,139.4 L940.0,96.2 L960.0,96.2" fill="none" stroke="#5C7479" stroke-width="1.35" stroke-linejoin="round" stroke-dasharray="none" marker-start="url(#composicao)"/>
+<path d="M1222.0,136.8 L1246.0,136.8 L1246.0,200.4 L1266.0,200.4" fill="none" stroke="#5C7479" stroke-width="1.35" stroke-linejoin="round" stroke-dasharray="none"/>
+<path d="M1339.4,240.0 L1339.4,430.0" fill="none" stroke="#5C7479" stroke-width="1.35" stroke-linejoin="round" stroke-dasharray="none"/>
+<path d="M1454.6,240.0 L1454.6,300.0 L1703.0,300.0 L1703.0,430.0" fill="none" stroke="#5C7479" stroke-width="1.35" stroke-linejoin="round" stroke-dasharray="none"/>
+<path d="M544.5,492.0 L544.5,748.0 L654.0,748.0" fill="none" stroke="#5C7479" stroke-width="1.35" stroke-linejoin="round" stroke-dasharray="none"/>
+<path d="M785.0,700.0 L785.0,593.0" fill="none" stroke="#5C7479" stroke-width="1.35" stroke-linejoin="round" stroke-dasharray="none"/>
+<path d="M1397.0,628.0 L1397.0,700.0" fill="none" stroke="#5C7479" stroke-width="1.35" stroke-linejoin="round" stroke-dasharray="none"/>
+<path d="M1266.0,756.5 L1246.0,756.5 L1246.0,668.0 L405.6,668.0 L405.6,492.0" fill="none" stroke="#5C7479" stroke-width="1.35" stroke-linejoin="round" stroke-dasharray="none"/>
+<path d="M916.0,557.1 L948.0,557.1 L948.0,739.8 L960.0,739.8" fill="none" stroke="#5C7479" stroke-width="1.35" stroke-linejoin="round" stroke-dasharray="none"/>
+<path d="M1222.0,718.1 L1244.0,718.1 L1244.0,400.0 L902.9,400.0 L902.9,308.0" fill="none" stroke="#5C7479" stroke-width="1.35" stroke-linejoin="round" stroke-dasharray="none"/>
+<path d="M413.5,492.0 L413.5,902.0 L638.0,902.0 L638.0,1045.1 L654.0,1045.1" fill="none" stroke="#5C7479" stroke-width="1.35" stroke-linejoin="round" stroke-dasharray="none"/>
+<path d="M916.0,1151.5 L946.0,1151.5 L946.0,611.0 L868.8,611.0 L868.8,593.0" fill="none" stroke="#5C7479" stroke-width="1.35" stroke-linejoin="round" stroke-dasharray="none"/>
+<path d="M916.0,1037.2 L940.0,1037.2 L940.0,1028.4 L960.0,1028.4" fill="none" stroke="#5C7479" stroke-width="1.35" stroke-linejoin="round" stroke-dasharray="none"/>
+<path d="M1222.0,1038.2 L1246.0,1038.2 L1246.0,1027.6 L1266.0,1027.6" fill="none" stroke="#5C7479" stroke-width="1.35" stroke-linejoin="round" stroke-dasharray="none"/>
+<path d="M785.0,1183.0 L785.0,1252.0" fill="none" stroke="#5C7479" stroke-width="1.35" stroke-linejoin="round" stroke-dasharray="none"/>
+<path d="M1528.0,1083.5 L1552.0,1083.5 L1552.0,1133.8 L1572.0,1133.8" fill="none" stroke="#5C7479" stroke-width="1.35" stroke-linejoin="round" stroke-dasharray="none"/>
+<path d="M479.0,1039.0 L479.0,1442.0 L1397.0,1442.0 L1397.0,1116.0" fill="none" stroke="#5C7479" stroke-width="1.35" stroke-linejoin="round" stroke-dasharray="none"/>
+<path d="M1703.0,986.0 L1703.0,934.0 L1240.0,934.0 L1240.0,841.2 L1222.0,841.2" fill="none" stroke="#5C7479" stroke-width="1.35" stroke-linejoin="round" stroke-dasharray="6 4" marker-end="url(#seta)"/>
+<g>
+<rect x="42.0" y="296.0" width="262.0" height="214.0" rx="4" ry="4" fill="#FFFFFF" stroke="#9DB0B5" stroke-width="1.25"/>
+<path d="M46.0,296.6 h254.0 v0.0 h0.0 z" fill="#E9EEEF"/>
+<path d="M42.6 300.0 a4 4 0 0 1 4 -4 h254.0 a4 4 0 0 1 4 4 v24.4 h-260.8 z" fill="#E9EEEF"/>
+<line x1="42.0" y1="325.0" x2="304.0" y2="325.0" stroke="#9DB0B5" stroke-width="1.25"/>
+<text x="173.0" y="315.5" font-family="Carlito" font-size="14" font-weight="bold" font-style="italic" fill="#26393D" text-anchor="middle">Usuario</text>
+<text x="53.0" y="345.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> id : UUID</text>
+<text x="53.0" y="362.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> nome : String</text>
+<text x="53.0" y="379.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> email : String</text>
+<text x="53.0" y="396.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> senhaHash : String</text>
+<text x="53.0" y="413.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> perfis : Perfil [1..*]</text>
+<text x="53.0" y="430.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> ativo : Boolean</text>
+<text x="53.0" y="447.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> ultimoAcessoEm : DateTime [0..1]</text>
+<line x1="42.0" y1="460.0" x2="304.0" y2="460.0" stroke="#9DB0B5" stroke-width="1.1"/>
+<text x="53.0" y="480.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">+</tspan> autenticar(senha) : Boolean</text>
+<text x="53.0" y="497.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">+</tspan> temPerfil(p : Perfil) : Boolean</text>
+</g>
+<g>
+<rect x="42.0" y="700.0" width="262.0" height="145.0" rx="4" ry="4" fill="#FFFFFF" stroke="#9DB0B5" stroke-width="1.25"/>
+<path d="M46.0,700.6 h254.0 v0.0 h0.0 z" fill="#E9EEEF"/>
+<path d="M42.6 704.0 a4 4 0 0 1 4 -4 h254.0 a4 4 0 0 1 4 4 v39.4 h-260.8 z" fill="#E9EEEF"/>
+<line x1="42.0" y1="744.0" x2="304.0" y2="744.0" stroke="#9DB0B5" stroke-width="1.25"/>
+<text x="173.0" y="715.0" font-family="Carlito" font-size="10.5" font-style="italic" fill="#26393D" text-anchor="middle">«enumeration»</text>
+<text x="173.0" y="734.5" font-family="Carlito" font-size="14" font-weight="bold" fill="#26393D" text-anchor="middle">Perfil</text>
+<text x="53.0" y="764.0" font-family="Carlito" font-size="11.5" fill="#13272B">TERAPEUTA</text>
+<text x="53.0" y="781.0" font-family="Carlito" font-size="11.5" fill="#13272B">COORDENADOR</text>
+<text x="53.0" y="798.0" font-family="Carlito" font-size="11.5" fill="#13272B">ADMINISTRADOR</text>
+<text x="53.0" y="815.0" font-family="Carlito" font-size="11.5" fill="#13272B">RESPONSAVEL</text>
+<text x="53.0" y="832.0" font-family="Carlito" font-size="11.5" fill="#13272B">PROFESSOR</text>
+</g>
+<g>
+<rect x="42.0" y="936.0" width="262.0" height="215.0" rx="4" ry="4" fill="#FFFFFF" stroke="#9DB0B5" stroke-width="1.25"/>
+<path d="M46.0,936.6 h254.0 v0.0 h0.0 z" fill="#E9EEEF"/>
+<path d="M42.6 940.0 a4 4 0 0 1 4 -4 h254.0 a4 4 0 0 1 4 4 v24.4 h-260.8 z" fill="#E9EEEF"/>
+<line x1="42.0" y1="965.0" x2="304.0" y2="965.0" stroke="#9DB0B5" stroke-width="1.25"/>
+<text x="173.0" y="955.5" font-family="Carlito" font-size="14" font-weight="bold" fill="#26393D" text-anchor="middle">RegistroAuditoria</text>
+<text x="53.0" y="985.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> id : UUID</text>
+<text x="53.0" y="1002.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> ocorridoEm : DateTime</text>
+<text x="53.0" y="1019.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> usuarioNome : String [0..1]</text>
+<text x="53.0" y="1036.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> perfil : Perfil [0..1]</text>
+<text x="53.0" y="1053.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> acao : AcaoAuditoria</text>
+<text x="53.0" y="1070.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> entidade : String</text>
+<text x="53.0" y="1087.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> idEntidade : UUID [0..1]</text>
+<text x="53.0" y="1104.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> origem : OrigemAuditoria</text>
+<text x="53.0" y="1121.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> ipOrigem : String [0..1]</text>
+<text x="53.0" y="1138.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> detalhe : String</text>
+</g>
+<g>
+<rect x="348.0" y="60.0" width="262.0" height="79.0" rx="4" ry="4" fill="#FFFFFF" stroke="#5FAEB6" stroke-width="1.25"/>
+<path d="M352.0,60.6 h254.0 v0.0 h0.0 z" fill="#DFF2F4"/>
+<path d="M348.6 64.0 a4 4 0 0 1 4 -4 h254.0 a4 4 0 0 1 4 4 v24.4 h-260.8 z" fill="#DFF2F4"/>
+<line x1="348.0" y1="89.0" x2="610.0" y2="89.0" stroke="#5FAEB6" stroke-width="1.25"/>
+<text x="479.0" y="79.5" font-family="Carlito" font-size="14" font-weight="bold" fill="#0A6C75" text-anchor="middle">Profissional</text>
+<text x="359.0" y="109.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> especialidade : String</text>
+<text x="359.0" y="126.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> registroConselho : String</text>
+</g>
+<g>
+<rect x="348.0" y="430.0" width="262.0" height="62.0" rx="4" ry="4" fill="#FFFFFF" stroke="#D19184" stroke-width="1.25"/>
+<path d="M352.0,430.6 h254.0 v0.0 h0.0 z" fill="#FBE9E5"/>
+<path d="M348.6 434.0 a4 4 0 0 1 4 -4 h254.0 a4 4 0 0 1 4 4 v24.4 h-260.8 z" fill="#FBE9E5"/>
+<line x1="348.0" y1="459.0" x2="610.0" y2="459.0" stroke="#D19184" stroke-width="1.25"/>
+<text x="479.0" y="449.5" font-family="Carlito" font-size="14" font-weight="bold" fill="#96301F" text-anchor="middle">Responsavel</text>
+<text x="359.0" y="479.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> telefone : String</text>
+</g>
+<g>
+<rect x="348.0" y="986.0" width="262.0" height="53.0" rx="4" ry="4" fill="#FFFFFF" stroke="#CCA95F" stroke-width="1.25"/>
+<path d="M352.0,986.6 h254.0 v0.0 h0.0 z" fill="#FAF0DA"/>
+<path d="M348.6 990.0 a4 4 0 0 1 4 -4 h254.0 a4 4 0 0 1 4 4 v24.4 h-260.8 z" fill="#FAF0DA"/>
+<line x1="348.0" y1="1015.0" x2="610.0" y2="1015.0" stroke="#CCA95F" stroke-width="1.25"/>
+<text x="479.0" y="1005.5" font-family="Carlito" font-size="14" font-weight="bold" fill="#7E5604" text-anchor="middle">ProfessorAEE</text>
+</g>
+<g>
+<rect x="654.0" y="60.0" width="262.0" height="248.0" rx="4" ry="4" fill="#FFFFFF" stroke="#5FAEB6" stroke-width="1.25"/>
+<path d="M658.0,60.6 h254.0 v0.0 h0.0 z" fill="#DFF2F4"/>
+<path d="M654.6 64.0 a4 4 0 0 1 4 -4 h254.0 a4 4 0 0 1 4 4 v24.4 h-260.8 z" fill="#DFF2F4"/>
+<line x1="654.0" y1="89.0" x2="916.0" y2="89.0" stroke="#5FAEB6" stroke-width="1.25"/>
+<text x="785.0" y="79.5" font-family="Carlito" font-size="14" font-weight="bold" fill="#0A6C75" text-anchor="middle">Sessao</text>
+<text x="665.0" y="109.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> id : UUID</text>
+<text x="665.0" y="126.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> numero : Integer</text>
+<text x="665.0" y="143.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> inicioPrevistoEm : DateTime</text>
+<text x="665.0" y="160.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> inicio : DateTime [0..1]</text>
+<text x="665.0" y="177.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> fim : DateTime [0..1]</text>
+<text x="665.0" y="194.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> local : String</text>
+<text x="665.0" y="211.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> situacao : SituacaoSessao</text>
+<text x="665.0" y="228.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> statusSync : StatusSync</text>
+<line x1="654.0" y1="241.0" x2="916.0" y2="241.0" stroke="#5FAEB6" stroke-width="1.1"/>
+<text x="665.0" y="261.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">+</tspan> iniciar()</text>
+<text x="665.0" y="278.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">+</tspan> pausar()</text>
+<text x="665.0" y="295.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">+</tspan> encerrar()</text>
+</g>
+<g>
+<rect x="960.0" y="60.0" width="262.0" height="113.0" rx="4" ry="4" fill="#FFFFFF" stroke="#5FAEB6" stroke-width="1.25"/>
+<path d="M964.0,60.6 h254.0 v0.0 h0.0 z" fill="#DFF2F4"/>
+<path d="M960.6 64.0 a4 4 0 0 1 4 -4 h254.0 a4 4 0 0 1 4 4 v24.4 h-260.8 z" fill="#DFF2F4"/>
+<line x1="960.0" y1="89.0" x2="1222.0" y2="89.0" stroke="#5FAEB6" stroke-width="1.25"/>
+<text x="1091.0" y="79.5" font-family="Carlito" font-size="14" font-weight="bold" fill="#0A6C75" text-anchor="middle">RegistroAtividade</text>
+<text x="971.0" y="109.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> id : UUID</text>
+<text x="971.0" y="126.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> ordem : Integer</text>
+<text x="971.0" y="143.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> resultado : Resultado</text>
+<text x="971.0" y="160.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> ocorridoEm : DateTime</text>
+</g>
+<g>
+<rect x="1266.0" y="60.0" width="262.0" height="180.0" rx="4" ry="4" fill="#FFFFFF" stroke="#5FAEB6" stroke-width="1.25"/>
+<path d="M1270.0,60.6 h254.0 v0.0 h0.0 z" fill="#DFF2F4"/>
+<path d="M1266.6 64.0 a4 4 0 0 1 4 -4 h254.0 a4 4 0 0 1 4 4 v24.4 h-260.8 z" fill="#DFF2F4"/>
+<line x1="1266.0" y1="89.0" x2="1528.0" y2="89.0" stroke="#5FAEB6" stroke-width="1.25"/>
+<text x="1397.0" y="79.5" font-family="Carlito" font-size="14" font-weight="bold" fill="#0A6C75" text-anchor="middle">Objetivo</text>
+<text x="1277.0" y="109.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> id : UUID</text>
+<text x="1277.0" y="126.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> dominio : String</text>
+<text x="1277.0" y="143.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> descricaoTecnica : String</text>
+<text x="1277.0" y="160.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> descricaoAcessivel : String</text>
+<text x="1277.0" y="177.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> status : StatusObjetivo</text>
+<text x="1277.0" y="194.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> percentualAtual : Decimal</text>
+<line x1="1266.0" y1="207.0" x2="1528.0" y2="207.0" stroke="#5FAEB6" stroke-width="1.1"/>
+<text x="1277.0" y="227.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">+</tspan> atingiuCriterio() : Boolean</text>
+</g>
+<g>
+<rect x="1572.0" y="60.0" width="262.0" height="79.0" rx="4" ry="4" fill="#FFFFFF" stroke="#5FAEB6" stroke-width="1.25"/>
+<path d="M1576.0,60.6 h254.0 v0.0 h0.0 z" fill="#DFF2F4"/>
+<path d="M1572.6 64.0 a4 4 0 0 1 4 -4 h254.0 a4 4 0 0 1 4 4 v24.4 h-260.8 z" fill="#DFF2F4"/>
+<line x1="1572.0" y1="89.0" x2="1834.0" y2="89.0" stroke="#5FAEB6" stroke-width="1.25"/>
+<text x="1703.0" y="79.5" font-family="Carlito" font-size="14" font-weight="bold" fill="#0A6C75" text-anchor="middle">CriterioDominio</text>
+<text x="1583.0" y="109.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> percentualMinimo : Integer</text>
+<text x="1583.0" y="126.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> sessoesConsecutivas : Integer</text>
+</g>
+<g>
+<rect x="654.0" y="430.0" width="262.0" height="163.0" rx="4" ry="4" fill="#FFFFFF" stroke="#9DB0B5" stroke-width="1.25"/>
+<path d="M658.0,430.6 h254.0 v0.0 h0.0 z" fill="#E9EEEF"/>
+<path d="M654.6 434.0 a4 4 0 0 1 4 -4 h254.0 a4 4 0 0 1 4 4 v24.4 h-260.8 z" fill="#E9EEEF"/>
+<line x1="654.0" y1="459.0" x2="916.0" y2="459.0" stroke="#9DB0B5" stroke-width="1.25"/>
+<text x="785.0" y="449.5" font-family="Carlito" font-size="14" font-weight="bold" fill="#26393D" text-anchor="middle">Paciente</text>
+<text x="665.0" y="479.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> id : UUID</text>
+<text x="665.0" y="496.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> nome : String</text>
+<text x="665.0" y="513.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> dataNascimento : Date</text>
+<text x="665.0" y="530.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> nivelSuporte : NivelSuporte</text>
+<text x="665.0" y="547.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> ativo : Boolean</text>
+<line x1="654.0" y1="560.0" x2="916.0" y2="560.0" stroke="#9DB0B5" stroke-width="1.1"/>
+<text x="665.0" y="580.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">+</tspan> idade() : Integer</text>
+</g>
+<g>
+<rect x="960.0" y="430.0" width="262.0" height="214.0" rx="4" ry="4" fill="#FFFFFF" stroke="#5FAEB6" stroke-width="1.25"/>
+<path d="M964.0,430.6 h254.0 v0.0 h0.0 z" fill="#DFF2F4"/>
+<path d="M960.6 434.0 a4 4 0 0 1 4 -4 h254.0 a4 4 0 0 1 4 4 v24.4 h-260.8 z" fill="#DFF2F4"/>
+<line x1="960.0" y1="459.0" x2="1222.0" y2="459.0" stroke="#5FAEB6" stroke-width="1.25"/>
+<text x="1091.0" y="449.5" font-family="Carlito" font-size="14" font-weight="bold" fill="#0A6C75" text-anchor="middle">PlanoTerapeutico</text>
+<text x="971.0" y="479.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> id : UUID</text>
+<text x="971.0" y="496.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> status : SituacaoPlano</text>
+<text x="971.0" y="513.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> dataInicio : Date</text>
+<text x="971.0" y="530.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> dataRevisao : Date</text>
+<text x="971.0" y="547.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> ultimaRevisaoEm : DateTime [0..1]</text>
+<text x="971.0" y="564.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> observacaoValidacao : String [0..1]</text>
+<line x1="960.0" y1="577.0" x2="1222.0" y2="577.0" stroke="#5FAEB6" stroke-width="1.1"/>
+<text x="971.0" y="597.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">+</tspan> enviarParaValidacao()</text>
+<text x="971.0" y="614.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">+</tspan> aprovar()</text>
+<text x="971.0" y="631.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">+</tspan> devolver(obs : String)</text>
+</g>
+<g>
+<rect x="1266.0" y="430.0" width="262.0" height="198.0" rx="4" ry="4" fill="#FFFFFF" stroke="#D19184" stroke-width="1.25"/>
+<path d="M1270.0,430.6 h254.0 v0.0 h0.0 z" fill="#FBE9E5"/>
+<path d="M1266.6 434.0 a4 4 0 0 1 4 -4 h254.0 a4 4 0 0 1 4 4 v24.4 h-260.8 z" fill="#FBE9E5"/>
+<line x1="1266.0" y1="459.0" x2="1528.0" y2="459.0" stroke="#D19184" stroke-width="1.25"/>
+<text x="1397.0" y="449.5" font-family="Carlito" font-size="14" font-weight="bold" fill="#96301F" text-anchor="middle">AtividadeCasa</text>
+<text x="1277.0" y="479.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> id : UUID</text>
+<text x="1277.0" y="496.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> titulo : String</text>
+<text x="1277.0" y="513.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> descricao : String</text>
+<text x="1277.0" y="530.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> passos : String [1..*]</text>
+<text x="1277.0" y="547.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> dicas : String</text>
+<text x="1277.0" y="564.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> frequenciaSemanal : Integer</text>
+<text x="1277.0" y="581.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> urlVideo : String [0..1]</text>
+<text x="1277.0" y="598.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> ativa : Boolean</text>
+<text x="1277.0" y="615.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> prescritaEm : DateTime</text>
+</g>
+<g>
+<rect x="1572.0" y="430.0" width="262.0" height="180.0" rx="4" ry="4" fill="#FFFFFF" stroke="#CCA95F" stroke-width="1.25"/>
+<path d="M1576.0,430.6 h254.0 v0.0 h0.0 z" fill="#FAF0DA"/>
+<path d="M1572.6 434.0 a4 4 0 0 1 4 -4 h254.0 a4 4 0 0 1 4 4 v24.4 h-260.8 z" fill="#FAF0DA"/>
+<line x1="1572.0" y1="459.0" x2="1834.0" y2="459.0" stroke="#CCA95F" stroke-width="1.25"/>
+<text x="1703.0" y="449.5" font-family="Carlito" font-size="14" font-weight="bold" fill="#7E5604" text-anchor="middle">CartaoEstrategia</text>
+<text x="1583.0" y="479.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> id : UUID</text>
+<text x="1583.0" y="496.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> tituloSimples : String</text>
+<text x="1583.0" y="513.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> oQueFazer : String [1..*]</text>
+<text x="1583.0" y="530.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> oQueEvitar : String [1..*]</text>
+<text x="1583.0" y="547.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> sinalAlerta : String</text>
+<text x="1583.0" y="564.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> atualizadoEm : DateTime</text>
+<line x1="1572.0" y1="577.0" x2="1834.0" y2="577.0" stroke="#CCA95F" stroke-width="1.1"/>
+<text x="1583.0" y="597.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">+</tspan> iniciarDe(o : Objetivo)</text>
+</g>
+<g>
+<rect x="654.0" y="700.0" width="262.0" height="96.0" rx="4" ry="4" fill="#FFFFFF" stroke="#D19184" stroke-width="1.25"/>
+<path d="M658.0,700.6 h254.0 v0.0 h0.0 z" fill="#FBE9E5"/>
+<path d="M654.6 704.0 a4 4 0 0 1 4 -4 h254.0 a4 4 0 0 1 4 4 v24.4 h-260.8 z" fill="#FBE9E5"/>
+<line x1="654.0" y1="729.0" x2="916.0" y2="729.0" stroke="#D19184" stroke-width="1.25"/>
+<text x="785.0" y="719.5" font-family="Carlito" font-size="14" font-weight="bold" fill="#96301F" text-anchor="middle">VinculoFamiliar</text>
+<text x="665.0" y="749.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> id : UUID</text>
+<text x="665.0" y="766.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> parentesco : String</text>
+<text x="665.0" y="783.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> responsavelLegal : Boolean</text>
+</g>
+<g>
+<rect x="960.0" y="700.0" width="262.0" height="181.0" rx="4" ry="4" fill="#FFFFFF" stroke="#5FAEB6" stroke-width="1.25"/>
+<path d="M964.0,700.6 h254.0 v0.0 h0.0 z" fill="#DFF2F4"/>
+<path d="M960.6 704.0 a4 4 0 0 1 4 -4 h254.0 a4 4 0 0 1 4 4 v24.4 h-260.8 z" fill="#DFF2F4"/>
+<line x1="960.0" y1="729.0" x2="1222.0" y2="729.0" stroke="#5FAEB6" stroke-width="1.25"/>
+<text x="1091.0" y="719.5" font-family="Carlito" font-size="14" font-weight="bold" fill="#0A6C75" text-anchor="middle">OcorrenciaComportamental</text>
+<text x="971.0" y="749.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> id : UUID</text>
+<text x="971.0" y="766.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> origem : Origem</text>
+<text x="971.0" y="783.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> ocorridaEm : DateTime</text>
+<text x="971.0" y="800.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> antecedente : String</text>
+<text x="971.0" y="817.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> comportamento : String</text>
+<text x="971.0" y="834.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> consequencia : String</text>
+<text x="971.0" y="851.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> intensidade : Integer</text>
+<text x="971.0" y="868.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> preliminar : Boolean</text>
+</g>
+<g>
+<rect x="1266.0" y="700.0" width="262.0" height="113.0" rx="4" ry="4" fill="#FFFFFF" stroke="#D19184" stroke-width="1.25"/>
+<path d="M1270.0,700.6 h254.0 v0.0 h0.0 z" fill="#FBE9E5"/>
+<path d="M1266.6 704.0 a4 4 0 0 1 4 -4 h254.0 a4 4 0 0 1 4 4 v24.4 h-260.8 z" fill="#FBE9E5"/>
+<line x1="1266.0" y1="729.0" x2="1528.0" y2="729.0" stroke="#D19184" stroke-width="1.25"/>
+<text x="1397.0" y="719.5" font-family="Carlito" font-size="14" font-weight="bold" fill="#96301F" text-anchor="middle">ExecucaoAtividadeCasa</text>
+<text x="1277.0" y="749.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> id : UUID</text>
+<text x="1277.0" y="766.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> dataRealizacao : Date</text>
+<text x="1277.0" y="783.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> desempenho : Desempenho</text>
+<text x="1277.0" y="800.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> observacao : String [0..1]</text>
+</g>
+<g>
+<rect x="654.0" y="986.0" width="262.0" height="197.0" rx="4" ry="4" fill="#FFFFFF" stroke="#D19184" stroke-width="1.25"/>
+<path d="M658.0,986.6 h254.0 v0.0 h0.0 z" fill="#FBE9E5"/>
+<path d="M654.6 990.0 a4 4 0 0 1 4 -4 h254.0 a4 4 0 0 1 4 4 v24.4 h-260.8 z" fill="#FBE9E5"/>
+<line x1="654.0" y1="1015.0" x2="916.0" y2="1015.0" stroke="#D19184" stroke-width="1.25"/>
+<text x="785.0" y="1005.5" font-family="Carlito" font-size="14" font-weight="bold" fill="#96301F" text-anchor="middle">Consentimento</text>
+<text x="665.0" y="1035.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> id : UUID</text>
+<text x="665.0" y="1052.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> escopos : EscopoAcesso [1..*]</text>
+<text x="665.0" y="1069.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> concedidoEm : DateTime</text>
+<text x="665.0" y="1086.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> validadeAte : Date</text>
+<text x="665.0" y="1103.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> revogadoEm : DateTime [0..1]</text>
+<text x="665.0" y="1120.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> hashTermo : String</text>
+<line x1="654.0" y1="1133.0" x2="916.0" y2="1133.0" stroke="#D19184" stroke-width="1.1"/>
+<text x="665.0" y="1153.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">+</tspan> estaVigente() : Boolean</text>
+<text x="665.0" y="1170.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">+</tspan> revogar()</text>
+</g>
+<g>
+<rect x="960.0" y="986.0" width="262.0" height="163.0" rx="4" ry="4" fill="#FFFFFF" stroke="#CCA95F" stroke-width="1.25"/>
+<path d="M964.0,986.6 h254.0 v0.0 h0.0 z" fill="#FAF0DA"/>
+<path d="M960.6 990.0 a4 4 0 0 1 4 -4 h254.0 a4 4 0 0 1 4 4 v24.4 h-260.8 z" fill="#FAF0DA"/>
+<line x1="960.0" y1="1015.0" x2="1222.0" y2="1015.0" stroke="#CCA95F" stroke-width="1.25"/>
+<text x="1091.0" y="1005.5" font-family="Carlito" font-size="14" font-weight="bold" fill="#7E5604" text-anchor="middle">ConviteEscolar</text>
+<text x="971.0" y="1035.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> id : UUID</text>
+<text x="971.0" y="1052.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> token : String</text>
+<text x="971.0" y="1069.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> criadoEm : DateTime</text>
+<text x="971.0" y="1086.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> expiraEm : DateTime</text>
+<text x="971.0" y="1103.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> usadoEm : DateTime [0..1]</text>
+<line x1="960.0" y1="1116.0" x2="1222.0" y2="1116.0" stroke="#CCA95F" stroke-width="1.1"/>
+<text x="971.0" y="1136.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">+</tspan> estaValido() : Boolean</text>
+</g>
+<g>
+<rect x="1266.0" y="986.0" width="262.0" height="130.0" rx="4" ry="4" fill="#FFFFFF" stroke="#CCA95F" stroke-width="1.25"/>
+<path d="M1270.0,986.6 h254.0 v0.0 h0.0 z" fill="#FAF0DA"/>
+<path d="M1266.6 990.0 a4 4 0 0 1 4 -4 h254.0 a4 4 0 0 1 4 4 v24.4 h-260.8 z" fill="#FAF0DA"/>
+<line x1="1266.0" y1="1015.0" x2="1528.0" y2="1015.0" stroke="#CCA95F" stroke-width="1.25"/>
+<text x="1397.0" y="1005.5" font-family="Carlito" font-size="14" font-weight="bold" fill="#7E5604" text-anchor="middle">VinculoEscolar</text>
+<text x="1277.0" y="1035.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> id : UUID</text>
+<text x="1277.0" y="1052.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> turma : String</text>
+<text x="1277.0" y="1069.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> turno : String</text>
+<text x="1277.0" y="1086.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> atuacao : String</text>
+<text x="1277.0" y="1103.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> status : StatusVinculo</text>
+</g>
+<g>
+<rect x="1572.0" y="986.0" width="262.0" height="197.0" rx="4" ry="4" fill="#FFFFFF" stroke="#CCA95F" stroke-width="1.25"/>
+<path d="M1576.0,986.6 h254.0 v0.0 h0.0 z" fill="#FAF0DA"/>
+<path d="M1572.6 990.0 a4 4 0 0 1 4 -4 h254.0 a4 4 0 0 1 4 4 v24.4 h-260.8 z" fill="#FAF0DA"/>
+<line x1="1572.0" y1="1015.0" x2="1834.0" y2="1015.0" stroke="#CCA95F" stroke-width="1.25"/>
+<text x="1703.0" y="1005.5" font-family="Carlito" font-size="14" font-weight="bold" fill="#7E5604" text-anchor="middle">OcorrenciaEscolar</text>
+<text x="1583.0" y="1035.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> id : UUID</text>
+<text x="1583.0" y="1052.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> ocorridoEm : DateTime</text>
+<text x="1583.0" y="1069.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> registradaEm : DateTime</text>
+<text x="1583.0" y="1086.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> corrigidaEm : DateTime [0..1]</text>
+<text x="1583.0" y="1103.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> tipo : String</text>
+<text x="1583.0" y="1120.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> intensidade : Integer</text>
+<text x="1583.0" y="1137.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> contexto : String</text>
+<line x1="1572.0" y1="1150.0" x2="1834.0" y2="1150.0" stroke="#CCA95F" stroke-width="1.1"/>
+<text x="1583.0" y="1170.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">+</tspan> podeCorrigir() : Boolean</text>
+</g>
+<g>
+<rect x="654.0" y="1252.0" width="262.0" height="113.0" rx="4" ry="4" fill="#FFFFFF" stroke="#CCA95F" stroke-width="1.25"/>
+<path d="M658.0,1252.6 h254.0 v0.0 h0.0 z" fill="#FAF0DA"/>
+<path d="M654.6 1256.0 a4 4 0 0 1 4 -4 h254.0 a4 4 0 0 1 4 4 v24.4 h-260.8 z" fill="#FAF0DA"/>
+<line x1="654.0" y1="1281.0" x2="916.0" y2="1281.0" stroke="#CCA95F" stroke-width="1.25"/>
+<text x="785.0" y="1271.5" font-family="Carlito" font-size="14" font-weight="bold" fill="#7E5604" text-anchor="middle">Escola</text>
+<text x="665.0" y="1301.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> id : UUID</text>
+<text x="665.0" y="1318.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> nome : String</text>
+<text x="665.0" y="1335.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> rede : String</text>
+<text x="665.0" y="1352.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> municipio : String</text>
+</g>
+<text x="35.0" y="443.1" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="end">0..1</text>
+<text x="35.0" y="993.5" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="end">0..*</text>
+<rect x="50.8" y="879.0" width="42.5" height="14" fill="#FFFFFF" opacity="0.92"/><text x="72.0" y="890.0" font-family="Carlito" font-size="11" font-style="italic" fill="#3F585D" text-anchor="middle">registra</text>
+<text x="617.0" y="113.5" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="start">1</text>
+<text x="647.0" y="118.6" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="end">0..*</text>
+<rect x="602.3" y="82.5" width="39.4" height="14" fill="#FFFFFF" opacity="0.92"/><text x="622.0" y="93.5" font-family="Carlito" font-size="11" font-style="italic" fill="#3F585D" text-anchor="middle">conduz</text>
+<text x="519.4" y="155.0" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="start">1</text>
+<text x="1098.0" y="424.0" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="start">0..*</text>
+<rect x="924.9" y="335.0" width="32.3" height="14" fill="#FFFFFF" opacity="0.92"/><text x="941.0" y="346.0" font-family="Carlito" font-size="11" font-style="italic" fill="#3F585D" text-anchor="middle">autor</text>
+<text x="404.2" y="155.0" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="start">1</text>
+<text x="647.0" y="476.6" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="end">0..*</text>
+<rect x="452.5" y="169.0" width="105.0" height="14" fill="#FFFFFF" opacity="0.92"/><text x="505.0" y="180.0" font-family="Carlito" font-size="11" font-style="italic" fill="#3F585D" text-anchor="middle">responsável pelo caso</text>
+<text x="467.0" y="155.0" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="start">1..*</text>
+<text x="647.0" y="538.5" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="end">0..*</text>
+<rect x="556.0" y="197.0" width="38.0" height="14" fill="#FFFFFF" opacity="0.92"/><text x="575.0" y="208.0" font-family="Carlito" font-size="11" font-style="italic" fill="#3F585D" text-anchor="middle">equipe</text>
+<text x="794.0" y="422.0" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="start">1</text>
+<text x="794.0" y="324.0" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="start">0..*</text>
+<text x="923.0" y="496.2" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="start">1</text>
+<text x="953.0" y="491.1" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="end">0..*</text>
+<text x="1194.3" y="422.0" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="start">1</text>
+<text x="1406.0" y="256.0" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="start">1..*</text>
+<text x="1535.0" y="146.0" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="start">1</text>
+<text x="1565.0" y="113.5" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="end">1</text>
+<text x="923.0" y="153.4" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="start">1</text>
+<text x="953.0" y="110.2" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="end">0..*</text>
+<text x="1229.0" y="150.8" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="start">0..*</text>
+<text x="1259.0" y="214.4" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="end">1</text>
+<rect x="1218.2" y="151.6" width="55.5" height="14" fill="#FFFFFF" opacity="0.92"/><text x="1246.0" y="162.6" font-family="Carlito" font-size="11" font-style="italic" fill="#3F585D" text-anchor="middle">refere-se a</text>
+<text x="1348.4" y="256.0" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="start">1</text>
+<text x="1348.4" y="422.0" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="start">0..*</text>
+<text x="1463.6" y="256.0" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="start">1</text>
+<text x="1712.0" y="422.0" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="start">0..*</text>
+<text x="553.5" y="508.0" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="start">1</text>
+<text x="647.0" y="762.0" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="end">0..*</text>
+<text x="794.0" y="692.0" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="start">0..*</text>
+<text x="794.0" y="609.0" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="start">1</text>
+<text x="1406.0" y="644.0" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="start">1</text>
+<text x="1406.0" y="692.0" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="start">0..*</text>
+<text x="1259.0" y="770.5" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="end">0..*</text>
+<text x="414.6" y="508.0" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="start">1</text>
+<rect x="724.3" y="651.0" width="71.3" height="14" fill="#FFFFFF" opacity="0.92"/><text x="760.0" y="662.0" font-family="Carlito" font-size="11" font-style="italic" fill="#3F585D" text-anchor="middle">registrada por</text>
+<text x="923.0" y="571.1" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="start">1</text>
+<text x="953.0" y="753.8" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="end">0..*</text>
+<text x="1229.0" y="732.1" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="start">0..*</text>
+<text x="911.9" y="324.0" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="start">0..1</text>
+<text x="351.5" y="508.0" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="start">1</text>
+<text x="647.0" y="1059.1" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="end">0..*</text>
+<rect x="497.8" y="885.0" width="44.5" height="14" fill="#FFFFFF" opacity="0.92"/><text x="520.0" y="896.0" font-family="Carlito" font-size="11" font-style="italic" fill="#3F585D" text-anchor="middle">concede</text>
+<text x="923.0" y="1165.5" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="start">0..*</text>
+<text x="877.8" y="609.0" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="start">1</text>
+<text x="925.0" y="1053.2" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="start">1</text>
+<text x="950.0" y="1045.4" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="end">1..*</text>
+<rect x="913.8" y="1020.2" width="28.3" height="14" fill="#FFFFFF" opacity="0.92"/><text x="928.0" y="1031.2" font-family="Carlito" font-size="11" font-style="italic" fill="#3F585D" text-anchor="middle">gera</text>
+<text x="1231.0" y="1054.2" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="start">1</text>
+<text x="1256.0" y="1044.6" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="end">0..1</text>
+<rect x="1199.8" y="1021.2" width="68.4" height="14" fill="#FFFFFF" opacity="0.92"/><text x="1234.0" y="1032.2" font-family="Carlito" font-size="11" font-style="italic" fill="#3F585D" text-anchor="middle">aceito produz</text>
+<text x="794.0" y="1199.0" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="start">0..*</text>
+<text x="794.0" y="1244.0" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="start">1</text>
+<text x="1535.0" y="1097.5" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="start">1</text>
+<text x="1565.0" y="1147.8" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="end">0..*</text>
+<text x="488.0" y="1055.0" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="start">1</text>
+<text x="1406.0" y="1132.0" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="start">0..*</text>
+<rect x="917.5" y="1425.0" width="45.1" height="14" fill="#FFFFFF" opacity="0.92"/><text x="940.0" y="1436.0" font-family="Carlito" font-size="11" font-style="italic" fill="#3F585D" text-anchor="middle">atua em</text>
+<rect x="1400.2" y="917.0" width="39.6" height="14" fill="#FFFFFF" opacity="0.92"/><text x="1420.0" y="928.0" font-family="Carlito" font-size="11" font-style="italic" fill="#3F585D" text-anchor="middle">«gera»</text>
+<text x="42" y="70" font-family="Caladea" font-size="23" font-weight="bold" fill="#13272B">SINCTEA</text><text x="42" y="97" font-family="Carlito" font-size="14.5" fill="#3F585D">Sistema Integrado de Continuidade</text><text x="42" y="116" font-family="Carlito" font-size="14.5" fill="#3F585D">Terapêutica no TEA</text><line x1="42" y1="136" x2="304" y2="136" stroke="#9DB0B5" stroke-width="1.2"/><text x="42" y="158" font-family="Carlito" font-size="13" font-weight="bold" fill="#13272B">Diagrama de classes</text><text x="42" y="177" font-family="Carlito" font-size="11.5" fill="#3F585D">21 classes · revisão de 20/09/2026</text><text x="42" y="207" font-family="Carlito" font-size="11" font-style="italic" fill="#5C7479">Modelo de domínio e de persistência.</text><text x="42" y="223" font-family="Carlito" font-size="11" font-style="italic" fill="#5C7479">Chave estrangeira, campo derivado e</text><text x="42" y="239" font-family="Carlito" font-size="11" font-style="italic" fill="#5C7479">recorte de resposta pertencem à camada</text><text x="42" y="255" font-family="Carlito" font-size="11" font-style="italic" fill="#5C7479">de serviços e não aparecem aqui.</text>
+<g>
+<path d="M42.0,1290.0 h389.0 l11.0,11.0 v61.0 h-400.0 z" fill="#FFFDF4" stroke="#C7B98A" stroke-width="1.1" stroke-linejoin="round"/>
+<path d="M431.0,1290.0 v11.0 h11.0" fill="none" stroke="#C7B98A" stroke-width="1.1"/>
+<text x="51.0" y="1306.0" font-family="Carlito" font-size="11" fill="#5A4E26">Consentimento → ConviteEscolar → VinculoEscolar</text>
+<text x="51.0" y="1321.0" font-family="Carlito" font-size="11" fill="#5A4E26">→ OcorrenciaEscolar. Sem consentimento não há</text>
+<text x="51.0" y="1336.0" font-family="Carlito" font-size="11" fill="#5A4E26">convite; sem convite aceito não há vínculo;</text>
+<text x="51.0" y="1351.0" font-family="Carlito" font-size="11" fill="#5A4E26">sem vínculo não há ocorrência.</text>
+</g>
+<g>
+<path d="M1572.0,1214.0 h369.0 l11.0,11.0 v61.0 h-380.0 z" fill="#FFFDF4" stroke="#C7B98A" stroke-width="1.1" stroke-linejoin="round"/>
+<path d="M1941.0,1214.0 v11.0 h11.0" fill="none" stroke="#C7B98A" stroke-width="1.1"/>
+<text x="1581.0" y="1230.0" font-family="Carlito" font-size="11" fill="#5A4E26">A família nomeia a escola ao conceder.</text>
+<text x="1581.0" y="1245.0" font-family="Carlito" font-size="11" fill="#5A4E26">O convite vincula a pessoa; o vínculo</text>
+<text x="1581.0" y="1260.0" font-family="Carlito" font-size="11" fill="#5A4E26">descreve turma, turno e atuação.</text>
+<text x="1581.0" y="1275.0" font-family="Carlito" font-size="11" fill="#5A4E26">Outra instituição exige outro consentimento.</text>
+</g>
+<g>
+<path d="M42.0,1180.0 h251.0 l11.0,11.0 v46.0 h-262.0 z" fill="#FFFDF4" stroke="#C7B98A" stroke-width="1.1" stroke-linejoin="round"/>
+<path d="M293.0,1180.0 v11.0 h11.0" fill="none" stroke="#C7B98A" stroke-width="1.1"/>
+<text x="51.0" y="1196.0" font-family="Carlito" font-size="11" fill="#5A4E26">ProfessorAEE não tem atributo próprio:</text>
+<text x="51.0" y="1211.0" font-family="Carlito" font-size="11" fill="#5A4E26">escola, turma e atuação descrevem o</text>
+<text x="51.0" y="1226.0" font-family="Carlito" font-size="11" fill="#5A4E26">vínculo, não a pessoa.</text>
+</g>
+<text x="1572" y="1360" font-family="Carlito" font-size="12.5" font-weight="bold" fill="#13272B">Contextos</text>
+<rect x="1572" y="1369" width="28" height="14" rx="2.5" fill="#E9EEEF" stroke="#9DB0B5" stroke-width="1.1"/>
+<text x="1609" y="1380" font-family="Carlito" font-size="11.5" fill="#13272B">Identidade e auditoria</text>
+<rect x="1572" y="1389" width="28" height="14" rx="2.5" fill="#DFF2F4" stroke="#5FAEB6" stroke-width="1.1"/>
+<text x="1609" y="1400" font-family="Carlito" font-size="11.5" fill="#13272B">Contexto clínico</text>
+<rect x="1572" y="1409" width="28" height="14" rx="2.5" fill="#FBE9E5" stroke="#D19184" stroke-width="1.1"/>
+<text x="1609" y="1420" font-family="Carlito" font-size="11.5" fill="#13272B">Contexto familiar</text>
+<rect x="1572" y="1429" width="28" height="14" rx="2.5" fill="#FAF0DA" stroke="#CCA95F" stroke-width="1.1"/>
+<text x="1609" y="1440" font-family="Carlito" font-size="11.5" fill="#13272B">Contexto escolar</text>
+</svg>

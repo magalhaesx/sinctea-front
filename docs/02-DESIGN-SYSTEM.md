@@ -162,6 +162,20 @@ Estado vazio ruim: "Nenhum registro encontrado."
 Estado vazio bom: "Nenhum paciente cadastrado ainda. Cadastre o primeiro para
 começar a montar o plano terapêutico." + botão.
 
+#### Quando não usar o `EstadoVazio`
+
+O componente `EstadoVazio` existe para oferecer a ação que preenche a lista.
+**Não o use quando essa ação já está visível na mesma tela** — repetir o botão
+duplica o alvo, e o leitor de tela passa duas vezes pela mesma oferta.
+
+Nesse caso, explique a ausência em uma frase e aponte para a ação que já está
+ali. A frase continua nomeando o que está vazio e o que fazer: some o botão, não
+a explicação.
+
+Exemplo, na tela 17, onde o formulário de autorização fica logo acima da lista:
+"Nenhuma escola tem acesso aos dados de Miguel. Quando você quiser autorizar uma,
+use o formulário acima."
+
 ### Inventário
 
 | Componente | Variantes | Observação |
