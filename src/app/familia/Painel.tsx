@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
-import { Tela } from '../../componentes/Layout'
+import { Tela } from '../LayoutApp'
+import { DEMONSTRACAO } from '../perfis'
 import { Aviso, Botao, Cartao, Etiqueta, Medidor, Titulo } from '../../componentes/ui'
 import { atividades, consentimento } from '../../dados/exemplo'
 
@@ -33,7 +34,7 @@ export function PainelFamilia() {
           ))}
         </ul>
         <div className="mt-4">
-          <Link to="/familia/atividade">
+          <Link to={`/app/familia/atividades/${DEMONSTRACAO.atividade}`}>
             <Botao area="fam" className="w-full">Abrir a atividade que falta</Botao>
           </Link>
         </div>
@@ -42,7 +43,7 @@ export function PainelFamilia() {
       <Aviso tom="ok" titulo={`A escola tem acesso até 31/12/2026`}>
         Prof.ª {consentimento.professor} · {consentimento.escola}. Você pode encerrar esse acesso
         quando quiser.{' '}
-        <Link to="/familia/consentimento" className="font-bold text-fam-ink underline">
+        <Link to="/app/familia/consentimento" className="font-bold text-fam-ink underline">
           Ver a autorização
         </Link>
       </Aviso>

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Tela } from '../../componentes/Layout'
+import { Tela } from '../LayoutApp'
 import { Botao, Cartao, Etiqueta, Titulo } from '../../componentes/ui'
 import type { Resultado } from '../../tipos/dominio'
 

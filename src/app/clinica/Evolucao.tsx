@@ -1,4 +1,4 @@
-import { Tela } from '../../componentes/Layout'
+import { Tela } from '../LayoutApp'
 import { Aviso, Cartao, Titulo } from '../../componentes/ui'
 import { GraficoEvolucao } from '../../componentes/GraficoEvolucao'
 import { objetivos, sessoes } from '../../dados/exemplo'

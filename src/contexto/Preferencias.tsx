@@ -17,17 +17,29 @@ interface Ctx extends Preferencias {
 
 const PreferenciasCtx = createContext<Ctx | null>(null)
 
+const PADRAO: Preferencias = { textoMaior: false, altoContraste: false, semAnimacao: false }
+const CHAVE = 'sinctea.preferencias'
+
+/** Ficam neste aparelho. Sem armazenamento disponivel, valem os padroes. */
+function lerGuardadas(): Preferencias {
+  try {
+    const texto = localStorage.getItem(CHAVE)
+    if (texto) return { ...PADRAO, ...JSON.parse(texto) as Partial<Preferencias> }
+  } catch { /* janela anonima ou armazenamento bloqueado */ }
+  return PADRAO
+}
+
 export function ProvedorPreferencias({ children }: { children: ReactNode }) {
-  const [prefs, setPrefs] = useState<Preferencias>({
-    textoMaior: false,
-    altoContraste: false,
-    semAnimacao: false,
-  })
+  const [prefs, setPrefs] = useState<Preferencias>(lerGuardadas)
 
   const alternar = (chave: keyof Preferencias) =>
     setPrefs((p) => ({ ...p, [chave]: !p[chave] }))
 
   useEffect(() => {
+    try {
+      localStorage.setItem(CHAVE, JSON.stringify(prefs))
+    } catch { /* idem */ }
+
     const raiz = document.documentElement
     raiz.style.setProperty('--escala-texto', prefs.textoMaior ? '1.2' : '1')
     raiz.classList.toggle('contraste', prefs.altoContraste)

@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react'
-import { Tela } from '../componentes/Layout'
+import { Tela } from '../app/LayoutApp'
 import { Botao, Etiqueta, Titulo } from '../componentes/ui'
 import { descricaoNivelSuporte } from '../dominio/regras'
 import { ErroServico, servicos, type Pagina, type PacienteResumo } from '../servicos'

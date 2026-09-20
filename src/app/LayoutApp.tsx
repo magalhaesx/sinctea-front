@@ -1,48 +1,79 @@
-import { NavLink, Outlet } from 'react-router-dom'
-import { BarraPreferencias } from './BarraPreferencias'
+import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { BarraPreferencias } from '../componentes/BarraPreferencias'
+import { usarSessao } from '../contexto/Sessao'
+import type { Perfil } from '../servicos'
+import { DEMONSTRACAO, NOME_DO_PERFIL } from './perfis'
 
-type Item = { para: string; nome: string; uc?: string; cor: string }
-type Grupo = { titulo: string; itens: Item[] }
+/**
+ * Moldura do sistema (/app). O menu mostra as telas do perfil ATIVO: as tres
+ * areas sao independentes, e nao um sistema unico com itens ocultos por
+ * permissao. Esconder item de menu tambem nao e seguranca — quem autoriza
+ * cada leitura e o servidor.
+ */
+
+type Item = { para: string; nome: string; uc?: string; cor: string; fim?: boolean }
+type Grupo = { titulo: string; perfis: Perfil[]; itens: Item[] }
+
+const CLI = '#00a2af'
+const FAM = '#c8402e'
+const ESC = '#bf8506'
+const NEUTRO = '#9db6ba'
+const pac = DEMONSTRACAO.paciente
 
 const menu: Grupo[] = [
   {
-    titulo: 'Início',
+    titulo: 'Área clínica',
+    perfis: ['TERAPEUTA', 'COORDENADOR'],
     itens: [
-      { para: '/', nome: 'Entrada', cor: '#9db6ba' },
-      { para: '/sobre', nome: 'A solução', cor: '#9db6ba' },
+      { para: '/app/clinica', nome: 'Painel do terapeuta', uc: 'UC10', cor: CLI, fim: true },
+      { para: `/app/clinica/pacientes/${pac}/plano`, nome: 'Plano Terapêutico', uc: 'UC02', cor: CLI },
+      { para: `/app/clinica/pacientes/${pac}/sessao`, nome: 'Registro de sessão', uc: 'UC04', cor: CLI },
+      { para: `/app/clinica/pacientes/${pac}/evolucao`, nome: 'Evolução por objetivo', uc: 'UC08', cor: CLI },
     ],
   },
   {
-    titulo: 'Área clínica',
+    titulo: 'Coordenação',
+    perfis: ['COORDENADOR'],
     itens: [
-      { para: '/clinica', nome: 'Painel do terapeuta', uc: 'UC10', cor: '#00a2af' },
-      { para: '/clinica/plano', nome: 'Plano Terapêutico', uc: 'UC02', cor: '#00a2af' },
-      { para: '/clinica/sessao', nome: 'Registro de sessão', uc: 'UC04', cor: '#00a2af' },
-      { para: '/clinica/evolucao', nome: 'Evolução por objetivo', uc: 'UC08', cor: '#00a2af' },
+      { para: '/app/coordenacao', nome: 'Indicadores da clínica', uc: 'UC18', cor: CLI, fim: true },
     ],
   },
   {
     titulo: 'Área da família',
+    perfis: ['RESPONSAVEL'],
     itens: [
-      { para: '/familia', nome: 'Painel da família', uc: 'UC13', cor: '#c8402e' },
-      { para: '/familia/atividade', nome: 'Atividade em casa', uc: 'UC14', cor: '#c8402e' },
-      { para: '/familia/consentimento', nome: 'Autorizar a escola', uc: 'UC11', cor: '#c8402e' },
+      { para: '/app/familia', nome: 'Painel da família', uc: 'UC13', cor: FAM, fim: true },
+      { para: `/app/familia/atividades/${DEMONSTRACAO.atividade}`, nome: 'Atividade em casa', uc: 'UC14', cor: FAM },
+      { para: '/app/familia/consentimento', nome: 'Autorizar a escola', uc: 'UC11', cor: FAM },
     ],
   },
   {
     titulo: 'Área da escola',
+    perfis: ['PROFESSOR'],
     itens: [
-      { para: '/escola', nome: 'Cartão de estratégias', uc: 'UC15', cor: '#bf8506' },
-      { para: '/escola/ocorrencia', nome: 'Registrar ocorrência', uc: 'UC16', cor: '#bf8506' },
+      { para: '/app/escola', nome: 'Meus alunos', uc: 'UC21', cor: ESC, fim: true },
     ],
   },
   {
     titulo: 'Apoio',
-    itens: [{ para: '/acessibilidade', nome: 'Acessibilidade e ajuda', cor: '#9db6ba' }],
+    perfis: ['TERAPEUTA', 'COORDENADOR', 'ADMINISTRADOR', 'RESPONSAVEL', 'PROFESSOR'],
+    itens: [
+      { para: '/app/conta', nome: 'Perfil e preferências', cor: NEUTRO },
+      { para: '/app/ajuda', nome: 'Acessibilidade e ajuda', cor: NEUTRO },
+    ],
   },
 ]
 
-export function Layout() {
+export function LayoutApp() {
+  const { usuario, perfilAtivo, sair } = usarSessao()
+  const navegar = useNavigate()
+  const grupos = menu.filter((g) => perfilAtivo !== null && g.perfis.includes(perfilAtivo))
+
+  const encerrar = async () => {
+    await sair()
+    navegar('/app/entrar', { replace: true })
+  }
+
   return (
     <div className="min-h-screen flex flex-col">
       <a className="pular" href="#conteudo">Pular para o conteúdo</a>
@@ -54,12 +85,30 @@ export function Layout() {
             Continuidade terapêutica no <abbr title="Transtorno do Espectro Autista">TEA</abbr>
           </span>
         </div>
-        <BarraPreferencias />
+
+        <div className="flex flex-wrap items-center gap-3">
+          <BarraPreferencias />
+          {usuario && perfilAtivo && (
+            <div className="flex items-center gap-2.5">
+              <span className="text-right text-[12px] leading-tight text-cromo-tinta">
+                <span className="block font-bold">{usuario.nome}</span>
+                <span className="block text-cromo-tinta2">{NOME_DO_PERFIL[perfilAtivo]}</span>
+              </span>
+              <button
+                type="button"
+                onClick={encerrar}
+                className="min-h-11 cursor-pointer rounded-lg border-2 border-cromo-linha px-3 text-[13px] font-bold text-cromo-tinta hover:bg-cromo2"
+              >
+                Sair
+              </button>
+            </div>
+          )}
+        </div>
       </header>
 
       <div className="grid min-h-0 min-w-0 flex-1 lg:grid-cols-[266px_1fr]">
-        <nav aria-label="Áreas e telas do sistema" className="min-w-0 border-b border-cromo-linha px-3 py-4 lg:border-b-0 lg:border-r">
-          {menu.map((g) => (
+        <nav aria-label="Telas do seu perfil" className="min-w-0 border-b border-cromo-linha px-3 py-4 lg:border-b-0 lg:border-r">
+          {grupos.map((g) => (
             <div key={g.titulo} className="mb-4 last:mb-0">
               <h2 className="mb-2 px-2 text-[10.5px] font-bold uppercase tracking-widest text-cromo-tinta2">
                 {g.titulo}
@@ -69,7 +118,7 @@ export function Layout() {
                   <li key={i.para} className="flex-none lg:flex-auto">
                     <NavLink
                       to={i.para}
-                      end={i.para === '/' || i.para === '/clinica' || i.para === '/familia' || i.para === '/escola'}
+                      end={i.fim}
                       className={({ isActive }) =>
                         `flex min-h-10 items-center gap-2.5 whitespace-nowrap rounded-lg px-2.5 py-2 text-[13px] text-cromo-tinta lg:w-full ${
                           isActive ? 'bg-cromo2 font-bold' : 'hover:bg-cromo2'

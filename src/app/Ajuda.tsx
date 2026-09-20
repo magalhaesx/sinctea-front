@@ -1,4 +1,4 @@
-import { Tela } from '../componentes/Layout'
+import { Tela } from './LayoutApp'
 import { Cartao, Titulo } from '../componentes/ui'
 import { BarraPreferencias } from '../componentes/BarraPreferencias'
 
@@ -19,7 +19,7 @@ const heuristicas = [
   ['Recuperação de erros', 'A validação nomeia exatamente o que falta e devolve o foco ao campo certo.'],
 ]
 
-export function Acessibilidade() {
+export function Ajuda() {
   return (
     <Tela area="neutro" caminho={['Início', 'Acessibilidade e ajuda']}>
       <Titulo sub="O que foi implementado nesta interface e como ajustá-la ao seu jeito de usar">

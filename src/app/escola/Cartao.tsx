@@ -1,9 +1,10 @@
-import { Link } from 'react-router-dom'
-import { Tela } from '../../componentes/Layout'
+import { Link, useParams } from 'react-router-dom'
+import { Tela } from '../LayoutApp'
 import { Botao, Titulo } from '../../componentes/ui'
 import { cartao } from '../../dados/exemplo'
 
 export function CartaoEstrategias() {
+  const { pacienteId } = useParams()
   return (
     <Tela
       area="esc"
@@ -46,7 +47,7 @@ export function CartaoEstrategias() {
           Autorizado pela família até 31/12/2026.
           <br />Sua consulta fica registrada.
         </span>
-        <Link to="/escola/ocorrencia">
+        <Link to={`/app/escola/${pacienteId}/ocorrencia`}>
           <Botao area="esc">Registrar uma ocorrência</Botao>
         </Link>
       </div>

@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
-import { Tela } from '../../componentes/Layout'
+import { Tela } from '../LayoutApp'
+import { DEMONSTRACAO } from '../perfis'
 import { Aviso, Botao, Etiqueta, Titulo } from '../../componentes/ui'
 
 const agenda = [
@@ -36,7 +37,7 @@ export function PainelClinica() {
               {a.estado === 'aberta' && (
                 <span className="flex flex-wrap items-center gap-2.5">
                   <Etiqueta tom="at" simbolo="●">Em aberto</Etiqueta>
-                  <Link to="/clinica/sessao">
+                  <Link to={`/app/clinica/pacientes/${DEMONSTRACAO.paciente}/sessao`}>
                     <Botao area="cli">Iniciar sessão</Botao>
                   </Link>
                 </span>
@@ -52,8 +53,8 @@ export function PainelClinica() {
       </Aviso>
 
       <div className="flex flex-wrap gap-2">
-        <Link to="/clinica/plano"><Botao area="cli" variante="secundaria">Abrir o plano do Miguel</Botao></Link>
-        <Link to="/clinica/evolucao"><Botao area="cli" variante="secundaria">Ver evolução por objetivo</Botao></Link>
+        <Link to={`/app/clinica/pacientes/${DEMONSTRACAO.paciente}/plano`}><Botao area="cli" variante="secundaria">Abrir o plano do Miguel</Botao></Link>
+        <Link to={`/app/clinica/pacientes/${DEMONSTRACAO.paciente}/evolucao`}><Botao area="cli" variante="secundaria">Ver evolução por objetivo</Botao></Link>
       </div>
     </Tela>
   )

@@ -1,4 +1,4 @@
-import { Tela } from '../componentes/Layout'
+import { Tela } from '../app/LayoutApp'
 import { Cartao, Titulo } from '../componentes/ui'
 
 const numeros = [

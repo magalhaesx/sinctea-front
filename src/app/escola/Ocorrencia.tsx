@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Tela } from '../../componentes/Layout'
+import { Tela } from '../LayoutApp'
 import { Aviso, Botao, Titulo } from '../../componentes/ui'
 
 const tipos = ['Saiu da sala', 'Tapou os ouvidos', 'Recusou a tarefa', 'Chorou', 'Agrediu-se', 'Outro']
