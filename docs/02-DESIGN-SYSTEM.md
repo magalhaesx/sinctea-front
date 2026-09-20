@@ -70,11 +70,17 @@ a única forma de hierarquia disponível quando o contraste já está no limite.
 
 Reservadas. **Nunca use uma cor de estado como cor de área, nem o contrário.**
 
-```
-ok  #1F7A4D  sobre #E4F2EA
-at  #9A6800  sobre #FBF0D8
-cr  #B22E22  sobre #FBE9E6
-```
+| Estado | Cor | Fundo | Como texto | Como mancha |
+|---|---|---|---|---|
+| ok | `#1F7A4D` | `#E4F2EA` | 4,61:1 | 5,32:1 |
+| atenção | `#8F6000` | `#FBF0D8` | 4,83:1 | 5,47:1 |
+| crítico | `#B22E22` | `#FBE9E6` | 5,41:1 | 6,35:1 |
+
+**Um valor por estado, não dois.** Diferente das áreas, aqui não existe família de
+marca separada: as cores de estado nunca dependem de cor sozinha — sempre trazem
+símbolo e rótulo em texto —, então não estão presas à faixa de luminosidade que a
+validação para daltonismo impõe. Um valor que cumpre o piso de texto de 4,5:1 serve
+também como mancha, onde o piso é 3:1.
 
 ### Cromo
 
@@ -90,6 +96,18 @@ cromo #16272B · cromo2 #1E3338 · linha #2C464C · tinta #E8F1F2 · tinta2 #9DB
 rótulo em texto: `✓ Concluída`, `● Em aberto`, `○ Agendada`, `▲ Atenção`.
 
 Teste: imprima a tela em preto e branco. Se alguma informação sumiu, está errado.
+
+### Todo token declara papel e piso
+
+Nenhuma cor entra nesta página sem dizer **para que serve** e **qual piso cumpre**.
+Nomear pelo significado — "atenção", "marca da clínica" — não basta: quem implementa
+precisa saber se aquela cor pode receber texto em cima.
+
+Onde o papel não está declarado, a implementação escolhe por conta e às vezes erra.
+Três defeitos de contraste neste projeto tiveram exatamente essa origem.
+
+Ao acrescentar um token: diga onde se usa, onde não se usa, e o contraste medido nas
+superfícies em que ele aparece.
 
 ## 2. Tipografia
 

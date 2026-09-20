@@ -40,8 +40,8 @@ export function GraficoEvolucao({ sessoes, criterio }: { sessoes: Sessao[]; crit
               <text x={L - 8} y={y(v) + 4} textAnchor="end" fontSize="11" fill="#4e656b">{v}%</text>
             </g>
           ))}
-          <line x1={L} y1={y(criterio)} x2={R} y2={y(criterio)} stroke="#9a6800" strokeWidth="2" strokeDasharray="6 4" />
-          <text x={L + 4} y={y(criterio) - 7} textAnchor="start" fontSize="11" fontWeight="700" fill="#9a6800">
+          <line x1={L} y1={y(criterio)} x2={R} y2={y(criterio)} stroke="#8f6000" strokeWidth="2" strokeDasharray="6 4" />
+          <text x={L + 4} y={y(criterio) - 7} textAnchor="start" fontSize="11" fontWeight="700" fill="#8f6000">
             critério de domínio · {criterio}%
           </text>
           <path d={`M ${linha} L ${ultimo.cx.toFixed(1)} ${B} L ${L} ${B} Z`} fill="#00a2af" fillOpacity="0.1" />
