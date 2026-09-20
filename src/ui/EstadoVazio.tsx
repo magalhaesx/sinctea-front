@@ -32,7 +32,7 @@ export function EstadoVazio({ titulo, explicacao, acao, nivel = 2, area = 'cli' 
   const Titulo = nivel === 2 ? 'h2' : 'h3'
   return (
     <section className="flex flex-col items-start gap-3 rounded-xl border border-dashed border-linha bg-sup p-5 sm:p-6">
-      <span aria-hidden="true" className="text-2xl leading-none text-tinta3">○</span>
+      <span aria-hidden="true" className="text-2xl leading-none text-tinta2">○</span>
       <Titulo className={`${nivel === 2 ? 'text-lg' : 'text-[15px]'} font-bold leading-tight`}>{titulo}</Titulo>
       <div className="max-w-[65ch] text-tinta2">{explicacao}</div>
       <div className="pt-1">

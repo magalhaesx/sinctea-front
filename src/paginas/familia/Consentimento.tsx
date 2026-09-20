@@ -73,7 +73,7 @@ export function Consentimento() {
           </Campo>
         </div>
 
-        <p className="mt-4 text-sm text-tinta3">
+        <p className="mt-4 text-sm text-tinta2">
           Ao autorizar, registramos a data, a hora e uma cópia do termo que você aceitou. Esse
           registro serve para provar, depois, exatamente o que foi autorizado.
         </p>

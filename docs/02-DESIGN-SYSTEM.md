@@ -46,14 +46,25 @@ distingue.
 ### Superfícies e tinta
 
 ```
-fundo    #F2F6F6      tinta       #132226
-sup      #FFFFFF      tinta2      #4E656B
-sup2     #E9F0F0      tinta3      #6F868B
+fundo    #F2F6F6      tinta    #132226   principal
+sup      #FFFFFF      tinta2   #4E656B   secundária — o mais claro permitido para texto
+sup2     #E9F0F0      tinta3   #6F868B   somente controles inativos
 linha    #D2DFE0
 ```
 
 Os neutros são levemente frios, puxados para o azul-petróleo das áreas. Cinza puro
 lê como não escolhido.
+
+Só existem duas cores de texto. Acima do piso de 4,5:1 não há espaço para um terceiro
+cinza que o leitor distinga do segundo: o mais claro que passa em todas as superfícies
+fica a 1,19:1 do `tinta2`.
+
+O `tinta3` serve apenas a componentes inativos, que o critério 1.4.3 da WCAG isenta
+expressamente de exigência de contraste. Nunca a texto ativo.
+
+Para fazer texto recuar, use tamanho e peso, não uma cor mais clara. A trilha de
+navegação recua por ter 13px contra os 15px do corpo, não por ser mais apagada. Essa é
+a única forma de hierarquia disponível quando o contraste já está no limite.
 
 ### Estado
 

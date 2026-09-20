@@ -90,7 +90,7 @@ export function Acessibilidade() {
           autismo. A tipografia é a Atkinson Hyperlegible, desenvolvida pelo Braille Institute of
           America para melhorar a legibilidade de pessoas com baixa visão.
         </p>
-        <p className="mt-3 text-sm text-tinta3">
+        <p className="mt-3 text-sm text-tinta2">
           Encontrou uma barreira de acesso? Registre no repositório do projeto. Tratamos relatos de
           acessibilidade com a mesma prioridade de um defeito funcional.
         </p>

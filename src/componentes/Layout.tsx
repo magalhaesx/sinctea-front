@@ -120,12 +120,12 @@ export function Tela({
             </span>
             <span>
               <span className="block text-sm font-bold leading-tight">{nome}</span>
-              {papel && <span className="block text-[11.5px] text-tinta3">{papel}</span>}
+              {papel && <span className="block text-[11.5px] text-tinta2">{papel}</span>}
             </span>
           </div>
         </div>
       )}
-      <nav aria-label="Trilha de navegação" className="px-5 pt-3 text-sm text-tinta3 break-words">
+      <nav aria-label="Trilha de navegação" className="px-5 pt-3 text-[13px] text-tinta2 break-words">
         Você está em:{' '}
         {caminho.map((p, i) => (
           <span key={p}>

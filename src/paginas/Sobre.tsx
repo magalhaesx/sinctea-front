@@ -73,7 +73,7 @@ export function Sobre() {
           imediato. Cada leitura de dado sensível é verificada antes de acontecer e registrada
           depois, inclusive quando é negada.
         </p>
-        <p className="mt-3 text-sm text-tinta3">
+        <p className="mt-3 text-sm text-tinta2">
           Lei nº 13.709/2018 (LGPD), artigos 7º, 8º, 11 e 18 · Lei nº 12.764/2012 · Lei nº 13.146/2015
         </p>
       </Cartao>

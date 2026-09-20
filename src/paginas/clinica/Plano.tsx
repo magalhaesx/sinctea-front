@@ -22,7 +22,7 @@ export function Plano() {
         </Botao>
       </div>
 
-      <p className="text-sm text-tinta3">
+      <p className="text-sm text-tinta2">
         O mesmo objetivo tem duas redações: a <b>técnica</b>, usada pela equipe, e a{' '}
         <b>acessível</b>, que é a única que a escola e a família enxergam.{' '}
         <Etiqueta tom={acessivel ? 'ok' : 'neutro'} simbolo={acessivel ? '✓' : '●'}>
@@ -42,7 +42,7 @@ export function Plano() {
               </div>
               <p className="my-2.5">{acessivel ? o.descricaoAcessivel : o.descricaoTecnica}</p>
               <Medidor valor={o.percentualAtual} area="cli" rotulo={`Domínio de ${o.dominio}`} />
-              <p className="mt-2 text-sm text-tinta3">
+              <p className="mt-2 text-sm text-tinta2">
                 {o.status === 'DOMINADO'
                   ? 'Atingido em 02/09/2026'
                   : `Critério: ${o.criterio.percentualMinimo}% em ${o.criterio.sessoesConsecutivas} sessões seguidas`}

@@ -53,6 +53,8 @@ export function Paginacao({ pagina, porPagina, total, aoMudar, rotulo, nomeItens
     ? `${fmt(total)} ${nome}`
     : `Mostrando ${fmt(primeiro)} a ${fmt(ultimo)} de ${fmt(total)} ${nome}`
 
+  // tinta3 so aqui: componente inativo, isento de contraste pelo criterio 1.4.3
+  // da WCAG (docs/02, secao 1). Texto ativo nunca usa tinta3.
   const inativo = 'border-linha bg-sup text-tinta3 cursor-not-allowed'
   const ativo = `border-current bg-sup ${acento[area].texto} hover:bg-sup2 cursor-pointer`
 
@@ -77,7 +79,7 @@ export function Paginacao({ pagina, porPagina, total, aoMudar, rotulo, nomeItens
             {paginasVisiveis(atual, totalPaginas).map((item, i) => (
               <li key={item === 'reticencias' ? `r${i}` : item} className="hidden sm:block">
                 {item === 'reticencias'
-                  ? <span className="inline-flex min-h-11 min-w-6 items-center justify-center text-tinta3" aria-hidden="true">…</span>
+                  ? <span className="inline-flex min-h-11 min-w-6 items-center justify-center text-tinta2" aria-hidden="true">…</span>
                   : item === atual
                     ? (
                       <button type="button" aria-current="page" className={`${alvo} ${acento[area].preenchido} border-transparent text-white`}>

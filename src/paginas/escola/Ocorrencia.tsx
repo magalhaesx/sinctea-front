@@ -103,7 +103,7 @@ export function Ocorrencia() {
         )}
       </div>
 
-      <p className="text-sm text-tinta3">
+      <p className="text-sm text-tinta2">
         Leva cerca de 20 segundos: três toques e enviar. Feito para caber no intervalo entre uma
         atividade e outra.
       </p>

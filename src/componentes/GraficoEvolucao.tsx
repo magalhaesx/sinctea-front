@@ -37,7 +37,7 @@ export function GraficoEvolucao({ sessoes, criterio }: { sessoes: Sessao[]; crit
           {[0, 25, 50, 75, 100].map((v) => (
             <g key={v}>
               <line x1={L} y1={y(v)} x2={R} y2={y(v)} stroke={v === 0 ? '#d2dfe0' : '#e9f0f0'} strokeWidth="1" />
-              <text x={L - 8} y={y(v) + 4} textAnchor="end" fontSize="11" fill="#6f868b">{v}%</text>
+              <text x={L - 8} y={y(v) + 4} textAnchor="end" fontSize="11" fill="#4e656b">{v}%</text>
             </g>
           ))}
           <line x1={L} y1={y(criterio)} x2={R} y2={y(criterio)} stroke="#9a6800" strokeWidth="2" strokeDasharray="6 4" />
@@ -55,9 +55,9 @@ export function GraficoEvolucao({ sessoes, criterio }: { sessoes: Sessao[]; crit
             {ultimo.percentualIndependente}%
           </text>
           {pontos.filter((_, i) => i % 2 === 0 || i === pontos.length - 1).map((p) => (
-            <text key={p.id} x={p.cx} y={B + 19} textAnchor="middle" fontSize="11" fill="#6f868b">S{p.numero}</text>
+            <text key={p.id} x={p.cx} y={B + 19} textAnchor="middle" fontSize="11" fill="#4e656b">S{p.numero}</text>
           ))}
-          <text x={(L + R) / 2} y={B + 36} textAnchor="middle" fontSize="11.5" fill="#6f868b">Sessão</text>
+          <text x={(L + R) / 2} y={B + 36} textAnchor="middle" fontSize="11.5" fill="#4e656b">Sessão</text>
         </svg>
       ) : (
         <div className="overflow-x-auto">

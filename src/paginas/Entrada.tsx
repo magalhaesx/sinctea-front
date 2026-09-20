@@ -41,7 +41,7 @@ export function Entrada() {
             className={`block rounded-xl border border-linha border-l-4 ${a.cor} bg-sup p-4 hover:bg-sup2`}
           >
             <h3 className={`text-base font-bold ${a.tinta}`}>{a.nome}</h3>
-            <p className="text-[11.5px] uppercase tracking-wide text-tinta3">{a.papel}</p>
+            <p className="text-[11.5px] uppercase tracking-wide text-tinta2">{a.papel}</p>
             <p className="mt-2 text-sm text-tinta2">{a.texto}</p>
           </Link>
         ))}

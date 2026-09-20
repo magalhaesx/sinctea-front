@@ -42,7 +42,7 @@ export function CartaoEstrategias() {
       </section>
 
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-linha pt-3">
-        <span className="text-sm text-tinta3">
+        <span className="text-sm text-tinta2">
           Autorizado pela família até 31/12/2026.
           <br />Sua consulta fica registrada.
         </span>

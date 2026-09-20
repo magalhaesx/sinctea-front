@@ -41,7 +41,7 @@ function Painel({ titulo, children }: { titulo: string; children: React.ReactNod
   const id = useId()
   return (
     <section className="flex min-w-0 flex-col gap-3" aria-labelledby={id}>
-      <h2 id={id} className="text-[13.5px] font-bold uppercase tracking-wider text-tinta3">{titulo}</h2>
+      <h2 id={id} className="text-[13.5px] font-bold uppercase tracking-wider text-tinta2">{titulo}</h2>
       {children}
     </section>
   )

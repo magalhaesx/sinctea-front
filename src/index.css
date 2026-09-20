@@ -16,6 +16,7 @@
   --color-linha: #d2dfe0;
   --color-tinta: #132226;
   --color-tinta2: #4e656b;
+  /* tinta3: somente controles inativos — nunca texto ativo (docs/02, secao 1) */
   --color-tinta3: #6f868b;
 
   --color-cli: #00a2af;

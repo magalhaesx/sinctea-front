@@ -114,7 +114,7 @@ export function Tabela<T>({
           <span aria-hidden="true">↔ </span>Role para o lado para ver todas as colunas.
         </p>
       )}
-      {nota && <p className="text-[11px] text-tinta3">{nota}</p>}
+      {nota && <p className="text-[11px] text-tinta2">{nota}</p>}
     </div>
   )
 }
