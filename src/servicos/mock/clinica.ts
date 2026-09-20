@@ -104,6 +104,30 @@ export const planosMock: ServicoPlano = {
     auditar(sessao, { acao: 'ALTERACAO', entidade: 'PlanoTerapeutico', idEntidade: plano.id, pacienteId: plano.pacienteId, detalhe: 'Plano devolvido com observação.' })
     return plano
   }),
+
+  iniciarCartao: (objetivoId) => responder(() => iniciarCartao(objetivoId)),
+}
+
+/** iniciarDe(): rascunho em branco, sem texto derivado do objetivo. */
+function iniciarCartao(objetivoId: string) {
+  const plano = banco.planos.find((p) => p.objetivos.some((o) => o.id === objetivoId))
+  if (!plano) naoEncontrado('Objetivo')
+  const { sessao } = exigirPacienteClinico(plano.pacienteId, 'CartaoEstrategia')
+  const cartao = {
+    id: gerarId('ce'),
+    objetivoId,
+    tituloSimples: '',
+    oQueFazer: [],
+    oQueEvitar: [],
+    sinalAlerta: '',
+    atualizadoEm: relogio.agora().toISOString(),
+  }
+  banco.cartoes.push(cartao)
+  auditar(sessao, {
+    acao: 'CRIACAO', entidade: 'CartaoEstrategia', idEntidade: cartao.id,
+    pacienteId: plano.pacienteId, detalhe: 'Rascunho de cartão iniciado.',
+  })
+  return cartao
 }
 
 // ---------------------------------------------------------------- Sessao

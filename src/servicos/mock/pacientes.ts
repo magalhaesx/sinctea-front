@@ -39,16 +39,18 @@ function detalhe(p: Paciente): PacienteDetalhe {
   return {
     ...p,
     idade: idadeEmAnos(p.dataNascimento, agora),
-    redeApoio: p.responsaveis.map((r) => {
-      const resp = banco.responsaveis.find((u) => u.id === r.responsavelId)
-      return { ...r, nome: resp?.nome ?? '—', telefone: resp?.telefone ?? '' }
-    }),
+    redeApoio: banco.vinculosFamiliares
+      .filter((v) => v.pacienteId === p.id)
+      .map((v) => {
+        const resp = banco.responsaveis.find((u) => u.id === v.responsavelId)
+        return { ...v, nome: resp?.nome ?? '—', telefone: resp?.telefone ?? '' }
+      }),
     equipe: p.equipeIds.map((id) => {
       const prof = banco.profissionais.find((u) => u.id === id)
       return { id, nome: prof?.nome ?? '—', especialidade: prof?.especialidade ?? '' }
     }),
     vinculosEscolares: banco.vinculos
-      .filter((v) => v.pacienteId === p.id && v.professorId !== null)
+      .filter((v) => v.pacienteId === p.id)
       .map((v) => {
         const c = banco.consentimentos.find((x) => x.id === v.consentimentoId)!
         return {
@@ -56,7 +58,7 @@ function detalhe(p: Paciente): PacienteDetalhe {
           escola: banco.escolas.find((e) => e.id === v.escolaId)?.nome ?? '—',
           turma: v.turma,
           turno: v.turno,
-          professor: banco.professores.find((u) => u.id === v.professorId)?.nome ?? null,
+          professor: banco.professores.find((u) => u.id === v.professorId)?.nome ?? '—',
           situacaoConsentimento: situacaoConsentimento(c, agora),
         }
       }),
@@ -105,7 +107,6 @@ export const pacientesMock: ServicoPaciente = {
       profissionalResponsavelId: dados.profissionalResponsavelId,
       equipeIds: [...new Set([dados.profissionalResponsavelId, sessao.usuario.id])]
         .filter((id) => banco.profissionais.some((p) => p.id === id)),
-      responsaveis: [],
       ativo: true,
     }
     banco.pacientes.push(paciente)

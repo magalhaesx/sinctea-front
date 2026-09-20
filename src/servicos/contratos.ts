@@ -1,5 +1,6 @@
 import type {
   AceiteConvite, AlunoEscola, AtividadeCasa, AvisoOcorrenciaEscolar, CartaoEscola,
+  CartaoEstrategia,
   ConsentimentoConcedido, ConsentimentoDetalhe, ConvitePublico, Desempenho, Escola,
   ExecucaoAtividadeCasa, FiltroAgenda, FiltroAuditoria, FiltroOcorrencia, FiltroPaciente,
   FiltroPaginacao, FiltroSessao, FiltroUsuario, FilhoResumo, ItemAgenda, NovaAtividadeCasa,
@@ -54,6 +55,11 @@ export interface ServicoPlano {
   aprovar(planoId: string): Promise<PlanoTerapeutico>
   /** Devolver exige observacao escrita. */
   devolver(planoId: string, observacao: string): Promise<PlanoTerapeutico>
+  /**
+   * Cria um cartao de estrategias em branco, ligado ao objetivo. Nao deriva
+   * nenhum texto do objetivo: quem escreve o conteudo e o terapeuta (regra 4).
+   */
+  iniciarCartao(objetivoId: string): Promise<CartaoEstrategia>
 }
 
 export interface ServicoSessao {

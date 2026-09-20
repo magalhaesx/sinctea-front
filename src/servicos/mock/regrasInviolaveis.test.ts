@@ -83,7 +83,7 @@ describe('regra 1 — quem autoriza a escola e o responsavel', () => {
   it('professor nao concede consentimento', async () => {
     await entrarComo('PROFESSOR')
     const erro = await erroDe(s.consentimentos.conceder({
-      pacienteId: 'p-001', escolaId: 'esc-1', escopos: ['CARTAO_ESTRATEGIA'], validadeAte: '2099-01-01T00:00:00Z',
+      pacienteId: 'p-001', escopos: ['CARTAO_ESTRATEGIA'], validadeAte: '2099-01-01T00:00:00Z',
     }))
     expect(erro.codigo).toBe('ACESSO_NEGADO')
   })
@@ -91,7 +91,7 @@ describe('regra 1 — quem autoriza a escola e o responsavel', () => {
   it('terapeuta tambem nao concede', async () => {
     await entrarComo('TERAPEUTA')
     const erro = await erroDe(s.consentimentos.conceder({
-      pacienteId: 'p-001', escolaId: 'esc-1', escopos: ['CARTAO_ESTRATEGIA'], validadeAte: '2099-01-01T00:00:00Z',
+      pacienteId: 'p-001', escopos: ['CARTAO_ESTRATEGIA'], validadeAte: '2099-01-01T00:00:00Z',
     }))
     expect(erro.codigo).toBe('ACESSO_NEGADO')
   })
@@ -99,11 +99,40 @@ describe('regra 1 — quem autoriza a escola e o responsavel', () => {
   it('responsavel concede e recebe convite de uso unico com 72 horas', async () => {
     await entrarComo('RESPONSAVEL')
     const concedido = await chamar(s.consentimentos.conceder({
-      pacienteId: 'p-002', escolaId: 'esc-2', escopos: ['CARTAO_ESTRATEGIA'], validadeAte: '2099-01-01T00:00:00Z',
+      pacienteId: 'p-002', escopos: ['CARTAO_ESTRATEGIA'], validadeAte: '2099-01-01T00:00:00Z',
     }))
     const horas = (Date.parse(concedido.conviteExpiraEm) - Date.parse(concedido.consentimento.concedidoEm)) / 3_600_000
     expect(horas).toBe(72)
     expect((await chamar(s.convites.obter(concedido.tokenConvite))).situacao).toBe('VALIDO')
+  })
+
+  it('consentimento gera convite, e so o convite aceito gera vinculo', async () => {
+    await entrarComo('RESPONSAVEL')
+    const concedido = await chamar(s.consentimentos.conceder({
+      pacienteId: 'p-001', escopos: ['CARTAO_ESTRATEGIA'], validadeAte: '2099-01-01T00:00:00Z',
+    }))
+    // Enquanto o professor nao aceita, nao ha vinculo: nem escola, nem turma.
+    expect(concedido.consentimento).toMatchObject({ vinculoId: null, escola: null, turma: null, conviteAceito: false })
+
+    await chamar(s.convites.aceitar(concedido.tokenConvite, {
+      nome: 'Professor Novo', email: 'novo@escola.example', senha: '12345678',
+      escolaId: 'esc-2', turma: '5º ano A', turno: 'Vespertino', atuacao: 'AEE',
+    }))
+    // O vinculo nasce do aceite, com a escola declarada pelo professor.
+    const aluno = (await chamar(s.areaEscola.listarAlunos())).itens.find((a) => a.pacienteId === 'p-001')
+    expect(aluno).toMatchObject({ turma: '5º ano A', turno: 'Vespertino', situacao: 'VIGENTE' })
+  })
+
+  it('cartao iniciado em branco nao vai para a escola', async () => {
+    await entrarComo('TERAPEUTA')
+    const cartao = await chamar(s.planos.iniciarCartao('o-001'))
+    // iniciarDe() nao deriva texto do objetivo: nasce vazio.
+    expect(cartao).toMatchObject({ tituloSimples: '', oQueFazer: [], oQueEvitar: [], sinalAlerta: '' })
+
+    await chamar(s.autenticacao.sair())
+    await chamar(s.autenticacao.entrar('novo@escola.example', 'demonstracao'))
+    const visivel = await chamar(s.areaEscola.obterCartao('p-001'))
+    expect(visivel.estrategias.every((e) => e.oQueFazer.length > 0 || e.sinalAlerta !== '')).toBe(true)
   })
 
   it('os quatro estados do convite', async () => {
@@ -113,9 +142,9 @@ describe('regra 1 — quem autoriza a escola e o responsavel', () => {
     const valido = await chamar(s.convites.obter('demo-convite-valido'))
     expect(valido.situacao).toBe('VALIDO')
 
-    await chamar(s.convites.aceitar('demo-convite-valido', { nome: 'Professora Teste', email: 'teste@escola.example', senha: '12345678' }))
+    await chamar(s.convites.aceitar('demo-convite-valido', { nome: 'Professora Teste', email: 'teste@escola.example', senha: '12345678', escolaId: 'esc-1', turma: '2º ano A', turno: 'Matutino', atuacao: 'Regente' }))
     expect((await chamar(s.convites.obter('demo-convite-valido'))).situacao).toBe('USADO')
-    expect((await erroDe(s.convites.aceitar('demo-convite-valido', { nome: 'Outra', email: 'outra@escola.example', senha: '12345678' }))).codigo).toBe('CONFLITO')
+    expect((await erroDe(s.convites.aceitar('demo-convite-valido', { nome: 'Outra', email: 'outra@escola.example', senha: '12345678', escolaId: 'esc-1', turma: '2º ano A', turno: 'Matutino', atuacao: 'Regente' }))).codigo).toBe('CONFLITO')
   })
 })
 

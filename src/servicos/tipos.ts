@@ -76,9 +76,7 @@ export interface Responsavel extends Usuario {
 
 export interface ProfessorAEE extends Usuario {
   tipo: 'PROFESSOR_AEE'
-  /** Instituicao onde atua. O diagrama guarda o nome; aqui e a chave de Escola. */
-  escolaId: string
-  /** Como atua: regente, AEE, acompanhante. */
+  /** Como atua: regente, AEE, acompanhante. A escola vem pelo VinculoEscolar. */
   atuacao: string
 }
 
@@ -101,8 +99,15 @@ export interface FiltroUsuario extends FiltroPaginacao {
 /** Nivel de suporte conforme DSM-5-TR. A descricao por extenso vem de dominio/regras. */
 export type NivelSuporte = 1 | 2 | 3
 
-export interface VinculoResponsavel {
+/**
+ * Liga Responsavel e Paciente. O parentesco e a responsabilidade legal sao da
+ * relacao, nao da pessoa: a mesma mae pode ser responsavel legal por um filho
+ * e nao por outro.
+ */
+export interface VinculoFamiliar {
+  id: string
   responsavelId: string
+  pacienteId: string
   parentesco: string
   responsavelLegal: boolean
 }
@@ -115,7 +120,6 @@ export interface Paciente {
   profissionalResponsavelId: string
   /** Equipe multiprofissional, incluindo o responsavel pelo caso. */
   equipeIds: string[]
-  responsaveis: VinculoResponsavel[]
   ativo: boolean
 }
 
@@ -134,14 +138,14 @@ export interface PacienteResumo {
 /** Ficha do paciente (tela 5): o paciente com a rede de apoio e a equipe resolvidas. */
 export interface PacienteDetalhe extends Paciente {
   idade: number
-  redeApoio: Array<VinculoResponsavel & { nome: string; telefone: string }>
+  redeApoio: Array<VinculoFamiliar & { nome: string; telefone: string }>
   equipe: Array<{ id: string; nome: string; especialidade: string }>
   vinculosEscolares: Array<{
     vinculoId: string
     escola: string
     turma: string
     turno: string
-    professor: string | null
+    professor: string
     situacaoConsentimento: SituacaoConsentimento
   }>
   situacaoPlano: SituacaoPlano
@@ -310,14 +314,16 @@ export interface OcorrenciaEscolar {
   intensidade: Intensidade
   /** Em que momento da rotina: entrada, recreio, troca de atividade. */
   contexto: string
-  observacao: string
 }
 
+/**
+ * Opcoes fechadas, de proposito: o professor relata o que observou, sem campo
+ * livre que convide a interpretar. A leitura clinica e do profissional.
+ */
 export interface NovaOcorrenciaEscolar {
   tipo: string
   intensidade: Intensidade
   contexto: string
-  observacao?: string
 }
 
 export interface AvisoOcorrenciaEscolar {
@@ -420,18 +426,32 @@ export interface Consentimento {
 }
 
 /**
- * Sem consentimento nao ha vinculo; sem vinculo nao ha ocorrencia.
- * O convite de uso unico vive no proprio vinculo: o professor so e associado
- * quando aceita o convite.
+ * Convite de uso unico, entregue pela familia ao professor. Nasce do
+ * Consentimento e expira em 72 horas. Nao existe autocadastro de professor.
  */
+export interface ConviteEscolar {
+  id: string
+  consentimentoId: string
+  token: string
+  criadoEm: DataIso
+  expiraEm: DataIso
+  usadoEm: DataIso | null
+}
+
 export type StatusVinculo = 'ATIVO' | 'ENCERRADO'
 
+/**
+ * Nasce do convite aceito: sem consentimento nao ha convite, sem convite
+ * aceito nao ha vinculo, sem vinculo nao ha ocorrencia. Por isso o professor
+ * e obrigatorio aqui.
+ */
 export interface VinculoEscolar {
   id: string
   consentimentoId: string
+  conviteId: string
   pacienteId: string
   escolaId: string
-  professorId: string | null
+  professorId: string
   turma: string
   turno: string
   /**
@@ -439,28 +459,22 @@ export interface VinculoEscolar {
    * quem autoriza a leitura e sempre o Consentimento, consultado a cada vez.
    */
   status: StatusVinculo
-  tokenConvite: string
-  conviteCriadoEm: DataIso
-  conviteExpiraEm: DataIso
-  conviteUsadoEm: DataIso | null
 }
 
 export interface ConsentimentoDetalhe extends Consentimento {
   situacao: SituacaoConsentimento
-  vinculoId: string
-  escola: string
+  /** Só existe depois que o professor aceita o convite. */
+  vinculoId: string | null
+  escola: string | null
   professor: string | null
+  turma: string | null
   conviteAceito: boolean
 }
 
 export interface NovoConsentimento {
   pacienteId: string
-  escolaId: string
   escopos: EscopoAcesso[]
   validadeAte: DataIso
-  /** Turma e turno do ano letivo; o responsavel informa ao autorizar. */
-  turma?: string
-  turno?: string
 }
 
 export interface ConsentimentoConcedido {
@@ -483,12 +497,19 @@ export interface ConvitePublico {
   expiraEm: DataIso | null
 }
 
+/**
+ * O professor se identifica e declara onde e como atua: e no aceite que o
+ * VinculoEscolar nasce, com escola, turma e turno.
+ */
 export interface AceiteConvite {
   nome: string
   email: string
   senha: string
+  escolaId: string
+  turma: string
+  turno: string
   /** Como atua com o aluno: regente, AEE, acompanhante. */
-  atuacao?: string
+  atuacao: string
 }
 
 export interface AlunoEscola {
@@ -554,6 +575,11 @@ export interface RegistroAuditoria {
   readonly id: string
   readonly ocorridoEm: DataIso
   readonly usuarioId: string | null
+  /**
+   * Fotografia do momento, nao referencia: o registro precisa sobreviver a
+   * renomeacao do usuario e a mudanca de perfis. Nunca resolva estes dois
+   * campos consultando Usuario na leitura.
+   */
   readonly usuarioNome: string | null
   readonly perfil: Perfil | null
   readonly acao: AcaoAuditoria

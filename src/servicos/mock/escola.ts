@@ -111,7 +111,10 @@ export const areaEscolaMock: ServicoAreaEscola = {
     const { sessao, vinculo, validadeAte } = exigirAcessoEscola(pacienteId, 'CARTAO_ESTRATEGIA', 'CartaoEstrategia')
     const plano = banco.planos.find((p) => p.pacienteId === pacienteId && p.status === 'VIGENTE')
     const objetivos = plano?.objetivos ?? []
-    const cartoes = banco.cartoes.filter((c) => objetivos.some((o) => o.id === c.objetivoId))
+    // Rascunho em branco nao vai para a escola: so cartao com conteudo escrito.
+    const cartoes = banco.cartoes
+      .filter((c) => objetivos.some((o) => o.id === c.objetivoId))
+      .filter((c) => c.oQueFazer.length > 0 || c.oQueEvitar.length > 0 || c.sinalAlerta.trim() !== '')
 
     // Projecao explicita, campo a campo: nada do objetivo alem da redacao acessivel.
     const cartao: CartaoEscola = {
@@ -148,7 +151,6 @@ export const areaEscolaMock: ServicoAreaEscola = {
       tipo: dados.tipo.trim(),
       intensidade: dados.intensidade,
       contexto: dados.contexto.trim(),
-      observacao: dados.observacao?.trim() ?? '',
     }
     banco.ocorrenciasEscolares.push(ocorrencia)
     // «gera»: entra na clinica como evento comportamental preliminar, sem leitura clinica.
@@ -159,7 +161,8 @@ export const areaEscolaMock: ServicoAreaEscola = {
       ocorridaEm: agora,
       antecedente: `Contexto: ${ocorrencia.contexto}`,
       comportamento: ocorrencia.tipo,
-      consequencia: ocorrencia.observacao || 'Não informado pela escola.',
+      // A escola relata o que observou; a leitura clinica e do profissional.
+      consequencia: 'Não informado pela escola.',
       intensidade: ocorrencia.intensidade,
       preliminar: true,
       sessaoId: null,
@@ -182,23 +185,21 @@ export const areaEscolaMock: ServicoAreaEscola = {
     validarOcorrencia(dados)
 
     // A versao original fica preservada na trilha de auditoria.
-    const { tipo, intensidade, contexto, observacao } = ocorrencia
+    const { tipo, intensidade, contexto } = ocorrencia
     auditar(sessao, {
       acao: 'ALTERACAO', entidade: 'OcorrenciaEscolar', idEntidade: ocorrencia.id, pacienteId: ocorrencia.pacienteId,
-      detalhe: `Versão original: ${JSON.stringify({ tipo, intensidade, contexto, observacao })}`,
+      detalhe: `Versão original: ${JSON.stringify({ tipo, intensidade, contexto })}`,
     })
 
     ocorrencia.tipo = dados.tipo.trim()
     ocorrencia.intensidade = dados.intensidade
     ocorrencia.contexto = dados.contexto.trim()
-    ocorrencia.observacao = dados.observacao?.trim() ?? ''
     ocorrencia.corrigidaEm = relogio.agora().toISOString()
 
     const derivada = banco.ocorrenciasComportamentais.find((o) => o.ocorrenciaEscolarId === ocorrencia.id)
     if (derivada) {
       derivada.antecedente = `Contexto: ${ocorrencia.contexto}`
       derivada.comportamento = ocorrencia.tipo
-      derivada.consequencia = ocorrencia.observacao || 'Não informado pela escola.'
       derivada.intensidade = ocorrencia.intensidade
     }
     return ocorrencia

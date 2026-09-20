@@ -16,7 +16,7 @@ export function alcancaClinicamente(sessao: SessaoServidor, paciente: Paciente):
 
 export function ehResponsavelDe(sessao: SessaoServidor, paciente: Paciente): boolean {
   return sessao.perfilAtivo === 'RESPONSAVEL' &&
-    paciente.responsaveis.some((r) => r.responsavelId === sessao.usuario.id)
+    banco.vinculosFamiliares.some((v) => v.pacienteId === paciente.id && v.responsavelId === sessao.usuario.id)
 }
 
 function buscarPaciente(pacienteId: string): Paciente {

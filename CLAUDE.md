@@ -109,9 +109,19 @@ Paciente 1─* OcorrenciaComportamental
 Sessao 1─* RegistroAtividade *─1 Objetivo
 ```
 
-A cadeia `Consentimento → VinculoEscolar → OcorrenciaEscolar` é o que torna a regra
-2 difícil de burlar: sem consentimento não há vínculo, sem vínculo não há
-ocorrência. **Não crie atalhos que contornem essa cadeia.**
+A cadeia `Consentimento → ConviteEscolar → VinculoEscolar → OcorrenciaEscolar` é o
+que torna a regra 2 difícil de burlar: sem consentimento não há convite, sem
+convite aceito não há vínculo, sem vínculo não há ocorrência. **Não crie atalhos
+que contornem essa cadeia.**
+
+### O diagrama é modelo, não contrato de API
+
+O diagrama de classes é modelo de domínio e de persistência, não contrato de API.
+Chave estrangeira, campo calculado e recorte de resposta pertencem à camada de
+serviços e **não entram no diagrama**.
+
+Atributo de persistência que nunca trafega — `senhaHash` — **permanece no diagrama
+e fica fora dos tipos do front-end**.
 
 ## 5. Stack
 

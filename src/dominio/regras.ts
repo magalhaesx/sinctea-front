@@ -1,7 +1,7 @@
 import type {
-  Consentimento, CriterioDominio, DataIso, EscopoAcesso, NivelSuporte, NovoConsentimento,
-  NovoObjetivo, Origem, PlanoTerapeutico, RegistroAtividade, Sessao, SituacaoConsentimento,
-  SituacaoConvite, VinculoEscolar,
+  Consentimento, ConviteEscolar, CriterioDominio, DataIso, EscopoAcesso, NivelSuporte,
+  NovoConsentimento, NovoObjetivo, Origem, PlanoTerapeutico, RegistroAtividade, Sessao,
+  SituacaoConsentimento, SituacaoConvite,
 } from '../servicos/tipos'
 
 /**
@@ -180,7 +180,6 @@ export function validarNovoConsentimento(dados: NovoConsentimento, agora: Date):
   const validade = ms(dados.validadeAte)
   if (Number.isNaN(validade)) erros.validadeAte = 'Informe até quando o acesso vale.'
   else if (validade <= agora.getTime()) erros.validadeAte = 'A validade precisa ser uma data futura.'
-  if (!dados.escolaId) erros.escolaId = 'Escolha a escola.'
   return erros
 }
 
@@ -198,14 +197,14 @@ export function calcularExpiracaoConvite(criadoEm: Date): Date {
 
 /** Os quatro estados do token (tela 2). */
 export function situacaoConvite(
-  vinculo: Pick<VinculoEscolar, 'conviteExpiraEm' | 'conviteUsadoEm'>,
+  convite: Pick<ConviteEscolar, 'expiraEm' | 'usadoEm'>,
   consentimento: Consentimento,
   agora: Date,
 ): SituacaoConvite {
-  if (vinculo.conviteUsadoEm !== null) return 'USADO'
+  if (convite.usadoEm !== null) return 'USADO'
   const situacao = situacaoConsentimento(consentimento, agora)
   if (situacao === 'REVOGADO') return 'CONSENTIMENTO_REVOGADO'
-  if (situacao === 'EXPIRADO' || agora.getTime() >= ms(vinculo.conviteExpiraEm)) return 'EXPIRADO'
+  if (situacao === 'EXPIRADO' || agora.getTime() >= ms(convite.expiraEm)) return 'EXPIRADO'
   return 'VALIDO'
 }
 

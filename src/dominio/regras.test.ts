@@ -188,12 +188,12 @@ describe('verificarAcessoEscola (UC21)', () => {
 
 describe('validarNovoConsentimento', () => {
   it('exige escopo, escola e validade futura', () => {
-    const erros = validarNovoConsentimento({ pacienteId: 'p1', escolaId: '', escopos: [], validadeAte: dias(-1) }, AGORA)
-    expect(Object.keys(erros).sort()).toEqual(['escolaId', 'escopos', 'validadeAte'])
+    const erros = validarNovoConsentimento({ pacienteId: 'p1', escopos: [], validadeAte: dias(-1) }, AGORA)
+    expect(Object.keys(erros).sort()).toEqual(['escopos', 'validadeAte'])
   })
 
   it('aceita pedido completo', () => {
-    expect(validarNovoConsentimento({ pacienteId: 'p1', escolaId: 'e1', escopos: ['CARTAO_ESTRATEGIA'], validadeAte: dias(90) }, AGORA)).toEqual({})
+    expect(validarNovoConsentimento({ pacienteId: 'p1', escopos: ['CARTAO_ESTRATEGIA'], validadeAte: dias(90) }, AGORA)).toEqual({})
   })
 })
 
@@ -202,21 +202,21 @@ describe('convite', () => {
     expect(calcularExpiracaoConvite(AGORA).toISOString()).toBe(horas(72))
   })
 
-  const vinculo = (parcial: { conviteExpiraEm?: string; conviteUsadoEm?: string | null } = {}) => ({
-    conviteExpiraEm: horas(10),
-    conviteUsadoEm: null,
+  const convite = (parcial: { expiraEm?: string; usadoEm?: string | null } = {}) => ({
+    expiraEm: horas(10),
+    usadoEm: null,
     ...parcial,
   })
 
   it('distingue os quatro estados do token', () => {
-    expect(situacaoConvite(vinculo(), consentimento(), AGORA)).toBe('VALIDO')
-    expect(situacaoConvite(vinculo({ conviteUsadoEm: horas(-1) }), consentimento(), AGORA)).toBe('USADO')
-    expect(situacaoConvite(vinculo({ conviteExpiraEm: horas(-1) }), consentimento(), AGORA)).toBe('EXPIRADO')
-    expect(situacaoConvite(vinculo(), consentimento({ revogadoEm: horas(-1) }), AGORA)).toBe('CONSENTIMENTO_REVOGADO')
+    expect(situacaoConvite(convite(), consentimento(), AGORA)).toBe('VALIDO')
+    expect(situacaoConvite(convite({ usadoEm: horas(-1) }), consentimento(), AGORA)).toBe('USADO')
+    expect(situacaoConvite(convite({ expiraEm: horas(-1) }), consentimento(), AGORA)).toBe('EXPIRADO')
+    expect(situacaoConvite(convite(), consentimento({ revogadoEm: horas(-1) }), AGORA)).toBe('CONSENTIMENTO_REVOGADO')
   })
 
   it('convite ja usado continua usado mesmo apos revogacao', () => {
-    expect(situacaoConvite(vinculo({ conviteUsadoEm: horas(-5) }), consentimento({ revogadoEm: horas(-1) }), AGORA)).toBe('USADO')
+    expect(situacaoConvite(convite({ usadoEm: horas(-5) }), consentimento({ revogadoEm: horas(-1) }), AGORA)).toBe('USADO')
   })
 })
 

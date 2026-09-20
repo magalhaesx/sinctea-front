@@ -41,6 +41,7 @@ export const servicosApi: Servicos = {
     listarAguardandoValidacao: (filtro) => r('GET', q('/planos/aguardando-validacao', filtro)),
     aprovar: (planoId) => r('POST', `/planos/${id(planoId)}/aprovacao`),
     devolver: (planoId, observacao) => r('POST', `/planos/${id(planoId)}/devolucao`, { observacao }),
+    iniciarCartao: (objetivoId) => r('POST', `/objetivos/${id(objetivoId)}/cartao`),
   },
 
   sessoes: {

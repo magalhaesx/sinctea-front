@@ -2,7 +2,7 @@ import type {
   AtividadeCasa, CartaoEstrategia, Consentimento, Escola, ExecucaoAtividadeCasa, Intensidade,
   Objetivo, OcorrenciaComportamental, OcorrenciaEscolar, Paciente, PlanoTerapeutico,
   ProfessorAEE, Profissional, RegistroAtividade, RegistroAuditoria, Responsavel, Resultado,
-  Sessao, VinculoEscolar,
+  Sessao, VinculoEscolar, VinculoFamiliar, ConviteEscolar,
 } from '../tipos'
 import { calcularExpiracaoConvite } from '../../dominio/regras'
 
@@ -30,6 +30,7 @@ export interface BancoDemonstracao {
   professores: ProfessorAEE[]
   escolas: Escola[]
   pacientes: Paciente[]
+  vinculosFamiliares: VinculoFamiliar[]
   planos: PlanoTerapeutico[]
   sessoes: Sessao[]
   ocorrenciasComportamentais: OcorrenciaComportamental[]
@@ -38,6 +39,7 @@ export interface BancoDemonstracao {
   execucoes: ExecucaoAtividadeCasa[]
   cartoes: CartaoEstrategia[]
   consentimentos: Consentimento[]
+  convites: ConviteEscolar[]
   vinculos: VinculoEscolar[]
   auditoria: RegistroAuditoria[]
 }
@@ -103,10 +105,10 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
 
   const professores: ProfessorAEE[] = [
     { tipo: 'PROFESSOR_AEE', id: 'u-profe-1', nome: 'Carla Nunes', email: 'carla.nunes@escola.example',
-      perfis: ['PROFESSOR'], ativo: true, ultimoAcessoEm: em(0, 9), escolaId: 'esc-1',
+      perfis: ['PROFESSOR'], ativo: true, ultimoAcessoEm: em(0, 9),
       atuacao: 'Professora regente' },
     { tipo: 'PROFESSOR_AEE', id: 'u-profe-2', nome: 'Tiago Rezende', email: 'tiago.rezende@escola.example',
-      perfis: ['PROFESSOR'], ativo: true, ultimoAcessoEm: em(4, 10), escolaId: 'esc-2',
+      perfis: ['PROFESSOR'], ativo: true, ultimoAcessoEm: em(4, 10),
       atuacao: 'Atendimento educacional especializado' },
   ]
 
@@ -114,20 +116,24 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
 
   const pacientes: Paciente[] = [
     { id: 'p-001', nome: 'Miguel Santana', dataNascimento: '2019-03-12', nivelSuporte: 2,
-      profissionalResponsavelId: 'u-prof-1', equipeIds: ['u-prof-1', 'u-prof-3'], ativo: true,
-      responsaveis: [{ responsavelId: 'u-resp-1', parentesco: 'Mãe', responsavelLegal: true }] },
+      profissionalResponsavelId: 'u-prof-1', equipeIds: ['u-prof-1', 'u-prof-3'], ativo: true, },
     { id: 'p-002', nome: 'Sofia Santana', dataNascimento: '2021-07-02', nivelSuporte: 1,
-      profissionalResponsavelId: 'u-prof-2', equipeIds: ['u-prof-2'], ativo: true,
-      responsaveis: [{ responsavelId: 'u-resp-1', parentesco: 'Mãe', responsavelLegal: true }] },
+      profissionalResponsavelId: 'u-prof-2', equipeIds: ['u-prof-2'], ativo: true, },
     { id: 'p-003', nome: 'Davi Farias', dataNascimento: '2017-11-23', nivelSuporte: 3,
-      profissionalResponsavelId: 'u-prof-1', equipeIds: ['u-prof-1', 'u-prof-2'], ativo: true,
-      responsaveis: [{ responsavelId: 'u-resp-2', parentesco: 'Pai', responsavelLegal: true }] },
+      profissionalResponsavelId: 'u-prof-1', equipeIds: ['u-prof-1', 'u-prof-2'], ativo: true, },
     { id: 'p-004', nome: 'Heitor Brandão', dataNascimento: '2020-01-30', nivelSuporte: 2,
-      profissionalResponsavelId: 'u-prof-3', equipeIds: ['u-prof-3', 'u-prof-1'], ativo: true,
-      responsaveis: [{ responsavelId: 'u-resp-3', parentesco: 'Mãe', responsavelLegal: true }] },
+      profissionalResponsavelId: 'u-prof-3', equipeIds: ['u-prof-3', 'u-prof-1'], ativo: true, },
     { id: 'p-005', nome: 'Laura Reis', dataNascimento: '2018-05-14', nivelSuporte: 1,
-      profissionalResponsavelId: 'u-prof-2', equipeIds: ['u-prof-2', 'u-prof-3'], ativo: true,
-      responsaveis: [{ responsavelId: 'u-resp-4', parentesco: 'Avô', responsavelLegal: true }] },
+      profissionalResponsavelId: 'u-prof-2', equipeIds: ['u-prof-2', 'u-prof-3'], ativo: true, },
+  ]
+
+  /** Parentesco e responsabilidade legal sao da relacao, nao da pessoa. */
+  const vinculosFamiliares: VinculoFamiliar[] = [
+    { id: 'vf-001', responsavelId: 'u-resp-1', pacienteId: 'p-001', parentesco: 'Mãe', responsavelLegal: true },
+    { id: 'vf-002', responsavelId: 'u-resp-1', pacienteId: 'p-002', parentesco: 'Mãe', responsavelLegal: true },
+    { id: 'vf-003', responsavelId: 'u-resp-2', pacienteId: 'p-003', parentesco: 'Pai', responsavelLegal: true },
+    { id: 'vf-004', responsavelId: 'u-resp-3', pacienteId: 'p-004', parentesco: 'Mãe', responsavelLegal: true },
+    { id: 'vf-005', responsavelId: 'u-resp-4', pacienteId: 'p-005', parentesco: 'Avô', responsavelLegal: true },
   ]
 
   // ------------------------------------------------------------ Planos e objetivos
@@ -287,25 +293,38 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
     consentimento('c-007', 'u-resp-4', 'p-005', ambos, em(1, 10), em(-90, 23, 59), horasAtras(2)),
   ]
 
-  const vinculo = (id: string, c: Consentimento, escolaId: string, professorId: string | null,
-    token: string, usadoEm: string | null, turma = '2º ano B', turno = 'Matutino'): VinculoEscolar => ({
-    id, consentimentoId: c.id, pacienteId: c.pacienteId, escolaId, professorId,
-    turma, turno, status: c.revogadoEm === null ? 'ATIVO' : 'ENCERRADO',
-    tokenConvite: token, conviteCriadoEm: c.concedidoEm,
-    conviteExpiraEm: calcularExpiracaoConvite(new Date(c.concedidoEm)).toISOString(),
-    conviteUsadoEm: usadoEm,
-  })
   const [c1, c2, c3, c4, c5, c6, c7] = consentimentos
   const depoisDe = (iso: string, horas: number) => new Date(Date.parse(iso) + horas * 3_600_000).toISOString()
 
+  /** Uso unico, 72 horas. O vinculo so nasce quando ele e aceito. */
+  const convite = (id: string, c: Consentimento, token: string, usadoEm: string | null): ConviteEscolar => ({
+    id, consentimentoId: c.id, token, criadoEm: c.concedidoEm,
+    expiraEm: calcularExpiracaoConvite(new Date(c.concedidoEm)).toISOString(),
+    usadoEm,
+  })
+
+  const convites: ConviteEscolar[] = [
+    convite('cv-001', c1, 'demo-convite-usado', depoisDe(c1.concedidoEm, 14)),
+    convite('cv-002', c2, 'demo-convite-davi', depoisDe(c2.concedidoEm, 20)),
+    convite('cv-003', c3, 'demo-convite-heitor', depoisDe(c3.concedidoEm, 16)),
+    convite('cv-004', c4, 'demo-convite-laura', depoisDe(c4.concedidoEm, 30)),
+    // Os tres a seguir nunca foram aceitos: sem vinculo, portanto.
+    convite('cv-005', c5, 'demo-convite-valido', null),
+    convite('cv-006', c6, 'demo-convite-expirado', null),
+    convite('cv-007', c7, 'demo-convite-revogado', null),
+  ]
+
+  const vinculo = (id: string, cv: ConviteEscolar, c: Consentimento, escolaId: string,
+    professorId: string, turma: string, turno: string): VinculoEscolar => ({
+    id, consentimentoId: c.id, conviteId: cv.id, pacienteId: c.pacienteId, escolaId, professorId,
+    turma, turno, status: c.revogadoEm === null ? 'ATIVO' : 'ENCERRADO',
+  })
+
   const vinculos: VinculoEscolar[] = [
-    vinculo('v-001', c1, 'esc-1', 'u-profe-1', 'demo-convite-usado', depoisDe(c1.concedidoEm, 14)),
-    vinculo('v-002', c2, 'esc-2', 'u-profe-2', 'demo-convite-davi', depoisDe(c2.concedidoEm, 20), '4º ano A', 'Vespertino'),
-    vinculo('v-003', c3, 'esc-1', 'u-profe-1', 'demo-convite-heitor', depoisDe(c3.concedidoEm, 16), '1º ano C', 'Matutino'),
-    vinculo('v-004', c4, 'esc-2', 'u-profe-2', 'demo-convite-laura', depoisDe(c4.concedidoEm, 30), '3º ano B', 'Vespertino'),
-    vinculo('v-005', c5, 'esc-1', null, 'demo-convite-valido', null),
-    vinculo('v-006', c6, 'esc-2', null, 'demo-convite-expirado', null),
-    vinculo('v-007', c7, 'esc-1', null, 'demo-convite-revogado', null),
+    vinculo('v-001', convites[0], c1, 'esc-1', 'u-profe-1', '2º ano B', 'Matutino'),
+    vinculo('v-002', convites[1], c2, 'esc-2', 'u-profe-2', '4º ano A', 'Vespertino'),
+    vinculo('v-003', convites[2], c3, 'esc-1', 'u-profe-1', '1º ano C', 'Matutino'),
+    vinculo('v-004', convites[3], c4, 'esc-2', 'u-profe-2', '3º ano B', 'Vespertino'),
   ]
 
   // ------------------------------------------------------------ Cartoes de estrategia
@@ -355,28 +374,28 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
   const ocorrenciasEscolares: OcorrenciaEscolar[] = []
   const ocorrenciasComportamentais: OcorrenciaComportamental[] = []
   const ocorrenciaEscolar = (id: string, v: VinculoEscolar, registradaEm: string, tipo: string,
-    intensidade: Intensidade, contexto: string, observacao = '') => {
+    intensidade: Intensidade, contexto: string) => {
     ocorrenciasEscolares.push({
-      id, vinculoId: v.id, pacienteId: v.pacienteId, professorId: v.professorId!,
+      id, vinculoId: v.id, pacienteId: v.pacienteId, professorId: v.professorId,
       // Na demonstracao o professor registra logo depois do que observou.
       ocorridoEm: registradaEm, registradaEm,
-      corrigidaEm: null, tipo, intensidade, contexto, observacao,
+      corrigidaEm: null, tipo, intensidade, contexto,
     })
     // «gera»: a ocorrencia da escola entra na clinica como evento preliminar.
     ocorrenciasComportamentais.push({
       id: `oc-${id}`, pacienteId: v.pacienteId, origem: 'ESCOLA', ocorridaEm: registradaEm,
       antecedente: `Contexto: ${contexto}`, comportamento: tipo,
-      consequencia: observacao || 'Não informado pela escola.', intensidade,
+      consequencia: 'Não informado pela escola.', intensidade,
       preliminar: true, sessaoId: null, ocorrenciaEscolarId: id,
     })
   }
   const [v1] = vinculos
-  ocorrenciaEscolar('oe-001', v1, em(30, 10, 15), 'Tapou os ouvidos', 4, 'Recreio', 'Foi levado ao canto calmo e voltou em 10 minutos.')
+  ocorrenciaEscolar('oe-001', v1, em(30, 10, 15), 'Tapou os ouvidos', 4, 'Recreio')
   ocorrenciaEscolar('oe-002', v1, em(24, 9, 40), 'Saiu da sala', 3, 'Troca de atividade')
   ocorrenciaEscolar('oe-003', v1, em(17, 10, 5), 'Tapou os ouvidos', 3, 'Atividade em grupo')
-  ocorrenciaEscolar('oe-004', v1, em(10, 11, 20), 'Recusou a tarefa', 2, 'Troca de atividade', 'Aceitou depois de ver o quadro de rotina.')
+  ocorrenciaEscolar('oe-004', v1, em(10, 11, 20), 'Recusou a tarefa', 2, 'Troca de atividade')
   ocorrenciaEscolar('oe-005', v1, em(3, 10, 0), 'Tapou os ouvidos', 2, 'Recreio')
-  ocorrenciaEscolar('oe-006', v1, horasAtras(3), 'Chorou', 3, 'Entrada', 'Acalmou com a chegada da auxiliar.')
+  ocorrenciaEscolar('oe-006', v1, horasAtras(3), 'Chorou', 3, 'Entrada')
 
   const sessaoMiguel = sessoes.find((s) => s.pacienteId === 'p-001' && s.numero === 7)!
   ocorrenciasComportamentais.push({
@@ -452,8 +471,8 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
     .map((r, i) => Object.freeze({ id: `aud-${String(i + 1).padStart(4, '0')}`, ...r }))
 
   return {
-    profissionais, responsaveis, professores, escolas, pacientes, planos, sessoes,
-    ocorrenciasComportamentais, ocorrenciasEscolares, atividades, execucoes, cartoes,
-    consentimentos, vinculos, auditoria,
+    profissionais, responsaveis, professores, escolas, pacientes, vinculosFamiliares,
+    planos, sessoes, ocorrenciasComportamentais, ocorrenciasEscolares, atividades,
+    execucoes, cartoes, consentimentos, convites, vinculos, auditoria,
   }
 }
