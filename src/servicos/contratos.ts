@@ -87,7 +87,10 @@ export interface ServicoSessao {
 export interface ServicoOcorrencia {
   listarPorPaciente(pacienteId: string, filtro?: FiltroOcorrencia): Promise<Pagina<OcorrenciaComportamental>>
   registrarNaSessao(sessaoId: string, dados: NovaOcorrenciaComportamental): Promise<OcorrenciaComportamental>
-  /** Avisos do painel do terapeuta: ocorrencias recentes vindas da escola. */
+  /**
+   * Avisos do painel do terapeuta: relatos recentes da escola que ainda
+   * esperam a leitura clinica. Registrada a leitura, o aviso sai da lista.
+   */
   listarAvisosDaEscola(filtro?: FiltroOcorrencia): Promise<Pagina<AvisoOcorrenciaEscolar>>
   /** Registra que o profissional fez a leitura clinica do evento preliminar. */
   registrarLeituraClinica(ocorrenciaId: string): Promise<OcorrenciaComportamental>

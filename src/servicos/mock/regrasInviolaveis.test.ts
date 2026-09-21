@@ -224,6 +224,21 @@ describe('camada simulada', () => {
     expect((await erroDe(s.ocorrencias.registrarLeituraClinica(jaLida.id))).codigo).toBe('CONFLITO')
   })
 
+  it('o aviso sai do painel do terapeuta quando a leitura clinica e registrada', async () => {
+    await entrarComo('TERAPEUTA')
+    const antes = await chamar(s.ocorrencias.listarAvisosDaEscola({ porPagina: 50 }))
+    expect(antes.total).toBeGreaterThan(0)
+
+    // O aviso aponta para o evento clinico, nao para o relato da escola: e por
+    // isso que o id que ele carrega serve para registrar a leitura.
+    const aviso = antes.itens[0]
+    await chamar(s.ocorrencias.registrarLeituraClinica(aviso.ocorrenciaId))
+
+    const depois = await chamar(s.ocorrencias.listarAvisosDaEscola({ porPagina: 50 }))
+    expect(depois.total).toBe(antes.total - 1)
+    expect(depois.itens.map((i) => i.ocorrenciaId)).not.toContain(aviso.ocorrenciaId)
+  })
+
   it('ocorrencia registrada na sessao ja nasce com leitura clinica', async () => {
     await entrarComo('TERAPEUTA')
     const sessao = await chamar(s.sessoes.iniciar('p-004'))

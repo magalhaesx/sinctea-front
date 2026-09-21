@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { Tela } from '../LayoutApp'
 import { NOME_DO_PERFIL } from '../perfis'
 import { Aviso } from '../../ui/Aviso'
-import { BotaoLink } from '../../ui/Botao'
+import { Botao, BotaoLink } from '../../ui/Botao'
 import { Cartao } from '../../ui/Cartao'
 import { Etiqueta } from '../../ui/Etiqueta'
 import { Titulo } from '../../ui/Titulo'
@@ -20,6 +20,10 @@ import {
  *
  * Agenda e avisos vem da camada de servicos, cada bloco com os seus quatro
  * estados. O aviso da escola e lista: pode haver mais de um no mesmo dia.
+ *
+ * O professor relata o que observou; a leitura clinica e de quem tem
+ * habilitacao para faze-la. E aqui que ela e registrada, e o aviso lido sai
+ * da lista: o bloco mostra o que ainda espera pelo profissional.
  */
 
 const SITUACAO: Record<SituacaoSessao, { rotulo: string; tom: 'ok' | 'at' | 'neutro'; simbolo: string }> = {
@@ -66,6 +70,9 @@ export function PainelClinica() {
   const [pendentes, setPendentes] = useState(0)
   const [tentativaAgenda, setTentativaAgenda] = useState(0)
   const [tentativaAvisos, setTentativaAvisos] = useState(0)
+  const [lendo, setLendo] = useState<string | null>(null)
+  const [aviso, setAviso] = useState<string | null>(null)
+  const [erroLeitura, setErroLeitura] = useState<string | null>(null)
 
   useEffect(() => {
     let ativo = true
@@ -92,6 +99,21 @@ export function PainelClinica() {
       .catch(() => { if (ativo) setPendentes(0) })
     return () => { ativo = false }
   }, [tentativaAgenda])
+
+  const registrarLeitura = async (a: AvisoOcorrenciaEscolar) => {
+    setAviso(null)
+    setErroLeitura(null)
+    setLendo(a.ocorrenciaId)
+    try {
+      await servicos.ocorrencias.registrarLeituraClinica(a.ocorrenciaId)
+      setAviso(`Leitura clínica registrada no relato sobre ${a.paciente.nome}. O aviso sai da lista.`)
+      setTentativaAvisos((t) => t + 1)
+    } catch (e) {
+      setErroLeitura((e as Error).message || 'Não foi possível registrar agora.')
+    } finally {
+      setLendo(null)
+    }
+  }
 
   const ehHoje = dia === diaDeHoje()
   const dataPorExtenso = new Date(`${dia}T12:00:00`).toLocaleDateString('pt-BR', {
@@ -124,6 +146,13 @@ export function PainelClinica() {
       <section aria-labelledby="h-avisos" className="flex flex-col gap-3">
         <h2 id="h-avisos" className="text-lg font-bold">Avisos da escola</h2>
 
+        <div aria-live="polite">
+          {aviso && <Aviso tom="ok" titulo="Pronto">{aviso}</Aviso>}
+          {erroLeitura && (
+            <Aviso tom="cr" titulo="Não foi possível registrar a leitura">{erroLeitura}</Aviso>
+          )}
+        </div>
+
         {avisos.tipo === 'carregando' && (
           <EstadoCarregando forma="texto" linhas={2} rotulo="Carregando os avisos da escola" />
         )}
@@ -151,12 +180,17 @@ export function PainelClinica() {
                     <p className="mt-1">
                       Relato: {a.tipo} · intensidade {a.intensidade} de 5. A leitura clínica é sua.
                     </p>
-                    <p className="mt-3">
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <Botao area="cli" onClick={() => void registrarLeitura(a)}
+                        disabled={lendo === a.ocorrenciaId}>
+                        {lendo === a.ocorrenciaId ? 'Registrando…' : 'Registrar a leitura clínica'}
+                      </Botao>
                       {/* A ficha e o ponto de entrada: de la se escolhe o que abrir. */}
-                      <BotaoLink para={`/app/clinica/pacientes/${a.paciente.id}`} area="cli">
+                      <BotaoLink para={`/app/clinica/pacientes/${a.paciente.id}`} area="cli"
+                        variante="secundaria">
                         Abrir a ficha de {a.paciente.nome.split(' ')[0]}
                       </BotaoLink>
-                    </p>
+                    </div>
                   </Aviso>
                 </li>
               ))}

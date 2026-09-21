@@ -378,22 +378,25 @@ export const ocorrenciasMock: ServicoOcorrencia = {
     const desde = filtro.desde ?? new Date(relogio.agora().getTime() - 7 * 86_400_000).toISOString()
     const itens = banco.ocorrenciasEscolares
       .filter((o) => o.registradaEm >= desde)
-      .filter((o) => {
-        const paciente = banco.pacientes.find((p) => p.id === o.pacienteId)
-        return paciente !== undefined && alcancaClinicamente(sessao, paciente)
-      })
       .sort((a, b) => b.registradaEm.localeCompare(a.registradaEm))
-      .map((o) => {
+      .flatMap((o) => {
+        const paciente = banco.pacientes.find((p) => p.id === o.pacienteId)
+        if (!paciente || !alcancaClinicamente(sessao, paciente)) return []
+        // O aviso e sobre o evento clinico que o relato gerou, e sai da lista
+        // quando a leitura clinica acontece: o painel mostra o que ainda
+        // espera pelo profissional, nao o historico da escola.
+        const evento = banco.ocorrenciasComportamentais.find((c) => c.ocorrenciaEscolarId === o.id)
+        if (!evento || !ehPreliminar(evento)) return []
         const vinculo = banco.vinculos.find((v) => v.id === o.vinculoId)
         const consentimento = banco.consentimentos.find((c) => c.id === vinculo?.consentimentoId)
-        return {
-          ocorrenciaId: o.id,
-          paciente: { id: o.pacienteId, nome: banco.pacientes.find((p) => p.id === o.pacienteId)?.nome ?? '—' },
+        return [{
+          ocorrenciaId: evento.id,
+          paciente: { id: paciente.id, nome: paciente.nome },
           escola: banco.escolas.find((e) => e.id === consentimento?.escolaId)?.nome ?? '—',
           registradaEm: o.registradaEm,
           tipo: o.tipo,
           intensidade: o.intensidade,
-        }
+        }]
       })
     return paginar(itens, filtro)
   }),

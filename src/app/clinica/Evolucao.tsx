@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { Tela } from '../LayoutApp'
 import { Aviso } from '../../ui/Aviso'
+import { Botao } from '../../ui/Botao'
 import { Campo } from '../../ui/Campo'
 import { Cartao } from '../../ui/Cartao'
 import { Etiqueta } from '../../ui/Etiqueta'
@@ -24,7 +25,13 @@ import {
  * A comparacao entre contextos so aparece com dados suficientes, e nunca em
  * versao parcial: abaixo do minimo, a tela diz o que falta, contexto por
  * contexto. A regra vive em dominio/regras.ts, nao aqui.
+ *
+ * A promocao a dominado tambem e daqui, e nao e automatica: atingir o criterio
+ * habilita o botao, quem promove e o profissional. O servico reconfere o
+ * criterio antes de gravar.
  */
+
+const emData = (iso: string) => new Date(iso).toLocaleDateString('pt-BR')
 
 const NOME_DO_CONTEXTO: Record<Origem, string> = {
   CLINICA: 'na clínica', CASA: 'em casa', ESCOLA: 'na escola',
@@ -61,10 +68,16 @@ export function Evolucao() {
   const [estado, setEstado] = useState<Estado>({ tipo: 'carregando' })
   const [tentativa, setTentativa] = useState(0)
   const [objetivoId, setObjetivoId] = useState('')
+  const [confirmando, setConfirmando] = useState(false)
+  const [aviso, setAviso] = useState<string | null>(null)
+  const [erroAcao, setErroAcao] = useState<string | null>(null)
 
   useEffect(() => {
     let ativo = true
     setEstado({ tipo: 'carregando' })
+    // O aviso e do objetivo que acabou de mudar: trocar de paciente o apaga.
+    setAviso(null)
+    setErroAcao(null)
     const carregar = async (): Promise<Dados> => {
       const [plano, sessoes, atividades, ocorrencias] = await Promise.all([
         servicos.planos.obterPorPaciente(id),
@@ -92,6 +105,35 @@ export function Evolucao() {
       .catch((erro) => { if (ativo) setEstado({ tipo: 'erro', erro }) })
     return () => { ativo = false }
   }, [id, tentativa])
+
+  const trocarObjetivo = (id: string) => {
+    setObjetivoId(id)
+    setAviso(null)
+    setErroAcao(null)
+  }
+
+  const confirmarDominio = async (objetivoId: string) => {
+    setAviso(null)
+    setErroAcao(null)
+    setConfirmando(true)
+    try {
+      const atualizado = await servicos.planos.confirmarDominio(objetivoId)
+      setEstado((atual) => atual.tipo === 'pronto'
+        ? {
+          ...atual,
+          dados: {
+            ...atual.dados,
+            objetivos: atual.dados.objetivos.map((o) => o.id === atualizado.id ? atualizado : o),
+          },
+        }
+        : atual)
+      setAviso('Domínio confirmado. O objetivo passa a constar como dominado no plano.')
+    } catch (e) {
+      setErroAcao((e as Error).message || 'Não foi possível confirmar agora.')
+    } finally {
+      setConfirmando(false)
+    }
+  }
 
   const series = useMemo(() => {
     if (estado.tipo !== 'pronto' || !objetivoId) return null
@@ -170,6 +212,7 @@ export function Evolucao() {
 
         const pontos: PontoSessao[] = series.clinica
         const atingiu = objetivoAtingiuCriterio(estado.dados.sessoes, objetivo.id, objetivo.criterio)
+        const dominado = objetivo.status === 'DOMINADO'
         const suficiencia = suficienciaComparacao({
           CLINICA: series.clinica.map((p) => p.data),
           CASA: series.casa.map((p) => p.data),
@@ -188,13 +231,20 @@ export function Evolucao() {
                   id="objetivo"
                   className="min-h-11 w-full rounded-lg border-2 border-linha bg-sup px-3 py-2.5 text-tinta"
                   value={objetivo.id}
-                  onChange={(e) => setObjetivoId(e.target.value)}
+                  onChange={(e) => trocarObjetivo(e.target.value)}
                 >
                   {estado.dados.objetivos.map((o) => <option key={o.id} value={o.id}>{o.dominio}</option>)}
                 </select>
               </Campo>
               <p className="mt-2 max-w-[65ch] text-sm text-tinta2">{objetivo.descricaoTecnica}</p>
             </Cartao>
+
+            <div aria-live="polite">
+              {aviso && <Aviso tom="ok" titulo="Pronto">{aviso}</Aviso>}
+              {erroAcao && (
+                <Aviso tom="cr" titulo="Não foi possível confirmar o domínio">{erroAcao}</Aviso>
+              )}
+            </div>
 
             <section aria-labelledby="h-clinica" className="flex flex-col gap-3">
               <h2 id="h-clinica" className="text-lg font-bold">Na clínica, sessão a sessão</h2>
@@ -212,23 +262,34 @@ export function Evolucao() {
                 )}
               </Cartao>
 
-              <Aviso tom={atingiu ? 'ok' : 'neutro'} titulo={atingiu
-                ? 'Critério de domínio atingido'
-                : 'Ainda não atingiu o critério de domínio'}>
+              <Aviso tom={dominado || atingiu ? 'ok' : 'neutro'} titulo={dominado
+                ? 'Objetivo dominado'
+                : atingiu
+                  ? 'Critério de domínio atingido'
+                  : 'Ainda não atingiu o critério de domínio'}>
                 <p className="text-[15px] text-tinta">
                   O critério é {objetivo.criterio.percentualMinimo}% em{' '}
                   {objetivo.criterio.sessoesConsecutivas}{' '}
                   {objetivo.criterio.sessoesConsecutivas === 1 ? 'sessão consecutiva' : 'sessões consecutivas'}.{' '}
-                  {atingiu
-                    ? 'A promoção a dominado não é automática: depende da sua confirmação.'
-                    : 'O status atual do objetivo é definido por você, no plano.'}
+                  {dominado && objetivo.dominadoEm
+                    ? `Domínio confirmado em ${emData(objetivo.dominadoEm)}.`
+                    : atingiu
+                      ? 'A promoção a dominado não é automática: depende da sua confirmação.'
+                      : 'O status atual do objetivo é definido por você, no plano.'}
                 </p>
                 <p className="mt-2">
-                  <Etiqueta tom={objetivo.status === 'DOMINADO' ? 'ok' : 'neutro'}
-                    simbolo={objetivo.status === 'DOMINADO' ? '✓' : '○'}>
-                    {objetivo.status === 'DOMINADO' ? 'Dominado' : objetivo.status === 'EM_AQUISICAO' ? 'Em aquisição' : 'Não iniciado'}
+                  <Etiqueta tom={dominado ? 'ok' : 'neutro'} simbolo={dominado ? '✓' : '○'}>
+                    {dominado ? 'Dominado' : objetivo.status === 'EM_AQUISICAO' ? 'Em aquisição' : 'Não iniciado'}
                   </Etiqueta>
                 </p>
+                {atingiu && !dominado && (
+                  <p className="mt-3">
+                    <Botao area="cli" onClick={() => void confirmarDominio(objetivo.id)}
+                      disabled={confirmando}>
+                      {confirmando ? 'Confirmando…' : 'Confirmar o domínio'}
+                    </Botao>
+                  </p>
+                )}
               </Aviso>
             </section>
 

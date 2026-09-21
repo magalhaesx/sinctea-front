@@ -341,6 +341,11 @@ export interface NovaOcorrenciaEscolar {
 }
 
 export interface AvisoOcorrenciaEscolar {
+  /**
+   * O evento comportamental que o relato gerou na clinica: e ele que recebe a
+   * leitura clinica. Em servicos.ocorrencias, "ocorrencia" sem sobrenome e
+   * sempre a comportamental; a da escola tem sobrenome.
+   */
   ocorrenciaId: string
   paciente: { id: string; nome: string }
   escola: string
