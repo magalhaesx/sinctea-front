@@ -161,33 +161,62 @@ Qualidade: ISO/IEC 25010:2023. Método: Kanban com limites de trabalho em progre
 
 ## 7. Estado atual
 
+Atualizado em 21/09/2026, lendo o código — não a memória.
+
 **Concluído**
 - Pré-projeto entregue em 17/08 — não pode mais ser alterado
 - Alinhamento aos 5 eixos · cronograma de 13 semanas · quadro Kanban
-- Modelagem UML: casos de uso, classes, sequência
+- Modelagem UML: casos de uso, classes (revisão de 21/09 em `docs/uml/`), sequência
 - Documento de IHC e UX/UI com avaliação heurística e conformidade
-- Front-end com 12 rotas, dados fixos no código
+- **Camada de serviços completa**: `servicos/contratos.ts` com 15 serviços, mock
+  que aplica controle de acesso e auditoria, stubs de API, e a escolha entre os
+  dois por `VITE_API_URL`. 122 testes automatizados
+- **Telas sobre serviços**: 1 e 2 (entrar e convite) · 3 a 9 e 11 (clínica e
+  coordenação) · 17 e 18 (consentimento da família e cartão da escola) · 22 (meus
+  alunos). A 21 usa o contexto de sessão, que fala com a mesma camada. 20 rotas
+  do produto, mais a vitrine `/dev/estados`
+- Publicação automática no GitHub Pages, com testes antes do build
 
 **Em construção**
-- Camada de dados simulada · site comercial · telas de coordenação e administração
+- Etapa 7, telas 10, 12, 13 e 14: emitir relatório, validar planos, registro de
+  auditoria e gerenciar usuários. As três últimas já têm serviço; a tela 10 não
+  — **não existe contrato de relatório**, e a decisão de criá-lo é do Cowork
+- Etapa 8, área da família e registro de ocorrência da escola: as telas 15, 16 e
+  19 ainda leem `src/dados/exemplo.ts`, fixo no código
+- Etapa 9, site comercial: só existe `/sobre`; a raiz leva ao login
 
 **Próximo, pelo cronograma**
-- S02 (atrasado) — documento de requisitos com matriz de rastreabilidade
-- S03 — BPMN do fluxo atual e proposto
+- S02 (atrasado) — documento de requisitos com **matriz de rastreabilidade**
+- S03 (atrasado) — **BPMN** do fluxo atual e proposto
 - S05 — C4 nos três níveis, diagrama de estados do Objetivo, segundo diagrama de
   sequência (sincronização offline)
 - S06 — DER, dicionário de dados, publicação em nuvem
 
-**Revisão do modelo em 20/09/2026**
-- `Perfil` deixou de ser classe e virou enumeração
-- `VinculoFamiliar` e `ConviteEscolar` criados
-- `atuacao` desceu de `ProfessorAEE` para `VinculoEscolar`
-- a família nomeia a escola no `Consentimento`; o professor declara turma, turno e
-  atuação ao aceitar o convite
+**Afirmações que o código ainda não sustenta**
+
+São duas, e as duas aparecem em texto de entrega. Enquanto não se resolverem,
+não devem ser afirmadas na defesa:
+
+1. **O hash do termo de consentimento não é um hash.** `Consentimento.hashTermo`
+   guarda `sha256:` seguido de um token aleatório (`servicos/mock/familia.ts`).
+   Não deriva do texto do termo, então não prova o que a família aceitou. Ou o
+   back-end passa a calcular sobre o conteúdo do termo, ou o campo não pode ser
+   apresentado como prova de consentimento.
+2. **A meta 8.5 da ODS 8 não tem sustentação no modelo.** Ela depende de uma
+   entidade de registro funcional que não existe em nenhuma das 21 classes. Ou a
+   entidade entra no modelo, ou a justificativa é reescrita.
+
+**Revisões do modelo**
+- 20/09/2026 — `Perfil` deixou de ser classe e virou enumeração · `VinculoFamiliar`
+  e `ConviteEscolar` criados · `atuacao` desceu de `ProfessorAEE` para
+  `VinculoEscolar` · a família nomeia a escola no `Consentimento`; o professor
+  declara turma, turno e atuação ao aceitar o convite
+- 21/09/2026 — `Objetivo` ganhou `dominadoEm`; `OcorrenciaComportamental` trocou
+  `preliminar` por `leituraClinicaEm`. As duas datas existem para o painel da
+  coordenação poder contar quando cada transição aconteceu
 
 **Pendências conhecidas do modelo**
-- Não existe entidade de registro funcional; a justificativa da meta 8.5 da ODS 8
-  depende dela ou precisa ser reescrita
+- Não existe entidade de registro funcional (ver a afirmação 2 acima)
 - Trilha de Autonomia movida para trabalhos futuros
 
 ## 8. Divisão de trabalho entre as duas sessões de IA

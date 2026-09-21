@@ -1,0 +1,24 @@
+name: Verificar
+
+# Roda no pull request, antes de qualquer coisa chegar na main. O deploy
+# tambem roda os testes, mas la ja e tarde: o proposito aqui e que a
+# revisao veja o resultado antes de aprovar.
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
