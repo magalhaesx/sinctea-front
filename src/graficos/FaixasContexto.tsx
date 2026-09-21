@@ -12,7 +12,13 @@ import type { Desempenho } from '../servicos'
  *
  * NUNCA a mesma escala, nunca media, indice combinado ou pontuacao geral
  * entre elas, nunca dois eixos verticais (docs/02, secao 5). A leitura que
- * interessa e "sobe junto ou diverge", nao "qual e maior".
+ * interessa e se os contextos caminham juntos ou divergem, nao qual faixa
+ * esta mais alta.
+ *
+ * ATENCAO A DIRECAO: subir e melhorar na clinica e em casa, mas na escola
+ * subir e piorar — a escala de intensidade tem o maior no topo, que e a
+ * convencao. O eixo nao se inverte; a direcao e dita no subtitulo de cada
+ * faixa e no rodape.
  *
  * Cada faixa usa uma MARCA diferente — linha na clinica, quadrado em casa,
  * triangulo na escola —, e nao so uma cor diferente: a forma faz o olho parar
@@ -142,7 +148,7 @@ export function FaixasContexto({ clinica, casa, escola }: {
         <>
           <Faixa
             titulo="Independência na clínica — percentual de tentativas por sessão"
-            descricao="Escala de 0 a 100% das tentativas do objetivo."
+            descricao="Escala de 0 a 100% das tentativas do objetivo. Mais alto é melhor."
             rotulos={[{ texto: '100%', y: yPercentual(100) }, { texto: '0%', y: yPercentual(0) }]}
           >
             <path d={linhaClinica} fill="none" stroke="#00a2af" strokeWidth="2.5" strokeLinejoin="round" />
@@ -153,7 +159,7 @@ export function FaixasContexto({ clinica, casa, escola }: {
 
           <Faixa
             titulo="Atividades em casa — como foi cada execução"
-            descricao="Escala de três níveis: não quis, com ajuda, sozinho."
+            descricao="Escala de três níveis: não quis, com ajuda, sozinho. Mais alto é melhor."
             rotulos={[
               { texto: 'Sozinho', y: yNivel(3, 3) },
               { texto: 'Com ajuda', y: yNivel(2, 3) },
@@ -174,7 +180,7 @@ export function FaixasContexto({ clinica, casa, escola }: {
           */}
           <Faixa
             titulo="Ocorrências registradas pela escola — do aluno, não deste objetivo"
-            descricao="Escala de intensidade de 1 a 5, por ocorrência relatada."
+            descricao="Escala de intensidade de 1 a 5, por ocorrência relatada. Aqui, mais alto é mais intenso — ou seja, pior."
             rotulos={[
               { texto: '5 · intensa', y: yNivel(5, 5) },
               { texto: '3', y: yNivel(3, 5) },
@@ -194,9 +200,10 @@ export function FaixasContexto({ clinica, casa, escola }: {
           </Faixa>
 
           <p className="max-w-[65ch] text-sm text-tinta2">
-            As três medidas têm naturezas diferentes e cada faixa tem a sua própria escala. A
-            leitura que interessa é se as faixas sobem juntas ou divergem — nunca qual delas é
-            maior.
+            As três medidas têm naturezas diferentes e cada faixa tem a sua própria escala.
+            Melhora aparece como subida na clínica e em casa, e como descida na escola. A leitura
+            que interessa é se os três contextos caminham juntos ou divergem — nunca qual faixa
+            está mais alta.
           </p>
         </>
       )}
