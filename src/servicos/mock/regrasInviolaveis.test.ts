@@ -563,3 +563,116 @@ describe('outras regras de tela aplicadas no servico', () => {
     expect(erro.campos.objetivoId).toBeTruthy()
   })
 })
+
+
+describe('painel da coordenacao — conta e aponta', () => {
+  it('so o coordenador alcanca, e a tentativa negada fica auditada', async () => {
+    for (const perfil of ['TERAPEUTA', 'RESPONSAVEL', 'PROFESSOR'] as const) {
+      await entrarComo(perfil)
+      expect((await erroDe(s.indicadores.resumo())).codigo).toBe('ACESSO_NEGADO')
+      expect((await erroDe(s.indicadores.listarAlertas('PLANO_SEM_REVISAO'))).codigo).toBe('ACESSO_NEGADO')
+      expect((await erroDe(s.indicadores.sessoesPorProfissional())).codigo).toBe('ACESSO_NEGADO')
+      expect((await erroDe(s.indicadores.ponteEscola())).codigo).toBe('ACESSO_NEGADO')
+      expect(await ultimaAuditoria()).toMatchObject({ acao: 'ACESSO_NEGADO', entidade: 'Indicadores' })
+    }
+  })
+
+  it('nenhum numero sem rotulo de periodo, e a janela e movel', async () => {
+    await entrarComo('COORDENADOR')
+    const resumo = await chamar(s.indicadores.resumo())
+    expect(resumo.temDados).toBe(true)
+    for (const indicador of [
+      resumo.pacientesEmAcompanhamento, resumo.sessoesUltimos7Dias,
+      resumo.objetivosDominadosUltimos30Dias, resumo.planosComRevisaoProximos30Dias,
+    ]) {
+      expect(indicador.periodo).toMatch(/\d{2}\/\d{2}/)
+      expect(indicador.valor).toBeGreaterThanOrEqual(0)
+    }
+    // Movel: o rotulo traz as duas pontas, nao "esta semana" nem "este mes".
+    expect(resumo.sessoesUltimos7Dias.periodo).toMatch(/últimos 7 dias \(\d{2}\/\d{2} a \d{2}\/\d{2}\)/)
+    expect(resumo.planosComRevisaoProximos30Dias.periodo).toMatch(/próximos 30 dias/)
+  })
+
+  it('o alerta aponta e nao descreve: so motivo, paciente, referencia e quantidade', async () => {
+    await entrarComo('COORDENADOR')
+    const pagina = await chamar(s.indicadores.listarAlertas('PLANO_SEM_REVISAO', { porPagina: 50 }))
+    expect(pagina.total).toBeGreaterThan(0)
+    for (const alerta of pagina.itens) {
+      expect(Object.keys(alerta).sort())
+        .toEqual(['motivo', 'paciente', 'quantidade', 'referenciaId', 'unidade'])
+      expect(Object.keys(alerta.paciente).sort()).toEqual(['id', 'nome'])
+    }
+  })
+
+  it('cada grupo vem do mais urgente para o menos', async () => {
+    await entrarComo('COORDENADOR')
+    // Espera ha mais tempo primeiro; quem nunca teve sessao vem antes de todos.
+    for (const motivo of ['PLANO_SEM_REVISAO', 'PACIENTE_SEM_SESSAO', 'OBJETIVO_SEM_AVANCO'] as const) {
+      const itens = (await chamar(s.indicadores.listarAlertas(motivo, { porPagina: 50 }))).itens
+      const pesos = itens.map((a) => a.quantidade ?? Number.POSITIVE_INFINITY)
+      expect(pesos).toEqual([...pesos].sort((x, y) => y - x))
+    }
+    // Consentimento e o contrario: o que vence antes aparece antes.
+    const vencendo = (await chamar(s.indicadores.listarAlertas('CONSENTIMENTO_VENCENDO', { porPagina: 50 }))).itens
+    const prazos = vencendo.map((a) => a.quantidade ?? 0)
+    expect(prazos).toEqual([...prazos].sort((x, y) => x - y))
+    expect(prazos.every((d) => d <= 30)).toBe(true)
+  })
+
+  it('os limiares sao os de dominio/regras, nao outros escritos no servico', async () => {
+    await entrarComo('COORDENADOR')
+    const planos = (await chamar(s.indicadores.listarAlertas('PLANO_SEM_REVISAO', { porPagina: 50 }))).itens
+    expect(planos.every((a) => (a.quantidade ?? 0) > 90)).toBe(true)
+
+    const semSessao = (await chamar(s.indicadores.listarAlertas('PACIENTE_SEM_SESSAO', { porPagina: 50 }))).itens
+    expect(semSessao.every((a) => a.quantidade === null || a.quantidade > 15)).toBe(true)
+
+    // Oito sessoes sem novo recorde, contadas em sessoes e nao em dias.
+    const parados = (await chamar(s.indicadores.listarAlertas('OBJETIVO_SEM_AVANCO', { porPagina: 50 }))).itens
+    expect(parados.length).toBeGreaterThan(0)
+    for (const a of parados) {
+      expect(a.unidade).toBe('sessoes')
+      expect(a.quantidade ?? 0).toBeGreaterThanOrEqual(8)
+    }
+  })
+
+  it('serie de grafico nao e paginada e traz a clinica inteira', async () => {
+    await entrarComo('COORDENADOR')
+    const serie = await chamar(s.indicadores.sessoesPorProfissional())
+    expect(Object.keys(serie).sort()).toEqual(['itens', 'periodo'])
+    const profissionais = await chamar(s.profissionais.listar({ porPagina: 50 }))
+    expect(serie.itens).toHaveLength(profissionais.total)
+    const sessoes = serie.itens.map((i) => i.sessoes)
+    expect(sessoes).toEqual([...sessoes].sort((x, y) => y - x))
+  })
+
+  it('a ocorrencia sem leitura fica fora da mediana e aparece ao lado dela', async () => {
+    await entrarComo('COORDENADOR')
+    const antes = await chamar(s.indicadores.ponteEscola())
+    expect(antes.aguardandoLeitura.quantidade).toBeGreaterThan(0)
+    expect(antes.aguardandoLeitura.maisAntigaHaDias).not.toBeNull()
+    expect(antes.tempoAteLeituraClinica.leituras).toBeGreaterThanOrEqual(3)
+    expect(antes.tempoAteLeituraClinica.medianaHoras).not.toBeNull()
+
+    const daEscola = (await chamar(s.ocorrencias.listarPorPaciente('p-001', { origem: 'ESCOLA', porPagina: 100 }))).itens
+    const preliminar = daEscola.find((o) => o.leituraClinicaEm === null)!
+    await chamar(s.ocorrencias.registrarLeituraClinica(preliminar.id))
+
+    // A que era fila virou medida: as duas populacoes sao a mesma, separadas
+    // pela leitura — por isso a mediana sozinha diria menos do que a verdade.
+    const depois = await chamar(s.indicadores.ponteEscola())
+    expect(depois.aguardandoLeitura.quantidade).toBe(antes.aguardandoLeitura.quantidade - 1)
+    expect(depois.tempoAteLeituraClinica.leituras).toBe(antes.tempoAteLeituraClinica.leituras + 1)
+  })
+
+  it('com menos de tres leituras no periodo, a mediana e nula', async () => {
+    await entrarComo('COORDENADOR')
+    const ponte = await chamar(s.indicadores.ponteEscola())
+    if (ponte.tempoAteLeituraClinica.leituras < 3) {
+      expect(ponte.tempoAteLeituraClinica.medianaHoras).toBeNull()
+    } else {
+      expect(ponte.tempoAteLeituraClinica.medianaHoras).toBeGreaterThan(0)
+    }
+    expect(ponte.escolasComVinculoAtivo.periodo).toMatch(/\d{2}\/\d{2}/)
+  })
+})

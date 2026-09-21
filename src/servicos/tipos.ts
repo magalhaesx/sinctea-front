@@ -354,6 +354,59 @@ export interface AvisoOcorrenciaEscolar {
   intensidade: Intensidade
 }
 
+// ---------------------------------------------------------------- Indicadores
+
+/** Todo numero do painel vem com o seu periodo. Nao existe numero sem rotulo. */
+export interface Indicador {
+  valor: number
+  /** "em 21/09", "nos últimos 7 dias (15 a 21/09)", "nos próximos 30 dias". */
+  periodo: string
+}
+
+export interface ResumoClinica {
+  /** Falso numa clinica sem nenhuma sessao registrada: a tela mostra estado vazio. */
+  temDados: boolean
+  pacientesEmAcompanhamento: Indicador
+  sessoesUltimos7Dias: Indicador
+  objetivosDominadosUltimos30Dias: Indicador
+  planosComRevisaoProximos30Dias: Indicador
+}
+
+export type MotivoAtencao =
+  | 'PLANO_SEM_REVISAO'       // > 90 dias
+  | 'PACIENTE_SEM_SESSAO'     // > 15 dias, ou nenhuma
+  | 'CONSENTIMENTO_VENCENDO'  // vence em ate 30 dias
+  | 'OBJETIVO_SEM_AVANCO'     // 8 sessoes sem novo recorde
+
+/** Aponta, nao descreve: nenhum texto clinico. */
+export interface AlertaAtencao {
+  motivo: MotivoAtencao
+  paciente: { id: string; nome: string }
+  /** planoId, consentimentoId ou objetivoId conforme o motivo; pacienteId no PACIENTE_SEM_SESSAO. */
+  referenciaId: string
+  /** Nulo so em PACIENTE_SEM_SESSAO quando nunca houve sessao. */
+  quantidade: number | null
+  unidade: 'dias' | 'sessoes'
+}
+
+/**
+ * Serie de grafico, nao listagem de registros: por isso NAO e paginada. O
+ * grafico precisa da serie inteira, e ela e limitada pelo numero de
+ * profissionais da clinica. Excecao declarada a regra da secao 4 do docs/01.
+ */
+export interface SessoesPorProfissional {
+  periodo: string
+  itens: Array<{ profissional: { id: string; nome: string }; sessoes: number }>
+}
+
+export interface PonteEscola {
+  escolasComVinculoAtivo: Indicador
+  ocorrenciasUltimos30Dias: Indicador
+  /** Mediana em horas. Nula com menos de 3 leituras no periodo. */
+  tempoAteLeituraClinica: { medianaHoras: number | null; leituras: number; periodo: string }
+  aguardandoLeitura: { quantidade: number; maisAntigaHaDias: number | null }
+}
+
 export interface FiltroOcorrencia extends FiltroPaginacao {
   origem?: Origem
   desde?: DataIso

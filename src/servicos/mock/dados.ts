@@ -521,8 +521,10 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
     })
   }
   const [v1] = vinculos
-  // Tres com leitura clinica feita, em prazos diferentes; tres ainda preliminares.
-  ocorrenciaEscolar('oe-001', v1, em(30, 10, 15), 'Tapou os ouvidos', 4, 'Recreio', 2)
+  // Tres com leitura clinica feita, em prazos diferentes; tres ainda
+  // preliminares. As tres lidas cabem na janela de 30 dias do painel, senao a
+  // mediana do tempo ate a leitura nao teria as tres medidas que precisa.
+  ocorrenciaEscolar('oe-001', v1, em(28, 10, 15), 'Tapou os ouvidos', 4, 'Recreio', 2)
   ocorrenciaEscolar('oe-002', v1, em(24, 9, 40), 'Saiu da sala', 3, 'Troca de atividade', 26)
   ocorrenciaEscolar('oe-003', v1, em(17, 10, 5), 'Tapou os ouvidos', 3, 'Atividade em grupo', 72)
   ocorrenciaEscolar('oe-004', v1, em(10, 11, 20), 'Recusou a tarefa', 2, 'Troca de atividade')

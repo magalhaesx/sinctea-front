@@ -102,6 +102,13 @@ export const servicosApi: Servicos = {
     listar: (filtro) => r('GET', q('/auditoria', filtro)),
   },
 
+  indicadores: {
+    resumo: () => r('GET', '/indicadores/resumo'),
+    listarAlertas: (motivo, filtro) => r('GET', q(`/indicadores/alertas/${id(motivo)}`, filtro)),
+    sessoesPorProfissional: () => r('GET', '/indicadores/sessoes-por-profissional'),
+    ponteEscola: () => r('GET', '/indicadores/ponte-escola'),
+  },
+
   usuarios: {
     listar: (filtro) => r('GET', q('/usuarios', filtro)),
     alterarPerfis: (usuarioId, perfis) => r('PUT', `/usuarios/${id(usuarioId)}/perfis`, { perfis }),

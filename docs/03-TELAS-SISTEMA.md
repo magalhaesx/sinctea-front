@@ -197,14 +197,19 @@ terapeuta, que é a visão de quem atende.
 
 **Conteúdo, nesta ordem de leitura:**
 
-1. Quatro números no topo: pacientes em acompanhamento · sessões na semana ·
-   objetivos dominados no mês · planos vencendo em 30 dias
-2. O que precisa de atenção: planos sem revisão há mais de 90 dias · pacientes sem
-   sessão há mais de 15 dias · consentimentos escolares vencendo em 30 dias ·
-   objetivos parados há mais de 8 sessões
-3. Distribuição de sessões por profissional
-4. Ponte clínica–escola: escolas com vínculo ativo, ocorrências no mês, tempo médio
-   entre a ocorrência e o retorno do terapeuta
+1. Quatro números no topo: pacientes em acompanhamento · sessões nos últimos 7
+   dias · objetivos dominados nos últimos 30 dias · planos com revisão nos
+   próximos 30 dias
+2. O que precisa de atenção: planos sem revisão há mais de 90 dias · pacientes
+   sem sessão há mais de 15 dias · consentimentos escolares vencendo em 30 dias ·
+   objetivos sem novo melhor resultado há 8 sessões
+3. Sessões por profissional nos últimos 30 dias
+4. Ponte clínica–escola: escolas com vínculo ativo · ocorrências nos últimos 30
+   dias · tempo até a leitura clínica (mediana) · ocorrências aguardando leitura
+
+Janela móvel, e não semana ou mês civil, para que nenhum número zere na virada.
+Mediana, e não média, porque um atraso isolado distorce a média. As ocorrências
+sem leitura ficam fora da mediana e aparecem sempre ao lado dela.
 
 **O bloco 2 é o coração da tela.** Um painel que só mostra números bonitos não serve
 para nada. O que faz alguém abrir todo dia é a lista do que exige ação — e cada

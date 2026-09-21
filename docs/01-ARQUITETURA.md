@@ -166,7 +166,8 @@ export const servicos = usarApi ? servicosApi : servicosMock
    estados de erro sejam realmente exercitados durante o desenvolvimento.
 3. **Toda listagem é paginada**, mesmo com cinco registros. `Pagina<T>` com
    `itens`, `total`, `pagina`, `porPagina`. Trocar para a API depois não muda a
-   assinatura.
+   assinatura. Séries de gráfico agregadas não são listagens e não são paginadas
+   — o gráfico precisa da série inteira; a exceção fica declarada no contrato.
 4. **Nenhum componente conhece `servicos/mock`.** Importa sempre de `servicos`.
 
 ### Regras de negócio ficam em `dominio/regras.ts`

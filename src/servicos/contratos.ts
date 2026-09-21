@@ -1,14 +1,14 @@
 import type {
-  AceiteConvite, AlunoEscola, AtividadeCasa, AvisoOcorrenciaEscolar, CartaoEscola,
+  AceiteConvite, AlertaAtencao, AlunoEscola, AtividadeCasa, AvisoOcorrenciaEscolar, CartaoEscola,
   CartaoEstrategia,
   ConsentimentoConcedido, ConsentimentoDetalhe, ConvitePublico, Desempenho, Escola,
   ExecucaoAtividadeCasa, FiltroAgenda, FiltroAuditoria, FiltroOcorrencia, FiltroPaciente,
   FiltroPaginacao, FiltroSessao, FiltroUsuario, FilhoResumo, ItemAgenda, NovaAtividadeCasa,
   NovaOcorrenciaComportamental, NovaOcorrenciaEscolar, NovoConsentimento, NovoObjetivo,
   NovoPaciente, Objetivo, ObjetivoAcessivel, OcorrenciaComportamental, OcorrenciaEscolar,
-  Pagina, PacienteDetalhe, PacienteResumo, Perfil, PlanoParaValidacao, PlanoTerapeutico,
-  Profissional, RegistroAtividade, RegistroAuditoria, Resultado, Sessao, SessaoUsuario,
-  Usuario,
+  MotivoAtencao, Pagina, PacienteDetalhe, PacienteResumo, Perfil, PlanoParaValidacao,
+  PlanoTerapeutico, PonteEscola, Profissional, RegistroAtividade, RegistroAuditoria, ResumoClinica,
+  Resultado, Sessao, SessaoUsuario, SessoesPorProfissional, Usuario,
 } from './tipos'
 
 /**
@@ -148,6 +148,21 @@ export interface ServicoAuditoria {
   listar(filtro?: FiltroAuditoria): Promise<Pagina<RegistroAuditoria>>
 }
 
+/**
+ * Indicadores da coordenacao (tela 11). Contam e apontam, nao descrevem: o
+ * painel nao busca pacientes, planos e sessoes para somar no navegador — o
+ * conteudo clinico inteiro atravessaria a rede so para virar um numero.
+ *
+ * So COORDENADOR alcanca. Os demais perfis recebem ACESSO_NEGADO, auditado.
+ */
+export interface ServicoIndicadores {
+  resumo(): Promise<ResumoClinica>
+  /** Cada grupo ja vem do mais urgente para o menos. */
+  listarAlertas(motivo: MotivoAtencao, filtro?: FiltroPaginacao): Promise<Pagina<AlertaAtencao>>
+  sessoesPorProfissional(): Promise<SessoesPorProfissional>
+  ponteEscola(): Promise<PonteEscola>
+}
+
 /** Desativar, nunca excluir: o historico clinico precisa manter a autoria. */
 export interface ServicoUsuario {
   listar(filtro?: FiltroUsuario): Promise<Pagina<Usuario>>
@@ -171,4 +186,5 @@ export interface Servicos {
   areaEscola: ServicoAreaEscola
   auditoria: ServicoAuditoria
   usuarios: ServicoUsuario
+  indicadores: ServicoIndicadores
 }
