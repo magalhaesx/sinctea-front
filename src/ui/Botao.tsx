@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { forwardRef, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { acento, type Area } from './tokens'
 
@@ -16,21 +16,27 @@ export function classesDoBotao(variante: VarianteBotao, area: Area): string {
       : `${base} w-full px-4 py-4 text-left justify-start bg-sup border-linha text-tinta aria-pressed:border-current`
 }
 
-/** Altura minima de 44px: o dobro dos 24px exigidos pelo criterio 2.5.8 da
- *  WCAG 2.2. Terapeuta e professor operam com atencao dividida. */
-export function Botao({
-  children, onClick, variante = 'primaria', area = 'cli', type = 'button',
-  className = '', ...resto
-}: {
+/**
+ * Altura minima de 44px: o dobro dos 24px exigidos pelo criterio 2.5.8 da
+ * WCAG 2.2. Terapeuta e professor operam com atencao dividida.
+ *
+ * Encaminha a referencia porque quem abre uma confirmacao em duas etapas
+ * precisa devolver o foco a este botao quando ela e cancelada (tela 8).
+ */
+export const Botao = forwardRef<HTMLButtonElement, {
   children: ReactNode
   onClick?: () => void
   variante?: VarianteBotao
   area?: Area
   type?: 'button' | 'submit'
   className?: string
-} & React.ButtonHTMLAttributes<HTMLButtonElement>) {
+} & React.ButtonHTMLAttributes<HTMLButtonElement>>(function Botao({
+  children, onClick, variante = 'primaria', area = 'cli', type = 'button',
+  className = '', ...resto
+}, ref) {
   return (
     <button
+      ref={ref}
       type={type}
       onClick={onClick}
       className={`${classesDoBotao(variante, area)} ${className}`}
@@ -39,7 +45,7 @@ export function Botao({
       {children}
     </button>
   )
-}
+})
 
 /**
  * Acao que NAVEGA: e um link, com a aparencia de botao.

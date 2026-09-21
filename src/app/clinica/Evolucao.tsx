@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { Tela } from '../LayoutApp'
 import { Aviso } from '../../ui/Aviso'
@@ -29,6 +29,10 @@ import {
  * A promocao a dominado tambem e daqui, e nao e automatica: atingir o criterio
  * habilita o botao, quem promove e o profissional. O servico reconfere o
  * criterio antes de gravar.
+ *
+ * E decisao clinica, auditada e sem desfazer pela tela — num tablet, no meio
+ * da sessao, um toque errado promoveria o objetivo com o nome de quem tocou.
+ * Por isso vai em duas etapas, como o encerramento de acesso da tela 17.
  */
 
 const emData = (iso: string) => new Date(iso).toLocaleDateString('pt-BR')
@@ -68,9 +72,27 @@ export function Evolucao() {
   const [estado, setEstado] = useState<Estado>({ tipo: 'carregando' })
   const [tentativa, setTentativa] = useState(0)
   const [objetivoId, setObjetivoId] = useState('')
-  const [confirmando, setConfirmando] = useState(false)
+  const [confirmacaoAberta, setConfirmacaoAberta] = useState(false)
+  const [salvando, setSalvando] = useState(false)
   const [aviso, setAviso] = useState<string | null>(null)
   const [erroAcao, setErroAcao] = useState<string | null>(null)
+
+  const botaoConfirmar = useRef<HTMLButtonElement>(null)
+  const caixaConfirmacao = useRef<HTMLDivElement>(null)
+  const blocoDominio = useRef<HTMLDivElement>(null)
+
+  /** Onde o foco tem de estar depois que o proximo quadro for desenhado. */
+  const focoPendente = useRef<'caixa' | 'botao' | 'bloco' | null>(null)
+
+  useEffect(() => {
+    const alvo = focoPendente.current
+    if (!alvo) return
+    focoPendente.current = null
+    const no = alvo === 'caixa' ? caixaConfirmacao.current
+      : alvo === 'botao' ? botaoConfirmar.current
+        : blocoDominio.current
+    no?.focus()
+  })
 
   useEffect(() => {
     let ativo = true
@@ -78,6 +100,7 @@ export function Evolucao() {
     // O aviso e do objetivo que acabou de mudar: trocar de paciente o apaga.
     setAviso(null)
     setErroAcao(null)
+    setConfirmacaoAberta(false)
     const carregar = async (): Promise<Dados> => {
       const [plano, sessoes, atividades, ocorrencias] = await Promise.all([
         servicos.planos.obterPorPaciente(id),
@@ -110,12 +133,26 @@ export function Evolucao() {
     setObjetivoId(id)
     setAviso(null)
     setErroAcao(null)
+    // A confirmacao aberta era sobre o objetivo que estava na tela.
+    setConfirmacaoAberta(false)
+  }
+
+  const abrirConfirmacao = () => {
+    setAviso(null)
+    setErroAcao(null)
+    setConfirmacaoAberta(true)
+    focoPendente.current = 'caixa'
+  }
+
+  const cancelarConfirmacao = () => {
+    setConfirmacaoAberta(false)
+    focoPendente.current = 'botao'
   }
 
   const confirmarDominio = async (objetivoId: string) => {
     setAviso(null)
     setErroAcao(null)
-    setConfirmando(true)
+    setSalvando(true)
     try {
       const atualizado = await servicos.planos.confirmarDominio(objetivoId)
       setEstado((atual) => atual.tipo === 'pronto'
@@ -128,10 +165,15 @@ export function Evolucao() {
         }
         : atual)
       setAviso('Domínio confirmado. O objetivo passa a constar como dominado no plano.')
+      // O botao sai da tela junto com a promocao: o foco vai para o bloco que
+      // mudou, e nao para o corpo da pagina.
+      focoPendente.current = 'bloco'
     } catch (e) {
       setErroAcao((e as Error).message || 'Não foi possível confirmar agora.')
+      focoPendente.current = 'botao'
     } finally {
-      setConfirmando(false)
+      setConfirmacaoAberta(false)
+      setSalvando(false)
     }
   }
 
@@ -262,35 +304,65 @@ export function Evolucao() {
                 )}
               </Cartao>
 
-              <Aviso tom={dominado || atingiu ? 'ok' : 'neutro'} titulo={dominado
-                ? 'Objetivo dominado'
-                : atingiu
-                  ? 'Critério de domínio atingido'
-                  : 'Ainda não atingiu o critério de domínio'}>
-                <p className="text-[15px] text-tinta">
-                  O critério é {objetivo.criterio.percentualMinimo}% em{' '}
-                  {objetivo.criterio.sessoesConsecutivas}{' '}
-                  {objetivo.criterio.sessoesConsecutivas === 1 ? 'sessão consecutiva' : 'sessões consecutivas'}.{' '}
-                  {dominado && objetivo.dominadoEm
-                    ? `Domínio confirmado em ${emData(objetivo.dominadoEm)}.`
-                    : atingiu
-                      ? 'A promoção a dominado não é automática: depende da sua confirmação.'
-                      : 'O status atual do objetivo é definido por você, no plano.'}
-                </p>
-                <p className="mt-2">
-                  <Etiqueta tom={dominado ? 'ok' : 'neutro'} simbolo={dominado ? '✓' : '○'}>
-                    {dominado ? 'Dominado' : objetivo.status === 'EM_AQUISICAO' ? 'Em aquisição' : 'Não iniciado'}
-                  </Etiqueta>
-                </p>
-                {atingiu && !dominado && (
-                  <p className="mt-3">
-                    <Botao area="cli" onClick={() => void confirmarDominio(objetivo.id)}
-                      disabled={confirmando}>
-                      {confirmando ? 'Confirmando…' : 'Confirmar o domínio'}
-                    </Botao>
+              <div ref={blocoDominio} tabIndex={-1}>
+                <Aviso tom={dominado || atingiu ? 'ok' : 'neutro'} titulo={dominado
+                  ? 'Objetivo dominado'
+                  : atingiu
+                    ? 'Critério de domínio atingido'
+                    : 'Ainda não atingiu o critério de domínio'}>
+                  <p className="text-[15px] text-tinta">
+                    O critério é {objetivo.criterio.percentualMinimo}% em{' '}
+                    {objetivo.criterio.sessoesConsecutivas}{' '}
+                    {objetivo.criterio.sessoesConsecutivas === 1 ? 'sessão consecutiva' : 'sessões consecutivas'}.{' '}
+                    {dominado && objetivo.dominadoEm
+                      ? `Domínio confirmado em ${emData(objetivo.dominadoEm)}.`
+                      : atingiu
+                        ? 'A promoção a dominado não é automática: depende da sua confirmação.'
+                        : 'O status atual do objetivo é definido por você, no plano.'}
                   </p>
-                )}
-              </Aviso>
+                  <p className="mt-2">
+                    <Etiqueta tom={dominado ? 'ok' : 'neutro'} simbolo={dominado ? '✓' : '○'}>
+                      {dominado ? 'Dominado' : objetivo.status === 'EM_AQUISICAO' ? 'Em aquisição' : 'Não iniciado'}
+                    </Etiqueta>
+                  </p>
+                  {atingiu && !dominado && (
+                    // Duas etapas: o primeiro clique mostra o que vai acontecer.
+                    confirmacaoAberta ? (
+                      <div
+                        ref={caixaConfirmacao}
+                        tabIndex={-1}
+                        role="group"
+                        aria-labelledby="confirmar-dominio"
+                        className="mt-3 rounded-lg border border-at bg-at-sup p-3.5"
+                      >
+                        <p id="confirmar-dominio" className="font-bold text-tinta">
+                          Confirmar o domínio deste objetivo?
+                        </p>
+                        <p className="mt-1 text-sm text-tinta2">
+                          O objetivo passa a dominado e isso fica registrado com o seu nome. Não há
+                          como desfazer pela tela.
+                        </p>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <Botao area="cli" onClick={() => void confirmarDominio(objetivo.id)}
+                            disabled={salvando}>
+                            {salvando ? 'Confirmando…' : 'Confirmar o domínio'}
+                          </Botao>
+                          <Botao area="cli" variante="secundaria" onClick={cancelarConfirmacao}
+                            disabled={salvando}>
+                            Cancelar
+                          </Botao>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="mt-3">
+                        <Botao area="cli" ref={botaoConfirmar} onClick={abrirConfirmacao}>
+                          Confirmar o domínio
+                        </Botao>
+                      </p>
+                    )
+                  )}
+                </Aviso>
+              </div>
             </section>
 
             <section aria-labelledby="h-contextos" className="flex flex-col gap-3">
