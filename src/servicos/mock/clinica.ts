@@ -3,7 +3,9 @@ import {
   ErroServico, type ItemAgenda, type Objetivo, type OcorrenciaComportamental, type PlanoTerapeutico,
   type Sessao,
 } from '../tipos'
-import { validarDevolucaoPlano, validarNovoObjetivo } from '../../dominio/regras'
+import {
+  ehPreliminar, objetivoAtingiuCriterio, validarDevolucaoPlano, validarNovoObjetivo,
+} from '../../dominio/regras'
 import { alcancaClinicamente, exigirPacienteClinico } from './acesso'
 import {
   auditar, banco, exigirPerfil, exigirSessao, exigirValido, gerarId, naoEncontrado, paginar,
@@ -51,6 +53,7 @@ export const planosMock: ServicoPlano = {
       // Gravada exatamente como o terapeuta escreveu. Nenhuma geracao automatica.
       descricaoAcessivel: dados.descricaoAcessivel.trim(),
       status: 'NAO_INICIADO',
+      dominadoEm: null,
       percentualAtual: 0,
       criterio: { ...dados.criterio },
     }
@@ -103,6 +106,38 @@ export const planosMock: ServicoPlano = {
     plano.observacaoValidacao = observacao.trim()
     auditar(sessao, { acao: 'ALTERACAO', entidade: 'PlanoTerapeutico', idEntidade: plano.id, pacienteId: plano.pacienteId, detalhe: 'Plano devolvido com observação.' })
     return plano
+  }),
+
+  /**
+   * Unico caminho para status === 'DOMINADO'. A invariante do modelo e
+   * status === 'DOMINADO' se, e so se, dominadoEm !== null: os dois campos
+   * so mudam aqui, juntos.
+   */
+  confirmarDominio: (objetivoId) => responder(() => {
+    const plano = banco.planos.find((p) => p.objetivos.some((o) => o.id === objetivoId))
+    if (!plano) naoEncontrado('Objetivo')
+    const { sessao } = exigirPacienteClinico(plano.pacienteId, 'Objetivo')
+    const objetivo = plano.objetivos.find((o) => o.id === objetivoId)!
+
+    if (objetivo.status === 'DOMINADO') {
+      throw new ErroServico('CONFLITO', 'Este objetivo já está marcado como dominado.')
+    }
+    const sessoes = banco.sessoes.filter((s) => s.pacienteId === plano.pacienteId)
+    if (!objetivoAtingiuCriterio(sessoes, objetivoId, objetivo.criterio)) {
+      throw new ErroServico(
+        'CONFLITO',
+        `O critério ainda não foi atingido: ${objetivo.criterio.percentualMinimo}% em ${objetivo.criterio.sessoesConsecutivas} sessões consecutivas.`,
+      )
+    }
+
+    objetivo.status = 'DOMINADO'
+    objetivo.dominadoEm = relogio.agora().toISOString()
+    // Quem confirmou fica na auditoria, nao num campo novo do objetivo.
+    auditar(sessao, {
+      acao: 'ALTERACAO', entidade: 'Objetivo', idEntidade: objetivo.id,
+      pacienteId: plano.pacienteId, detalhe: 'Domínio confirmado.',
+    })
+    return objetivo
   }),
 
   iniciarCartao: (objetivoId) => responder(() => iniciarCartao(objetivoId)),
@@ -314,11 +349,27 @@ export const ocorrenciasMock: ServicoOcorrencia = {
       comportamento: dados.comportamento.trim(),
       consequencia: dados.consequencia.trim(),
       intensidade: dados.intensidade,
-      preliminar: false,
+      // Quem registra na sessao ja e o profissional: a leitura clinica e esta.
+      leituraClinicaEm: relogio.agora().toISOString(),
       sessaoId,
       ocorrenciaEscolarId: null,
     }
     banco.ocorrenciasComportamentais.push(ocorrencia)
+    return ocorrencia
+  }),
+
+  registrarLeituraClinica: (ocorrenciaId) => responder(() => {
+    const ocorrencia = banco.ocorrenciasComportamentais.find((o) => o.id === ocorrenciaId)
+      ?? naoEncontrado('Ocorrência')
+    const { sessao } = exigirPacienteClinico(ocorrencia.pacienteId, 'OcorrenciaComportamental')
+    if (!ehPreliminar(ocorrencia)) {
+      throw new ErroServico('CONFLITO', 'A leitura clínica deste evento já foi registrada.')
+    }
+    ocorrencia.leituraClinicaEm = relogio.agora().toISOString()
+    auditar(sessao, {
+      acao: 'ALTERACAO', entidade: 'OcorrenciaComportamental', idEntidade: ocorrencia.id,
+      pacienteId: ocorrencia.pacienteId, detalhe: 'Leitura clínica registrada.',
+    })
     return ocorrencia
   }),
 

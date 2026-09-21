@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Consentimento, NovoObjetivo, RegistroAtividade, Resultado, Sessao } from '../servicos/tipos'
 import {
+  ehPreliminar, objetivoSemAvanco,
   calcularExpiracaoConvite, consentimentoVencendo, consentimentoVigente, descricaoNivelSuporte,
   escopoPermiteLeitura, frequenciaEmLinguagemCotidiana, idadeEmAnos, objetivoAtingiuCriterio,
   pacienteSemSessaoRecente, percentualIndependente, planoPrecisaRevisao, podeCorrigirOcorrencia,
@@ -94,6 +95,40 @@ describe('objetivoAtingiuCriterio', () => {
 
   it('ordena pelo numero da sessao, nao pela ordem recebida', () => {
     expect(objetivoAtingiuCriterio([sessao(4, 9), sessao(1, 2), sessao(3, 9), sessao(2, 9)], 'o1', criterio)).toBe(true)
+  })
+})
+
+describe('objetivoSemAvanco', () => {
+  // Oito sessoes sem bater o recorde anterior.
+  const paradas = [60, 50, 40, 40, 30, 40, 30, 40, 40, 50]
+
+  it('acusa quando as ultimas oito nao superam o melhor anterior', () => {
+    expect(objetivoSemAvanco('EM_AQUISICAO', paradas)).toBe(true)
+  })
+
+  it('uma sessao ruim isolada nao conta como parado', () => {
+    // O recorde e recente, mesmo com uma queda no meio.
+    expect(objetivoSemAvanco('EM_AQUISICAO', [20, 30, 40, 50, 10, 60, 55, 58, 60, 62])).toBe(false)
+  })
+
+  it('precisa de mais de oito sessoes para dizer qualquer coisa', () => {
+    expect(objetivoSemAvanco('EM_AQUISICAO', [50, 40, 40, 40, 40, 40, 40, 40])).toBe(false)
+  })
+
+  it('so vale para objetivo em aquisicao', () => {
+    expect(objetivoSemAvanco('DOMINADO', paradas)).toBe(false)
+    expect(objetivoSemAvanco('NAO_INICIADO', paradas)).toBe(false)
+  })
+
+  it('empatar o recorde nao e avancar', () => {
+    expect(objetivoSemAvanco('EM_AQUISICAO', [70, 60, 60, 70, 65, 60, 70, 60, 70])).toBe(true)
+  })
+})
+
+describe('ehPreliminar', () => {
+  it('e preliminar enquanto nao ha leitura clinica', () => {
+    expect(ehPreliminar({ leituraClinicaEm: null })).toBe(true)
+    expect(ehPreliminar({ leituraClinicaEm: AGORA.toISOString() })).toBe(false)
   })
 })
 

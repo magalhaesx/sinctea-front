@@ -41,6 +41,7 @@ export const servicosApi: Servicos = {
     listarAguardandoValidacao: (filtro) => r('GET', q('/planos/aguardando-validacao', filtro)),
     aprovar: (planoId) => r('POST', `/planos/${id(planoId)}/aprovacao`),
     devolver: (planoId, observacao) => r('POST', `/planos/${id(planoId)}/devolucao`, { observacao }),
+    confirmarDominio: (objetivoId) => r('POST', `/objetivos/${id(objetivoId)}/dominio`),
     iniciarCartao: (objetivoId) => r('POST', `/objetivos/${id(objetivoId)}/cartao`),
   },
 
@@ -61,6 +62,7 @@ export const servicosApi: Servicos = {
     listarPorPaciente: (pacienteId, filtro) => r('GET', q(`/pacientes/${id(pacienteId)}/ocorrencias`, filtro)),
     registrarNaSessao: (sessaoId, dados) => r('POST', `/sessoes/${id(sessaoId)}/ocorrencias`, dados),
     listarAvisosDaEscola: (filtro) => r('GET', q('/ocorrencias/avisos-escola', filtro)),
+    registrarLeituraClinica: (ocorrenciaId) => r('POST', `/ocorrencias/${id(ocorrenciaId)}/leitura-clinica`),
   },
 
   atividades: {

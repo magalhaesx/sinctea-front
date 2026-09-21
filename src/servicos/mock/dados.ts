@@ -186,9 +186,16 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
   // ------------------------------------------------------------ Planos e objetivos
 
   const criterioPadrao = { percentualMinimo: 80, sessoesConsecutivas: 3 }
+  /** dominadoEm e obrigatorio quando o status e DOMINADO, e proibido fora dele. */
   const objetivo = (id: string, planoId: string, dominio: string, descricaoTecnica: string,
-    descricaoAcessivel: string, status: Objetivo['status'], percentualAtual: number): Objetivo =>
-    ({ id, planoId, dominio, descricaoTecnica, descricaoAcessivel, status, percentualAtual, criterio: { ...criterioPadrao } })
+    descricaoAcessivel: string, status: Objetivo['status'], percentualAtual: number,
+    dominadoEm: string | null = null): Objetivo => {
+    if ((status === 'DOMINADO') !== (dominadoEm !== null)) {
+      throw new Error(`Objetivo ${id}: status DOMINADO e dominadoEm andam juntos.`)
+    }
+    return { id, planoId, dominio, descricaoTecnica, descricaoAcessivel, status, dominadoEm,
+      percentualAtual, criterio: { ...criterioPadrao } }
+  }
 
   const planos: PlanoTerapeutico[] = [
     {
@@ -203,7 +210,9 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
           'Avisar quando o barulho está incomodando e pedir um tempo em um lugar calmo.', 'EM_AQUISICAO', 40),
         objetivo('o-003', 'pl-001', 'Transição entre atividades',
           'Encerrar atividade em curso após aviso antecedente de 5 minutos, sem esquiva.',
-          'Guardar o que está fazendo quando avisam que falta pouco para terminar.', 'DOMINADO', 90),
+          'Guardar o que está fazendo quando avisam que falta pouco para terminar.', 'DOMINADO', 90,
+          // Dentro dos ultimos 30 dias: conta em "objetivos dominados no mes".
+          em(12, 16)),
       ],
     },
     {
@@ -227,7 +236,9 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
           'Escolher na prancha a figura do que ele quer.', 'EM_AQUISICAO', 50),
         objetivo('o-007', 'pl-003', 'Autocuidado',
           'Executar sequência de lavagem das mãos em 6 etapas com apoio de agenda visual.',
-          'Lavar as mãos seguindo os desenhos do passo a passo.', 'EM_AQUISICAO', 60),
+          'Lavar as mãos seguindo os desenhos do passo a passo.', 'DOMINADO', 90,
+          // Fora da janela: existe no historico, mas nao no numero do mes.
+          em(65, 16)),
       ],
     },
     {
@@ -339,7 +350,9 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
 
   // Miguel: duas sessoes por semana; o-001 sobe ate atingir o criterio.
   const evolucaoMiguel = [30, 45, 40, 55, 60, 55, 70, 80, 82, 85]
-  const regulacaoMiguel = [20, 20, 30, 30, 40, 30, 40, 40, 50, 40]
+  /* Objetivo sem avanco: o recorde (60%) ficou nas duas primeiras sessoes e
+     nao foi batido nas oito seguintes. Alimenta o alerta da tela 11. */
+  const regulacaoMiguel = [60, 50, 40, 40, 30, 40, 30, 40, 40, 50]
   evolucaoMiguel.forEach((p, i) => {
     const diasAtras = 33 - Math.floor(i * 3.5)
     encerrada('p-001', i % 4 === 3 ? 'u-prof-3' : 'u-prof-1', diasAtras,
@@ -488,7 +501,7 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
   const ocorrenciasEscolares: OcorrenciaEscolar[] = []
   const ocorrenciasComportamentais: OcorrenciaComportamental[] = []
   const ocorrenciaEscolar = (id: string, v: VinculoEscolar, registradaEm: string, tipo: string,
-    intensidade: Intensidade, contexto: string) => {
+    intensidade: Intensidade, contexto: string, horasAteLeitura: number | null = null) => {
     ocorrenciasEscolares.push({
       id, vinculoId: v.id, pacienteId: v.pacienteId, professorId: v.professorId,
       // Na demonstracao o professor registra logo depois do que observou.
@@ -500,13 +513,18 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
       id: `oc-${id}`, pacienteId: v.pacienteId, origem: 'ESCOLA', ocorridaEm: registradaEm,
       antecedente: `Contexto: ${contexto}`, comportamento: tipo,
       consequencia: 'Não informado pela escola.', intensidade,
-      preliminar: true, sessaoId: null, ocorrenciaEscolarId: id,
+      // Nulo enquanto o profissional nao fez a leitura clinica do evento.
+      leituraClinicaEm: horasAteLeitura === null
+        ? null
+        : new Date(Date.parse(registradaEm) + horasAteLeitura * 3_600_000).toISOString(),
+      sessaoId: null, ocorrenciaEscolarId: id,
     })
   }
   const [v1] = vinculos
-  ocorrenciaEscolar('oe-001', v1, em(30, 10, 15), 'Tapou os ouvidos', 4, 'Recreio')
-  ocorrenciaEscolar('oe-002', v1, em(24, 9, 40), 'Saiu da sala', 3, 'Troca de atividade')
-  ocorrenciaEscolar('oe-003', v1, em(17, 10, 5), 'Tapou os ouvidos', 3, 'Atividade em grupo')
+  // Tres com leitura clinica feita, em prazos diferentes; tres ainda preliminares.
+  ocorrenciaEscolar('oe-001', v1, em(30, 10, 15), 'Tapou os ouvidos', 4, 'Recreio', 2)
+  ocorrenciaEscolar('oe-002', v1, em(24, 9, 40), 'Saiu da sala', 3, 'Troca de atividade', 26)
+  ocorrenciaEscolar('oe-003', v1, em(17, 10, 5), 'Tapou os ouvidos', 3, 'Atividade em grupo', 72)
   ocorrenciaEscolar('oe-004', v1, em(10, 11, 20), 'Recusou a tarefa', 2, 'Troca de atividade')
   ocorrenciaEscolar('oe-005', v1, em(3, 10, 0), 'Tapou os ouvidos', 2, 'Recreio')
   ocorrenciaEscolar('oe-006', v1, horasAtras(3), 'Chorou', 3, 'Entrada')
@@ -516,7 +534,8 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
     id: 'oc-clin-001', pacienteId: 'p-001', origem: 'CLINICA', ocorridaEm: sessaoMiguel.inicio!,
     antecedente: 'Liquidificador ligado na sala ao lado.', comportamento: 'Tapou os ouvidos e deitou no chão.',
     consequencia: 'Ofertado abafador e pausa de 3 minutos; retomou a atividade.', intensidade: 3,
-    preliminar: false, sessaoId: sessaoMiguel.id, ocorrenciaEscolarId: null,
+    // Registrada em sessao pelo profissional: a leitura clinica e a propria.
+    leituraClinicaEm: sessaoMiguel.inicio!, sessaoId: sessaoMiguel.id, ocorrenciaEscolarId: null,
   })
 
   // ------------------------------------------------------------ Atividades em casa

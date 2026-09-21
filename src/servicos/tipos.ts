@@ -193,6 +193,12 @@ export interface Objetivo {
   descricaoTecnica: string
   descricaoAcessivel: string
   status: StatusObjetivo
+  /**
+   * Quando o dominio foi confirmado. INVARIANTE: status === 'DOMINADO' se, e
+   * so se, dominadoEm !== null. O unico caminho de escrita e
+   * servicos.planos.confirmarDominio() — quem promoveu fica na auditoria.
+   */
+  dominadoEm: DataIso | null
   percentualAtual: number
   criterio: CriterioDominio
 }
@@ -290,8 +296,11 @@ export interface OcorrenciaComportamental {
   comportamento: string
   consequencia: string
   intensidade: Intensidade
-  /** Verdadeiro enquanto a leitura clinica do profissional nao foi feita. */
-  preliminar: boolean
+  /**
+   * Quando o profissional habilitado fez a leitura clinica do evento. Nulo
+   * enquanto e apenas preliminar — use ehPreliminar() de dominio/regras.
+   */
+  leituraClinicaEm: DataIso | null
   sessaoId: string | null
   ocorrenciaEscolarId: string | null
 }

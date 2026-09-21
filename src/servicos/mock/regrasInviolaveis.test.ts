@@ -181,6 +181,73 @@ describe('camada simulada', () => {
     await chamar(s.sessoes.encerrar(sessao.id))
   })
 
+  it('confirmar dominio exige criterio atingido, e e o unico caminho para DOMINADO', async () => {
+    await entrarComo('TERAPEUTA')
+    const plano = await chamar(s.planos.obterPorPaciente('p-001'))
+
+    // o-002 nao atingiu o criterio: recusa.
+    const recusa = await erroDe(s.planos.confirmarDominio('o-002'))
+    expect(recusa.codigo).toBe('CONFLITO')
+    expect((await chamar(s.planos.obterPorPaciente('p-001'))).objetivos
+      .find((o) => o.id === 'o-002')).toMatchObject({ status: 'EM_AQUISICAO', dominadoEm: null })
+
+    // o-001 atingiu: promove, e os dois campos andam juntos.
+    const promovido = await chamar(s.planos.confirmarDominio('o-001'))
+    expect(promovido.status).toBe('DOMINADO')
+    expect(promovido.dominadoEm).not.toBeNull()
+    expect(await ultimaAuditoria()).toMatchObject({ acao: 'ALTERACAO', entidade: 'Objetivo', idEntidade: 'o-001' })
+
+    // Promover de novo nao faz sentido.
+    expect((await erroDe(s.planos.confirmarDominio('o-001'))).codigo).toBe('CONFLITO')
+
+    // A invariante vale para todos os objetivos do plano.
+    const depois = await chamar(s.planos.obterPorPaciente('p-001'))
+    for (const o of [...plano.objetivos, ...depois.objetivos]) {
+      expect(o.status === 'DOMINADO').toBe(o.dominadoEm !== null)
+    }
+  })
+
+  it('a leitura clinica do evento da escola e registrada uma vez so', async () => {
+    await entrarComo('TERAPEUTA')
+    const daEscola = (await chamar(s.ocorrencias.listarPorPaciente('p-001', { origem: 'ESCOLA', porPagina: 100 }))).itens
+    const preliminar = daEscola.find((o) => o.leituraClinicaEm === null)!
+    const jaLida = daEscola.find((o) => o.leituraClinicaEm !== null)!
+
+    const lida = await chamar(s.ocorrencias.registrarLeituraClinica(preliminar.id))
+    expect(lida.leituraClinicaEm).not.toBeNull()
+    expect(await ultimaAuditoria()).toMatchObject({
+      acao: 'ALTERACAO', entidade: 'OcorrenciaComportamental', idEntidade: preliminar.id,
+    })
+
+    // Duas vezes, nao: a leitura ja aconteceu.
+    expect((await erroDe(s.ocorrencias.registrarLeituraClinica(lida.id))).codigo).toBe('CONFLITO')
+    expect((await erroDe(s.ocorrencias.registrarLeituraClinica(jaLida.id))).codigo).toBe('CONFLITO')
+  })
+
+  it('ocorrencia registrada na sessao ja nasce com leitura clinica', async () => {
+    await entrarComo('TERAPEUTA')
+    const sessao = await chamar(s.sessoes.iniciar('p-004'))
+    const ocorrencia = await chamar(s.ocorrencias.registrarNaSessao(sessao.id, {
+      antecedente: 'Fim do intervalo.', comportamento: 'Levantou da mesa.',
+      consequencia: 'Retomou apos o aviso visual.', intensidade: 2,
+    }))
+    // Quem registrou e o profissional: nao ha o que ler depois.
+    expect(ocorrencia.leituraClinicaEm).not.toBeNull()
+    await chamar(s.sessoes.encerrar(sessao.id))
+  })
+
+  it('so quem alcanca o paciente confirma dominio ou registra leitura', async () => {
+    await entrarComo('COORDENADOR')
+    const daEscola = (await chamar(s.ocorrencias.listarPorPaciente('p-001', { origem: 'ESCOLA', porPagina: 100 }))).itens
+    const preliminar = daEscola.find((o) => o.leituraClinicaEm === null)
+
+    await entrarComo('PROFESSOR')
+    expect((await erroDe(s.planos.confirmarDominio('o-002'))).codigo).toBe('ACESSO_NEGADO')
+    if (preliminar) {
+      expect((await erroDe(s.ocorrencias.registrarLeituraClinica(preliminar.id))).codigo).toBe('ACESSO_NEGADO')
+    }
+  })
+
   it('a busca ignora acentos', async () => {
     await entrarComo('COORDENADOR')
     expect((await chamar(s.pacientes.listar({ busca: 'brandao' }))).itens.map((p) => p.nome)).toEqual(['Heitor Brandão'])

@@ -165,7 +165,8 @@ export const areaEscolaMock: ServicoAreaEscola = {
       // A escola relata o que observou; a leitura clinica e do profissional.
       consequencia: 'Não informado pela escola.',
       intensidade: ocorrencia.intensidade,
-      preliminar: true,
+      // Nasce sem leitura clinica: o professor relata, o profissional le.
+      leituraClinicaEm: null,
       sessaoId: null,
       ocorrenciaEscolarId: ocorrencia.id,
     })

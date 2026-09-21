@@ -56,6 +56,11 @@ export interface ServicoPlano {
   /** Devolver exige observacao escrita. */
   devolver(planoId: string, observacao: string): Promise<PlanoTerapeutico>
   /**
+   * Promove o objetivo a dominado. So com o criterio atingido; auditado.
+   * E o unico caminho para status === 'DOMINADO'.
+   */
+  confirmarDominio(objetivoId: string): Promise<Objetivo>
+  /**
    * Cria um cartao de estrategias em branco, ligado ao objetivo. Nao deriva
    * nenhum texto do objetivo: quem escreve o conteudo e o terapeuta (regra 4).
    */
@@ -84,6 +89,8 @@ export interface ServicoOcorrencia {
   registrarNaSessao(sessaoId: string, dados: NovaOcorrenciaComportamental): Promise<OcorrenciaComportamental>
   /** Avisos do painel do terapeuta: ocorrencias recentes vindas da escola. */
   listarAvisosDaEscola(filtro?: FiltroOcorrencia): Promise<Pagina<AvisoOcorrenciaEscolar>>
+  /** Registra que o profissional fez a leitura clinica do evento preliminar. */
+  registrarLeituraClinica(ocorrenciaId: string): Promise<OcorrenciaComportamental>
 }
 
 export interface ServicoAtividadeCasa {

@@ -1,7 +1,7 @@
 import type {
   Consentimento, ConviteEscolar, CriterioDominio, DataIso, EscopoAcesso, NivelSuporte,
-  NovoConsentimento, NovoObjetivo, Origem, PlanoTerapeutico, RegistroAtividade, Sessao,
-  SituacaoConsentimento, SituacaoConvite,
+  NovoConsentimento, NovoObjetivo, OcorrenciaComportamental, Origem, PlanoTerapeutico,
+  RegistroAtividade, Sessao, SituacaoConsentimento, SituacaoConvite, StatusObjetivo,
 } from '../servicos/tipos'
 
 /**
@@ -25,6 +25,7 @@ export const LIMIARES_ATENCAO = {
   diasSemRevisaoPlano: 90,
   diasSemSessao: 15,
   diasConsentimentoVencendo: 30,
+  sessoesSemAvanco: 8,
 } as const
 
 const MS_MINUTO = 60_000
@@ -92,6 +93,35 @@ export function objetivoAtingiuCriterio(
   return percentuais
     .slice(-criterio.sessoesConsecutivas)
     .every((p) => p >= criterio.percentualMinimo)
+}
+
+/**
+ * Em aquisicao, com ao menos 9 sessoes registradas, e o melhor percentual das
+ * ultimas 8 nao supera o melhor percentual anterior a elas. Ou seja: ha 8
+ * sessoes o objetivo nao bate o proprio recorde.
+ *
+ * "Nao bateu o proprio recorde" resiste a uma sessao ruim isolada, que e o que
+ * comparar a ultima sessao com a de oito atras nao faria.
+ *
+ * `percentuais` vem em ordem cronologica, uma entrada por sessao em que o
+ * objetivo foi trabalhado.
+ */
+export function objetivoSemAvanco(status: StatusObjetivo, percentuais: number[]): boolean {
+  if (status !== 'EM_AQUISICAO') return false
+  const janela = LIMIARES_ATENCAO.sessoesSemAvanco
+  if (percentuais.length <= janela) return false
+  const ultimas = percentuais.slice(-janela)
+  const anteriores = percentuais.slice(0, -janela)
+  return Math.max(...ultimas) <= Math.max(...anteriores)
+}
+
+/**
+ * Evento vindo da escola enquanto o profissional habilitado nao fez a leitura
+ * clinica. O professor relata o que observou; a leitura e de quem tem
+ * habilitacao para faze-la.
+ */
+export function ehPreliminar(o: Pick<OcorrenciaComportamental, 'leituraClinicaEm'>): boolean {
+  return o.leituraClinicaEm === null
 }
 
 /**
