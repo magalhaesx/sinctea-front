@@ -101,12 +101,12 @@ export function Evolucao() {
     const clinica = sessoes
       .slice()
       .sort((a, b) => a.numero - b.numero)
-      .map((s) => ({ sessao: s, valor: percentualIndependente(s.registros, objetivoId) }))
-      .filter((p): p is { sessao: Sessao; valor: number } => p.valor !== null)
-      .map(({ sessao, valor }) => ({
+      .map((s) => ({ sessao: s, percentual: percentualIndependente(s.registros, objetivoId) }))
+      .filter((p): p is { sessao: Sessao; percentual: number } => p.percentual !== null)
+      .map(({ sessao, percentual }) => ({
         rotulo: `S${sessao.numero}`,
         data: sessao.inicio ?? sessao.inicioPrevistoEm,
-        valor,
+        percentual,
       }))
 
     // Casa: execucoes das atividades ligadas a ESTE objetivo.

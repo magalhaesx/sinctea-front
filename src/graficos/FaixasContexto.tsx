@@ -25,7 +25,8 @@ import type { Desempenho } from '../servicos'
  * de comparar altura entre faixas, que e exatamente o erro a impedir.
  */
 
-export interface PontoClinica { data: string; valor: number }
+/** Mesma serie da linha de evolucao: percentual de 0 a 100, nunca proporcao. */
+export interface PontoClinica { data: string; percentual: number }
 export interface PontoCasa { data: string; desempenho: Desempenho }
 export interface PontoEscola { data: string; intensidade: number }
 
@@ -93,7 +94,7 @@ export function FaixasContexto({ clinica, casa, escola }: {
   const yNivel = (nivel: number, niveis: number) => B - ((nivel - 1) / (niveis - 1)) * (B - T)
 
   const linhaClinica = clinica
-    .map((p, i) => `${i === 0 ? 'M' : 'L'} ${x(p.data).toFixed(1)} ${yPercentual(p.valor).toFixed(1)}`)
+    .map((p, i) => `${i === 0 ? 'M' : 'L'} ${x(p.data).toFixed(1)} ${yPercentual(p.percentual).toFixed(1)}`)
     .join(' ')
 
   const linhasDaTabela = [...new Set([...clinica, ...casa, ...escola].map((p) => p.data))]
@@ -133,7 +134,7 @@ export function FaixasContexto({ clinica, casa, escola }: {
                   <th scope="row" className="px-3 py-2 text-left font-bold whitespace-nowrap">
                     {new Date(l.data).toLocaleDateString('pt-BR')}
                   </th>
-                  <td className="px-3 py-2 tabular-nums">{l.clinica ? `${l.clinica.valor}%` : '—'}</td>
+                  <td className="px-3 py-2 tabular-nums">{l.clinica ? `${l.clinica.percentual}%` : '—'}</td>
                   <td className="px-3 py-2">{l.casa ? ROTULO_CASA[l.casa.desempenho] : '—'}</td>
                   <td className="px-3 py-2 tabular-nums">{l.escola ? `${l.escola.intensidade} de 5` : '—'}</td>
                 </tr>
@@ -153,7 +154,7 @@ export function FaixasContexto({ clinica, casa, escola }: {
           >
             <path d={linhaClinica} fill="none" stroke="#00a2af" strokeWidth="2.5" strokeLinejoin="round" />
             {clinica.map((p) => (
-              <circle key={p.data} cx={x(p.data)} cy={yPercentual(p.valor)} r="4" fill="#0a6c75" />
+              <circle key={p.data} cx={x(p.data)} cy={yPercentual(p.percentual)} r="4" fill="#0a6c75" />
             ))}
           </Faixa>
 

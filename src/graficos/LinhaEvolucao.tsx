@@ -14,8 +14,12 @@ export interface PontoSessao {
   rotulo: string
   /** Data da sessao, para a tabela. */
   data: string
-  /** Percentual de tentativas independentes, de 0 a 100. */
-  valor: number
+  /**
+   * Percentual de tentativas independentes, de 0 a 100 — nunca uma proporcao
+   * de 0 a 1. O eixo e fixo em 0 a 100%: o nome carrega o contrato onde ele e
+   * lido, que e na chamada.
+   */
+  percentual: number
 }
 
 const L = 46, R = 640, T = 16, B = 184
@@ -33,7 +37,7 @@ export function LinhaEvolucao({ titulo, pontos, criterio }: {
     ? (L + R) / 2
     : L + (i / (pontos.length - 1)) * (R - L)
 
-  const linha = pontos.map((p, i) => `${i === 0 ? 'M' : 'L'} ${x(i).toFixed(1)} ${y(p.valor).toFixed(1)}`).join(' ')
+  const linha = pontos.map((p, i) => `${i === 0 ? 'M' : 'L'} ${x(i).toFixed(1)} ${y(p.percentual).toFixed(1)}`).join(' ')
   const ultimo = pontos[pontos.length - 1]
 
   return (
@@ -61,7 +65,7 @@ export function LinhaEvolucao({ titulo, pontos, criterio }: {
                 <tr key={p.rotulo} className="border-t border-linha">
                   <th scope="row" className="px-3 py-2 text-left font-bold">{p.rotulo}</th>
                   <td className="px-3 py-2">{new Date(p.data).toLocaleDateString('pt-BR')}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{p.valor}%</td>
+                  <td className="px-3 py-2 text-right tabular-nums">{p.percentual}%</td>
                 </tr>
               ))}
             </tbody>
@@ -90,15 +94,15 @@ export function LinhaEvolucao({ titulo, pontos, criterio }: {
 
           <path d={linha} fill="none" stroke="#00a2af" strokeWidth="2.5" strokeLinejoin="round" />
           {pontos.map((p, i) => (
-            <circle key={p.rotulo} cx={x(i)} cy={y(p.valor)} r={i === pontos.length - 1 ? 6 : 4}
+            <circle key={p.rotulo} cx={x(i)} cy={y(p.percentual)} r={i === pontos.length - 1 ? 6 : 4}
               fill="#0a6c75" stroke="#fff" strokeWidth="2" />
           ))}
 
           {/* Rotulo direto so onde importa: o ultimo ponto. */}
           {ultimo && (
-            <text x={Math.min(x(pontos.length - 1), R - 30)} y={y(ultimo.valor) - 12}
+            <text x={Math.min(x(pontos.length - 1), R - 30)} y={y(ultimo.percentual) - 12}
               textAnchor="middle" fontSize="13" fontWeight="700" fill="#0a6c75">
-              {ultimo.valor}%
+              {ultimo.percentual}%
             </text>
           )}
 
