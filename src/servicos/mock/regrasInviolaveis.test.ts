@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
-import { ErroServico } from '../tipos'
+import { ErroServico, type OcorrenciaComportamental, type Sessao } from '../tipos'
 import { servicosMock as s } from '.'
+import { banco, relogio } from './infra'
 
 /**
  * As regras inviolaveis do CLAUDE.md verificadas na camada de dados, e nao
@@ -663,6 +664,71 @@ describe('painel da coordenacao — conta e aponta', () => {
     const depois = await chamar(s.indicadores.ponteEscola())
     expect(depois.aguardandoLeitura.quantidade).toBe(antes.aguardandoLeitura.quantidade - 1)
     expect(depois.tempoAteLeituraClinica.leituras).toBe(antes.tempoAteLeituraClinica.leituras + 1)
+  })
+
+  it('o primeiro dia do rotulo entra na conta; o dia anterior, nao', async () => {
+    await entrarComo('COORDENADOR')
+    // Congela o relogio: a fronteira nao pode andar no meio da verificacao.
+    const original = relogio.agora
+    const agora = original()
+    relogio.agora = () => agora
+
+    /** Zero hora do primeiro dia que o rotulo da janela mostra. */
+    const primeiroDia = (dias: number) => {
+      const d = new Date(agora)
+      d.setHours(0, 0, 0, 0)
+      d.setDate(d.getDate() - (dias - 1))
+      return d
+    }
+    const dentro7 = primeiroDia(7)
+    const fora7 = new Date(dentro7.getTime() - 1)
+    const dentro30 = primeiroDia(30)
+    const fora30 = new Date(dentro30.getTime() - 1)
+
+    const sessao = (id: string, inicio: Date): Sessao => ({
+      id, pacienteId: 'p-001', profissionalId: 'u-prof-1', numero: 900,
+      inicioPrevistoEm: inicio.toISOString(), inicio: inicio.toISOString(),
+      fim: inicio.toISOString(), local: 'Sala', situacao: 'ENCERRADA',
+      statusSync: 'SINCRONIZADO', registros: [],
+    })
+    const ocorrencia = (id: string, ocorridaEm: Date): OcorrenciaComportamental => ({
+      id, pacienteId: 'p-001', origem: 'ESCOLA', ocorridaEm: ocorridaEm.toISOString(),
+      antecedente: '—', comportamento: '—', consequencia: '—', intensidade: 1,
+      leituraClinicaEm: ocorridaEm.toISOString(), sessaoId: null, ocorrenciaEscolarId: null,
+    })
+
+    try {
+      const antes = await chamar(s.indicadores.resumo())
+      const ponteAntes = await chamar(s.indicadores.ponteEscola())
+
+      // O rotulo promete as duas pontas; o filtro tem de cumprir a primeira.
+      expect(antes.sessoesUltimos7Dias.periodo)
+        .toContain(dentro7.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }))
+      expect(ponteAntes.ocorrenciasUltimos30Dias.periodo)
+        .toContain(dentro30.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }))
+
+      banco.sessoes.push(sessao('s-fronteira-dentro', dentro7))
+      banco.ocorrenciasComportamentais.push(ocorrencia('oc-fronteira-dentro', dentro30))
+      const comDentro = await chamar(s.indicadores.resumo())
+      const ponteComDentro = await chamar(s.indicadores.ponteEscola())
+      expect(comDentro.sessoesUltimos7Dias.valor).toBe(antes.sessoesUltimos7Dias.valor + 1)
+      expect(ponteComDentro.ocorrenciasUltimos30Dias.valor)
+        .toBe(ponteAntes.ocorrenciasUltimos30Dias.valor + 1)
+
+      // Um milissegundo antes da zero hora daquele dia ja e outro periodo.
+      banco.sessoes.push(sessao('s-fronteira-fora', fora7))
+      banco.ocorrenciasComportamentais.push(ocorrencia('oc-fronteira-fora', fora30))
+      const comFora = await chamar(s.indicadores.resumo())
+      const ponteComFora = await chamar(s.indicadores.ponteEscola())
+      expect(comFora.sessoesUltimos7Dias.valor).toBe(comDentro.sessoesUltimos7Dias.valor)
+      expect(ponteComFora.ocorrenciasUltimos30Dias.valor)
+        .toBe(ponteComDentro.ocorrenciasUltimos30Dias.valor)
+    } finally {
+      relogio.agora = original
+      banco.sessoes = banco.sessoes.filter((x) => !x.id.startsWith('s-fronteira'))
+      banco.ocorrenciasComportamentais = banco.ocorrenciasComportamentais
+        .filter((x) => !x.id.startsWith('oc-fronteira'))
+    }
   })
 
   it('com menos de tres leituras no periodo, a mediana e nula', async () => {

@@ -212,8 +212,11 @@ export const indicadoresMock: ServicoIndicadores = {
         : motivo === 'CONSENTIMENTO_VENCENDO' ? alertasConsentimentoVencendo(agora)
           : alertasObjetivoSemAvanco()
 
-    // Das quatro operacoes, so esta nomeia pacientes: e a que entra na
-    // auditoria como leitura autorizada. As outras sao contagem sem sujeito.
+    // Das quatro operacoes, so esta nomeia pacientes, e e registrada como
+    // leitura autorizada uma vez por chamada. Ela nao leva pacienteId de
+    // proposito: o alerta aponta, nao descreve. A leitura de cada paciente e
+    // auditada no destino — ficha, plano ou evolucao —, com pacienteId, quando
+    // a coordenacao abre o registro.
     auditar(sessao, {
       acao: 'LEITURA_AUTORIZADA', entidade: 'Indicadores', idEntidade: motivo,
       detalhe: 'Alertas do painel da coordenação.',
