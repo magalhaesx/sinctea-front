@@ -166,6 +166,18 @@ export function frequenciaEmLinguagemCotidiana(percentual: number): string {
   return `${baixo} ou ${alto} de cada 10 vezes`
 }
 
+/**
+ * Frequencia semanal como a familia le: "duas vezes por semana", nunca "2x/sem".
+ * Sete vezes e todo dia, e dizer "sete vezes por semana" soa como meta a bater.
+ */
+export function frequenciaSemanalEmPalavras(vezes: number): string {
+  const n = Math.min(7, Math.max(1, Math.round(vezes)))
+  if (n === 7) return 'todos os dias'
+  if (n === 1) return 'uma vez por semana'
+  const nomes = ['', '', 'duas', 'três', 'quatro', 'cinco', 'seis']
+  return `${nomes[n]} vezes por semana`
+}
+
 // ---------------------------------------------------------------- Consentimento (regras 1, 2, 5)
 
 export function situacaoConsentimento(c: Consentimento, agora: Date): SituacaoConsentimento {

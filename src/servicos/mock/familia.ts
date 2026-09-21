@@ -66,6 +66,25 @@ export const atividadesMock: ServicoAtividadeCasa = {
     return atividade
   }),
 
+  /**
+   * Sem este caminho, `ativa` nasceria verdadeira e nunca mudaria: a atividade
+   * prescrita ficaria para sempre na tela da familia. O historico de execucoes
+   * nao se apaga — a atividade so deixa de ser oferecida.
+   */
+  encerrar: (atividadeId) => responder(() => {
+    const atividade = buscarAtividade(atividadeId)
+    const { sessao } = exigirPacienteClinico(atividade.pacienteId, 'AtividadeCasa')
+    if (!atividade.ativa) {
+      throw new ErroServico('CONFLITO', 'Esta atividade já foi encerrada.')
+    }
+    atividade.ativa = false
+    auditar(sessao, {
+      acao: 'ALTERACAO', entidade: 'AtividadeCasa', idEntidade: atividade.id,
+      pacienteId: atividade.pacienteId, detalhe: 'Prescrição encerrada.',
+    })
+    return atividade
+  }),
+
   registrarExecucao: (atividadeId, desempenho, observacao) => responder(() => {
     const atividade = buscarAtividade(atividadeId)
     const { sessao } = exigirPacienteDaFamilia(atividade.pacienteId, 'ExecucaoAtividadeCasa')

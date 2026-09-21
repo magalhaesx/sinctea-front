@@ -570,15 +570,20 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
   ]
 
   const execucoes: ExecucaoAtividadeCasa[] = []
-  const desempenhos: ExecucaoAtividadeCasa['desempenho'][] = ['COM_AJUDA', 'COM_AJUDA', 'NAO_QUIS', 'COM_AJUDA', 'SOZINHO', 'SOZINHO', 'SOZINHO']
-  ;[31, 27, 24, 20, 13, 9, 4].forEach((d, i) =>
+  /* As tres ultimas caem dentro dos sete dias que a tela 9 conta, e com os tres
+     desempenhos diferentes: e o que faz a divisao aparecer na adesao. */
+  const desempenhos: ExecucaoAtividadeCasa['desempenho'][] =
+    ['COM_AJUDA', 'COM_AJUDA', 'NAO_QUIS', 'COM_AJUDA', 'SOZINHO', 'SOZINHO', 'COM_AJUDA', 'NAO_QUIS']
+  const observacoes: (string | null)[] =
+    [null, null, null, null, null, null, null, 'Hoje ele não quis. Estava um dia agitado na escola.']
+  ;[31, 27, 24, 20, 13, 6, 3, 1].forEach((d, i) =>
     execucoes.push({ id: `ex-${i + 1}`, atividadeId: 'a-001', responsavelId: 'u-resp-1',
-      dataRealizacao: em(d, 12), desempenho: desempenhos[i], observacao: null }))
+      dataRealizacao: em(d, 12), desempenho: desempenhos[i], observacao: observacoes[i] }))
   ;[22, 15, 8].forEach((d, i) =>
-    execucoes.push({ id: `ex-${i + 8}`, atividadeId: 'a-003', responsavelId: 'u-resp-1',
+    execucoes.push({ id: `ex-${i + 21}`, atividadeId: 'a-003', responsavelId: 'u-resp-1',
       dataRealizacao: em(d, 18), desempenho: i === 2 ? 'SOZINHO' : 'COM_AJUDA', observacao: null }))
   ;[20, 12, 5].forEach((d, i) =>
-    execucoes.push({ id: `ex-${i + 11}`, atividadeId: 'a-004', responsavelId: 'u-resp-2',
+    execucoes.push({ id: `ex-${i + 31}`, atividadeId: 'a-004', responsavelId: 'u-resp-2',
       dataRealizacao: em(d, 19), desempenho: 'COM_AJUDA', observacao: null }))
 
   // ------------------------------------------------------------ Auditoria inicial

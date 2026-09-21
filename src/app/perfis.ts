@@ -19,9 +19,9 @@ export const PAINEL_DO_PERFIL: Record<Perfil, string> = {
 }
 
 /**
- * Identificador usado enquanto a lista de atividades (tela 9) nao existe.
- * A etapa 7 substitui este atalho por navegacao real; nenhum outro lugar do
- * codigo fixa identificador.
+ * Identificador usado pela area da familia (telas 15 e 16) enquanto ela nao
+ * consome a camada de servicos. A etapa 8 substitui este atalho por navegacao
+ * real; nenhum outro lugar do codigo fixa identificador.
  */
 export const DEMONSTRACAO = { atividade: 'a-003' } as const
 

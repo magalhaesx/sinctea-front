@@ -347,6 +347,9 @@ export function Ficha() {
                 <BotaoLink para={`/app/clinica/pacientes/${p.id}/evolucao`} area="cli" variante="secundaria">
                   Ver evolução por objetivo
                 </BotaoLink>
+                <BotaoLink para={`/app/clinica/pacientes/${p.id}/atividades`} area="cli" variante="secundaria">
+                  Atividades para casa
+                </BotaoLink>
               </div>
             </section>
           </>

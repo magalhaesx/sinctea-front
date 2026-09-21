@@ -100,6 +100,8 @@ export interface ServicoAtividadeCasa {
   listarPorPaciente(pacienteId: string, filtro?: FiltroPaginacao & { ativa?: boolean }): Promise<Pagina<AtividadeCasa>>
   obter(id: string): Promise<AtividadeCasa>
   prescrever(dados: NovaAtividadeCasa): Promise<AtividadeCasa>
+  /** Encerra a prescricao. A familia deixa de ve-la; o historico permanece. */
+  encerrar(atividadeId: string): Promise<AtividadeCasa>
   registrarExecucao(atividadeId: string, desempenho: Desempenho, observacao?: string): Promise<ExecucaoAtividadeCasa>
   listarExecucoes(atividadeId: string, filtro?: FiltroPaginacao): Promise<Pagina<ExecucaoAtividadeCasa>>
 }

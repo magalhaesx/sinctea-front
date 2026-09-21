@@ -3,7 +3,8 @@ import type { Consentimento, NovoObjetivo, RegistroAtividade, Resultado, Sessao 
 import {
   ehPreliminar, objetivoSemAvanco,
   calcularExpiracaoConvite, consentimentoVencendo, consentimentoVigente, descricaoNivelSuporte,
-  escopoPermiteLeitura, frequenciaEmLinguagemCotidiana, idadeEmAnos, objetivoAtingiuCriterio,
+  escopoPermiteLeitura, frequenciaEmLinguagemCotidiana, frequenciaSemanalEmPalavras, idadeEmAnos,
+  objetivoAtingiuCriterio,
   pacienteSemSessaoRecente, percentualIndependente, planoPrecisaRevisao, podeCorrigirOcorrencia,
   podeDesativarUsuario, situacaoConsentimento, situacaoConvite, suficienciaComparacao,
   validarDevolucaoPlano, validarNovoConsentimento, validarNovoObjetivo, verificarAcessoEscola,
@@ -168,6 +169,23 @@ describe('frequenciaEmLinguagemCotidiana', () => {
 
   it('nunca devolve o simbolo de percentual', () => {
     for (let p = 0; p <= 100; p++) expect(frequenciaEmLinguagemCotidiana(p)).not.toContain('%')
+  })
+})
+
+describe('frequenciaSemanalEmPalavras', () => {
+  it('escreve por extenso, como a familia le', () => {
+    expect(frequenciaSemanalEmPalavras(1)).toBe('uma vez por semana')
+    expect(frequenciaSemanalEmPalavras(3)).toBe('três vezes por semana')
+    expect(frequenciaSemanalEmPalavras(6)).toBe('seis vezes por semana')
+  })
+
+  it('sete vezes e todo dia, e dizer sete soa como meta a bater', () => {
+    expect(frequenciaSemanalEmPalavras(7)).toBe('todos os dias')
+  })
+
+  it('fora da faixa, volta para dentro dela', () => {
+    expect(frequenciaSemanalEmPalavras(0)).toBe('uma vez por semana')
+    expect(frequenciaSemanalEmPalavras(12)).toBe('todos os dias')
   })
 })
 

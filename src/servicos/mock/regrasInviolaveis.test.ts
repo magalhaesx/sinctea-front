@@ -555,6 +555,38 @@ describe('outras regras de tela aplicadas no servico', () => {
     expect((await erroDe(s.usuarios.desativar('u-prof-3'))).codigo).toBe('CONFLITO')
   })
 
+  it('encerrar tira a atividade da familia e guarda o historico', async () => {
+    await entrarComo('TERAPEUTA')
+    const ativas = await chamar(s.atividades.listarPorPaciente('p-001', { ativa: true, porPagina: 50 }))
+    const atividade = ativas.itens[0]
+    const execucoesAntes = await chamar(s.atividades.listarExecucoes(atividade.id, { porPagina: 50 }))
+
+    const encerrada = await chamar(s.atividades.encerrar(atividade.id))
+    expect(encerrada.ativa).toBe(false)
+    expect(await ultimaAuditoria()).toMatchObject({
+      acao: 'ALTERACAO', entidade: 'AtividadeCasa', idEntidade: atividade.id,
+    })
+
+    // Sai da lista ativa, mas o que a familia registrou nao se apaga.
+    const depois = await chamar(s.atividades.listarPorPaciente('p-001', { ativa: true, porPagina: 50 }))
+    expect(depois.itens.map((a) => a.id)).not.toContain(atividade.id)
+    const execucoesDepois = await chamar(s.atividades.listarExecucoes(atividade.id, { porPagina: 50 }))
+    expect(execucoesDepois.total).toBe(execucoesAntes.total)
+
+    // Encerrada, a familia nao registra mais — e encerrar de novo nao faz sentido.
+    expect((await erroDe(s.atividades.encerrar(atividade.id))).codigo).toBe('CONFLITO')
+    await entrarComo('RESPONSAVEL')
+    expect((await erroDe(s.atividades.registrarExecucao(atividade.id, 'SOZINHO'))).codigo).toBe('CONFLITO')
+  })
+
+  it('so a clinica encerra a prescricao', async () => {
+    await entrarComo('TERAPEUTA')
+    const ativas = await chamar(s.atividades.listarPorPaciente('p-001', { ativa: true, porPagina: 50 }))
+    const atividade = ativas.itens[0]
+    await entrarComo('RESPONSAVEL')
+    expect((await erroDe(s.atividades.encerrar(atividade.id))).codigo).toBe('ACESSO_NEGADO')
+  })
+
   it('atividade em casa sem objetivo do plano nao existe', async () => {
     await entrarComo('TERAPEUTA')
     const erro = await erroDe(s.atividades.prescrever({

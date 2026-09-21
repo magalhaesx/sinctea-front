@@ -69,11 +69,14 @@ export function Plano() {
   const [salvando, setSalvando] = useState(false)
   const [aviso, setAviso] = useState<string | null>(null)
 
+  // Aviso de sucesso e do plano que acabou de mudar: trocar de paciente o
+  // apaga. So a troca de paciente, e nao toda recarga: gravar e recarregar em
+  // seguida matava o recado com a recarga que ele mesmo pediu.
+  useEffect(() => { setAviso(null) }, [id])
+
   useEffect(() => {
     let ativo = true
     setEstado({ tipo: 'carregando' })
-    // Aviso de sucesso e do plano que acabou de mudar: trocar de paciente o apaga.
-    setAviso(null)
     servicos.planos.obterPorPaciente(id)
       .then((plano) => { if (ativo) setEstado({ tipo: 'pronto', plano }) })
       .catch((erro) => { if (ativo) setEstado({ tipo: 'erro', erro }) })
