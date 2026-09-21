@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { Tela } from '../app/LayoutApp'
+import { PainelSemDados } from '../app/coordenacao/Painel'
 import { Botao } from '../ui/Botao'
 import { Etiqueta } from '../ui/Etiqueta'
 import { Titulo } from '../ui/Titulo'
@@ -101,6 +102,12 @@ export function VitrineEstados() {
             explicacao="A busca procura pelo nome, entre os pacientes que você acompanha. Confira a grafia ou limpe a busca para ver a lista inteira."
             acao={{ rotulo: 'Limpar a busca', aoAcionar: () => undefined }}
           />
+        </Painel>
+
+        <Painel titulo="Vazio — a tela 11 inteira">
+          {/* Os dados de demonstracao nunca estao sem sessao nenhuma: e aqui
+              que a variante de clinica nova pode ser vista. */}
+          <PainelSemDados />
         </Painel>
 
         <Painel titulo="Erro">

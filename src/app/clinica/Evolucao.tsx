@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
 import { Tela } from '../LayoutApp'
 import { Aviso } from '../../ui/Aviso'
 import { Botao } from '../../ui/Botao'
@@ -69,9 +69,13 @@ function frase(falta: { contexto: Origem; registrosFaltando: number; semanasFalt
 
 export function Evolucao() {
   const { id = '' } = useParams()
+  // ?objetivo= e como o alerta do painel da coordenacao aponta para UM
+  // objetivo. Sem isto o link cairia sempre no primeiro do plano.
+  const [params] = useSearchParams()
+  const objetivoPedido = params.get('objetivo') ?? ''
   const [estado, setEstado] = useState<Estado>({ tipo: 'carregando' })
   const [tentativa, setTentativa] = useState(0)
-  const [objetivoId, setObjetivoId] = useState('')
+  const [objetivoId, setObjetivoId] = useState(objetivoPedido)
   const [confirmacaoAberta, setConfirmacaoAberta] = useState(false)
   const [salvando, setSalvando] = useState(false)
   const [aviso, setAviso] = useState<string | null>(null)
@@ -122,12 +126,15 @@ export function Evolucao() {
     carregar()
       .then((dados) => {
         if (!ativo) return
-        setObjetivoId((atual) => atual || dados.objetivos[0]?.id || '')
+        const existe = (objetivoId: string) => dados.objetivos.some((o) => o.id === objetivoId)
+        setObjetivoId((atual) => existe(atual)
+          ? atual
+          : existe(objetivoPedido) ? objetivoPedido : dados.objetivos[0]?.id ?? '')
         setEstado({ tipo: 'pronto', dados })
       })
       .catch((erro) => { if (ativo) setEstado({ tipo: 'erro', erro }) })
     return () => { ativo = false }
-  }, [id, tentativa])
+  }, [id, tentativa, objetivoPedido])
 
   const trocarObjetivo = (id: string) => {
     setObjetivoId(id)
