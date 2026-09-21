@@ -31,7 +31,7 @@ const GRUPOS: Array<{ motivo: MotivoAtencao; titulo: string }> = [
   { motivo: 'PLANO_SEM_REVISAO', titulo: 'Planos sem revisão há mais de 90 dias' },
   { motivo: 'PACIENTE_SEM_SESSAO', titulo: 'Pacientes sem sessão há mais de 15 dias' },
   { motivo: 'CONSENTIMENTO_VENCENDO', titulo: 'Consentimentos escolares vencendo em 30 dias' },
-  { motivo: 'OBJETIVO_SEM_AVANCO', titulo: 'Objetivos sem novo melhor resultado há 8 sessões' },
+  { motivo: 'OBJETIVO_SEM_AVANCO', titulo: 'Objetivos sem novo melhor resultado há 8 sessões ou mais' },
 ]
 
 type Estado<T> =
@@ -82,7 +82,9 @@ function CartaoNumero({ rotulo, valor, periodo, apagado = false }: {
 }) {
   return (
     <Cartao className="h-full">
-      <p className="text-[15px] leading-snug">{rotulo}</p>
+      {/* Rede de seguranca para rotulo comprido: "acompanhamento" sozinha ja
+          passa de 100px. A hifenacao depende do lang="pt-BR" do documento. */}
+      <p className="hyphens-auto break-words text-[15px] leading-snug">{rotulo}</p>
       {/* Algarismos proporcionais: tabular e para coluna de tabela, onde os
           numeros se alinham. Num numero grande e sozinho, ele afrouxa o
           desenho — "121" fica com buracos. */}
@@ -273,7 +275,7 @@ function BlocoPonte() {
         const { tempoAteLeituraClinica: tempo, aguardandoLeitura: fila } = estado.dados
         return (
           <>
-            <ul className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+            <ul className="grid grid-cols-1 gap-3 min-[400px]:grid-cols-2 lg:grid-cols-3">
               <li>
                 <CartaoNumero rotulo="Escolas com vínculo ativo" valor={escolas.valor} periodo={escolas.periodo} />
               </li>
@@ -379,8 +381,10 @@ export function PainelCoordenacao() {
               />
             )}
 
+            {/* Uma coluna ate 400px: a dois por linha o cartao fica com ~125px
+                e o rotulo nao cabe, nem com hifen. */}
             {resumo.tipo === 'pronto' && (
-              <ul className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+              <ul className="grid grid-cols-1 gap-3 min-[400px]:grid-cols-2 lg:grid-cols-4">
                 {numeroDoResumo(resumo.dados).map(([rotulo, indicador]) => (
                   <li key={rotulo}>
                     <CartaoNumero rotulo={rotulo} valor={indicador.valor} periodo={indicador.periodo} />

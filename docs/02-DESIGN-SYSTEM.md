@@ -232,6 +232,10 @@ Antes de considerar qualquer tela pronta, verifique os doze itens:
 12. Rolagem lateral: em 320px, rode `window.scrollTo(9999, 0)` e confira que
     `window.scrollX` é 0. Medir o recipiente não substitui esta verificação: o
     recipiente pode rolar corretamente enquanto a página inteira rola.
+13. Estouro de texto: a 320px e com Texto maior ligado, nenhum texto passa da
+    borda do seu cartão. O `scrollX` não pega isso — o `main` tem
+    `overflow-x: hidden`, que esconde o estouro interno da medida da página.
+    Olhe a tela; não confie só no número.
 
 ### Preferências do usuário
 

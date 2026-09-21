@@ -18,10 +18,13 @@ export interface BarraProfissional {
 }
 
 /**
- * A maior barra para em 88% da pista, para o numero caber depois dela. Todas
- * encolhem pelo mesmo fator, entao a comparacao entre elas nao muda.
+ * O numero fica na ponta da barra, entao a pista reserva espaco para ele. A
+ * reserva vai em em, e nao em porcentagem: porcentagem acompanha a largura da
+ * tela, nao o tamanho da letra — com "Texto maior" ligado o numero crescia e a
+ * reserva nao. Todas as barras dividem a mesma pista reduzida, entao a escala
+ * entre elas nao muda.
  */
-const LARGURA_MAXIMA = 88
+const RESERVA_DO_VALOR = '3.5em'
 
 export function BarrasProfissional({ titulo, itens }: {
   titulo: string
@@ -75,7 +78,7 @@ export function BarrasProfissional({ titulo, itens }: {
                 <span
                   aria-hidden="true"
                   className="block h-3 shrink-0 rounded-r-[4px] bg-cli"
-                  style={{ width: `${(i.sessoes / maior) * LARGURA_MAXIMA}%` }}
+                  style={{ width: `calc(${(i.sessoes / maior).toFixed(4)} * (100% - ${RESERVA_DO_VALOR}))` }}
                 />
                 {/* Valor na cor de tinta, nunca na cor da serie. */}
                 <span className="shrink-0 text-sm font-bold text-tinta">{i.sessoes}</span>
