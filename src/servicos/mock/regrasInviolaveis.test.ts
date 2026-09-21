@@ -224,7 +224,7 @@ describe('camada simulada', () => {
     expect((await erroDe(s.ocorrencias.registrarLeituraClinica(jaLida.id))).codigo).toBe('CONFLITO')
   })
 
-  it('o aviso sai do painel do terapeuta quando a leitura clinica e registrada', async () => {
+  it('lido, o evento sai do painel e continua na ficha', async () => {
     await entrarComo('TERAPEUTA')
     const antes = await chamar(s.ocorrencias.listarAvisosDaEscola({ porPagina: 50 }))
     expect(antes.total).toBeGreaterThan(0)
@@ -234,9 +234,16 @@ describe('camada simulada', () => {
     const aviso = antes.itens[0]
     await chamar(s.ocorrencias.registrarLeituraClinica(aviso.ocorrenciaId))
 
+    // Sai da fila do painel.
     const depois = await chamar(s.ocorrencias.listarAvisosDaEscola({ porPagina: 50 }))
     expect(depois.total).toBe(antes.total - 1)
     expect(depois.itens.map((i) => i.ocorrenciaId)).not.toContain(aviso.ocorrenciaId)
+
+    // E continua na ficha, agora com a data da leitura — nao some da interface.
+    const naFicha = await chamar(s.ocorrencias.listarPorPaciente(aviso.paciente.id, { porPagina: 100 }))
+    const evento = naFicha.itens.find((o) => o.id === aviso.ocorrenciaId)
+    expect(evento).toBeDefined()
+    expect(evento?.leituraClinicaEm).not.toBeNull()
   })
 
   it('ocorrencia registrada na sessao ja nasce com leitura clinica', async () => {

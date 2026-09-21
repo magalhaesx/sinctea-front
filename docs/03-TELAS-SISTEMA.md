@@ -71,6 +71,10 @@ Já existe. Muda: agenda vem de serviço paginado, e o aviso da escola vira list
 **Conteúdo:** saudação com data · avisos de ocorrência escolar · agenda do dia com
 estado por atendimento · registros aguardando sincronização · atalhos.
 
+Os avisos da escola são só os eventos ainda preliminares: é a fila do que espera a
+leitura clínica do profissional. Registrada a leitura, o aviso sai da lista — o
+histórico fica na ficha.
+
 **Aceitação:** zero atendimentos hoje mostra estado vazio com texto próprio, não
 uma lista em branco.
 
@@ -98,7 +102,9 @@ sem empurrar a página.
 **Conteúdo:** identificação e nível de suporte · rede de apoio (responsáveis com
 parentesco e quem é o responsável legal) · equipe multiprofissional com
 especialidade · vínculo escolar, se houver, com situação do consentimento ·
-histórico resumido · ações para plano, sessão e evolução.
+eventos comportamentais recentes dos últimos 30 dias, de todas as origens, com a
+situação da leitura clínica · histórico resumido · ações para plano, sessão e
+evolução.
 
 **Regras:** nível de suporte 1, 2 ou 3 conforme DSM-5-TR, sempre com a descrição
 por extenso ao lado do número. Ninguém deve precisar decorar o que significa "2".

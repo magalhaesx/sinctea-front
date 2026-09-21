@@ -1,15 +1,18 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { Tela } from '../LayoutApp'
-import { BotaoLink } from '../../ui/Botao'
+import { Aviso } from '../../ui/Aviso'
+import { Botao, BotaoLink } from '../../ui/Botao'
 import { Cartao } from '../../ui/Cartao'
 import { Etiqueta } from '../../ui/Etiqueta'
 import { Titulo } from '../../ui/Titulo'
 import { EstadoCarregando } from '../../ui/EstadoCarregando'
 import { EstadoErro } from '../../ui/EstadoErro'
-import { descricaoNivelSuporte } from '../../dominio/regras'
+import { Paginacao } from '../../ui/Paginacao'
+import { descricaoNivelSuporte, ehPreliminar } from '../../dominio/regras'
 import {
-  ErroServico, servicos, type PacienteDetalhe, type SituacaoConsentimento, type SituacaoPlano,
+  ErroServico, servicos, type OcorrenciaComportamental, type Origem, type Pagina,
+  type PacienteDetalhe, type SituacaoConsentimento, type SituacaoPlano,
 } from '../../servicos'
 
 /**
@@ -18,6 +21,11 @@ import {
  * A rede de apoio marca quem responde legalmente: so o responsavel legal
  * autoriza o acesso da escola (regra 1 do CLAUDE.md). Quem olha a ficha
  * precisa saber a quem recorrer sem abrir outra tela.
+ *
+ * Os eventos comportamentais recentes ficam aqui porque o painel do terapeuta
+ * so mostra os que ainda esperam leitura clinica. Lido, o evento precisa de um
+ * lugar onde continue visivel — e quem chega pelo "Abrir a ficha" do aviso nao
+ * pode ter de voltar ao painel para agir sobre o que esta vendo.
  */
 
 const SITUACAO_PLANO: Record<SituacaoPlano, { rotulo: string; tom: 'ok' | 'at' | 'neutro'; simbolo: string }> = {
@@ -35,12 +43,158 @@ const SITUACAO_CONSENTIMENTO: Record<SituacaoConsentimento, { rotulo: string; to
   AGUARDANDO_INICIO: { rotulo: 'Acesso ainda não começou', tom: 'neutro', simbolo: '○' },
 }
 
+const NOME_DA_ORIGEM: Record<Origem, string> = {
+  CLINICA: 'Clínica', CASA: 'Casa', ESCOLA: 'Escola',
+}
+
+/** Janela dos eventos recentes, em dias. */
+const DIAS_RECENTES = 30
+const EVENTOS_POR_PAGINA = 5
+
 type Estado =
   | { tipo: 'carregando' }
   | { tipo: 'erro'; erro: unknown }
   | { tipo: 'pronto'; paciente: PacienteDetalhe }
 
+type EstadoLista =
+  | { tipo: 'carregando' }
+  | { tipo: 'erro'; erro: unknown }
+  | { tipo: 'pronto'; dados: Pagina<OcorrenciaComportamental> }
+
 const emData = (iso: string) => new Date(iso).toLocaleDateString('pt-BR')
+
+/**
+ * Eventos comportamentais dos ultimos 30 dias, de todas as origens, com a
+ * situacao da leitura clinica. Carrega por conta propria: a ficha nao espera
+ * por esta lista para aparecer.
+ */
+function EventosComportamentais({ pacienteId, primeiroNome }: {
+  pacienteId: string
+  primeiroNome: string
+}) {
+  const [estado, setEstado] = useState<EstadoLista>({ tipo: 'carregando' })
+  const [pagina, setPagina] = useState(1)
+  const [tentativa, setTentativa] = useState(0)
+  const [lendo, setLendo] = useState<string | null>(null)
+  const [aviso, setAviso] = useState<string | null>(null)
+  const [erroLeitura, setErroLeitura] = useState<string | null>(null)
+
+  useEffect(() => {
+    let ativo = true
+    setEstado({ tipo: 'carregando' })
+    const desde = new Date(Date.now() - DIAS_RECENTES * 86_400_000).toISOString()
+    servicos.ocorrencias.listarPorPaciente(pacienteId, { desde, pagina, porPagina: EVENTOS_POR_PAGINA })
+      .then((dados) => { if (ativo) setEstado({ tipo: 'pronto', dados }) })
+      .catch((erro) => { if (ativo) setEstado({ tipo: 'erro', erro }) })
+    return () => { ativo = false }
+  }, [pacienteId, pagina, tentativa])
+
+  const registrarLeitura = async (o: OcorrenciaComportamental) => {
+    setAviso(null)
+    setErroLeitura(null)
+    setLendo(o.id)
+    try {
+      await servicos.ocorrencias.registrarLeituraClinica(o.id)
+      setAviso(`Leitura clínica registrada no evento de ${emData(o.ocorridaEm)}.`)
+      setTentativa((t) => t + 1)
+    } catch (e) {
+      setErroLeitura((e as Error).message || 'Não foi possível registrar agora.')
+    } finally {
+      setLendo(null)
+    }
+  }
+
+  return (
+    <Cartao>
+      <h2 className="text-lg font-bold">Eventos comportamentais recentes</h2>
+      <p className="mt-1 text-sm text-tinta2">
+        Últimos {DIAS_RECENTES} dias, de todas as origens.
+      </p>
+
+      <div aria-live="polite">
+        {aviso && <div className="mt-3"><Aviso tom="ok" titulo="Pronto">{aviso}</Aviso></div>}
+        {erroLeitura && (
+          <div className="mt-3">
+            <Aviso tom="cr" titulo="Não foi possível registrar a leitura">{erroLeitura}</Aviso>
+          </div>
+        )}
+      </div>
+
+      {estado.tipo === 'carregando' && (
+        <div className="mt-3">
+          <EstadoCarregando forma="lista" linhas={3} rotulo="Carregando os eventos comportamentais" />
+        </div>
+      )}
+
+      {estado.tipo === 'erro' && (
+        <div className="mt-3">
+          <EstadoErro
+            erro={estado.erro}
+            oQue="os eventos comportamentais"
+            nivel={3}
+            aoTentarDeNovo={() => setTentativa((t) => t + 1)}
+          />
+        </div>
+      )}
+
+      {estado.tipo === 'pronto' && (
+        estado.dados.total === 0 ? (
+          // Sem EstadoVazio: o que preenche esta lista e a sessao, e "Iniciar
+          // sessao" ja esta nas acoes desta tela (docs/02, secao 4).
+          <p className="mt-3 text-tinta2">
+            Nenhum evento comportamental de {primeiroNome} nos últimos {DIAS_RECENTES} dias.
+            Eventos entram pelo registro em sessão ou por relato da escola.
+          </p>
+        ) : (
+          <>
+            <ul className="mt-3 flex flex-col gap-2">
+              {estado.dados.itens.map((o) => (
+                <li
+                  key={o.id}
+                  className="flex flex-wrap items-start justify-between gap-2 rounded-lg border border-linha bg-sup px-3 py-2.5"
+                >
+                  <span>
+                    <b>{emData(o.ocorridaEm)} · {NOME_DA_ORIGEM[o.origem]}</b>
+                    <span className="block text-sm text-tinta2">
+                      {o.comportamento} · intensidade {o.intensidade} de 5
+                    </span>
+                  </span>
+                  <span className="flex flex-wrap items-center gap-2">
+                    {ehPreliminar(o) ? (
+                      <>
+                        <Etiqueta tom="at" simbolo="▲">Aguardando leitura clínica</Etiqueta>
+                        <Botao area="cli" variante="secundaria" disabled={lendo === o.id}
+                          onClick={() => void registrarLeitura(o)}>
+                          {lendo === o.id ? 'Registrando…' : 'Registrar a leitura clínica'}
+                        </Botao>
+                      </>
+                    ) : (
+                      <Etiqueta tom="ok" simbolo="✓">
+                        {/* Nao e preliminar: a data da leitura existe. */}
+                        Leitura clínica em {emData(o.leituraClinicaEm!)}
+                      </Etiqueta>
+                    )}
+                  </span>
+                </li>
+              ))}
+            </ul>
+
+            <div className="mt-3">
+              <Paginacao
+                pagina={estado.dados.pagina}
+                porPagina={estado.dados.porPagina}
+                total={estado.dados.total}
+                aoMudar={setPagina}
+                rotulo="Páginas dos eventos comportamentais"
+                nomeItens={{ singular: 'evento', plural: 'eventos' }}
+              />
+            </div>
+          </>
+        )
+      )}
+    </Cartao>
+  )
+}
 
 export function Ficha() {
   const { id = '' } = useParams()
@@ -168,6 +322,8 @@ export function Ficha() {
                 </ul>
               )}
             </Cartao>
+
+            <EventosComportamentais pacienteId={p.id} primeiroNome={p.nome.split(' ')[0]} />
 
             <Cartao>
               <h2 className="text-lg font-bold">Histórico resumido</h2>
