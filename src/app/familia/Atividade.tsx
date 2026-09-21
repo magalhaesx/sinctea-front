@@ -6,7 +6,7 @@ import { Campo } from '../../ui/Campo'
 import { Cartao } from '../../ui/Cartao'
 import { Titulo } from '../../ui/Titulo'
 import { atividades } from '../../dados/exemplo'
-import type { Desempenho } from '../../tipos/dominio'
+import type { Desempenho } from '../../servicos'
 
 const opcoes: { valor: Desempenho; rotulo: string }[] = [
   { valor: 'SOZINHO', rotulo: 'Fez sozinho' },
