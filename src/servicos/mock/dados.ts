@@ -1,7 +1,8 @@
 import type {
   AtividadeCasa, CartaoEstrategia, Consentimento, Escola, ExecucaoAtividadeCasa, Intensidade,
   Objetivo, OcorrenciaComportamental, OcorrenciaEscolar, Paciente, PlanoTerapeutico,
-  ProfessorAEE, Profissional, RegistroAtividade, RegistroAuditoria, Responsavel, Resultado,
+  ProfessorAEE, Profissional, RegistroAtividade, RegistroAuditoria, RelatorioEvolucao, Responsavel,
+  Resultado,
   Sessao, VinculoEscolar, VinculoFamiliar, ConviteEscolar,
 } from '../tipos'
 import { calcularExpiracaoConvite } from '../../dominio/regras'
@@ -42,6 +43,7 @@ export interface BancoDemonstracao {
   convites: ConviteEscolar[]
   vinculos: VinculoEscolar[]
   auditoria: RegistroAuditoria[]
+  relatorios: RelatorioEvolucao[]
 }
 
 /** Usuario usado por cada botao de demonstracao da tela de entrada. */
@@ -613,6 +615,7 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
 
   return {
     profissionais, responsaveis, professores, escolas, pacientes, vinculosFamiliares,
+    relatorios: [],
     planos, sessoes, ocorrenciasComportamentais, ocorrenciasEscolares, atividades,
     execucoes, cartoes, consentimentos, convites, vinculos, auditoria,
   }

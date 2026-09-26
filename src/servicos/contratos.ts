@@ -6,9 +6,10 @@ import type {
   FiltroPaginacao, FiltroSessao, FiltroUsuario, FilhoResumo, ItemAgenda, NovaAtividadeCasa,
   NovaOcorrenciaComportamental, NovaOcorrenciaEscolar, NovoConsentimento, NovoObjetivo,
   NovoPaciente, Objetivo, ObjetivoAcessivel, OcorrenciaComportamental, OcorrenciaEscolar,
-  MotivoAtencao, Pagina, PacienteDetalhe, PacienteResumo, Perfil, PlanoParaValidacao,
-  PlanoTerapeutico, PonteEscola, Profissional, RegistroAtividade, RegistroAuditoria, ResumoClinica,
-  Resultado, Sessao, SessaoUsuario, SessoesPorProfissional, Usuario,
+  ConteudoRelatorio, MotivoAtencao, Pagina, PacienteDetalhe, PacienteResumo, PedidoRelatorio,
+  Perfil, PlanoParaValidacao, PlanoTerapeutico, PonteEscola, Profissional, RegistroAtividade,
+  RegistroAuditoria, RelatorioEvolucao, ResumoClinica, Resultado, Sessao, SessaoUsuario,
+  SessoesPorProfissional, Usuario,
 } from './tipos'
 
 /**
@@ -151,6 +152,21 @@ export interface ServicoAuditoria {
 }
 
 /**
+ * Relatorio de evolucao (tela 10). Documento clinico: so terapeuta da equipe e
+ * coordenacao alcancam, a escola nunca. Emitir grava o conteudo como saiu —
+ * nao ha regeneracao a partir dos dados de hoje.
+ */
+export interface ServicoRelatorio {
+  /** Monta o documento sem gravar nada. Aceita consideracoes ainda vazias. */
+  previsualizar(pacienteId: string, pedido: PedidoRelatorio): Promise<ConteudoRelatorio>
+  /** Grava o conteudo e o seu hash. Auditado como CRIACAO. */
+  emitir(pacienteId: string, pedido: PedidoRelatorio): Promise<RelatorioEvolucao>
+  listarPorPaciente(pacienteId: string, filtro?: FiltroPaginacao): Promise<Pagina<RelatorioEvolucao>>
+  /** Abrir um emitido e leitura de dado sensivel: auditado. */
+  obter(relatorioId: string): Promise<RelatorioEvolucao>
+}
+
+/**
  * Indicadores da coordenacao (tela 11). Contam e apontam, nao descrevem: o
  * painel nao busca pacientes, planos e sessoes para somar no navegador — o
  * conteudo clinico inteiro atravessaria a rede so para virar um numero.
@@ -189,4 +205,5 @@ export interface Servicos {
   auditoria: ServicoAuditoria
   usuarios: ServicoUsuario
   indicadores: ServicoIndicadores
+  relatorios: ServicoRelatorio
 }

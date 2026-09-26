@@ -354,6 +354,83 @@ export interface AvisoOcorrenciaEscolar {
   intensidade: Intensidade
 }
 
+// ---------------------------------------------------------------- Relatorio (UC09)
+
+/**
+ * Para quem o documento e escrito. Decide qual das duas redacoes do objetivo
+ * vai impressa: a equipe le a tecnica, a familia le a acessivel. E a regra 4
+ * do CLAUDE.md servindo ao documento — as duas existem para isso.
+ */
+export type Destinatario = 'PROFISSIONAIS' | 'FAMILIA'
+
+/** O que se pede ao pre-visualizar ou emitir. */
+export interface PedidoRelatorio {
+  /** Datas em AAAA-MM-DD: o periodo e de dias inteiros, sem hora. */
+  periodoInicio: DataIso
+  periodoFim: DataIso
+  objetivoIds: string[]
+  destinatario: Destinatario
+  /** Leitura do profissional. Obrigatoria, nunca gerada. */
+  consideracoes: string
+}
+
+/** Um objetivo dentro do documento, ja recortado pelo periodo. */
+export interface ObjetivoNoRelatorio {
+  objetivoId: string
+  dominio: string
+  /** A redacao do destinatario: tecnica para a equipe, acessivel para a familia. */
+  redacao: string
+  criterio: CriterioDominio
+  /** Sessoes do periodo em que ESTE objetivo foi trabalhado. */
+  sessoesNoPeriodo: number
+  /** Nulos quando nenhuma sessao do periodo registrou tentativa do objetivo. */
+  primeiroPercentual: number | null
+  ultimoPercentual: number | null
+  melhorPercentual: number | null
+  status: StatusObjetivo
+  dominadoEm: DataIso | null
+}
+
+/**
+ * O documento. O mesmo objeto na pre-visualizacao e no emitido — e o que o
+ * hash protege, por isso as consideracoes vivem aqui dentro tambem.
+ */
+export interface ConteudoRelatorio {
+  paciente: { id: string; nome: string; dataNascimento: DataIso }
+  periodoInicio: DataIso
+  periodoFim: DataIso
+  destinatario: Destinatario
+  consideracoes: string
+  objetivos: ObjetivoNoRelatorio[]
+  /** Sessoes encerradas do paciente no periodo, de todos os objetivos. */
+  sessoesNoPeriodo: number
+}
+
+/**
+ * Documento clinico emitido. Nao se regenera: a familia ou outro profissional
+ * recebe uma copia, e o sistema precisa poder mostrar exatamente o que saiu,
+ * mesmo que um registro de sessao seja desfeito depois.
+ */
+export interface RelatorioEvolucao {
+  id: string
+  /** Desnormalizado: deriva dos objetivos, mas a busca precisa dele direto. */
+  pacienteId: string
+  objetivoIds: string[]
+  periodoInicio: DataIso
+  periodoFim: DataIso
+  destinatario: Destinatario
+  /** Leitura do profissional. Obrigatoria, nunca gerada. */
+  consideracoes: string
+  /** Fotografia da emissao, como no RegistroAuditoria: nunca resolver pelo Usuario. */
+  autorNome: string
+  autorRegistro: string
+  emitidoEm: DataIso
+  /** O conteudo exatamente como foi emitido. */
+  conteudoEmitido: ConteudoRelatorio
+  /** "sha256:<hex>" do conteudo emitido, em JSON canonico. */
+  hashConteudo: string
+}
+
 // ---------------------------------------------------------------- Indicadores
 
 /** Todo numero do painel vem com o seu periodo. Nao existe numero sem rotulo. */

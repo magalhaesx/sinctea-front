@@ -62,6 +62,36 @@ body {
   border-radius: 4px;
 }
 
+/* Impressao: o que vai para o papel e a folha do relatorio (tela 10). O PDF
+   sai daqui, pelo proprio navegador — nao ha back-end para guardar arquivo. */
+@media print {
+  body { background: #fff; }
+
+  /* Cromo do produto: cabecalho, menu lateral, trilha de navegacao e os
+     controles da tela. Nada disso pertence ao documento. */
+  header, nav, .nao-imprimir { display: none !important; }
+
+  main {
+    padding: 0 !important;
+    background: #fff !important;
+    overflow: visible !important;
+  }
+
+  /* A moldura do prototipo nao faz sentido no papel. */
+  #conteudo > div > div { border: 0 !important; border-radius: 0 !important; }
+
+  .folha-relatorio {
+    border: 0;
+    padding: 0;
+    background: #fff;
+  }
+
+  /* Objetivo cortado entre duas paginas atrapalha a leitura do documento. */
+  .folha-relatorio li,
+  .folha-relatorio section,
+  .folha-relatorio footer { break-inside: avoid; }
+}
+
 /* Modo de alto contraste — preferencia oferecida pelo proprio produto */
 .contraste {
   --color-fundo: #ffffff;

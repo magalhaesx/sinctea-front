@@ -32,12 +32,16 @@ const esperar = (ms: number) => new Promise<void>((resolver) => setTimeout(resol
  * 4. devolve uma copia, como faria a rede: a tela nunca segura referencia ao
  *    estado do "servidor".
  */
-export async function responder<T>(operacao: () => T): Promise<T> {
+/**
+ * A operacao pode ser assincrona: o relatorio calcula um SHA-256 de verdade,
+ * e crypto.subtle so responde por Promise.
+ */
+export async function responder<T>(operacao: () => T | Promise<T>): Promise<T> {
   await esperar(LATENCIA_MIN_MS + Math.random() * (LATENCIA_MAX_MS - LATENCIA_MIN_MS))
   if (Math.random() < taxaDeFalha()) {
     throw new ErroServico('INDISPONIVEL', 'Falha simulada de comunicação (VITE_MOCK_FALHA).')
   }
-  return structuredClone(operacao())
+  return structuredClone(await operacao())
 }
 
 export function paginar<T>(itens: T[], filtro: FiltroPaginacao = {}): Pagina<T> {

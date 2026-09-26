@@ -103,6 +103,13 @@ export const servicosApi: Servicos = {
     listar: (filtro) => r('GET', q('/auditoria', filtro)),
   },
 
+  relatorios: {
+    previsualizar: (pacienteId, pedido) => r('POST', `/pacientes/${id(pacienteId)}/relatorios/previa`, pedido),
+    emitir: (pacienteId, pedido) => r('POST', `/pacientes/${id(pacienteId)}/relatorios`, pedido),
+    listarPorPaciente: (pacienteId, filtro) => r('GET', q(`/pacientes/${id(pacienteId)}/relatorios`, filtro)),
+    obter: (relatorioId) => r('GET', `/relatorios/${id(relatorioId)}`),
+  },
+
   indicadores: {
     resumo: () => r('GET', '/indicadores/resumo'),
     listarAlertas: (motivo, filtro) => r('GET', q(`/indicadores/alertas/${id(motivo)}`, filtro)),

@@ -91,7 +91,7 @@ Nada de vocabulário interpretativo ou culpabilizante na área da escola.
 
 ## 4. Modelo de dados
 
-21 classes. Diagrama completo em `docs/uml/`.
+22 classes. Diagrama completo em `docs/uml/`.
 
 ```
 Usuario ◁── Profissional | Responsavel | ProfessorAEE      (herança: autenticação única)
@@ -107,6 +107,7 @@ Objetivo 1─* AtividadeCasa | CartaoEstrategia
 AtividadeCasa 1─* ExecucaoAtividadeCasa *─1 Responsavel
 Sessao ◆─* RegistroAtividade *─1 Objetivo
 Paciente 1─* OcorrenciaComportamental *─0..1 Sessao
+RelatorioEvolucao *─1..* Objetivo   ("abrange")
 Responsavel 1─* Consentimento *─1 Escola | 1─1 Paciente
 Consentimento 1─1..* ConviteEscolar 1─0..1 VinculoEscolar 1─* OcorrenciaEscolar
 VinculoEscolar *─1 ProfessorAEE
@@ -178,9 +179,10 @@ Atualizado em 21/09/2026, lendo o código — não a memória.
 - Publicação automática no GitHub Pages, com testes antes do build
 
 **Em construção**
-- Etapa 7, telas 10, 12, 13 e 14: emitir relatório, validar planos, registro de
-  auditoria e gerenciar usuários. As três últimas já têm serviço; a tela 10 não
-  — **não existe contrato de relatório**, e a decisão de criá-lo é do Cowork
+- Etapa 7, telas 12, 13 e 14: validar planos, registro de auditoria e gerenciar
+  usuários. As três já têm serviço. A tela 10, emitir relatório, está pronta —
+  `RelatorioEvolucao` entrou no modelo e o documento emitido carrega o hash do
+  próprio conteúdo
 - Etapa 8, área da família e registro de ocorrência da escola: as telas 15, 16 e
   19 ainda leem `src/dados/exemplo.ts`, fixo no código
 - Etapa 9, site comercial: só existe `/sobre`; a raiz leva ao login
@@ -203,7 +205,7 @@ não devem ser afirmadas na defesa:
    back-end passa a calcular sobre o conteúdo do termo, ou o campo não pode ser
    apresentado como prova de consentimento.
 2. **A meta 8.5 da ODS 8 não tem sustentação no modelo.** Ela depende de uma
-   entidade de registro funcional que não existe em nenhuma das 21 classes. Ou a
+   entidade de registro funcional que não existe em nenhuma das 22 classes. Ou a
    entidade entra no modelo, ou a justificativa é reescrita.
 
 **Revisões do modelo**
@@ -214,9 +216,18 @@ não devem ser afirmadas na defesa:
 - 21/09/2026 — `Objetivo` ganhou `dominadoEm`; `OcorrenciaComportamental` trocou
   `preliminar` por `leituraClinicaEm`. As duas datas existem para o painel da
   coordenação poder contar quando cada transição aconteceu
+- 26/09/2026 — `RelatorioEvolucao` criada, a 22ª classe. Relatório emitido é
+  documento clínico: guarda o conteúdo como saiu e o hash dele, porque gerar de
+  novo a partir dos dados de hoje produziria outro documento
 
 **Pendências conhecidas do modelo**
 - Não existe entidade de registro funcional (ver a afirmação 2 acima)
+- **A tela 17 promete à família o que o sistema não faz.** Ela diz que
+  "registramos uma cópia do termo que você aceitou", e o que existe é o
+  `hashTermo` da afirmação 1 — um token aleatório, que não guarda cópia nenhuma.
+  É a tela que sustenta a LGPD no TCC prometendo o que não acontece. **Trabalho
+  da etapa 8**, que revisita a tela 17; a emissão de relatório (UC09) já mostra
+  a forma certa: guardar o conteúdo e o hash calculado sobre ele
 - Trilha de Autonomia movida para trabalhos futuros
 
 ## 8. Divisão de trabalho entre as duas sessões de IA

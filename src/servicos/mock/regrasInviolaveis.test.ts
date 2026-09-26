@@ -2,6 +2,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import { ErroServico, type OcorrenciaComportamental, type Sessao } from '../tipos'
 import { servicosMock as s } from '.'
 import { banco, relogio } from './infra'
+import { resumoSha256 } from '../../dominio/hash'
 
 /**
  * As regras inviolaveis do CLAUDE.md verificadas na camada de dados, e nao
@@ -772,5 +773,123 @@ describe('painel da coordenacao — conta e aponta', () => {
       expect(ponte.tempoAteLeituraClinica.medianaHoras).toBeGreaterThan(0)
     }
     expect(ponte.escolasComVinculoAtivo.periodo).toMatch(/\d{2}\/\d{2}/)
+  })
+})
+
+
+describe('relatorio de evolucao — documento clinico (UC09)', () => {
+  const pedido = {
+    periodoInicio: '2026-01-01',
+    periodoFim: '2030-12-31',
+    objetivoIds: ['o-001', 'o-002'],
+    destinatario: 'PROFISSIONAIS' as const,
+    consideracoes: 'Avanço consistente na comunicação funcional; a regulação sensorial segue exigindo apoio.',
+  }
+
+  it('a escola nunca alcanca o relatorio, e a tentativa fica auditada', async () => {
+    await entrarComo('PROFESSOR')
+    expect((await erroDe(s.relatorios.previsualizar('p-001', pedido))).codigo).toBe('ACESSO_NEGADO')
+    expect((await erroDe(s.relatorios.emitir('p-001', pedido))).codigo).toBe('ACESSO_NEGADO')
+    expect((await erroDe(s.relatorios.listarPorPaciente('p-001'))).codigo).toBe('ACESSO_NEGADO')
+    expect(await ultimaAuditoria()).toMatchObject({
+      acao: 'ACESSO_NEGADO', entidade: 'RelatorioEvolucao', pacienteId: 'p-001',
+    })
+
+    // A familia tambem nao: o relatorio e emitido PARA ela, nao POR ela.
+    await entrarComo('RESPONSAVEL')
+    expect((await erroDe(s.relatorios.emitir('p-001', pedido))).codigo).toBe('ACESSO_NEGADO')
+  })
+
+  it('sem consideracoes nao ha relatorio, e a previa nao as exige', async () => {
+    await entrarComo('TERAPEUTA')
+    // A previa monta o documento mesmo sem elas: e rascunho, nao emissao.
+    const previa = await chamar(s.relatorios.previsualizar('p-001', { ...pedido, consideracoes: '' }))
+    expect(previa.objetivos).toHaveLength(2)
+
+    const erro = await erroDe(s.relatorios.emitir('p-001', { ...pedido, consideracoes: '   ' }))
+    expect(erro.codigo).toBe('VALIDACAO')
+    expect(erro.campos.consideracoes).toBe(
+      'O relatório é a sua leitura clínica, não só os números. Escreva as suas considerações — elas não são geradas pelo sistema.',
+    )
+  })
+
+  it('o destinatario decide qual das duas redacoes vai no documento', async () => {
+    await entrarComo('TERAPEUTA')
+    const plano = await chamar(s.planos.obterPorPaciente('p-001'))
+    const objetivo = plano.objetivos.find((o) => o.id === 'o-001')!
+
+    const paraEquipe = await chamar(s.relatorios.previsualizar('p-001', { ...pedido, objetivoIds: ['o-001'] }))
+    const paraFamilia = await chamar(s.relatorios.previsualizar('p-001', {
+      ...pedido, objetivoIds: ['o-001'], destinatario: 'FAMILIA',
+    }))
+
+    expect(paraEquipe.objetivos[0].redacao).toBe(objetivo.descricaoTecnica)
+    expect(paraFamilia.objetivos[0].redacao).toBe(objetivo.descricaoAcessivel)
+    expect(paraEquipe.objetivos[0].redacao).not.toBe(paraFamilia.objetivos[0].redacao)
+  })
+
+  it('emitir grava o conteudo com hash do proprio conteudo, e audita', async () => {
+    await entrarComo('TERAPEUTA')
+    const relatorio = await chamar(s.relatorios.emitir('p-001', pedido))
+
+    expect(relatorio.autorNome).toBeTruthy()
+    expect(relatorio.autorRegistro).toBeTruthy()
+    // O hash e do conteudo emitido, nao um valor com cara de hash.
+    expect(relatorio.hashConteudo).toBe(await resumoSha256(relatorio.conteudoEmitido))
+    expect(await ultimaAuditoria()).toMatchObject({
+      acao: 'CRIACAO', entidade: 'RelatorioEvolucao', idEntidade: relatorio.id, pacienteId: 'p-001',
+    })
+
+    // Abrir o emitido e leitura de dado sensivel.
+    await entrarComo('TERAPEUTA')
+    const aberto = await chamar(s.relatorios.obter(relatorio.id))
+    expect(aberto.hashConteudo).toBe(relatorio.hashConteudo)
+    expect(await ultimaAuditoria()).toMatchObject({
+      acao: 'LEITURA_AUTORIZADA', entidade: 'RelatorioEvolucao', idEntidade: relatorio.id,
+      pacienteId: 'p-001',
+    })
+
+    const lista = await chamar(s.relatorios.listarPorPaciente('p-001', { porPagina: 50 }))
+    expect(lista.itens.map((r) => r.id)).toContain(relatorio.id)
+  })
+
+  it('o emitido nao se regenera: mudar o dado depois nao muda o documento', async () => {
+    await entrarComo('TERAPEUTA')
+    const relatorio = await chamar(s.relatorios.emitir('p-001', { ...pedido, objetivoIds: ['o-001'] }))
+    const redacaoNaEmissao = relatorio.conteudoEmitido.objetivos[0].redacao
+
+    // Mexe no banco direto porque e exatamente isto que o campo existe para
+    // resistir: o dado de origem mudando depois que a copia ja saiu.
+    const objetivo = banco.planos
+      .flatMap((p) => p.objetivos)
+      .find((o) => o.id === 'o-001')!
+    const original = objetivo.descricaoTecnica
+    objetivo.descricaoTecnica = 'Redacao trocada depois da emissao.'
+    try {
+      const aberto = await chamar(s.relatorios.obter(relatorio.id))
+      expect(aberto.conteudoEmitido.objetivos[0].redacao).toBe(redacaoNaEmissao)
+      expect(await resumoSha256(aberto.conteudoEmitido)).toBe(aberto.hashConteudo)
+
+      // Gerar de novo hoje produziria outro documento — que e o motivo de o
+      // relatorio ser classe, e nao uma consulta.
+      const agora = await chamar(s.relatorios.previsualizar('p-001', { ...pedido, objetivoIds: ['o-001'] }))
+      expect(agora.objetivos[0].redacao).not.toBe(redacaoNaEmissao)
+    } finally {
+      objetivo.descricaoTecnica = original
+    }
+  })
+
+  it('objetivo de outro plano nao entra no relatorio', async () => {
+    await entrarComo('COORDENADOR')
+    const erro = await erroDe(s.relatorios.emitir('p-001', { ...pedido, objetivoIds: ['o-007'] }))
+    expect(erro.codigo).toBe('VALIDACAO')
+  })
+
+  it('periodo invertido e recusado no campo do periodo', async () => {
+    await entrarComo('TERAPEUTA')
+    const erro = await erroDe(s.relatorios.emitir('p-001', {
+      ...pedido, periodoInicio: '2026-09-30', periodoFim: '2026-09-01',
+    }))
+    expect(erro.campos.periodo).toBeTruthy()
   })
 })

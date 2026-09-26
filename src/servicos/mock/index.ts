@@ -5,6 +5,7 @@ import { areaEscolaMock } from './escola'
 import { atividadesMock, consentimentosMock, convitesMock, familiaMock } from './familia'
 import { auditoriaMock, usuariosMock } from './gestao'
 import { indicadoresMock } from './indicadores'
+import { relatoriosMock } from './relatorios'
 import { escolasMock, pacientesMock, profissionaisMock } from './pacientes'
 
 /**
@@ -27,4 +28,5 @@ export const servicosMock: Servicos = {
   auditoria: auditoriaMock,
   usuarios: usuariosMock,
   indicadores: indicadoresMock,
+  relatorios: relatoriosMock,
 }

@@ -61,7 +61,13 @@ type EstadoLista =
   | { tipo: 'erro'; erro: unknown }
   | { tipo: 'pronto'; dados: Pagina<OcorrenciaComportamental> }
 
-const emData = (iso: string) => new Date(iso).toLocaleDateString('pt-BR')
+/**
+ * Data em AAAA-MM-DD vira meio-dia local antes de virar Date: sem isso o
+ * navegador le a data-only como meia-noite UTC e o fuso puxa o dia para tras —
+ * 12/03 nasce virando 11/03. Texto com hora passa direto.
+ */
+const emData = (iso: string) =>
+  new Date(iso.length === 10 ? `${iso}T12:00:00` : iso).toLocaleDateString('pt-BR')
 
 /**
  * Eventos comportamentais dos ultimos 30 dias, de todas as origens, com a
@@ -349,6 +355,9 @@ export function Ficha() {
                 </BotaoLink>
                 <BotaoLink para={`/app/clinica/pacientes/${p.id}/atividades`} area="cli" variante="secundaria">
                   Atividades para casa
+                </BotaoLink>
+                <BotaoLink para={`/app/clinica/pacientes/${p.id}/relatorio`} area="cli" variante="secundaria">
+                  Emitir relatório
                 </BotaoLink>
               </div>
             </section>
