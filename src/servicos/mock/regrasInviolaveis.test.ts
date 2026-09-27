@@ -879,6 +879,29 @@ describe('relatorio de evolucao — documento clinico (UC09)', () => {
     }
   })
 
+  it('o mesmo relatorio muda de lingua com o destinatario', async () => {
+    await entrarComo('TERAPEUTA')
+    const paraEquipe = await chamar(s.relatorios.emitir('p-001', { ...pedido, objetivoIds: ['o-001'] }))
+    const paraFamilia = await chamar(s.relatorios.emitir('p-001', {
+      ...pedido, objetivoIds: ['o-001'], destinatario: 'FAMILIA',
+    }))
+
+    const daEquipe = paraEquipe.conteudoEmitido.objetivos[0]
+    const daFamilia = paraFamilia.conteudoEmitido.objetivos[0]
+    expect(daFamilia.redacao).not.toBe(daEquipe.redacao)
+    expect(daFamilia.criterioTexto).not.toBe(daEquipe.criterioTexto)
+    expect(daFamilia.periodoTexto).not.toBe(daEquipe.periodoTexto)
+
+    // O documento da familia nao carrega percentual em lugar nenhum — nem
+    // impresso, nem guardado: o que o hash cobre e o que ela recebeu.
+    expect(JSON.stringify(paraFamilia.conteudoEmitido)).not.toContain('%')
+    expect(JSON.stringify(paraEquipe.conteudoEmitido)).toContain('%')
+
+    // E cada um continua conferindo contra o proprio conteudo.
+    expect(paraFamilia.hashConteudo).toBe(await resumoSha256(paraFamilia.conteudoEmitido))
+    expect(paraEquipe.hashConteudo).not.toBe(paraFamilia.hashConteudo)
+  })
+
   it('objetivo de outro plano nao entra no relatorio', async () => {
     await entrarComo('COORDENADOR')
     const erro = await erroDe(s.relatorios.emitir('p-001', { ...pedido, objetivoIds: ['o-007'] }))

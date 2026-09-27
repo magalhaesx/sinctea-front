@@ -12,6 +12,7 @@ import { Paginacao } from '../../ui/Paginacao'
 import { Tabela, type Coluna } from '../../ui/Tabela'
 import { usarSessao } from '../../contexto/Sessao'
 import { descricaoNivelSuporte } from '../../dominio/regras'
+import { emData } from '../../dominio/datas'
 import {
   servicos, type NivelSuporte, type Pagina, type PacienteResumo, type Profissional,
   type SituacaoPlano,
@@ -70,7 +71,7 @@ const colunas: Coluna<PacienteResumo>[] = [
   {
     id: 'ultima', titulo: 'Última sessão', numerica: true,
     celula: (p) => p.ultimaSessaoEm
-      ? new Date(p.ultimaSessaoEm).toLocaleDateString('pt-BR')
+      ? emData(p.ultimaSessaoEm)
       : <><span aria-hidden="true">—</span><span className="sr-only">Nenhuma sessão registrada</span></>,
   },
 ]

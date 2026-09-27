@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { Tela } from '../LayoutApp'
+import { emData } from '../../dominio/datas'
 import { BotaoLink } from '../../ui/Botao'
 import { Titulo } from '../../ui/Titulo'
 import { usarSessao } from '../../contexto/Sessao'
@@ -108,7 +109,7 @@ export function CartaoEstrategias() {
 
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-linha pt-3">
               <span className="text-sm text-tinta2">
-                Autorizado pela família até {new Date(estado.cartao.validadeAte).toLocaleDateString('pt-BR')}.
+                Autorizado pela família até {emData(estado.cartao.validadeAte)}.
                 <br />Sua consulta fica registrada.
               </span>
               <BotaoLink para={`/app/escola/${pacienteId}/ocorrencia`} area="esc">

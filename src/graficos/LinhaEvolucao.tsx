@@ -1,5 +1,6 @@
 import { useId, useState } from 'react'
 import { Botao } from '../ui/Botao'
+import { emData } from '../dominio/datas'
 
 /**
  * Serie unica: nao leva legenda — o titulo nomeia a serie (docs/02, secao 5).
@@ -64,7 +65,7 @@ export function LinhaEvolucao({ titulo, pontos, criterio }: {
               {pontos.map((p) => (
                 <tr key={p.rotulo} className="border-t border-linha">
                   <th scope="row" className="px-3 py-2 text-left font-bold">{p.rotulo}</th>
-                  <td className="px-3 py-2">{new Date(p.data).toLocaleDateString('pt-BR')}</td>
+                  <td className="px-3 py-2">{emData(p.data)}</td>
                   <td className="px-3 py-2 text-right tabular-nums">{p.percentual}%</td>
                 </tr>
               ))}

@@ -7,6 +7,7 @@ import {
   objetivoAtingiuCriterio,
   pacienteSemSessaoRecente, percentualIndependente, planoPrecisaRevisao, podeCorrigirOcorrencia,
   podeDesativarUsuario, situacaoConsentimento, situacaoConvite, suficienciaComparacao,
+  textoDoCriterio, textoDoPeriodo,
   validarDevolucaoPlano, validarNovoConsentimento, validarNovoObjetivo, verificarAcessoEscola,
 } from './regras'
 
@@ -186,6 +187,39 @@ describe('frequenciaSemanalEmPalavras', () => {
   it('fora da faixa, volta para dentro dela', () => {
     expect(frequenciaSemanalEmPalavras(0)).toBe('uma vez por semana')
     expect(frequenciaSemanalEmPalavras(12)).toBe('todos os dias')
+  })
+})
+
+describe('textoDoCriterio e textoDoPeriodo', () => {
+  const criterio = { percentualMinimo: 80, sessoesConsecutivas: 3 }
+
+  it('a equipe le percentual', () => {
+    expect(textoDoCriterio(criterio, 'PROFISSIONAIS')).toBe('80% em 3 sessões consecutivas')
+    expect(textoDoPeriodo([30, 50, 90, 70], 'PROFISSIONAIS'))
+      .toBe('primeiro 30% · último 70% · melhor 90%')
+  })
+
+  it('a familia le a mesma exigencia em vezes, sem nenhum percentual', () => {
+    expect(textoDoCriterio(criterio, 'FAMILIA')).toBe('conseguir 8 de cada 10 vezes, em 3 sessões seguidas')
+    expect(textoDoPeriodo([30, 50, 90], 'FAMILIA'))
+      .toBe('de 3 de cada 10 vezes para 9 de cada 10 vezes')
+    expect(textoDoCriterio(criterio, 'FAMILIA')).not.toContain('%')
+    expect(textoDoPeriodo([30, 90], 'FAMILIA')).not.toContain('%')
+  })
+
+  it('uma sessao so nao vira "de X para X"', () => {
+    expect(textoDoPeriodo([60], 'FAMILIA')).toBe('6 de cada 10 vezes')
+  })
+
+  it('sem registro no periodo nao ha o que dizer', () => {
+    expect(textoDoPeriodo([], 'FAMILIA')).toBeNull()
+    expect(textoDoPeriodo([], 'PROFISSIONAIS')).toBeNull()
+  })
+
+  it('uma sessao consecutiva nao vira "1 sessões seguidas"', () => {
+    const uma = { percentualMinimo: 100, sessoesConsecutivas: 1 }
+    expect(textoDoCriterio(uma, 'PROFISSIONAIS')).toBe('100% em 1 sessão consecutiva')
+    expect(textoDoCriterio(uma, 'FAMILIA')).toBe('conseguir todas as vezes, em 1 sessão')
   })
 })
 

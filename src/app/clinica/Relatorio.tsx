@@ -10,6 +10,7 @@ import { EstadoCarregando } from '../../ui/EstadoCarregando'
 import { EstadoErro } from '../../ui/EstadoErro'
 import { Paginacao } from '../../ui/Paginacao'
 import { FolhaRelatorio, NOME_DO_DESTINATARIO } from '../../componentes/FolhaRelatorio'
+import { diaIso, emData } from '../../dominio/datas'
 import {
   ErroServico, servicos, type ConteudoRelatorio, type Destinatario, type Pagina,
   type PedidoRelatorio, type PlanoTerapeutico, type RelatorioEvolucao,
@@ -37,19 +38,6 @@ type Estado<T> =
   | { tipo: 'carregando' }
   | { tipo: 'erro'; erro: unknown }
   | { tipo: 'pronto'; dados: T }
-
-/**
- * Data em AAAA-MM-DD vira meio-dia local antes de virar Date: sem isso o
- * navegador le a data-only como meia-noite UTC e o fuso puxa o dia para tras —
- * 12/03 nasce virando 11/03. Texto com hora passa direto.
- */
-const emData = (iso: string) =>
-  new Date(iso.length === 10 ? `${iso}T12:00:00` : iso).toLocaleDateString('pt-BR')
-
-/** AAAA-MM-DD no fuso de quem usa: o periodo e de dias inteiros. */
-function diaIso(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-}
 
 export function Relatorio() {
   const { id = '' } = useParams()
@@ -336,7 +324,7 @@ export function Relatorio() {
                               </b>
                               <span className="block text-sm text-tinta2">
                                 {NOME_DO_DESTINATARIO[r.destinatario]} · emitido em{' '}
-                                {new Date(r.emitidoEm).toLocaleDateString('pt-BR')} por {r.autorNome}
+                                {emData(r.emitidoEm)} por {r.autorNome}
                               </span>
                             </span>
                             <span aria-hidden="true" className="text-tinta2">›</span>

@@ -10,6 +10,7 @@ import { EstadoCarregando } from '../../ui/EstadoCarregando'
 import { EstadoErro } from '../../ui/EstadoErro'
 import { Paginacao } from '../../ui/Paginacao'
 import { descricaoNivelSuporte, ehPreliminar } from '../../dominio/regras'
+import { emData } from '../../dominio/datas'
 import {
   ErroServico, servicos, type OcorrenciaComportamental, type Origem, type Pagina,
   type PacienteDetalhe, type SituacaoConsentimento, type SituacaoPlano,
@@ -60,14 +61,6 @@ type EstadoLista =
   | { tipo: 'carregando' }
   | { tipo: 'erro'; erro: unknown }
   | { tipo: 'pronto'; dados: Pagina<OcorrenciaComportamental> }
-
-/**
- * Data em AAAA-MM-DD vira meio-dia local antes de virar Date: sem isso o
- * navegador le a data-only como meia-noite UTC e o fuso puxa o dia para tras —
- * 12/03 nasce virando 11/03. Texto com hora passa direto.
- */
-const emData = (iso: string) =>
-  new Date(iso.length === 10 ? `${iso}T12:00:00` : iso).toLocaleDateString('pt-BR')
 
 /**
  * Eventos comportamentais dos ultimos 30 dias, de todas as origens, com a

@@ -11,6 +11,7 @@ import { EstadoCarregando } from '../../ui/EstadoCarregando'
 import { EstadoErro } from '../../ui/EstadoErro'
 import { Paginacao } from '../../ui/Paginacao'
 import { usarSessao } from '../../contexto/Sessao'
+import { dataIsoParaLocal, diaIso } from '../../dominio/datas'
 import {
   servicos, type AvisoOcorrenciaEscolar, type ItemAgenda, type Pagina, type SituacaoSessao,
 } from '../../servicos'
@@ -42,16 +43,13 @@ type Estado<T> =
   | { tipo: 'pronto'; dados: T }
 
 /** AAAA-MM-DD no fuso de quem usa, que e como a agenda e pedida. */
-const diaDeHoje = () => {
-  const d = new Date()
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-}
+const diaDeHoje = () => diaIso(new Date())
 
 const hora = (iso: string) =>
-  new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+  dataIsoParaLocal(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
 
 const quando = (iso: string) => {
-  const data = new Date(iso)
+  const data = dataIsoParaLocal(iso)
   const hoje = new Date()
   const mesmoDia = data.toDateString() === hoje.toDateString()
   return mesmoDia
@@ -116,7 +114,7 @@ export function PainelClinica() {
   }
 
   const ehHoje = dia === diaDeHoje()
-  const dataPorExtenso = new Date(`${dia}T12:00:00`).toLocaleDateString('pt-BR', {
+  const dataPorExtenso = dataIsoParaLocal(dia).toLocaleDateString('pt-BR', {
     weekday: 'long', day: 'numeric', month: 'long',
   })
   const totalNaAgenda = agenda.tipo === 'pronto' ? agenda.dados.total : null

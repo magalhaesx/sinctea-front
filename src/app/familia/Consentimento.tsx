@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Tela } from '../LayoutApp'
+import { dataIsoParaLocal, emData } from '../../dominio/datas'
 import { Aviso } from '../../ui/Aviso'
 import { Botao } from '../../ui/Botao'
 import { Campo } from '../../ui/Campo'
@@ -42,7 +43,6 @@ type Estado =
   | { tipo: 'erro'; erro: unknown }
   | { tipo: 'pronto'; filhos: FilhoResumo[]; escolas: Escola[]; consentimentos: ConsentimentoDetalhe[] }
 
-const emData = (iso: string) => new Date(iso).toLocaleDateString('pt-BR')
 
 export function Consentimento() {
   const [estado, setEstado] = useState<Estado>({ tipo: 'carregando' })
@@ -256,7 +256,7 @@ export function Consentimento() {
               <h2 className="text-base font-bold">Convite gerado</h2>
               <p className="mb-3 text-sm text-tinta2">
                 Entregue este convite ao professor. Ele vale para um único cadastro e expira
-                em {emData(convite.conviteExpiraEm)}, às {new Date(convite.conviteExpiraEm).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}.
+                em {emData(convite.conviteExpiraEm)}, às {dataIsoParaLocal(convite.conviteExpiraEm).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}.
               </p>
               <p className="font-bold break-all tabular-nums">
                 {location.origin}/#/app/convite/{convite.tokenConvite}

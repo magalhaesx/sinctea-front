@@ -8,6 +8,7 @@ import { EstadoCarregando } from '../../ui/EstadoCarregando'
 import { EstadoErro } from '../../ui/EstadoErro'
 import { EstadoVazio } from '../../ui/EstadoVazio'
 import { Tela } from '../LayoutApp'
+import { emData } from '../../dominio/datas'
 
 /**
  * Lista de alunos do professor · /app/escola
@@ -93,7 +94,7 @@ export function Alunos() {
                         ))}
                       </ul>
                       <p className="mt-2 text-sm text-tinta2">
-                        Acesso autorizado até {new Date(aluno.validadeAte).toLocaleDateString('pt-BR')}.
+                        Acesso autorizado até {emData(aluno.validadeAte)}.
                       </p>
                     </>
                   ) : (

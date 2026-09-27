@@ -380,13 +380,17 @@ export interface ObjetivoNoRelatorio {
   dominio: string
   /** A redacao do destinatario: tecnica para a equipe, acessivel para a familia. */
   redacao: string
-  criterio: CriterioDominio
+  /**
+   * O criterio e o resultado ja escritos na lingua do destinatario: percentual
+   * para a equipe, "8 de cada 10 vezes" para a familia. Texto, e nao numero,
+   * porque o conteudo emitido guarda o que foi impresso — e o hash precisa
+   * cobrir exatamente o que a pessoa recebeu.
+   */
+  criterioTexto: string
   /** Sessoes do periodo em que ESTE objetivo foi trabalhado. */
   sessoesNoPeriodo: number
-  /** Nulos quando nenhuma sessao do periodo registrou tentativa do objetivo. */
-  primeiroPercentual: number | null
-  ultimoPercentual: number | null
-  melhorPercentual: number | null
+  /** Nulo quando nenhuma sessao do periodo registrou tentativa do objetivo. */
+  periodoTexto: string | null
   status: StatusObjetivo
   dominadoEm: DataIso | null
 }

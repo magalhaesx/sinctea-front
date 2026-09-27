@@ -14,6 +14,7 @@ import { LinhaEvolucao, type PontoSessao } from '../../graficos/LinhaEvolucao'
 import {
   objetivoAtingiuCriterio, percentualIndependente, suficienciaComparacao, SUFICIENCIA_MINIMA,
 } from '../../dominio/regras'
+import { emData } from '../../dominio/datas'
 import {
   ErroServico, servicos, type AtividadeCasa, type Desempenho, type ExecucaoAtividadeCasa,
   type Objetivo, type OcorrenciaComportamental, type Origem, type Sessao,
@@ -35,7 +36,6 @@ import {
  * Por isso vai em duas etapas, como o encerramento de acesso da tela 17.
  */
 
-const emData = (iso: string) => new Date(iso).toLocaleDateString('pt-BR')
 
 const NOME_DO_CONTEXTO: Record<Origem, string> = {
   CLINICA: 'na clínica', CASA: 'em casa', ESCOLA: 'na escola',

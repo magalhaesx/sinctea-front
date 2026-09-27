@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { emData } from '../dominio/datas'
 import type { ConteudoRelatorio, Destinatario, ObjetivoNoRelatorio } from '../servicos'
 
 /**
@@ -21,15 +22,6 @@ const SITUACAO: Record<ObjetivoNoRelatorio['status'], string> = {
   DOMINADO: 'Dominado',
 }
 
-/**
- * Data em AAAA-MM-DD vira meio-dia local antes de virar Date: sem isso o
- * navegador le a data-only como meia-noite UTC e o fuso puxa o dia para tras —
- * 12/03 nasce virando 11/03. Texto com hora passa direto.
- */
-const emData = (iso: string) =>
-  new Date(iso.length === 10 ? `${iso}T12:00:00` : iso).toLocaleDateString('pt-BR')
-const percentual = (v: number | null) => v === null ? '—' : `${v}%`
-
 /*
  * As listas de definicao so viram duas colunas a partir de sm: a 320px, com
  * "Texto maior" ligado, rotulo e valor lado a lado estouram a borda do bloco.
@@ -40,6 +32,7 @@ export function FolhaRelatorio({ conteudo, rodape }: {
   rodape?: ReactNode
 }) {
   const { paciente } = conteudo
+  const paraFamilia = conteudo.destinatario === 'FAMILIA'
   return (
     <article className="folha-relatorio rounded-xl border border-linha bg-sup p-5 sm:p-7">
       <header>
@@ -70,19 +63,16 @@ export function FolhaRelatorio({ conteudo, rodape }: {
                 <p className="mt-1 text-[15px]">{o.redacao}</p>
 
                 <dl className="mt-3 grid gap-x-4 gap-y-1.5 text-[15px] sm:grid-cols-[auto_1fr]">
-                  <dt className="font-bold">Critério de domínio</dt>
-                  <dd>
-                    {o.criterio.percentualMinimo}% em {o.criterio.sessoesConsecutivas}{' '}
-                    {o.criterio.sessoesConsecutivas === 1 ? 'sessão consecutiva' : 'sessões consecutivas'}
-                  </dd>
+                  {/* Para a familia o alvo se chama objetivo, nao criterio de
+                      dominio: o texto ao lado ja vem na lingua dela. */}
+                  <dt className="font-bold">
+                    {paraFamilia ? 'Objetivo' : 'Critério de domínio'}
+                  </dt>
+                  <dd>{o.criterioTexto}</dd>
                   <dt className="font-bold">Sessões com este objetivo</dt>
                   <dd className="tabular-nums">{o.sessoesNoPeriodo}</dd>
                   <dt className="font-bold">No período</dt>
-                  <dd className="tabular-nums">
-                    {o.sessoesNoPeriodo === 0
-                      ? 'Sem registro no período'
-                      : `primeiro ${percentual(o.primeiroPercentual)} · último ${percentual(o.ultimoPercentual)} · melhor ${percentual(o.melhorPercentual)}`}
-                  </dd>
+                  <dd>{o.periodoTexto ?? 'Sem registro no período'}</dd>
                   <dt className="font-bold">Situação</dt>
                   <dd>
                     {SITUACAO[o.status]}

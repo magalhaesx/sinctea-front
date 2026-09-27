@@ -12,6 +12,7 @@ import { EstadoErro } from '../../ui/EstadoErro'
 import { Paginacao } from '../../ui/Paginacao'
 import { CartaoAtividadeFamilia } from '../../componentes/CartaoAtividadeFamilia'
 import { frequenciaSemanalEmPalavras } from '../../dominio/regras'
+import { emData } from '../../dominio/datas'
 import {
   ErroServico, servicos, type AtividadeCasa, type Desempenho, type ExecucaoAtividadeCasa,
   type NovaAtividadeCasa, type Objetivo, type Pagina, type PlanoTerapeutico,
@@ -48,7 +49,6 @@ type Estado<T> =
   | { tipo: 'erro'; erro: unknown }
   | { tipo: 'pronto'; dados: T }
 
-const emData = (iso: string) => new Date(iso).toLocaleDateString('pt-BR')
 const plural = (n: number, um: string, muitos: string) => `${n} ${n === 1 ? um : muitos}`
 
 /** Zero hora do primeiro dos ultimos sete dias, contando hoje. */

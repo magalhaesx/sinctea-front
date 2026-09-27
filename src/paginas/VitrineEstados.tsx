@@ -5,6 +5,7 @@ import { Botao } from '../ui/Botao'
 import { Etiqueta } from '../ui/Etiqueta'
 import { Titulo } from '../ui/Titulo'
 import { descricaoNivelSuporte } from '../dominio/regras'
+import { emData } from '../dominio/datas'
 import { ErroServico, servicos, type Pagina, type PacienteResumo } from '../servicos'
 import { EstadoCarregando } from '../ui/EstadoCarregando'
 import { EstadoErro } from '../ui/EstadoErro'
@@ -31,7 +32,7 @@ const colunas: Coluna<PacienteResumo>[] = [
   },
   {
     id: 'ultima', titulo: 'Última sessão', numerica: true,
-    celula: (p) => p.ultimaSessaoEm ? new Date(p.ultimaSessaoEm).toLocaleDateString('pt-BR') : '—',
+    celula: (p) => p.ultimaSessaoEm ? emData(p.ultimaSessaoEm) : '—',
   },
 ]
 

@@ -11,6 +11,7 @@ import { Titulo } from '../../ui/Titulo'
 import { EstadoCarregando } from '../../ui/EstadoCarregando'
 import { EstadoErro } from '../../ui/EstadoErro'
 import { validarNovoObjetivo } from '../../dominio/regras'
+import { emData } from '../../dominio/datas'
 import {
   ErroServico, servicos, type NovoObjetivo, type Objetivo, type PlanoTerapeutico,
   type SituacaoPlano, type StatusObjetivo,
@@ -41,7 +42,6 @@ const STATUS_OBJETIVO: Record<StatusObjetivo, { rotulo: string; tom: 'ok' | 'at'
 }
 
 const CRITERIO_PADRAO = { percentualMinimo: '80', sessoesConsecutivas: '3' }
-const emData = (iso: string) => new Date(iso).toLocaleDateString('pt-BR')
 
 type Estado =
   | { tipo: 'carregando' }

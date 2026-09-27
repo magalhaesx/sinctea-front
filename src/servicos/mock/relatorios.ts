@@ -3,7 +3,7 @@ import {
   ErroServico, type ConteudoRelatorio, type ObjetivoNoRelatorio, type PedidoRelatorio,
   type RelatorioEvolucao, type Sessao,
 } from '../tipos'
-import { percentualIndependente } from '../../dominio/regras'
+import { percentualIndependente, textoDoCriterio, textoDoPeriodo } from '../../dominio/regras'
 import { resumoSha256 } from '../../dominio/hash'
 import { exigirPacienteClinico } from './acesso'
 import { auditar, banco, exigirValido, gerarId, naoEncontrado, paginar, relogio, responder } from './infra'
@@ -55,11 +55,11 @@ function montarConteudo(pacienteId: string, pedido: PedidoRelatorio): ConteudoRe
       redacao: pedido.destinatario === 'FAMILIA'
         ? objetivo.descricaoAcessivel
         : objetivo.descricaoTecnica,
-      criterio: { ...objetivo.criterio },
+      // Os numeros tambem mudam de lingua com o destinatario, pela mesma razao
+      // das duas redacoes: quem le em casa nao conta em porcentagem.
+      criterioTexto: textoDoCriterio(objetivo.criterio, pedido.destinatario),
       sessoesNoPeriodo: percentuais.length,
-      primeiroPercentual: percentuais[0] ?? null,
-      ultimoPercentual: percentuais[percentuais.length - 1] ?? null,
-      melhorPercentual: percentuais.length > 0 ? Math.max(...percentuais) : null,
+      periodoTexto: textoDoPeriodo(percentuais, pedido.destinatario),
       status: objetivo.status,
       dominadoEm: objetivo.dominadoEm,
     }

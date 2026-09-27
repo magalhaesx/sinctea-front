@@ -1,5 +1,6 @@
 import { useId, useState } from 'react'
 import { Botao } from '../ui/Botao'
+import { dataIsoParaLocal, emData } from '../dominio/datas'
 import type { Desempenho } from '../servicos'
 
 /**
@@ -37,7 +38,8 @@ const ROTULO_CASA: Record<Desempenho, string> = {
   SOZINHO: 'Sozinho', COM_AJUDA: 'Com ajuda', NAO_QUIS: 'Não quis',
 }
 
-const dia = (iso: string) => new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+const dia = (iso: string) =>
+  dataIsoParaLocal(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
 
 function Faixa({ titulo, descricao, children, rotulos, aoTempo }: {
   titulo: string
@@ -132,7 +134,7 @@ export function FaixasContexto({ clinica, casa, escola }: {
               {linhasDaTabela.map((l) => (
                 <tr key={l.data} className="border-t border-linha">
                   <th scope="row" className="px-3 py-2 text-left font-bold whitespace-nowrap">
-                    {new Date(l.data).toLocaleDateString('pt-BR')}
+                    {emData(l.data)}
                   </th>
                   <td className="px-3 py-2 tabular-nums">{l.clinica ? `${l.clinica.percentual}%` : '—'}</td>
                   <td className="px-3 py-2">{l.casa ? ROTULO_CASA[l.casa.desempenho] : '—'}</td>

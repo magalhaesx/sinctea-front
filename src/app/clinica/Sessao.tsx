@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { Tela } from '../LayoutApp'
+import { dataIsoParaLocal } from '../../dominio/datas'
 import { Aviso } from '../../ui/Aviso'
 import { Botao, BotaoLink } from '../../ui/Botao'
 import { Campo } from '../../ui/Campo'
@@ -51,7 +52,8 @@ type Estado =
   | { tipo: 'erro'; erro: unknown }
   | { tipo: 'pronto'; objetivos: Objetivo[]; sessao: Sessao | null }
 
-const hora = (iso: string) => new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+const hora = (iso: string) =>
+  dataIsoParaLocal(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
 
 export function RegistroSessao() {
   const { id = '' } = useParams()

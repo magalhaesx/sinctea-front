@@ -6,6 +6,7 @@ import { Cartao } from '../ui/Cartao'
 import { Etiqueta } from '../ui/Etiqueta'
 import { Titulo } from '../ui/Titulo'
 import { usarSessao } from '../contexto/Sessao'
+import { emData } from '../dominio/datas'
 import { ErroServico, servicos, type ConvitePublico } from '../servicos'
 import { EstadoCarregando } from '../ui/EstadoCarregando'
 import { EstadoErro } from '../ui/EstadoErro'
@@ -130,7 +131,7 @@ export function Convite() {
                 ))}
               </ul>
               <p className="mt-2 text-sm text-tinta2">
-                O acesso vale até {new Date(estado.convite.validadeAte!).toLocaleDateString('pt-BR')} e
+                O acesso vale até {emData(estado.convite.validadeAte!)} e
                 a família pode encerrá-lo quando quiser.
               </p>
 

@@ -1,5 +1,5 @@
 import type {
-  Consentimento, ConviteEscolar, CriterioDominio, DataIso, EscopoAcesso, NivelSuporte,
+  Consentimento, ConviteEscolar, CriterioDominio, DataIso, Destinatario, EscopoAcesso, NivelSuporte,
   NovoConsentimento, NovoObjetivo, OcorrenciaComportamental, Origem, PlanoTerapeutico,
   RegistroAtividade, Sessao, SituacaoConsentimento, SituacaoConvite, StatusObjetivo,
 } from '../servicos/tipos'
@@ -176,6 +176,41 @@ export function frequenciaSemanalEmPalavras(vezes: number): string {
   if (n === 1) return 'uma vez por semana'
   const nomes = ['', '', 'duas', 'três', 'quatro', 'cinco', 'seis']
   return `${nomes[n]} vezes por semana`
+}
+
+/**
+ * O criterio de dominio como o destinatario le. A equipe le percentual, que e
+ * a lingua certa ali; a familia le a mesma exigencia em vezes, que e como ela
+ * conta em casa.
+ */
+export function textoDoCriterio(criterio: CriterioDominio, destinatario: Destinatario): string {
+  const sessoes = criterio.sessoesConsecutivas
+  if (destinatario === 'FAMILIA') {
+    return `conseguir ${frequenciaEmLinguagemCotidiana(criterio.percentualMinimo)}, ` +
+      (sessoes === 1 ? 'em 1 sessão' : `em ${sessoes} sessões seguidas`)
+  }
+  return `${criterio.percentualMinimo}% em ${sessoes} ` +
+    (sessoes === 1 ? 'sessão consecutiva' : 'sessões consecutivas')
+}
+
+/**
+ * O que o periodo mostrou. Para a equipe, os tres numeros; para a familia, o
+ * caminho entre o primeiro e o ultimo — sem percentual nenhum, porque numero
+ * de porcentagem nao e a lingua de quem le em casa.
+ *
+ * `percentuais` vem em ordem cronologica. Vazio quando o objetivo nao foi
+ * trabalhado no periodo, e ai nao ha o que dizer.
+ */
+export function textoDoPeriodo(percentuais: number[], destinatario: Destinatario): string | null {
+  if (percentuais.length === 0) return null
+  const primeiro = percentuais[0]
+  const ultimo = percentuais[percentuais.length - 1]
+  if (destinatario === 'FAMILIA') {
+    return percentuais.length === 1
+      ? frequenciaEmLinguagemCotidiana(ultimo)
+      : `de ${frequenciaEmLinguagemCotidiana(primeiro)} para ${frequenciaEmLinguagemCotidiana(ultimo)}`
+  }
+  return `primeiro ${primeiro}% · último ${ultimo}% · melhor ${Math.max(...percentuais)}%`
 }
 
 // ---------------------------------------------------------------- Consentimento (regras 1, 2, 5)

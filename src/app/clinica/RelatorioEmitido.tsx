@@ -8,6 +8,7 @@ import { EstadoCarregando } from '../../ui/EstadoCarregando'
 import { EstadoErro } from '../../ui/EstadoErro'
 import { FolhaRelatorio } from '../../componentes/FolhaRelatorio'
 import { resumoSha256 } from '../../dominio/hash'
+import { dataIsoParaLocal } from '../../dominio/datas'
 import { ErroServico, servicos, type RelatorioEvolucao } from '../../servicos'
 
 /**
@@ -31,7 +32,7 @@ type Estado =
 type Conferencia = 'conferindo' | 'confere' | 'difere' | 'indisponivel'
 
 const dataEHora = (iso: string) => {
-  const d = new Date(iso)
+  const d = dataIsoParaLocal(iso)
   return `${d.toLocaleDateString('pt-BR')} às ${d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
 }
 
