@@ -595,6 +595,28 @@ describe('outras regras de tela aplicadas no servico', () => {
     expect(existe.message).toBe(naoExiste.message)
   })
 
+  it('quem escreveu o plano nao valida o proprio plano', async () => {
+    await entrarComo('COORDENADOR')
+    const fila = await chamar(s.planos.listarAguardandoValidacao({ porPagina: 50 }))
+    const sessao = await chamar(s.autenticacao.sessaoAtual())
+    const meu = fila.itens.find((p) => p.autor.id === sessao!.usuario.id)
+    const deOutro = fila.itens.find((p) => p.autor.id !== sessao!.usuario.id)
+    expect(meu).toBeDefined()
+    expect(deOutro).toBeDefined()
+
+    // Sem esta recusa, a validacao vira assinatura do proprio trabalho.
+    expect((await erroDe(s.planos.aprovar(meu!.planoId))).codigo).toBe('CONFLITO')
+    expect((await erroDe(s.planos.devolver(meu!.planoId, 'Ajuste o critério.'))).codigo).toBe('CONFLITO')
+
+    // O plano continua na fila, esperando outra pessoa da coordenacao.
+    const depois = await chamar(s.planos.listarAguardandoValidacao({ porPagina: 50 }))
+    expect(depois.itens.map((p) => p.planoId)).toContain(meu!.planoId)
+
+    // E a recusa e sobre a autoria, nao sobre validar: no plano de outro autor,
+    // a mesma chamada passa da autoria e para na regra da observacao.
+    expect((await erroDe(s.planos.devolver(deOutro!.planoId, '  '))).codigo).toBe('VALIDACAO')
+  })
+
   it('devolver plano exige observacao', async () => {
     await entrarComo('COORDENADOR')
     expect((await erroDe(s.planos.devolver('pl-002', ' '))).codigo).toBe('VALIDACAO')

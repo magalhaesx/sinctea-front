@@ -34,6 +34,7 @@ const menu: Grupo[] = [
     perfis: ['COORDENADOR'],
     itens: [
       { para: '/app/coordenacao', nome: 'Indicadores da clínica', uc: 'UC18', cor: CLI, fim: true },
+      { para: '/app/coordenacao/planos', nome: 'Validar planos', uc: 'UC17', cor: CLI },
       { para: '/app/coordenacao/auditoria', nome: 'Registro de auditoria', uc: 'UC19', cor: CLI },
     ],
   },

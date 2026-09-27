@@ -31,6 +31,17 @@ function exigirPlanoAguardando(planoId: string): { sessao: SessaoServidor; plano
   if (plano.status !== 'AGUARDANDO_VALIDACAO') {
     throw new ErroServico('CONFLITO', 'Este plano não está aguardando validação.')
   }
+  /*
+   * Quem escreveu nao valida. O coordenador tambem atende, e sem esta recusa a
+   * validacao viraria assinatura do proprio trabalho — a dupla conferencia da
+   * regra 4 deixaria de existir justamente onde ela e o controle de qualidade.
+   */
+  if (plano.autorId === sessao.usuario.id) {
+    throw new ErroServico(
+      'CONFLITO',
+      'Você escreveu este plano. A validação precisa de outra pessoa da coordenação.',
+    )
+  }
   return { sessao, plano }
 }
 
