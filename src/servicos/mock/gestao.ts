@@ -1,6 +1,9 @@
 import type { ServicoAuditoria, ServicoUsuario } from '../contratos'
-import { ErroServico, type Usuario, type UsuarioQualquer } from '../tipos'
+import {
+  ErroServico, type FiltroAuditoria, type RegistroAuditoria, type Usuario, type UsuarioQualquer,
+} from '../tipos'
 import { podeDesativarUsuario } from '../../dominio/regras'
+import { montarCsv } from '../../dominio/csv'
 import {
   auditar, banco, exigirPerfil, naoEncontrado, paginar, responder, todosUsuarios, usuarioPorId,
 } from './infra'
@@ -8,18 +11,62 @@ import {
 // ---------------------------------------------------------------- Auditoria
 
 /** Somente leitura. Nao existe operacao de editar ou excluir registro. */
+/** O recorte do filtro, do mais recente para o mais antigo. */
+function filtrarAuditoria(filtro: FiltroAuditoria): RegistroAuditoria[] {
+  return banco.auditoria
+    .filter((r) => !filtro.desde || r.ocorridoEm >= filtro.desde)
+    .filter((r) => !filtro.ate || r.ocorridoEm <= filtro.ate)
+    .filter((r) => !filtro.usuarioId || r.usuarioId === filtro.usuarioId)
+    .filter((r) => !filtro.acao || r.acao === filtro.acao)
+    .filter((r) => !filtro.pacienteId || r.pacienteId === filtro.pacienteId)
+    .filter((r) => !filtro.entidade || r.entidade === filtro.entidade)
+    .slice()
+    .reverse()
+}
+
+/** O filtro em uma linha, para caber no detalhe do registro da exportacao. */
+function descreverFiltro(filtro: FiltroAuditoria): string {
+  const partes = [
+    filtro.desde && `desde ${filtro.desde.slice(0, 10)}`,
+    filtro.ate && `ate ${filtro.ate.slice(0, 10)}`,
+    filtro.usuarioId && `usuario ${filtro.usuarioId}`,
+    filtro.acao && `acao ${filtro.acao}`,
+    filtro.pacienteId && `paciente ${filtro.pacienteId}`,
+    filtro.entidade && `entidade ${filtro.entidade}`,
+  ].filter(Boolean)
+  return partes.length === 0 ? 'sem filtro' : partes.join(', ')
+}
+
 export const auditoriaMock: ServicoAuditoria = {
+  /**
+   * Listar NAO e auditado, de proposito. Ler a trilha e o trabalho deste
+   * perfil, e registrar cada abertura da tela encheria a trilha com registros
+   * da propria leitura dela — o ruido acabaria escondendo o que importa.
+   * Exportar e outra coisa: ali o dado sai do sistema.
+   */
   listar: (filtro = {}) => responder(() => {
     exigirPerfil(['COORDENADOR'], 'RegistroAuditoria')
-    const itens = banco.auditoria
-      .filter((r) => !filtro.desde || r.ocorridoEm >= filtro.desde)
-      .filter((r) => !filtro.ate || r.ocorridoEm <= filtro.ate)
-      .filter((r) => !filtro.usuarioId || r.usuarioId === filtro.usuarioId)
-      .filter((r) => !filtro.acao || r.acao === filtro.acao)
-      .filter((r) => !filtro.pacienteId || r.pacienteId === filtro.pacienteId)
-      .slice()
-      .reverse()
-    return paginar(itens, filtro)
+    return paginar(filtrarAuditoria(filtro), filtro)
+  }),
+
+  exportar: (filtro = {}) => responder(() => {
+    const sessao = exigirPerfil(['COORDENADOR'], 'RegistroAuditoria')
+    // Todos os registros do filtro, e nao a pagina visivel: quem exporta quer
+    // o recorte inteiro, e uma planilha com um pedaco dele engana.
+    const itens = filtrarAuditoria(filtro)
+    const csv = montarCsv(
+      ['Data e hora', 'Usuário', 'Perfil', 'Ação', 'Entidade', 'Identificador',
+        'Paciente', 'Origem', 'Detalhe'],
+      itens.map((r) => [
+        r.ocorridoEm, r.usuarioNome ?? '', r.perfil ?? '', r.acao, r.entidade,
+        r.idEntidade ?? '', r.pacienteId ?? '', r.origem, r.detalhe,
+      ]),
+    )
+    auditar(sessao, {
+      acao: 'LEITURA_AUTORIZADA', entidade: 'RegistroAuditoria', idEntidade: null,
+      detalhe: `Exportação da trilha: ${itens.length} ${itens.length === 1 ? 'registro' : 'registros'} (${descreverFiltro(filtro)}).`,
+    })
+    return csv
   }),
 }
 

@@ -149,6 +149,8 @@ export interface ServicoAreaEscola {
 /** Somente leitura. O registro de auditoria e escrito pelo servidor e e imutavel. */
 export interface ServicoAuditoria {
   listar(filtro?: FiltroAuditoria): Promise<Pagina<RegistroAuditoria>>
+  /** CSV de todos os registros do filtro. A exportacao e auditada. */
+  exportar(filtro?: FiltroAuditoria): Promise<string>
 }
 
 /**

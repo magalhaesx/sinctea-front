@@ -20,6 +20,7 @@ import { Atividades } from './app/clinica/Atividades'
 import { Relatorio } from './app/clinica/Relatorio'
 import { RelatorioEmitido } from './app/clinica/RelatorioEmitido'
 import { PainelCoordenacao } from './app/coordenacao/Painel'
+import { Auditoria } from './app/coordenacao/Auditoria'
 import { PainelFamilia } from './app/familia/Painel'
 import { Atividade } from './app/familia/Atividade'
 import { Consentimento } from './app/familia/Consentimento'
@@ -53,6 +54,7 @@ const titulos: [padrao: string, titulo: string][] = [
   ['/app/clinica/pacientes/:id/relatorio', 'Relatório de evolução'],
   ['/app/clinica/pacientes/:id/relatorio/:relatorioId', 'Relatório emitido'],
   ['/app/coordenacao', 'Indicadores da clínica'],
+  ['/app/coordenacao/auditoria', 'Registro de auditoria'],
   ['/app/familia', 'Painel da família'],
   ['/app/familia/atividades/:id', 'Atividade em casa'],
   ['/app/familia/consentimento', 'Autorizar o acesso da escola'],
@@ -114,6 +116,7 @@ export function App() {
         <Route path="clinica/pacientes/:id/relatorio/:relatorioId" element={protegida(CLINICA, <RelatorioEmitido />)} />
 
         <Route path="coordenacao" element={protegida(['COORDENADOR'], <PainelCoordenacao />)} />
+        <Route path="coordenacao/auditoria" element={protegida(['COORDENADOR'], <Auditoria />)} />
 
         <Route path="familia" element={protegida(['RESPONSAVEL'], <PainelFamilia />)} />
         <Route path="familia/atividades/:id" element={protegida(['RESPONSAVEL'], <Atividade />)} />

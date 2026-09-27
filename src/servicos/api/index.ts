@@ -101,6 +101,7 @@ export const servicosApi: Servicos = {
 
   auditoria: {
     listar: (filtro) => r('GET', q('/auditoria', filtro)),
+    exportar: (filtro) => r('GET', q('/auditoria/csv', filtro)),
   },
 
   relatorios: {

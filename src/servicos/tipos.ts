@@ -761,4 +761,6 @@ export interface FiltroAuditoria extends FiltroPaginacao {
   usuarioId?: string
   acao?: AcaoAuditoria
   pacienteId?: string
+  /** Nome da entidade tocada: "Paciente", "CartaoEstrategia", "Consentimento". */
+  entidade?: string
 }

@@ -519,8 +519,58 @@ describe('regra 5 — revogacao com efeito imediato', () => {
 })
 
 describe('regra 6 — auditoria imutavel', () => {
+  it('exportar traz o recorte inteiro, nao a pagina visivel', async () => {
+    await entrarComo('COORDENADOR')
+    const pagina = await chamar(s.auditoria.listar({ porPagina: 5 }))
+    expect(pagina.total).toBeGreaterThan(5)
+
+    const csv = await chamar(s.auditoria.exportar())
+    // Uma linha de cabecalho mais uma por registro do filtro.
+    const linhas = csv.trimEnd().split('\r\n')
+    expect(linhas.length).toBe(pagina.total + 1)
+    expect(linhas.length).toBeGreaterThan(pagina.itens.length + 1)
+  })
+
+  it('celula que comeca com = sai escapada, e o filtro vale para o arquivo', async () => {
+    // O detalhe vem de texto digitado: sem escape, a planilha executaria.
+    // Uma atividade nova basta, e nao mexe no estado de que outro teste depende.
+    await entrarComo('TERAPEUTA')
+    const plano = await chamar(s.planos.obterPorPaciente('p-001'))
+    await chamar(s.atividades.prescrever({
+      pacienteId: 'p-001', objetivoId: plano.objetivos[0].id,
+      titulo: '=SOMA(1;1) atividade de teste', descricao: '', passos: ['um'], dicas: '',
+      frequenciaSemanal: 1, urlVideo: null,
+    }))
+    await entrarComo('COORDENADOR')
+
+    const csv = await chamar(s.auditoria.exportar({ acao: 'CRIACAO' }))
+    expect(csv).toContain(`"'=SOMA(1;1) atividade de teste"`)
+    expect(csv).not.toContain('"=SOMA')
+    // So a acao filtrada entra no arquivo.
+    expect(csv).not.toContain('ACESSO_NEGADO')
+  })
+
+  it('exportar e dado saindo do sistema, e por isso fica auditado', async () => {
+    await entrarComo('COORDENADOR')
+    const antes = await chamar(s.auditoria.listar({ porPagina: 1 }))
+    await chamar(s.auditoria.exportar({ acao: 'ACESSO_NEGADO' }))
+
+    const registro = await ultimaAuditoria()
+    expect(registro).toMatchObject({ acao: 'LEITURA_AUTORIZADA', entidade: 'RegistroAuditoria' })
+    expect(registro.detalhe).toContain('Exportação da trilha')
+    expect(registro.detalhe).toContain('acao ACESSO_NEGADO')
+
+    // Listar, ao contrario, nao deixa rastro: seria a trilha registrando a
+    // propria leitura, e o ruido esconderia o que importa.
+    const depois = await chamar(s.auditoria.listar({ porPagina: 1 }))
+    expect(depois.total).toBe(antes.total + 1)
+  })
+
+
   it('o contrato de auditoria so tem leitura', () => {
-    expect(Object.keys(s.auditoria)).toEqual(['listar'])
+    // As duas leem: uma pagina na tela, a outra o recorte inteiro num arquivo.
+    // Nenhuma escreve no registro, e nao ha editar nem excluir para existir.
+    expect(Object.keys(s.auditoria)).toEqual(['listar', 'exportar'])
   })
 
   it('registros sao congelados', async () => {
