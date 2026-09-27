@@ -1,4 +1,5 @@
 import { Botao } from './Botao'
+import { aoArtigo } from './texto'
 import { type Area } from './tokens'
 import { ErroServico } from '../servicos'
 
@@ -29,7 +30,7 @@ export function descreverErro(erro: unknown, oQue: string): DescricaoErro {
       }
     case 'ACESSO_NEGADO':
       // A mensagem do servico ja explica o motivo (ex.: acesso encerrado pela familia).
-      return { titulo: `Você não tem acesso a ${oQue}`, texto: (erro as ErroServico).message }
+      return { titulo: `Você não tem acesso ${aoArtigo(oQue)}`, texto: (erro as ErroServico).message }
     case 'NAO_ENCONTRADO':
       return {
         titulo: `Não encontramos ${oQue}`,
