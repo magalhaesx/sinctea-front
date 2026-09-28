@@ -39,6 +39,13 @@ const menu: Grupo[] = [
     ],
   },
   {
+    titulo: 'Administração',
+    perfis: ['ADMINISTRADOR'],
+    itens: [
+      { para: '/app/admin/usuarios', nome: 'Usuários e perfis', uc: 'UC20', cor: CLI },
+    ],
+  },
+  {
     titulo: 'Área da família',
     perfis: ['RESPONSAVEL'],
     itens: [

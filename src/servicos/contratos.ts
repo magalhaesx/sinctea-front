@@ -186,6 +186,8 @@ export interface ServicoIndicadores {
 /** Desativar, nunca excluir: o historico clinico precisa manter a autoria. */
 export interface ServicoUsuario {
   listar(filtro?: FiltroUsuario): Promise<Pagina<Usuario>>
+  /** So cadastra equipe da clinica: terapeuta, coordenacao, administracao. */
+  convidar(dados: { nome: string; email: string; perfis: Perfil[] }): Promise<Usuario>
   alterarPerfis(usuarioId: string, perfis: Perfil[]): Promise<Usuario>
   desativar(usuarioId: string): Promise<Usuario>
   reativar(usuarioId: string): Promise<Usuario>

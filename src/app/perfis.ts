@@ -13,7 +13,7 @@ export const NOME_DO_PERFIL: Record<Perfil, string> = {
 export const PAINEL_DO_PERFIL: Record<Perfil, string> = {
   TERAPEUTA: '/app/clinica',
   COORDENADOR: '/app/coordenacao',
-  ADMINISTRADOR: '/app/conta',
+  ADMINISTRADOR: '/app/admin/usuarios',
   RESPONSAVEL: '/app/familia',
   PROFESSOR: '/app/escola',
 }

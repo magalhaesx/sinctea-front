@@ -1,11 +1,13 @@
 import type { ServicoAuditoria, ServicoUsuario } from '../contratos'
 import {
-  ErroServico, type FiltroAuditoria, type RegistroAuditoria, type Usuario, type UsuarioQualquer,
+  ErroServico, type FiltroAuditoria, type Perfil, type Profissional, type RegistroAuditoria,
+  type Usuario, type UsuarioQualquer,
 } from '../tipos'
 import { podeDesativarUsuario } from '../../dominio/regras'
 import { montarCsv } from '../../dominio/csv'
 import {
-  auditar, banco, exigirPerfil, naoEncontrado, paginar, responder, todosUsuarios, usuarioPorId,
+  auditar, banco, exigirPerfil, exigirValido, gerarId, naoEncontrado, paginar, responder,
+  todosUsuarios, usuarioPorId,
 } from './infra'
 
 // ---------------------------------------------------------------- Auditoria
@@ -81,6 +83,9 @@ function buscarUsuario(id: string): UsuarioQualquer {
   return usuarioPorId(id) ?? naoEncontrado('Usuário')
 }
 
+/** Perfis que esta tela pode conceder. Familia e escola nunca saem daqui. */
+const PERFIS_DE_EQUIPE: Perfil[] = ['TERAPEUTA', 'COORDENADOR', 'ADMINISTRADOR']
+
 /** Desativar, nunca excluir: o historico clinico precisa manter a autoria. */
 export const usuariosMock: ServicoUsuario = {
   listar: (filtro = {}) => responder(() => {
@@ -93,6 +98,50 @@ export const usuariosMock: ServicoUsuario = {
       .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
       .map(publico)
     return paginar(itens, filtro)
+  }),
+
+  /**
+   * So equipe da clinica. RESPONSAVEL e PROFESSOR nunca saem daqui: o
+   * responsavel nasce do vinculo com o paciente, e o professor so nasce do
+   * convite da familia (regra 1). Sem esta trava, a tela de administracao
+   * seria a porta dos fundos da regra — o administrador criaria um professor
+   * que nenhuma familia autorizou.
+   */
+  convidar: (dados) => responder(() => {
+    const sessao = exigirPerfil(['ADMINISTRADOR'], 'Usuario')
+    const nome = dados.nome.trim()
+    const email = dados.email.trim().toLowerCase()
+    const perfis = [...new Set(dados.perfis)]
+    const erros: Record<string, string> = {}
+    if (!nome) erros.nome = 'Escreva o nome de quem vai receber a conta.'
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) erros.email = 'Escreva um e-mail válido.'
+    if (perfis.length === 0) erros.perfis = 'Escolha ao menos um perfil.'
+    if (perfis.some((p) => !PERFIS_DE_EQUIPE.includes(p))) {
+      erros.perfis = 'Esta tela cadastra apenas a equipe da clínica. O responsável nasce do vínculo com o paciente, e o professor, do convite da família.'
+    }
+    exigirValido(erros)
+    if (todosUsuarios().some((u) => u.email.toLowerCase() === email)) {
+      throw new ErroServico('CONFLITO', 'Já existe uma conta com este e-mail.')
+    }
+
+    const usuario: Profissional = {
+      tipo: 'PROFISSIONAL',
+      id: gerarId('u'),
+      nome,
+      email,
+      perfis,
+      ativo: true,
+      ultimoAcessoEm: null,
+      // Preenchidos por quem recebe a conta, ao completar o proprio cadastro.
+      especialidade: '',
+      registroConselho: '',
+    }
+    banco.profissionais.push(usuario)
+    auditar(sessao, {
+      acao: 'CRIACAO', entidade: 'Usuario', idEntidade: usuario.id,
+      detalhe: `Conta criada para ${email} (${perfis.join(', ')}).`,
+    })
+    return publico(usuario)
   }),
 
   alterarPerfis: (usuarioId, perfis) => responder(() => {

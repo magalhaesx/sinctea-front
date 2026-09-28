@@ -622,6 +622,52 @@ describe('outras regras de tela aplicadas no servico', () => {
     expect((await erroDe(s.planos.devolver('pl-002', ' '))).codigo).toBe('VALIDACAO')
   })
 
+  it('o administrador nao cria professor nem responsavel por esta tela', async () => {
+    await entrarComo('COORDENADOR')
+    await chamar(s.autenticacao.trocarPerfil('ADMINISTRADOR'))
+
+    // Fosse permitido, a tela de administracao seria a porta dos fundos da
+    // regra 1: um professor com acesso que nenhuma familia autorizou.
+    for (const perfil of ['PROFESSOR', 'RESPONSAVEL'] as const) {
+      const erro = await erroDe(s.usuarios.convidar({
+        nome: 'Pessoa de teste', email: `${perfil.toLowerCase()}@clinica.example`, perfis: [perfil],
+      }))
+      expect(erro.codigo).toBe('VALIDACAO')
+      expect(erro.campos.perfis).toBeTruthy()
+    }
+  })
+
+  it('e-mail repetido nao vira segunda conta', async () => {
+    await entrarComo('COORDENADOR')
+    await chamar(s.autenticacao.trocarPerfil('ADMINISTRADOR'))
+    const nova = await chamar(s.usuarios.convidar({
+      nome: 'Tereza Nogueira Pinho', email: 'tereza.pinho@clinica.example', perfis: ['TERAPEUTA'],
+    }))
+    expect(nova.ativo).toBe(true)
+    expect(nova.ultimoAcessoEm).toBeNull()
+
+    const erro = await erroDe(s.usuarios.convidar({
+      nome: 'Outra pessoa', email: 'TEREZA.PINHO@clinica.example', perfis: ['COORDENADOR'],
+    }))
+    expect(erro.codigo).toBe('CONFLITO')
+  })
+
+  it('desativar vale na chamada seguinte, e nao no proximo login', async () => {
+    await entrarComo('COORDENADOR')
+    await chamar(s.autenticacao.trocarPerfil('ADMINISTRADOR'))
+    const alvo = await chamar(s.usuarios.convidar({
+      nome: 'Bruno Sales Ferraz', email: 'bruno.ferraz@clinica.example', perfis: ['TERAPEUTA'],
+    }))
+    await chamar(s.usuarios.desativar(alvo.id))
+
+    // A pessoa desativada segue com a sessao aberta no navegador dela; e a
+    // chamada seguinte que descobre, no mesmo espirito da regra 5.
+    const { gravarSessao } = await import('./infra')
+    gravarSessao({ usuarioId: alvo.id, perfilAtivo: 'TERAPEUTA' })
+    expect((await erroDe(s.pacientes.listar())).codigo).toBe('NAO_AUTENTICADO')
+    expect(await chamar(s.autenticacao.sessaoAtual())).toBeNull()
+  })
+
   it('administrador nao desativa a si mesmo', async () => {
     await entrarComo('COORDENADOR')
     await chamar(s.autenticacao.trocarPerfil('ADMINISTRADOR'))
@@ -746,8 +792,16 @@ describe('painel da coordenacao — conta e aponta', () => {
     await entrarComo('COORDENADOR')
     const serie = await chamar(s.indicadores.sessoesPorProfissional())
     expect(Object.keys(serie).sort()).toEqual(['itens', 'periodo'])
+    // Todo profissional ativo aparece, mesmo com zero; quem saiu da equipe so
+    // aparece se conduziu sessao na janela.
     const profissionais = await chamar(s.profissionais.listar({ porPagina: 50 }))
-    expect(serie.itens).toHaveLength(profissionais.total)
+    for (const p of profissionais.itens) {
+      expect(serie.itens.some((i) => i.profissional.id === p.id)).toBe(true)
+    }
+    const ativos = new Set(profissionais.itens.map((p) => p.id))
+    for (const i of serie.itens) {
+      if (!ativos.has(i.profissional.id)) expect(i.sessoes).toBeGreaterThan(0)
+    }
     const sessoes = serie.itens.map((i) => i.sessoes)
     expect(sessoes).toEqual([...sessoes].sort((x, y) => y - x))
   })

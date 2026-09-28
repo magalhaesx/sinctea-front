@@ -236,6 +236,10 @@ export const indicadoresMock: ServicoIndicadores = {
         profissional: { id: prof.id, nome: prof.nome },
         sessoes: feitas.filter((s) => s.profissionalId === prof.id).length,
       }))
+      // Quem saiu da equipe some da comparacao de carga, mas nao se ja
+      // conduziu sessao na janela: o atendimento aconteceu, e sem ele as
+      // barras nao somariam o total da clinica.
+      .filter((i) => i.sessoes > 0 || banco.profissionais.find((p) => p.id === i.profissional.id)?.ativo)
       // Quem conduziu mais primeiro; empate resolve pelo nome, nao pela ordem
       // em que o profissional foi cadastrado.
       .sort((a, b) => b.sessoes - a.sessoes || a.profissional.nome.localeCompare(b.profissional.nome, 'pt-BR'))

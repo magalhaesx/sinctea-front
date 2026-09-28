@@ -120,6 +120,7 @@ export const servicosApi: Servicos = {
 
   usuarios: {
     listar: (filtro) => r('GET', q('/usuarios', filtro)),
+    convidar: (dados) => r('POST', '/usuarios', dados),
     alterarPerfis: (usuarioId, perfis) => r('PUT', `/usuarios/${id(usuarioId)}/perfis`, { perfis }),
     desativar: (usuarioId) => r('POST', `/usuarios/${id(usuarioId)}/desativacao`),
     reativar: (usuarioId) => r('POST', `/usuarios/${id(usuarioId)}/reativacao`),
