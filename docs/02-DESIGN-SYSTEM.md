@@ -162,6 +162,18 @@ Estado vazio ruim: "Nenhum registro encontrado."
 Estado vazio bom: "Nenhum paciente cadastrado ainda. Cadastre o primeiro para
 começar a montar o plano terapêutico." + botão.
 
+#### A mensagem de resultado
+
+**Mensagem de resultado (a região `aria-live`) é apagada quando o usuário abre
+outro registro, e nunca por um efeito que observa o identificador aberto:** a
+própria ação de concluir costuma fechar o registro e mudar esse identificador,
+apagando o recado que ela acabou de produzir.
+
+Aconteceu três vezes antes de virar regra — telas 6, 9 e 12. Nas três, gravar
+recarregava, a recarga trocava o identificador e o efeito de limpeza engolia o
+"Pronto" que a gravação tinha acabado de escrever. Apague no manipulador que
+abre o outro registro, não em efeito.
+
 #### Quando não usar o `EstadoVazio`
 
 O componente `EstadoVazio` existe para oferecer a ação que preenche a lista.
