@@ -325,14 +325,29 @@ describe('regra 1 — quem autoriza a escola e o responsavel', () => {
     expect(versaoDoResumo(c.hashTermo)).toBe(VERSAO_CORRENTE_DO_TERMO)
     const dados = {
       versaoTermo: VERSAO_CORRENTE_DO_TERMO,
-      responsavel: { id: sessao!.usuario.id, nome: sessao!.usuario.nome },
-      paciente: { id: filhos.itens[0].id, nome: filhos.itens[0].nome },
-      escola: { id: escolas.itens[0].id, nome: c.escola },
+      responsavelId: sessao!.usuario.id,
+      pacienteId: filhos.itens[0].id,
+      escolaId: escolas.itens[0].id,
       escopos: c.escopos,
       validadeAte: c.validadeAte,
       concedidoEm: c.concedidoEm,
     }
     expect(await conferirResumoDoTermo(c.hashTermo, dados)).toBe(true)
+
+    // Nome nenhum entra no resumo. VinculoFamiliar e muitos-para-muitos: outro
+    // responsavel do mesmo paciente reconstroi a partir do que esta gravado no
+    // consentimento, sem saber o nome de quem concedeu, e chega ao mesmo valor.
+    expect(JSON.stringify(dados)).not.toContain(sessao!.usuario.nome)
+    const comoOutroResponsavelReconstroi = {
+      versaoTermo: VERSAO_CORRENTE_DO_TERMO,
+      responsavelId: c.responsavelId,
+      pacienteId: c.pacienteId,
+      escolaId: c.escolaId,
+      escopos: c.escopos,
+      validadeAte: c.validadeAte,
+      concedidoEm: c.concedidoEm,
+    }
+    expect(await conferirResumoDoTermo(c.hashTermo, comoOutroResponsavelReconstroi)).toBe(true)
 
     // 2. Mesmos escopos e validade, outro paciente: outro resumo.
     const { consentimento: outro } = await chamar(s.consentimentos.conceder({
@@ -341,19 +356,19 @@ describe('regra 1 — quem autoriza a escola e o responsavel', () => {
     }))
     expect(outro.hashTermo).not.toBe(c.hashTermo)
 
-    // 3. Qualquer campo diferente, e a conferencia falha.
+    // 3. Qualquer campo que mude a autorizacao faz a conferencia falhar.
     expect(await conferirResumoDoTermo(c.hashTermo, { ...dados, escopos: ['REGISTRO_OCORRENCIA'] })).toBe(false)
     expect(await conferirResumoDoTermo(c.hashTermo, { ...dados, validadeAte: c.concedidoEm })).toBe(false)
-    expect(await conferirResumoDoTermo(c.hashTermo, {
-      ...dados, paciente: { ...dados.paciente, nome: 'Outro Nome' },
-    })).toBe(false)
+    expect(await conferirResumoDoTermo(c.hashTermo, { ...dados, escolaId: escolas.itens[1].id })).toBe(false)
+    expect(await conferirResumoDoTermo(c.hashTermo, { ...dados, pacienteId: filhos.itens[1].id })).toBe(false)
+    expect(await conferirResumoDoTermo(c.hashTermo, { ...dados, versaoTermo: '2026-09' })).toBe(false)
 
     // 4. O texto nao e gravado: nenhum campo do consentimento o carrega, e o
     //    termo se reproduz da versao mais os dados.
     expect(JSON.stringify(c)).not.toContain('TERMO DE AUTORIZAÇÃO')
     expect(textoDoTermo(VERSAO_CORRENTE_DO_TERMO, {
-      responsavel: dados.responsavel.nome, escola: dados.escola.nome, aluno: dados.paciente.nome,
-      escopos: dados.escopos, validadeAte: dados.validadeAte,
+      responsavel: sessao!.usuario.nome, escola: c.escola, aluno: filhos.itens[0].nome,
+      escopos: c.escopos, validadeAte: c.validadeAte,
     })).toContain('TERMO DE AUTORIZAÇÃO DE ACESSO DA ESCOLA')
   })
 

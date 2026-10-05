@@ -195,20 +195,23 @@ function gerarToken(): string {
 /**
  * Os consentimentos de demonstracao nascem sem resumo: calcula-lo exige
  * SHA-256, que so responde por Promise, e os dados sao montados de forma
- * sincrona. Esta promessa preenche todos uma vez; quem le consentimento espera
- * por ela, para que "Ver o termo que aceitei" funcione tambem nos semeados.
+ * sincrona. Esta promessa preenche todos uma vez.
+ *
+ * TODO METODO QUE DEVOLVE ConsentimentoDetalhe PRECISA ESPERAR POR ELA —
+ * senao a tela recebe um consentimento com hashTermo vazio e "Ver o termo que
+ * aceitei" nao tem o que reconstruir.
  */
 const resumosSemeados: Promise<void> = (async () => {
   for (const c of banco.consentimentos) {
     if (c.hashTermo) continue
-    const responsavel = banco.responsaveis.find((r) => r.id === c.responsavelId)
-    const paciente = banco.pacientes.find((p) => p.id === c.pacienteId)
-    const escola = banco.escolas.find((e) => e.id === c.escolaId)
     c.hashTermo = await resumoDoTermo({
-      versaoTermo: VERSAO_CORRENTE_DO_TERMO,
-      responsavel: { id: c.responsavelId, nome: responsavel?.nome ?? '' },
-      paciente: { id: c.pacienteId, nome: paciente?.nome ?? '' },
-      escola: { id: c.escolaId, nome: escola?.nome ?? '' },
+      // Versao literal, e nao a corrente: quando existir uma 2026-11, os
+      // semeados iriam todos para ela em silencio, e a demonstracao perderia o
+      // unico lugar onde o caminho da versao antiga apareceria funcionando.
+      versaoTermo: '2026-10',
+      responsavelId: c.responsavelId,
+      pacienteId: c.pacienteId,
+      escolaId: c.escolaId,
       escopos: c.escopos,
       validadeAte: c.validadeAte,
       concedidoEm: c.concedidoEm,
@@ -258,9 +261,9 @@ export const consentimentosMock: ServicoConsentimento = {
        */
       hashTermo: await resumoDoTermo({
         versaoTermo: VERSAO_CORRENTE_DO_TERMO,
-        responsavel: { id: sessao.usuario.id, nome: sessao.usuario.nome },
-        paciente: { id: paciente.id, nome: paciente.nome },
-        escola: { id: escolaDoTermo.id, nome: escolaDoTermo.nome },
+        responsavelId: sessao.usuario.id,
+        pacienteId: paciente.id,
+        escolaId: escolaDoTermo.id,
         escopos,
         validadeAte: dados.validadeAte,
         concedidoEm,
@@ -284,7 +287,8 @@ export const consentimentosMock: ServicoConsentimento = {
     }
   }),
 
-  reemitirConvite: (consentimentoId) => responder(() => {
+  reemitirConvite: (consentimentoId) => responder(async () => {
+    await resumosSemeados
     const consentimento = banco.consentimentos.find((c) => c.id === consentimentoId) ?? naoEncontrado('Consentimento')
     exigirPerfil(['RESPONSAVEL'], 'ConviteEscolar', consentimento.pacienteId)
     const { sessao } = exigirPacienteDaFamilia(consentimento.pacienteId, 'ConviteEscolar')
@@ -304,7 +308,8 @@ export const consentimentosMock: ServicoConsentimento = {
     }
   }),
 
-  revogar: (consentimentoId) => responder(() => {
+  revogar: (consentimentoId) => responder(async () => {
+    await resumosSemeados
     const consentimento = banco.consentimentos.find((c) => c.id === consentimentoId) ?? naoEncontrado('Consentimento')
     exigirPerfil(['RESPONSAVEL'], 'Consentimento', consentimento.pacienteId)
     const { sessao } = exigirPacienteDaFamilia(consentimento.pacienteId, 'Consentimento')

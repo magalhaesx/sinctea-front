@@ -237,7 +237,7 @@ que nenhum deles mudou. O diagrama de classes não muda por causa disso: a vers�
 viaja dentro do próprio `hashTermo`.
 
 **Pendências conhecidas do modelo**
-- Não existe entidade de registro funcional (ver a afirmação 2 acima)
+- Não existe entidade de registro funcional (ver a afirmação 1 acima)
 - Trilha de Autonomia movida para trabalhos futuros
 
 ## 8. Divisão de trabalho entre as duas sessões de IA

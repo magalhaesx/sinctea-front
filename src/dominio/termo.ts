@@ -30,12 +30,23 @@ export interface DadosDoTermo {
   validadeAte: DataIso
 }
 
-/** O que entra no resumo. Nomes e identificadores, porque os dois identificam. */
+/**
+ * O que entra no resumo: so fatos imutaveis do registro, sem nome nenhum.
+ *
+ * Nome nao entra por duas razoes. VinculoFamiliar e muitos-para-muitos, entao
+ * mais de um responsavel pode abrir a mesma autorizacao, e a reconstrucao nao
+ * teria como saber o nome de QUEM concedeu sem grava-lo. E nome de escola muda:
+ * escola renomeada e a mesma escola, e a tela deve mostrar o nome de hoje —
+ * isso e correto, nao e divergencia.
+ *
+ * O resumo continua cobrindo tudo que altera a autorizacao: outra escola, outra
+ * crianca, outro escopo, outra validade, outra versao de texto.
+ */
 export interface DadosDoResumo {
   versaoTermo: string
-  responsavel: { id: string; nome: string }
-  paciente: { id: string; nome: string }
-  escola: { id: string; nome: string }
+  responsavelId: string
+  pacienteId: string
+  escolaId: string
   escopos: EscopoAcesso[]
   validadeAte: DataIso
   concedidoEm: DataIso

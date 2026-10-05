@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Tela } from '../LayoutApp'
 import { usarSessao } from '../../contexto/Sessao'
 import { dataIsoParaLocal, emData } from '../../dominio/datas'
@@ -79,6 +79,23 @@ export function Consentimento() {
     { consentimentoId: string; texto: string; confere: boolean | null } | null
   >(null)
 
+  /*
+   * A etapa 2 desmonta o formulario e o botao que tinha o foco. Sem levar o
+   * foco para o termo, ele cai no <body>: quem usa leitor de tela nao ouve
+   * nada, e quem usa teclado recomeca do topo da pagina.
+   */
+  const caixaDoTermo = useRef<HTMLDivElement>(null)
+  const selectDaEscola = useRef<HTMLSelectElement>(null)
+  const focoPendente = useRef<'termo' | 'escola' | null>(null)
+
+  useEffect(() => {
+    const alvo = focoPendente.current
+    if (!alvo) return
+    focoPendente.current = null
+    const no = alvo === 'termo' ? caixaDoTermo.current : selectDaEscola.current
+    no?.focus()
+  })
+
   useEffect(() => {
     let ativo = true
     setEstado({ tipo: 'carregando' })
@@ -123,7 +140,10 @@ export function Consentimento() {
       new Date(),
     )
     setErros(encontrados)
-    if (Object.keys(encontrados).length === 0) setEtapa('termo')
+    if (Object.keys(encontrados).length === 0) {
+      setEtapa('termo')
+      focoPendente.current = 'termo'
+    }
   }
 
   const conceder = async () => {
@@ -178,12 +198,16 @@ export function Consentimento() {
     ? estado.filhos.find((f) => f.id === id)?.nome ?? '—'
     : '—'
 
-  /** Os campos do resumo de um consentimento ja gravado. */
+  /**
+   * Os campos do resumo de um consentimento ja gravado: so identificadores.
+   * Nome nenhum entra — quem reconstroi pode ser outro responsavel do mesmo
+   * paciente, e escola renomeada continua sendo a mesma escola.
+   */
   const dadosDoResumo = (c: ConsentimentoDetalhe, versao: string): DadosDoResumo => ({
     versaoTermo: versao,
-    responsavel: { id: c.responsavelId, nome: usuario?.nome ?? '' },
-    paciente: { id: c.pacienteId, nome: nomeDoFilho(c.pacienteId) },
-    escola: { id: c.escolaId, nome: c.escola },
+    responsavelId: c.responsavelId,
+    pacienteId: c.pacienteId,
+    escolaId: c.escolaId,
     escopos: c.escopos,
     validadeAte: c.validadeAte,
     concedidoEm: c.concedidoEm,
@@ -208,12 +232,14 @@ export function Consentimento() {
     const dados = dadosDoResumo(c, versao)
     setTermoAberto({
       consentimentoId: c.id,
+      // Os nomes sao de hoje, e so servem para escrever o texto: o resumo
+      // cobre as identidades, nao as palavras que as nomeiam.
       texto: textoDoTermo(versao, {
-        responsavel: dados.responsavel.nome,
-        escola: dados.escola.nome,
-        aluno: dados.paciente.nome,
-        escopos: dados.escopos,
-        validadeAte: dados.validadeAte,
+        responsavel: usuario?.nome ?? '',
+        escola: c.escola,
+        aluno: nomeDoFilho(c.pacienteId),
+        escopos: c.escopos,
+        validadeAte: c.validadeAte,
       }),
       confere: null,
     })
@@ -268,7 +294,8 @@ export function Consentimento() {
             <h2 className="text-lg font-bold">Autorizar uma escola</h2>
             <form className="mt-3 flex flex-col gap-4" onSubmit={revisarTermo} noValidate>
               <Campo id="escola" rotulo="Escola" dica="O acesso vale para esta escola. Outra escola precisa de uma autorização própria.">
-                <select id="escola" className={campo} value={escolaId} onChange={(e) => setEscolaId(e.target.value)}>
+                <select id="escola" ref={selectDaEscola} className={campo} value={escolaId}
+                  onChange={(e) => setEscolaId(e.target.value)}>
                   <option value="">Escolha a escola</option>
                   {estado.escolas.map((e) => (
                     <option key={e.id} value={e.id}>{e.nome} · {e.rede} · {e.municipio}</option>
@@ -345,7 +372,11 @@ export function Consentimento() {
                 reabri-lo depois nesta mesma tela.
               </p>
 
-              <div className="mt-3 max-h-96 overflow-y-auto whitespace-pre-line rounded-lg border border-linha bg-sup p-4 text-[15px] leading-relaxed">
+              <div
+                ref={caixaDoTermo}
+                tabIndex={-1}
+                className="mt-3 max-h-96 overflow-y-auto whitespace-pre-line rounded-lg border border-linha bg-sup p-4 text-[15px] leading-relaxed"
+              >
                 {textoDoTermo(VERSAO_CORRENTE_DO_TERMO, {
                   responsavel: usuario?.nome ?? '',
                   escola: estado.escolas.find((e) => e.id === escolaId)?.nome ?? '',
@@ -363,7 +394,7 @@ export function Consentimento() {
                   {salvando ? 'Autorizando…' : 'Autorizar'}
                 </Botao>
                 <Botao area="fam" variante="secundaria" className="w-full" disabled={salvando}
-                  onClick={() => setEtapa('formulario')}>
+                  onClick={() => { setEtapa('formulario'); focoPendente.current = 'escola' }}>
                   Voltar e corrigir
                 </Botao>
               </div>
@@ -477,8 +508,11 @@ export function Consentimento() {
                     <p className="mt-2 text-sm" aria-live="polite">
                       {termoAberto.confere === null && 'Conferindo o texto…'}
                       {termoAberto.confere === true && (
+                        // Diz o que esta provado: nenhum campo da autorizacao
+                        // mudou. O nome da escola, esse pode ter mudado — e e o
+                        // de hoje que aparece no texto, como deve ser.
                         <b className="text-ok">
-                          Texto conferido: igual ao que você aceitou em {emData(c.concedidoEm)} às{' '}
+                          Conferido: nada mudou nesta autorização desde {emData(c.concedidoEm)} às{' '}
                           {dataIsoParaLocal(c.concedidoEm).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}.
                         </b>
                       )}
