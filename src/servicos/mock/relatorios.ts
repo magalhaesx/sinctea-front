@@ -106,7 +106,19 @@ export const relatoriosMock: ServicoRelatorio = {
     }
     exigirValido(erros)
 
+    /*
+     * O documento clinico carrega o nome e o registro no conselho de quem
+     * assina. Sem registro preenchido nao se emite — e o sistema nao inventa
+     * um, pela mesma razao da regra 4: nao se preenche no lugar do
+     * profissional aquilo que so ele pode responder.
+     */
     const autor = banco.profissionais.find((p) => p.id === sessao.usuario.id)
+    if (!autor?.registroConselho.trim()) {
+      throw new ErroServico(
+        'CONFLITO',
+        'Complete o seu registro no conselho em Perfil e preferências antes de emitir um relatório.',
+      )
+    }
     const conteudoEmitido = montarConteudo(pacienteId, pedido)
     const relatorio: RelatorioEvolucao = {
       id: gerarId('rel'),
@@ -118,7 +130,7 @@ export const relatoriosMock: ServicoRelatorio = {
       consideracoes: conteudoEmitido.consideracoes,
       // Fotografia da emissao: nunca resolver pelo Usuario na leitura.
       autorNome: sessao.usuario.nome,
-      autorRegistro: autor?.registroConselho ?? '—',
+      autorRegistro: autor.registroConselho.trim(),
       emitidoEm: relogio.agora().toISOString(),
       conteudoEmitido,
       hashConteudo: await resumoSha256(conteudoEmitido),

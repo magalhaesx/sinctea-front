@@ -84,6 +84,14 @@ sozinho.**
 6. **Auditoria em três momentos:** concessão de acesso, leitura autorizada de dado
    sensível e **tentativa de acesso negada**. Registro imutável.
 
+### Documento clínico emitido
+
+**Documento clínico emitido carrega o nome e o registro no conselho do autor.
+Sem registro preenchido, não se emite.** O sistema não inventa a identificação
+de quem assina, pela mesma razão da regra 4: não se preenche, no lugar do
+profissional, aquilo que só ele pode responder. O registro se completa em
+Perfil e preferências, pelo próprio dono — nunca pela administração.
+
 ### Vocabulário obrigatório
 O professor **relata o que observou**; a **leitura clínica é do profissional
 habilitado**. Ocorrência da escola entra como *evento comportamental preliminar*.

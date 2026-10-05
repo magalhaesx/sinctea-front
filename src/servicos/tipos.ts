@@ -91,6 +91,16 @@ export interface SessaoUsuario {
   perfilAtivo: Perfil
 }
 
+/**
+ * O que identifica o profissional no documento que ele assina. Fica fora da
+ * projecao publica de Usuario: quem le a lista de contas nao precisa disto, e
+ * quem responde pelo registro e o proprio dono.
+ */
+export interface DadosProfissionais {
+  especialidade: string
+  registroConselho: string
+}
+
 export interface FiltroUsuario extends FiltroPaginacao {
   busca?: string
   perfil?: Perfil

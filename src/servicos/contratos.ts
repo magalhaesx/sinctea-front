@@ -6,7 +6,7 @@ import type {
   FiltroPaginacao, FiltroSessao, FiltroUsuario, FilhoResumo, ItemAgenda, NovaAtividadeCasa,
   NovaOcorrenciaComportamental, NovaOcorrenciaEscolar, NovoConsentimento, NovoObjetivo,
   NovoPaciente, Objetivo, ObjetivoAcessivel, OcorrenciaComportamental, OcorrenciaEscolar,
-  ConteudoRelatorio, MotivoAtencao, Pagina, PacienteDetalhe, PacienteResumo, PedidoRelatorio,
+  ConteudoRelatorio, DadosProfissionais, MotivoAtencao, Pagina, PacienteDetalhe, PacienteResumo, PedidoRelatorio,
   Perfil, PlanoParaValidacao, PlanoTerapeutico, PonteEscola, Profissional, RegistroAtividade,
   RegistroAuditoria, RelatorioEvolucao, ResumoClinica, Resultado, Sessao, SessaoUsuario,
   SessoesPorProfissional, Usuario,
@@ -187,7 +187,21 @@ export interface ServicoIndicadores {
 export interface ServicoUsuario {
   listar(filtro?: FiltroUsuario): Promise<Pagina<Usuario>>
   /** So cadastra equipe da clinica: terapeuta, coordenacao, administracao. */
-  convidar(dados: { nome: string; email: string; perfis: Perfil[] }): Promise<Usuario>
+  convidar(dados: {
+    nome: string
+    email: string
+    perfis: Perfil[]
+    /** Opcionais: quem completa depois e a propria pessoa, na tela 21. */
+    especialidade?: string
+    registroConselho?: string
+  }): Promise<Usuario>
+  /** Dados profissionais de quem esta na sessao. Nulo para quem nao e profissional. */
+  meusDadosProfissionais(): Promise<DadosProfissionais | null>
+  /**
+   * So o proprio dono altera: quem responde pelo registro no conselho e quem o
+   * possui, nao o administrador. Auditado como ALTERACAO.
+   */
+  atualizarMeusDadosProfissionais(dados: DadosProfissionais): Promise<DadosProfissionais>
   alterarPerfis(usuarioId: string, perfis: Perfil[]): Promise<Usuario>
   desativar(usuarioId: string): Promise<Usuario>
   reativar(usuarioId: string): Promise<Usuario>

@@ -1,11 +1,13 @@
-import { useState } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Aviso } from '../ui/Aviso'
 import { Botao } from '../ui/Botao'
+import { Campo } from '../ui/Campo'
 import { Cartao } from '../ui/Cartao'
 import { Titulo } from '../ui/Titulo'
 import { usarPreferencias, type Preferencias } from '../contexto/Preferencias'
 import { usarSessao } from '../contexto/Sessao'
-import type { Perfil } from '../servicos'
+import { ErroServico, servicos, type DadosProfissionais, type Perfil } from '../servicos'
 import { Tela } from './LayoutApp'
 import { AREA_DO_PERFIL, NOME_DO_PERFIL, PAINEL_DO_PERFIL } from './perfis'
 
@@ -14,6 +16,11 @@ import { AREA_DO_PERFIL, NOME_DO_PERFIL, PAINEL_DO_PERFIL } from './perfis'
  *
  * Dados da conta, troca do perfil ativo quando ha mais de um, preferencias
  * sensoriais persistidas e sair.
+ *
+ * Especialidade e registro no conselho se editam aqui, e nao na tela de
+ * administracao: quem responde pelo registro e quem o possui. Sem ele
+ * preenchido, o relatorio de evolucao (UC09) nao e emitido — o documento
+ * clinico carrega a identificacao de quem assina.
  */
 
 const PREFERENCIAS: { chave: keyof Preferencias; rotulo: string; efeito: string }[] = [
@@ -29,7 +36,46 @@ export function Conta() {
   const [aviso, setAviso] = useState<string | null>(null)
   const [trocando, setTrocando] = useState(false)
 
+  const [dados, setDados] = useState<DadosProfissionais | null>(null)
+  const [formulario, setFormulario] = useState<DadosProfissionais>({ especialidade: '', registroConselho: '' })
+  const [salvando, setSalvando] = useState(false)
+  const [erros, setErros] = useState<Record<string, string>>({})
+  const [recado, setRecado] = useState<string | null>(null)
+
+  useEffect(() => {
+    let ativo = true
+    servicos.usuarios.meusDadosProfissionais()
+      .then((d) => {
+        if (!ativo) return
+        setDados(d)
+        if (d) setFormulario(d)
+      })
+      .catch(() => { if (ativo) setDados(null) })
+    return () => { ativo = false }
+  }, [])
+
+  const salvarDados = async (evento: FormEvent) => {
+    evento.preventDefault()
+    setErros({})
+    setRecado(null)
+    setSalvando(true)
+    try {
+      const atualizado = await servicos.usuarios.atualizarMeusDadosProfissionais(formulario)
+      setDados(atualizado)
+      setRecado('Dados atualizados. Eles vão impressos nos relatórios que você emitir.')
+    } catch (e) {
+      const erro = e as ErroServico
+      setErros(erro instanceof ErroServico && Object.keys(erro.campos).length > 0
+        ? erro.campos
+        : { geral: (erro as Error).message ?? 'Não foi possível salvar agora.' })
+    } finally {
+      setSalvando(false)
+    }
+  }
+
   if (!usuario || !perfilAtivo) return null
+
+  const campoTexto = 'min-h-11 w-full min-w-0 rounded-lg border-2 border-linha bg-sup px-3 py-2.5 text-tinta'
 
   const trocar = async (perfil: Perfil) => {
     setTrocando(true)
@@ -69,6 +115,51 @@ export function Conta() {
           <dd>{usuario.perfis.map((p) => NOME_DO_PERFIL[p]).join(' · ')}</dd>
         </dl>
       </Cartao>
+
+      {dados && (
+        <Cartao>
+          <h2 className="text-lg font-bold">Dados profissionais</h2>
+          <p className="mt-1 text-sm text-tinta2">
+            Vão impressos no relatório de evolução que você emitir, com o seu nome. Sem o registro
+            no conselho preenchido, o relatório não é emitido — o documento precisa identificar
+            quem o assina.
+          </p>
+          <form onSubmit={(e) => void salvarDados(e)} className="mt-3 flex flex-col gap-3">
+            <Campo id="especialidade" rotulo="Especialidade">
+              <input
+                id="especialidade"
+                className={campoTexto}
+                value={formulario.especialidade}
+                onChange={(e) => setFormulario((f) => ({ ...f, especialidade: e.target.value }))}
+                aria-invalid={erros.especialidade ? true : undefined}
+              />
+            </Campo>
+            {erros.especialidade && <p className="text-sm font-bold text-cr">{erros.especialidade}</p>}
+
+            <Campo id="registro" rotulo="Registro no conselho" dica="Como ele aparece no documento: CRFa 1001, CRP 06/1234.">
+              <input
+                id="registro"
+                className={campoTexto}
+                value={formulario.registroConselho}
+                onChange={(e) => setFormulario((f) => ({ ...f, registroConselho: e.target.value }))}
+                aria-invalid={erros.registroConselho ? true : undefined}
+              />
+            </Campo>
+            {erros.registroConselho && <p className="text-sm font-bold text-cr">{erros.registroConselho}</p>}
+
+            <div>
+              <Botao area={AREA_DO_PERFIL[perfilAtivo]} type="submit" disabled={salvando}>
+                {salvando ? 'Salvando…' : 'Salvar dados profissionais'}
+              </Botao>
+            </div>
+          </form>
+
+          <div aria-live="polite" className="mt-3">
+            {recado && <Aviso tom="ok" titulo="Pronto">{recado}</Aviso>}
+            {erros.geral && <Aviso tom="cr" titulo="Não foi possível salvar">{erros.geral}</Aviso>}
+          </div>
+        </Cartao>
+      )}
 
       <Cartao>
         <h2 className="text-lg font-bold">Perfil ativo</h2>

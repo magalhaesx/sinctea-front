@@ -36,7 +36,7 @@ const POR_PAGINA = 10
 const PERFIS_DE_EQUIPE: Perfil[] = ['TERAPEUTA', 'COORDENADOR', 'ADMINISTRADOR']
 const TODOS_OS_PERFIS: Perfil[] = [...PERFIS_DE_EQUIPE, 'RESPONSAVEL', 'PROFESSOR']
 
-const VAZIO = { nome: '', email: '', perfis: [] as Perfil[] }
+const VAZIO = { nome: '', email: '', perfis: [] as Perfil[], especialidade: '', registroConselho: '' }
 
 type Estado =
   | { tipo: 'carregando' }
@@ -231,6 +231,21 @@ export function Usuarios() {
             </div>
             {erros.nome && <p className="text-sm font-bold text-cr">{erros.nome}</p>}
             {erros.email && <p className="text-sm font-bold text-cr">{erros.email}</p>}
+
+            {/* Opcionais: o administrador costuma ter os dois a mao, e quem
+                completa depois e a propria pessoa, em Perfil e preferencias.
+                Sem o registro preenchido, essa pessoa nao emite relatorio. */}
+            <div className="grid gap-3 [&>*]:min-w-0 sm:grid-cols-2">
+              <Campo id="especialidade" rotulo="Especialidade (opcional)">
+                <input id="especialidade" className={campo} value={convite.especialidade}
+                  onChange={(e) => setConvite((c) => ({ ...c, especialidade: e.target.value }))} />
+              </Campo>
+              <Campo id="registro" rotulo="Registro no conselho (opcional)"
+                dica="Sem ele, a pessoa completa em Perfil e preferências antes de emitir relatório.">
+                <input id="registro" className={campo} value={convite.registroConselho}
+                  onChange={(e) => setConvite((c) => ({ ...c, registroConselho: e.target.value }))} />
+              </Campo>
+            </div>
 
             <fieldset className="border-0 p-0">
               <legend className="text-sm font-bold">Perfis</legend>

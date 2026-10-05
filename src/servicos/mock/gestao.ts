@@ -6,8 +6,8 @@ import {
 import { podeDesativarUsuario } from '../../dominio/regras'
 import { montarCsv } from '../../dominio/csv'
 import {
-  auditar, banco, exigirPerfil, exigirValido, gerarId, naoEncontrado, paginar, responder,
-  todosUsuarios, usuarioPorId,
+  auditar, banco, exigirPerfil, exigirSessao, exigirValido, gerarId, naoEncontrado, paginar,
+  responder, todosUsuarios, usuarioPorId,
 } from './infra'
 
 // ---------------------------------------------------------------- Auditoria
@@ -132,9 +132,10 @@ export const usuariosMock: ServicoUsuario = {
       perfis,
       ativo: true,
       ultimoAcessoEm: null,
-      // Preenchidos por quem recebe a conta, ao completar o proprio cadastro.
-      especialidade: '',
-      registroConselho: '',
+      // O administrador costuma ter os dois a mao; quem completa depois e a
+      // propria pessoa, na tela 21.
+      especialidade: dados.especialidade?.trim() ?? '',
+      registroConselho: dados.registroConselho?.trim() ?? '',
     }
     banco.profissionais.push(usuario)
     auditar(sessao, {
@@ -142,6 +143,40 @@ export const usuariosMock: ServicoUsuario = {
       detalhe: `Conta criada para ${email} (${perfis.join(', ')}).`,
     })
     return publico(usuario)
+  }),
+
+  meusDadosProfissionais: () => responder(() => {
+    const sessao = exigirSessao()
+    const usuario = sessao.usuario
+    return usuario.tipo === 'PROFISSIONAL'
+      ? { especialidade: usuario.especialidade, registroConselho: usuario.registroConselho }
+      : null
+  }),
+
+  /**
+   * O proprio dono, e nao o administrador: o registro no conselho responde por
+   * quem assina o documento, e ninguem assina no lugar de outro.
+   */
+  atualizarMeusDadosProfissionais: (dados) => responder(() => {
+    const sessao = exigirSessao()
+    const usuario = sessao.usuario
+    if (usuario.tipo !== 'PROFISSIONAL') {
+      throw new ErroServico('CONFLITO', 'Esta conta não tem dados profissionais.')
+    }
+    const especialidade = dados.especialidade.trim()
+    const registroConselho = dados.registroConselho.trim()
+    const erros: Record<string, string> = {}
+    if (!especialidade) erros.especialidade = 'Escreva a sua especialidade.'
+    if (!registroConselho) erros.registroConselho = 'Escreva o seu registro no conselho.'
+    exigirValido(erros)
+
+    usuario.especialidade = especialidade
+    usuario.registroConselho = registroConselho
+    auditar(sessao, {
+      acao: 'ALTERACAO', entidade: 'Usuario', idEntidade: usuario.id,
+      detalhe: `Dados profissionais atualizados: ${especialidade}, ${registroConselho}.`,
+    })
+    return { especialidade, registroConselho }
   }),
 
   alterarPerfis: (usuarioId, perfis) => responder(() => {

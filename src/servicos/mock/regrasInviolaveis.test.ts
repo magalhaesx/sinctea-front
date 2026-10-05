@@ -1028,6 +1028,37 @@ describe('relatorio de evolucao — documento clinico (UC09)', () => {
     expect(paraEquipe.hashConteudo).not.toBe(paraFamilia.hashConteudo)
   })
 
+  it('sem registro no conselho nao se emite, e completar o perfil destrava', async () => {
+    await entrarComo('TERAPEUTA')
+    const sessao = await chamar(s.autenticacao.sessaoAtual())
+    const autor = banco.profissionais.find((p) => p.id === sessao!.usuario.id)!
+    const originais = { especialidade: autor.especialidade, registroConselho: autor.registroConselho }
+
+    try {
+      // Conta criada pela tela 14 sem o registro: a string vazia passava pelo
+      // ?? e o documento saia sem a identificacao de quem assina.
+      autor.registroConselho = ''
+      const erro = await erroDe(s.relatorios.emitir('p-001', pedido))
+      expect(erro.codigo).toBe('CONFLITO')
+      expect(erro.message).toContain('registro no conselho')
+
+      // Quem completa e o proprio dono, e a alteracao fica na auditoria.
+      const atualizado = await chamar(s.usuarios.atualizarMeusDadosProfissionais({
+        especialidade: 'Fonoaudiologia', registroConselho: 'CRFa 4321-FICT',
+      }))
+      expect(atualizado.registroConselho).toBe('CRFa 4321-FICT')
+      expect(await ultimaAuditoria()).toMatchObject({
+        acao: 'ALTERACAO', entidade: 'Usuario', idEntidade: autor.id,
+      })
+
+      const relatorio = await chamar(s.relatorios.emitir('p-001', pedido))
+      expect(relatorio.autorRegistro).toBe('CRFa 4321-FICT')
+      expect(relatorio.conteudoEmitido.objetivos.length).toBeGreaterThan(0)
+    } finally {
+      Object.assign(autor, originais)
+    }
+  })
+
   it('objetivo de outro plano nao entra no relatorio', async () => {
     await entrarComo('COORDENADOR')
     const erro = await erroDe(s.relatorios.emitir('p-001', { ...pedido, objetivoIds: ['o-007'] }))
