@@ -204,17 +204,16 @@ Atualizado em 21/09/2026, lendo o código — não a memória.
 
 **Afirmações que o código ainda não sustenta**
 
-São duas, e as duas aparecem em texto de entrega. Enquanto não se resolverem,
-não devem ser afirmadas na defesa:
+Restou uma, e ela aparece em texto de entrega. Enquanto não se resolver, não
+deve ser afirmada na defesa:
 
-1. **O hash do termo de consentimento não é um hash.** `Consentimento.hashTermo`
-   guarda `sha256:` seguido de um token aleatório (`servicos/mock/familia.ts`).
-   Não deriva do texto do termo, então não prova o que a família aceitou. Ou o
-   back-end passa a calcular sobre o conteúdo do termo, ou o campo não pode ser
-   apresentado como prova de consentimento.
-2. **A meta 8.5 da ODS 8 não tem sustentação no modelo.** Ela depende de uma
+1. **A meta 8.5 da ODS 8 não tem sustentação no modelo.** Ela depende de uma
    entidade de registro funcional que não existe em nenhuma das 22 classes. Ou a
    entidade entra no modelo, ou a justificativa é reescrita.
+
+O hash do termo de consentimento saiu desta lista em 04/10/2026: `hashTermo`
+passou a ser `sha256:<versão>:<hex>` calculado sobre os campos que compõem o
+termo, e a família reabre o texto da versão registrada pela própria tela 17.
 
 **Revisões do modelo**
 - 20/09/2026 — `Perfil` deixou de ser classe e virou enumeração · `VinculoFamiliar`
@@ -228,14 +227,17 @@ não devem ser afirmadas na defesa:
   documento clínico: guarda o conteúdo como saiu e o hash dele, porque gerar de
   novo a partir dos dados de hoje produziria outro documento
 
+**Termo de consentimento**
+
+O texto do termo vive em `src/dominio/termo.ts`, versionado. **Versão antiga
+nunca é removida:** um termo aceito há seis meses precisa poder ser
+reapresentado com as palavras daquela época. O texto renderizado não é gravado —
+ele se reproduz da versão mais os campos do `Consentimento`, e o resumo prova
+que nenhum deles mudou. O diagrama de classes não muda por causa disso: a versão
+viaja dentro do próprio `hashTermo`.
+
 **Pendências conhecidas do modelo**
 - Não existe entidade de registro funcional (ver a afirmação 2 acima)
-- **A tela 17 promete à família o que o sistema não faz.** Ela diz que
-  "registramos uma cópia do termo que você aceitou", e o que existe é o
-  `hashTermo` da afirmação 1 — um token aleatório, que não guarda cópia nenhuma.
-  É a tela que sustenta a LGPD no TCC prometendo o que não acontece. **Trabalho
-  da etapa 8**, que revisita a tela 17; a emissão de relatório (UC09) já mostra
-  a forma certa: guardar o conteúdo e o hash calculado sobre ele
 - Trilha de Autonomia movida para trabalhos futuros
 
 ## 8. Divisão de trabalho entre as duas sessões de IA

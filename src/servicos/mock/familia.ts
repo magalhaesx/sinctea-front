@@ -9,6 +9,7 @@ import {
   calcularExpiracaoConvite, consentimentoVigente, idadeEmAnos, situacaoConsentimento,
   situacaoConvite, validarNovoConsentimento,
 } from '../../dominio/regras'
+import { resumoDoTermo, VERSAO_CORRENTE_DO_TERMO } from '../../dominio/termo'
 import {
   ehResponsavelDe, exigirPacienteClinico, exigirPacienteClinicoOuFamilia, exigirPacienteDaFamilia,
 } from './acesso'
@@ -191,8 +192,33 @@ function gerarToken(): string {
   return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')
 }
 
+/**
+ * Os consentimentos de demonstracao nascem sem resumo: calcula-lo exige
+ * SHA-256, que so responde por Promise, e os dados sao montados de forma
+ * sincrona. Esta promessa preenche todos uma vez; quem le consentimento espera
+ * por ela, para que "Ver o termo que aceitei" funcione tambem nos semeados.
+ */
+const resumosSemeados: Promise<void> = (async () => {
+  for (const c of banco.consentimentos) {
+    if (c.hashTermo) continue
+    const responsavel = banco.responsaveis.find((r) => r.id === c.responsavelId)
+    const paciente = banco.pacientes.find((p) => p.id === c.pacienteId)
+    const escola = banco.escolas.find((e) => e.id === c.escolaId)
+    c.hashTermo = await resumoDoTermo({
+      versaoTermo: VERSAO_CORRENTE_DO_TERMO,
+      responsavel: { id: c.responsavelId, nome: responsavel?.nome ?? '' },
+      paciente: { id: c.pacienteId, nome: paciente?.nome ?? '' },
+      escola: { id: c.escolaId, nome: escola?.nome ?? '' },
+      escopos: c.escopos,
+      validadeAte: c.validadeAte,
+      concedidoEm: c.concedidoEm,
+    })
+  }
+})()
+
 export const consentimentosMock: ServicoConsentimento = {
-  listarPorPaciente: (pacienteId, filtro = {}) => responder(() => {
+  listarPorPaciente: (pacienteId, filtro = {}) => responder(async () => {
+    await resumosSemeados
     exigirPacienteClinicoOuFamilia(pacienteId, 'Consentimento')
     const itens = banco.consentimentos
       .filter((c) => c.pacienteId === pacienteId)
@@ -201,7 +227,7 @@ export const consentimentosMock: ServicoConsentimento = {
     return paginar(itens, filtro)
   }),
 
-  conceder: (dados) => responder(() => {
+  conceder: (dados) => responder(async () => {
     // Regra 1: quem autoriza e o Responsavel do paciente — nunca a escola, nunca a clinica.
     exigirPerfil(['RESPONSAVEL'], 'Consentimento', dados.pacienteId)
     const { sessao } = exigirPacienteDaFamilia(dados.pacienteId, 'Consentimento')
@@ -210,17 +236,35 @@ export const consentimentosMock: ServicoConsentimento = {
     if (dados.escolaId && !banco.escolas.some((e) => e.id === dados.escolaId)) erros.escolaId = 'Escola não encontrada.'
     exigirValido(erros)
 
+    const escolaDoTermo = banco.escolas.find((e) => e.id === dados.escolaId)!
+    const paciente = banco.pacientes.find((p) => p.id === dados.pacienteId)!
+    const escopos = [...new Set(dados.escopos)]
+    const concedidoEm = agora.toISOString()
+
     const consentimento: Consentimento = {
       id: gerarId('c'),
       responsavelId: sessao.usuario.id,
       pacienteId: dados.pacienteId,
       escolaId: dados.escolaId,
-      escopos: [...new Set(dados.escopos)],
-      concedidoEm: agora.toISOString(),
+      escopos,
+      concedidoEm,
       validadeAte: dados.validadeAte,
       revogadoEm: null,
-      // No servidor, a impressao digital do termo que o responsavel aceitou.
-      hashTermo: `sha256:${gerarToken()}`,
+      /*
+       * O resumo do termo aceito: "sha256:<versao>:<hex>", calculado sobre os
+       * dados que compoem o texto. O texto renderizado nao e gravado — ele se
+       * reproduz a partir da versao mais estes campos, e o resumo prova que
+       * nenhum deles mudou depois.
+       */
+      hashTermo: await resumoDoTermo({
+        versaoTermo: VERSAO_CORRENTE_DO_TERMO,
+        responsavel: { id: sessao.usuario.id, nome: sessao.usuario.nome },
+        paciente: { id: paciente.id, nome: paciente.nome },
+        escola: { id: escolaDoTermo.id, nome: escolaDoTermo.nome },
+        escopos,
+        validadeAte: dados.validadeAte,
+        concedidoEm,
+      }),
     }
     banco.consentimentos.push(consentimento)
     // Sem consentimento nao ha convite. O vinculo so nasce quando o professor

@@ -1,6 +1,12 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Tela } from '../LayoutApp'
+import { usarSessao } from '../../contexto/Sessao'
 import { dataIsoParaLocal, emData } from '../../dominio/datas'
+import { validarNovoConsentimento } from '../../dominio/regras'
+import {
+  conferirResumoDoTermo, textoDoTermo, VERSAO_CORRENTE_DO_TERMO, versaoConhecida, versaoDoResumo,
+  type DadosDoResumo,
+} from '../../dominio/termo'
 import { Aviso } from '../../ui/Aviso'
 import { Botao } from '../../ui/Botao'
 import { Campo } from '../../ui/Campo'
@@ -23,6 +29,15 @@ import { NUNCA_VISIVEL } from '../limites'
  * declara turma, turno e atuacao ao aceitar o convite.
  *
  * A revogacao vale na hora (regra 5) e tem confirmacao em duas etapas.
+ *
+ * Conceder tambem vai em duas etapas, e a segunda e o TERMO INTEIRO. Dado de
+ * saude exige consentimento especifico e destacado (LGPD, art. 11, I): uma
+ * caixa marcada no meio de um formulario nao e destaque. A familia le o texto
+ * com os valores dela preenchidos antes de autorizar.
+ *
+ * O texto nao fica gravado. O que fica e a versao, dentro do resumo — e o
+ * texto se reproduz a partir dela mais os campos do consentimento, que ja
+ * estao persistidos. "Ver o termo que aceitei" reconstroi e confere.
  */
 
 const ESCOPOS: { valor: EscopoAcesso; rotulo: string; explicacao: string }[] = [
@@ -45,6 +60,7 @@ type Estado =
 
 
 export function Consentimento() {
+  const { usuario } = usarSessao()
   const [estado, setEstado] = useState<Estado>({ tipo: 'carregando' })
   const [tentativa, setTentativa] = useState(0)
   const [pacienteId, setPacienteId] = useState<string | null>(null)
@@ -57,6 +73,11 @@ export function Consentimento() {
   const [convite, setConvite] = useState<ConsentimentoConcedido | null>(null)
   const [confirmando, setConfirmando] = useState<string | null>(null)
   const [aviso, setAviso] = useState<string | null>(null)
+  /** 'formulario' escolhe; 'termo' le e autoriza. */
+  const [etapa, setEtapa] = useState<'formulario' | 'termo'>('formulario')
+  const [termoAberto, setTermoAberto] = useState<
+    { consentimentoId: string; texto: string; confere: boolean | null } | null
+  >(null)
 
   useEffect(() => {
     let ativo = true
@@ -87,18 +108,33 @@ export function Consentimento() {
   const alternarEscopo = (valor: EscopoAcesso) =>
     setEscopos((atual) => atual.includes(valor) ? atual.filter((e) => e !== valor) : [...atual, valor])
 
-  const conceder = async (evento: FormEvent) => {
+  /** Fim do dia escolhido: o acesso vale ate o ultimo instante daquela data. */
+  const validadeIso = () => validadeAte ? new Date(`${validadeAte}T23:59:59`).toISOString() : ''
+
+  /**
+   * Primeira etapa: so confere o que a propria regra de dominio confere, para
+   * ninguem ler o termo inteiro e so depois descobrir que faltou a escola.
+   */
+  const revisarTermo = (evento: FormEvent) => {
     evento.preventDefault()
+    if (!pacienteId) return
+    const encontrados = validarNovoConsentimento(
+      { pacienteId, escolaId, escopos, validadeAte: validadeIso() },
+      new Date(),
+    )
+    setErros(encontrados)
+    if (Object.keys(encontrados).length === 0) setEtapa('termo')
+  }
+
+  const conceder = async () => {
     if (!pacienteId) return
     setErros({})
     setSalvando(true)
     try {
       const concedido = await servicos.consentimentos.conceder({
-        pacienteId,
-        escolaId,
-        escopos,
-        validadeAte: validadeAte ? new Date(`${validadeAte}T23:59:59`).toISOString() : '',
+        pacienteId, escolaId, escopos, validadeAte: validadeIso(),
       })
+      setEtapa('formulario')
       setConvite(concedido)
       setAviso(`Acesso autorizado para ${concedido.consentimento.escola}. Entregue o convite ao professor.`)
       recarregar()
@@ -107,6 +143,8 @@ export function Consentimento() {
       setErros(erro.campos && Object.keys(erro.campos).length > 0
         ? erro.campos
         : { geral: erro.message ?? 'Não foi possível autorizar agora.' })
+      // Erro de campo so se corrige no formulario.
+      setEtapa('formulario')
     } finally {
       setSalvando(false)
     }
@@ -135,6 +173,53 @@ export function Consentimento() {
   }
 
   const campo = 'min-h-11 w-full rounded-lg border-2 border-linha bg-sup px-3 py-2.5 text-tinta'
+
+  const nomeDoFilho = (id: string | null) => estado.tipo === 'pronto'
+    ? estado.filhos.find((f) => f.id === id)?.nome ?? '—'
+    : '—'
+
+  /** Os campos do resumo de um consentimento ja gravado. */
+  const dadosDoResumo = (c: ConsentimentoDetalhe, versao: string): DadosDoResumo => ({
+    versaoTermo: versao,
+    responsavel: { id: c.responsavelId, nome: usuario?.nome ?? '' },
+    paciente: { id: c.pacienteId, nome: nomeDoFilho(c.pacienteId) },
+    escola: { id: c.escolaId, nome: c.escola },
+    escopos: c.escopos,
+    validadeAte: c.validadeAte,
+    concedidoEm: c.concedidoEm,
+  })
+
+  /**
+   * Reconstroi o texto da versao registrada e confere o resumo. O texto nunca
+   * foi guardado: ele nasce da versao mais os campos do consentimento, e e o
+   * resumo que prova que nenhum deles mudou depois.
+   */
+  const verTermo = async (c: ConsentimentoDetalhe) => {
+    if (termoAberto?.consentimentoId === c.id) { setTermoAberto(null); return }
+    const versao = versaoDoResumo(c.hashTermo)
+    if (!versao || !versaoConhecida(versao)) {
+      setTermoAberto({
+        consentimentoId: c.id,
+        texto: 'Não foi possível reconstruir este termo: a versão registrada não está neste sistema.',
+        confere: false,
+      })
+      return
+    }
+    const dados = dadosDoResumo(c, versao)
+    setTermoAberto({
+      consentimentoId: c.id,
+      texto: textoDoTermo(versao, {
+        responsavel: dados.responsavel.nome,
+        escola: dados.escola.nome,
+        aluno: dados.paciente.nome,
+        escopos: dados.escopos,
+        validadeAte: dados.validadeAte,
+      }),
+      confere: null,
+    })
+    const confere = await conferirResumoDoTermo(c.hashTermo, dados)
+    setTermoAberto((atual) => atual?.consentimentoId === c.id ? { ...atual, confere } : atual)
+  }
 
   // Linguagem da familia: o filho e chamado pelo primeiro nome.
   const primeiroNome = estado.tipo === 'pronto'
@@ -178,9 +263,10 @@ export function Consentimento() {
             </Cartao>
           )}
 
+          {etapa === 'formulario' && (
           <Cartao>
             <h2 className="text-lg font-bold">Autorizar uma escola</h2>
-            <form className="mt-3 flex flex-col gap-4" onSubmit={conceder} noValidate>
+            <form className="mt-3 flex flex-col gap-4" onSubmit={revisarTermo} noValidate>
               <Campo id="escola" rotulo="Escola" dica="O acesso vale para esta escola. Outra escola precisa de uma autorização própria.">
                 <select id="escola" className={campo} value={escolaId} onChange={(e) => setEscolaId(e.target.value)}>
                   <option value="">Escolha a escola</option>
@@ -235,17 +321,54 @@ export function Consentimento() {
               </Campo>
 
               <p className="text-sm text-tinta2">
-                Ao autorizar, registramos a data, a hora e uma cópia do termo que você aceitou. Esse
-                registro serve para provar, depois, exatamente o que foi autorizado.
+                Guardamos a versão do termo que você aceitou e um resumo que prova que ele não
+                mudou.
               </p>
 
               {erros.geral && <p role="alert" className="font-bold text-cr">{erros.geral}</p>}
 
               <Botao area="fam" type="submit" className="w-full" disabled={salvando}>
-                {salvando ? 'Autorizando…' : 'Autorizar e gerar convite'}
+                Ler o termo e autorizar
               </Botao>
             </form>
           </Cartao>
+          )}
+
+          {/* Etapa 2: o termo inteiro, com os valores preenchidos. Consentimento
+              para dado de saude precisa ser especifico e destacado — a pessoa le
+              o que esta autorizando antes de autorizar (LGPD, art. 11, I). */}
+          {etapa === 'termo' && (
+            <Cartao>
+              <h2 className="text-lg font-bold">Leia antes de autorizar</h2>
+              <p className="mt-1 text-sm text-tinta2">
+                Este é o termo com os seus dados. Ele fica registrado nesta versão, e você pode
+                reabri-lo depois nesta mesma tela.
+              </p>
+
+              <div className="mt-3 max-h-96 overflow-y-auto whitespace-pre-line rounded-lg border border-linha bg-sup p-4 text-[15px] leading-relaxed">
+                {textoDoTermo(VERSAO_CORRENTE_DO_TERMO, {
+                  responsavel: usuario?.nome ?? '',
+                  escola: estado.escolas.find((e) => e.id === escolaId)?.nome ?? '',
+                  aluno: nomeDoFilho(pacienteId),
+                  escopos,
+                  validadeAte: validadeIso(),
+                })}
+              </div>
+
+              {erros.geral && <p role="alert" className="mt-3 font-bold text-cr">{erros.geral}</p>}
+
+              <div className="mt-4 flex flex-col gap-2">
+                <Botao area="fam" className="w-full" disabled={salvando}
+                  onClick={() => void conceder()}>
+                  {salvando ? 'Autorizando…' : 'Autorizar'}
+                </Botao>
+                <Botao area="fam" variante="secundaria" className="w-full" disabled={salvando}
+                  onClick={() => setEtapa('formulario')}>
+                  Voltar e corrigir
+                </Botao>
+              </div>
+            </Cartao>
+          )}
 
           <div aria-live="polite">
             {aviso && <Aviso tom="ok" titulo="Pronto">{aviso}</Aviso>}
@@ -334,6 +457,38 @@ export function Consentimento() {
                       </Botao>
                     </p>
                   )
+                )}
+
+                {/* A prova na mao da familia: o texto se reconstroi da versao
+                    registrada, e o resumo diz se algum campo mudou depois. */}
+                <p className="mt-3">
+                  <Botao area="fam" variante="secundaria"
+                    aria-expanded={termoAberto?.consentimentoId === c.id}
+                    onClick={() => void verTermo(c)}>
+                    {termoAberto?.consentimentoId === c.id ? 'Fechar o termo' : 'Ver o termo que aceitei'}
+                  </Botao>
+                </p>
+
+                {termoAberto?.consentimentoId === c.id && (
+                  <div className="mt-3">
+                    <div className="max-h-96 overflow-y-auto whitespace-pre-line rounded-lg border border-linha bg-sup p-4 text-[15px] leading-relaxed">
+                      {termoAberto.texto}
+                    </div>
+                    <p className="mt-2 text-sm" aria-live="polite">
+                      {termoAberto.confere === null && 'Conferindo o texto…'}
+                      {termoAberto.confere === true && (
+                        <b className="text-ok">
+                          Texto conferido: igual ao que você aceitou em {emData(c.concedidoEm)} às{' '}
+                          {dataIsoParaLocal(c.concedidoEm).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}.
+                        </b>
+                      )}
+                      {termoAberto.confere === false && (
+                        <b className="text-cr">
+                          O texto não confere com o resumo registrado. Avise a clínica.
+                        </b>
+                      )}
+                    </p>
+                  </div>
                 )}
               </Cartao>
             ))}

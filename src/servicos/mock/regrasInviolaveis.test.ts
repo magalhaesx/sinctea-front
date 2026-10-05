@@ -3,6 +3,9 @@ import { ErroServico, type OcorrenciaComportamental, type Sessao } from '../tipo
 import { servicosMock as s } from '.'
 import { banco, relogio } from './infra'
 import { resumoSha256 } from '../../dominio/hash'
+import {
+  conferirResumoDoTermo, textoDoTermo, VERSAO_CORRENTE_DO_TERMO, versaoDoResumo,
+} from '../../dominio/termo'
 
 /**
  * As regras inviolaveis do CLAUDE.md verificadas na camada de dados, e nao
@@ -303,6 +306,55 @@ describe('regra 1 — quem autoriza a escola e o responsavel', () => {
     const horas = (Date.parse(concedido.conviteExpiraEm) - Date.parse(concedido.consentimento.concedidoEm)) / 3_600_000
     expect(horas).toBe(72)
     expect((await chamar(s.convites.obter(concedido.tokenConvite))).situacao).toBe('VALIDO')
+  })
+
+  it('o resumo do termo e do termo: versao dentro do valor, hex sobre os dados', async () => {
+    await entrarComo('RESPONSAVEL')
+    const filhos = await chamar(s.familia.listarFilhos())
+    const sessao = await chamar(s.autenticacao.sessaoAtual())
+    const escolas = await chamar(s.escolas.listar({ porPagina: 10 }))
+    const validadeAte = new Date(Date.now() + 120 * 86_400_000).toISOString()
+
+    const { consentimento: c } = await chamar(s.consentimentos.conceder({
+      pacienteId: filhos.itens[0].id, escolaId: escolas.itens[0].id,
+      escopos: ['CARTAO_ESTRATEGIA'], validadeAte,
+    }))
+
+    // 1. Formato "sha256:<versao>:<hex>", e o hex confere com o recalculo.
+    expect(c.hashTermo).toMatch(/^sha256:\d{4}-\d{2}:[0-9a-f]{64}$/)
+    expect(versaoDoResumo(c.hashTermo)).toBe(VERSAO_CORRENTE_DO_TERMO)
+    const dados = {
+      versaoTermo: VERSAO_CORRENTE_DO_TERMO,
+      responsavel: { id: sessao!.usuario.id, nome: sessao!.usuario.nome },
+      paciente: { id: filhos.itens[0].id, nome: filhos.itens[0].nome },
+      escola: { id: escolas.itens[0].id, nome: c.escola },
+      escopos: c.escopos,
+      validadeAte: c.validadeAte,
+      concedidoEm: c.concedidoEm,
+    }
+    expect(await conferirResumoDoTermo(c.hashTermo, dados)).toBe(true)
+
+    // 2. Mesmos escopos e validade, outro paciente: outro resumo.
+    const { consentimento: outro } = await chamar(s.consentimentos.conceder({
+      pacienteId: filhos.itens[1].id, escolaId: escolas.itens[0].id,
+      escopos: ['CARTAO_ESTRATEGIA'], validadeAte,
+    }))
+    expect(outro.hashTermo).not.toBe(c.hashTermo)
+
+    // 3. Qualquer campo diferente, e a conferencia falha.
+    expect(await conferirResumoDoTermo(c.hashTermo, { ...dados, escopos: ['REGISTRO_OCORRENCIA'] })).toBe(false)
+    expect(await conferirResumoDoTermo(c.hashTermo, { ...dados, validadeAte: c.concedidoEm })).toBe(false)
+    expect(await conferirResumoDoTermo(c.hashTermo, {
+      ...dados, paciente: { ...dados.paciente, nome: 'Outro Nome' },
+    })).toBe(false)
+
+    // 4. O texto nao e gravado: nenhum campo do consentimento o carrega, e o
+    //    termo se reproduz da versao mais os dados.
+    expect(JSON.stringify(c)).not.toContain('TERMO DE AUTORIZAÇÃO')
+    expect(textoDoTermo(VERSAO_CORRENTE_DO_TERMO, {
+      responsavel: dados.responsavel.nome, escola: dados.escola.nome, aluno: dados.paciente.nome,
+      escopos: dados.escopos, validadeAte: dados.validadeAte,
+    })).toContain('TERMO DE AUTORIZAÇÃO DE ACESSO DA ESCOLA')
   })
 
   it('consentimento gera convite, e so o convite aceito gera vinculo', async () => {

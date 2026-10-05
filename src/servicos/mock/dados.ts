@@ -401,9 +401,11 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
   const consentimento = (id: string, responsavelId: string, pacienteId: string, escolaId: string,
     escopos: Consentimento['escopos'], concedidoEm: string, validadeAte: string,
     revogadoEm: string | null = null): Consentimento =>
-    // Hash ficticio: no servidor sera a impressao digital do termo aceito.
+    /* O resumo nasce vazio e e calculado quando o modulo de servicos carrega:
+       ele depende de SHA-256, que so responde por Promise. Ver
+       semearResumosDosTermos(), em mock/familia.ts. */
     ({ id, responsavelId, pacienteId, escolaId, escopos, concedidoEm, validadeAte, revogadoEm,
-      hashTermo: `sha256:ficticio-${id}` })
+      hashTermo: '' })
 
   const ambos: Consentimento['escopos'] = ['CARTAO_ESTRATEGIA', 'REGISTRO_OCORRENCIA']
   const consentimentos: Consentimento[] = [
