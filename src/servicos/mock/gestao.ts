@@ -5,6 +5,7 @@ import {
 } from '../tipos'
 import { podeDesativarUsuario } from '../../dominio/regras'
 import { montarCsv } from '../../dominio/csv'
+import { versaoAnteriorEmTexto } from '../../dominio/auditoria'
 import {
   auditar, banco, exigirPerfil, exigirSessao, exigirValido, gerarId, naoEncontrado, paginar,
   responder, todosUsuarios, usuarioPorId,
@@ -58,10 +59,13 @@ export const auditoriaMock: ServicoAuditoria = {
     const itens = filtrarAuditoria(filtro)
     const csv = montarCsv(
       ['Data e hora', 'Usuário', 'Perfil', 'Ação', 'Entidade', 'Identificador',
-        'Paciente', 'Origem', 'Detalhe'],
+        'Paciente', 'Origem', 'Detalhe', 'Versão anterior'],
       itens.map((r) => [
         r.ocorridoEm, r.usuarioNome ?? '', r.perfil ?? '', r.acao, r.entidade,
         r.idEntidade ?? '', r.pacienteId ?? '', r.origem, r.detalhe,
+        // Em texto legivel, nao em JSON: quem abre a planilha quer ler. A
+        // protecao contra formula e do celulaCsv, como em qualquer celula.
+        versaoAnteriorEmTexto(r.valorAnterior),
       ]),
     )
     auditar(sessao, {

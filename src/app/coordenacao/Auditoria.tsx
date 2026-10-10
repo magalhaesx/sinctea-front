@@ -13,6 +13,9 @@ import { Paginacao } from '../../ui/Paginacao'
 import { Tabela, type Coluna } from '../../ui/Tabela'
 import { NOME_DO_PERFIL } from '../perfis'
 import { dataIsoParaLocal, diaIso } from '../../dominio/datas'
+// A leitura do valorAnterior mora no dominio: a tela e o CSV exportado dizem
+// a mesma coisa porque leem do mesmo lugar.
+import { camposAnteriores, NOME_DO_CAMPO } from '../../dominio/auditoria'
 import {
   servicos, type AcaoAuditoria, type FiltroAuditoria, type OrigemAuditoria, type Pagina,
   type PacienteResumo, type RegistroAuditoria,
@@ -62,27 +65,6 @@ type Estado =
   | { tipo: 'carregando' }
   | { tipo: 'erro'; erro: unknown }
   | { tipo: 'pronto'; dados: Pagina<RegistroAuditoria>; atualizando: boolean }
-
-/** Os campos que a trilha guarda em valorAnterior, com nome de gente. */
-const NOME_DO_CAMPO: Record<string, string> = {
-  tipo: 'O que aconteceu',
-  intensidade: 'Intensidade',
-  contexto: 'Em que momento',
-}
-
-/**
- * O JSON canonico guardado vira pares legiveis. Se vier algo que nao se
- * entende, mostra-se o texto como esta — melhor do que esconder.
- */
-function camposAnteriores(valorAnterior: string): Array<[string, string]> {
-  try {
-    const valor: unknown = JSON.parse(valorAnterior)
-    if (valor && typeof valor === 'object' && !Array.isArray(valor)) {
-      return Object.entries(valor as Record<string, unknown>).map(([k, v]) => [k, String(v)])
-    }
-  } catch { /* nao era JSON: cai no bruto, abaixo */ }
-  return [['Valor anterior', valorAnterior]]
-}
 
 const dataEHora = (iso: string) => {
   const d = dataIsoParaLocal(iso)

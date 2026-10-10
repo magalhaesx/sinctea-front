@@ -555,6 +555,8 @@ describe('janela de correcao da ocorrencia (UC16)', () => {
     await entrarComo('PROFESSOR')
     const alunos = await chamar(s.areaEscola.listarAlunos())
     const aluno = alunos.itens.find((a) => a.situacao === 'VIGENTE' && a.escopos.includes('REGISTRO_OCORRENCIA'))!
+    expect(aluno, 'nenhum aluno com acesso vigente: este bloco precisa rodar antes da regra 5')
+      .toBeDefined()
     const original = { tipo: 'Tapou os ouvidos', intensidade: 3 as const, contexto: 'Recreio' }
     const nova = await chamar(s.areaEscola.registrarOcorrencia(aluno.pacienteId, original))
 
@@ -580,6 +582,8 @@ describe('janela de correcao da ocorrencia (UC16)', () => {
     await entrarComo('PROFESSOR')
     const alunos = await chamar(s.areaEscola.listarAlunos())
     const aluno = alunos.itens.find((a) => a.situacao === 'VIGENTE' && a.escopos.includes('REGISTRO_OCORRENCIA'))!
+    expect(aluno, 'nenhum aluno com acesso vigente: este bloco precisa rodar antes da regra 5')
+      .toBeDefined()
     const nova = await chamar(s.areaEscola.registrarOcorrencia(aluno.pacienteId, {
       tipo: 'Saiu da sala', intensidade: 2, contexto: 'Troca de atividade',
     }))
@@ -611,6 +615,8 @@ describe('janela de correcao da ocorrencia (UC16)', () => {
     await entrarComo('PROFESSOR')
     const alunos = await chamar(s.areaEscola.listarAlunos())
     const aluno = alunos.itens.find((a) => a.situacao === 'VIGENTE' && a.escopos.includes('REGISTRO_OCORRENCIA'))!
+    expect(aluno, 'nenhum aluno com acesso vigente: este bloco precisa rodar antes da regra 5')
+      .toBeDefined()
     const nova = await chamar(s.areaEscola.registrarOcorrencia(aluno.pacienteId, {
       tipo: 'Recusou a tarefa', intensidade: 2, contexto: 'Recreio',
     }))
@@ -708,6 +714,27 @@ describe('regra 6 — auditoria imutavel', () => {
     expect(csv).not.toContain('"=SOMA')
     // So a acao filtrada entra no arquivo.
     expect(csv).not.toContain('ACESSO_NEGADO')
+  })
+
+  it('a planilha leva a versao anterior em texto, numa coluna propria', async () => {
+    await entrarComo('COORDENADOR')
+    const csv = await chamar(s.auditoria.exportar({ entidade: 'OcorrenciaEscolar' }))
+    const linhas = csv.trimEnd().split('\r\n')
+
+    // Dez colunas, com a nova no fim.
+    expect(linhas[0].split(';')).toHaveLength(10)
+    expect(linhas[0]).toContain('"Versão anterior"')
+
+    // A linha da correcao traz os campos legiveis: nem chave, nem aspas de JSON.
+    const correcao = linhas.find((l) => l.includes('Ocorrência corrigida pelo professor'))!
+    expect(correcao).toContain('O que aconteceu: ')
+    expect(correcao).toContain('Em que momento: ')
+    expect(correcao).not.toContain('{')
+    expect(correcao).not.toContain('\\"tipo\\"')
+
+    // Criacao nao tem versao anterior: a decima coluna fica vazia.
+    const criacao = linhas.find((l) => l.includes('"CRIACAO"'))!
+    expect(criacao.endsWith(';""')).toBe(true)
   })
 
   it('exportar e dado saindo do sistema, e por isso fica auditado', async () => {
