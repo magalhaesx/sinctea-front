@@ -121,7 +121,15 @@ export const familiaMock: ServicoFamilia = {
     const itens = banco.pacientes
       .filter((p) => p.ativo && ehResponsavelDe(sessao, p))
       .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
-      .map((p) => ({ id: p.id, nome: p.nome, idade: idadeEmAnos(p.dataNascimento, agora) }))
+      .map((p) => ({
+        id: p.id,
+        nome: p.nome,
+        idade: idadeEmAnos(p.dataNascimento, agora),
+        // O parentesco e da relacao, nao da pessoa: quem olha pode ser mae de
+        // um e avo de outro.
+        parentesco: banco.vinculosFamiliares
+          .find((v) => v.pacienteId === p.id && v.responsavelId === sessao.usuario.id)?.parentesco ?? '',
+      }))
     return paginar(itens, filtro)
   }),
 

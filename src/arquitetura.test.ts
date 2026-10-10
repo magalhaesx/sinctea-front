@@ -3,6 +3,9 @@ import { describe, expect, it } from 'vitest'
 /**
  * Regra 4 da camada de dados (docs/01, secao 4): nenhum componente conhece
  * servicos/mock. So a propria pasta servicos/ e os testes podem importa-la.
+ *
+ * A outra porta e o dado estatico: foi por ela que duas telas da familia
+ * ficaram cinco etapas paradas, lendo um arquivo fixo em vez do servico.
  */
 
 const fontes = import.meta.glob<string>(['/src/**/*.{ts,tsx}', '!/src/**/*.test.ts'], {
@@ -12,6 +15,7 @@ const fontes = import.meta.glob<string>(['/src/**/*.{ts,tsx}', '!/src/**/*.test.
 })
 
 const IMPORTA_MOCK = /from\s+['"][^'"]*servicos\/mock[^'"]*['"]|import\(\s*['"][^'"]*servicos\/mock/
+const IMPORTA_DADOS = /from\s+['"][^'"]*\/dados\/[^'"]*['"]/
 
 describe('arquitetura', () => {
   it('encontra os arquivos de codigo', () => {
@@ -22,6 +26,14 @@ describe('arquitetura', () => {
     const violacoes = Object.entries(fontes)
       .filter(([caminho]) => !caminho.startsWith('/src/servicos/'))
       .filter(([, codigo]) => IMPORTA_MOCK.test(codigo))
+      .map(([caminho]) => caminho)
+    expect(violacoes).toEqual([])
+  })
+
+  it('nenhuma tela le dado estatico: a origem e sempre o servico', () => {
+    const violacoes = Object.entries(fontes)
+      .filter(([caminho]) => caminho.startsWith('/src/app/'))
+      .filter(([, codigo]) => IMPORTA_DADOS.test(codigo))
       .map(([caminho]) => caminho)
     expect(violacoes).toEqual([])
   })

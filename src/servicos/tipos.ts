@@ -549,6 +549,8 @@ export interface FilhoResumo {
   id: string
   nome: string
   idade: number
+  /** Como ESTE responsavel se relaciona com a crianca: vem do VinculoFamiliar. */
+  parentesco: string
 }
 
 /** O que a familia ve de um objetivo: so a redacao acessivel. Nenhum termo clinico. */

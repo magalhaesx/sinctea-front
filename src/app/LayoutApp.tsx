@@ -2,7 +2,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { BarraPreferencias } from '../componentes/BarraPreferencias'
 import { usarSessao } from '../contexto/Sessao'
 import type { Perfil } from '../servicos'
-import { DEMONSTRACAO, NOME_DO_PERFIL } from './perfis'
+import { NOME_DO_PERFIL } from './perfis'
 
 /**
  * Moldura do sistema (/app). O menu mostra as telas do perfil ATIVO: as tres
@@ -50,7 +50,7 @@ const menu: Grupo[] = [
     perfis: ['RESPONSAVEL'],
     itens: [
       { para: '/app/familia', nome: 'Painel da família', uc: 'UC13', cor: FAM, fim: true },
-      { para: `/app/familia/atividades/${DEMONSTRACAO.atividade}`, nome: 'Atividade em casa', uc: 'UC14', cor: FAM },
+      // A atividade se abre pelo painel, com a atividade escolhida.
       { para: '/app/familia/consentimento', nome: 'Autorizar a escola', uc: 'UC11', cor: FAM },
     ],
   },

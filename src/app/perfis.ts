@@ -18,13 +18,6 @@ export const PAINEL_DO_PERFIL: Record<Perfil, string> = {
   PROFESSOR: '/app/escola',
 }
 
-/**
- * Identificador usado pela area da familia (telas 15 e 16) enquanto ela nao
- * consome a camada de servicos. A etapa 8 substitui este atalho por navegacao
- * real; nenhum outro lugar do codigo fixa identificador.
- */
-export const DEMONSTRACAO = { atividade: 'a-003' } as const
-
 /** Area visual de cada perfil (docs/02, secao 1). */
 export const AREA_DO_PERFIL: Record<Perfil, 'cli' | 'fam' | 'esc'> = {
   TERAPEUTA: 'cli',
