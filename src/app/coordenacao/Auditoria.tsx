@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Tela } from '../LayoutApp'
 import { Aviso } from '../../ui/Aviso'
@@ -63,6 +63,27 @@ type Estado =
   | { tipo: 'erro'; erro: unknown }
   | { tipo: 'pronto'; dados: Pagina<RegistroAuditoria>; atualizando: boolean }
 
+/** Os campos que a trilha guarda em valorAnterior, com nome de gente. */
+const NOME_DO_CAMPO: Record<string, string> = {
+  tipo: 'O que aconteceu',
+  intensidade: 'Intensidade',
+  contexto: 'Em que momento',
+}
+
+/**
+ * O JSON canonico guardado vira pares legiveis. Se vier algo que nao se
+ * entende, mostra-se o texto como esta — melhor do que esconder.
+ */
+function camposAnteriores(valorAnterior: string): Array<[string, string]> {
+  try {
+    const valor: unknown = JSON.parse(valorAnterior)
+    if (valor && typeof valor === 'object' && !Array.isArray(valor)) {
+      return Object.entries(valor as Record<string, unknown>).map(([k, v]) => [k, String(v)])
+    }
+  } catch { /* nao era JSON: cai no bruto, abaixo */ }
+  return [['Valor anterior', valorAnterior]]
+}
+
 const dataEHora = (iso: string) => {
   const d = dataIsoParaLocal(iso)
   return `${d.toLocaleDateString('pt-BR')} ${d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
@@ -88,7 +109,31 @@ const colunas: Coluna<RegistroAuditoria>[] = [
   },
   { id: 'entidade', titulo: 'Entidade', celula: (r) => r.entidade },
   { id: 'origem', titulo: 'Origem', celula: (r) => ORIGENS[r.origem] },
-  { id: 'detalhe', titulo: 'Detalhe', quebrar: true, celula: (r) => r.detalhe },
+  {
+    id: 'detalhe', titulo: 'Detalhe', quebrar: true,
+    celula: (r) => (
+      <>
+        {r.detalhe}
+        {/* O que torna a promessa da tela 19 verificavel por quem coordena:
+            a versao anterior, em campos, e nao em JSON cru. */}
+        {r.valorAnterior && (
+          <details className="mt-1">
+            <summary className="min-h-11 cursor-pointer text-[15px] font-bold text-cli-ink underline">
+              Ver o que havia antes
+            </summary>
+            <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-[15px]">
+              {camposAnteriores(r.valorAnterior).map(([campo, valor]) => (
+                <Fragment key={campo}>
+                  <dt className="font-bold">{NOME_DO_CAMPO[campo] ?? campo}</dt>
+                  <dd>{valor}</dd>
+                </Fragment>
+              ))}
+            </dl>
+          </details>
+        )}
+      </>
+    ),
+  },
 ]
 
 export function Auditoria() {

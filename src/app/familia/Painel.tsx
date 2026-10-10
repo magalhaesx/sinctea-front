@@ -201,10 +201,12 @@ export function PainelFamilia() {
                       {/* So a redacao acessivel: a tecnica nao sai do servico. */}
                       <h3 className="text-base font-bold">{o.descricaoAcessivel}</h3>
                       <div className="mt-3">
+                        {/* A descricao ja e o h3 acima: repeti-la no rotulo
+                            faria o leitor de tela dizer a frase duas vezes. */}
                         <Medidor
                           valor={o.percentualAtual}
                           area="fam"
-                          rotulo={o.descricaoAcessivel}
+                          rotulo="Frequência"
                           emPalavras={frequenciaEmLinguagemCotidiana(o.percentualAtual)}
                         />
                       </div>

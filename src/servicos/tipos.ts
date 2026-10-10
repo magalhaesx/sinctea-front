@@ -765,6 +765,12 @@ export interface RegistroAuditoria {
   /** Origem da requisicao. So o servidor sabe; no mock fica nulo. */
   readonly ipOrigem: string | null
   readonly detalhe: string
+  /**
+   * JSON canonico dos campos que MUDARAM, na versao anterior — nunca o
+   * registro inteiro: a trilha nao acumula copias, por minimizacao. Nulo em
+   * tudo que nao e alteracao com valor anterior a preservar.
+   */
+  readonly valorAnterior: string | null
 }
 
 export interface FiltroAuditoria extends FiltroPaginacao {

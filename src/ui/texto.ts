@@ -8,6 +8,15 @@
 
 const CONTRACOES: Record<string, string> = { o: 'ao', a: 'à', os: 'aos', as: 'às' }
 
+/**
+ * Tira o ponto final do rotulo antes de juntar com outra frase. Rotulo que
+ * vem de texto escrito por gente costuma terminar em ponto, e "frase.: valor"
+ * e o que o leitor de tela anuncia se ninguem cuidar da juncao.
+ */
+export function semPontuacaoFinal(texto: string): string {
+  return texto.replace(/[.,;:!?\s]+$/u, '')
+}
+
 /** Preposicao "a" contraida com o artigo: ao, à, aos, às. */
 export function aoArtigo(expressao: string): string {
   const m = /^(o|a|os|as)\s+(.*)$/.exec(expressao)

@@ -135,6 +135,8 @@ interface EventoAuditoria {
   idEntidade?: string | null
   pacienteId?: string | null
   detalhe: string
+  /** So quando houve versao anterior a preservar. Ver RegistroAuditoria. */
+  valorAnterior?: string | null
 }
 
 /** Registro imutavel: congelado e apenas acrescentado, nunca alterado ou removido. */
@@ -154,6 +156,7 @@ export function auditar(sessao: SessaoServidor | null, evento: EventoAuditoria):
     // So o servidor conhece o IP de origem; no mock nao existe requisicao.
     ipOrigem: null,
     detalhe: evento.detalhe,
+    valorAnterior: evento.valorAnterior ?? null,
   })
   banco.auditoria.push(registro)
 }

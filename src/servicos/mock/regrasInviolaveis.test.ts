@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import { ErroServico, type OcorrenciaComportamental, type Sessao } from '../tipos'
 import { servicosMock as s } from '.'
 import { banco, relogio } from './infra'
-import { resumoSha256 } from '../../dominio/hash'
+import { jsonCanonico, resumoSha256 } from '../../dominio/hash'
 import {
   conferirResumoDoTermo, textoDoTermo, VERSAO_CORRENTE_DO_TERMO, versaoDoResumo,
 } from '../../dominio/termo'
@@ -546,6 +546,90 @@ describe('regra 4 — duas redacoes, a acessivel escrita pelo terapeuta', () => 
   })
 })
 
+/*
+ * Antes da regra 5, de proposito: aquele bloco revoga consentimentos, e sem
+ * acesso vigente nao ha ocorrencia para registrar nem corrigir.
+ */
+describe('janela de correcao da ocorrencia (UC16)', () => {
+  it('corrigir dentro do prazo guarda a versao anterior, e so os campos que mudam', async () => {
+    await entrarComo('PROFESSOR')
+    const alunos = await chamar(s.areaEscola.listarAlunos())
+    const aluno = alunos.itens.find((a) => a.situacao === 'VIGENTE' && a.escopos.includes('REGISTRO_OCORRENCIA'))!
+    const original = { tipo: 'Tapou os ouvidos', intensidade: 3 as const, contexto: 'Recreio' }
+    const nova = await chamar(s.areaEscola.registrarOcorrencia(aluno.pacienteId, original))
+
+    // Na criacao nao ha versao anterior a preservar.
+    expect((await ultimaAuditoria()).valorAnterior).toBeNull()
+
+    await entrarComo('PROFESSOR')
+    const corrigida = await chamar(s.areaEscola.corrigirOcorrencia(nova.id, {
+      tipo: 'Chorou', intensidade: 2, contexto: 'Entrada',
+    }))
+    expect(corrigida.tipo).toBe('Chorou')
+    expect(corrigida.corrigidaEm).not.toBeNull()
+
+    const registro = await ultimaAuditoria()
+    expect(registro).toMatchObject({ acao: 'ALTERACAO', entidade: 'OcorrenciaEscolar', idEntidade: nova.id })
+    // O detalhe e a frase que alguem le; o antes vai no campo proprio.
+    expect(registro.detalhe).toBe('Ocorrência corrigida pelo professor que a registrou, dentro da janela de 30 minutos.')
+    expect(registro.valorAnterior).toBe(jsonCanonico(original))
+    expect(registro.valorAnterior).not.toContain('pacienteId')
+  })
+
+  it('fora do prazo nao corrige, e nao deixa registro novo', async () => {
+    await entrarComo('PROFESSOR')
+    const alunos = await chamar(s.areaEscola.listarAlunos())
+    const aluno = alunos.itens.find((a) => a.situacao === 'VIGENTE' && a.escopos.includes('REGISTRO_OCORRENCIA'))!
+    const nova = await chamar(s.areaEscola.registrarOcorrencia(aluno.pacienteId, {
+      tipo: 'Saiu da sala', intensidade: 2, contexto: 'Troca de atividade',
+    }))
+
+    // Ler a trilha e da coordenacao; o professor volta logo em seguida.
+    const totalDaTrilha = async () => {
+      await entrarComo('COORDENADOR')
+      const pagina = await chamar(s.auditoria.listar({ porPagina: 1 }))
+      await entrarComo('PROFESSOR')
+      return pagina.total
+    }
+
+    // Passa a janela mexendo no relogio do "servidor", nao no registro.
+    const original = relogio.agora
+    relogio.agora = () => new Date(original().getTime() + 31 * 60_000)
+    try {
+      const antes = await totalDaTrilha()
+      expect((await erroDe(s.areaEscola.corrigirOcorrencia(nova.id, {
+        tipo: 'Chorou', intensidade: 1, contexto: 'Entrada',
+      }))).codigo).toBe('CONFLITO')
+      // Recusa por prazo nao e tentativa de acesso: nada novo na trilha.
+      expect(await totalDaTrilha()).toBe(antes)
+    } finally {
+      relogio.agora = original
+    }
+  })
+
+  it('quem nao registrou nao corrige, e a negativa fica auditada', async () => {
+    await entrarComo('PROFESSOR')
+    const alunos = await chamar(s.areaEscola.listarAlunos())
+    const aluno = alunos.itens.find((a) => a.situacao === 'VIGENTE' && a.escopos.includes('REGISTRO_OCORRENCIA'))!
+    const nova = await chamar(s.areaEscola.registrarOcorrencia(aluno.pacienteId, {
+      tipo: 'Recusou a tarefa', intensidade: 2, contexto: 'Recreio',
+    }))
+
+    // Outro professor com acesso ao mesmo aluno nao corrige o registro alheio.
+    const outro = banco.professores.find((p) => p.id !== banco.vinculos.find((v) => v.pacienteId === aluno.pacienteId)?.professorId)
+    if (outro) {
+      const { gravarSessao } = await import('./infra')
+      gravarSessao({ usuarioId: outro.id, perfilAtivo: 'PROFESSOR' })
+      const erro = await erroDe(s.areaEscola.corrigirOcorrencia(nova.id, {
+        tipo: 'Chorou', intensidade: 1, contexto: 'Entrada',
+      }))
+      expect(['ACESSO_NEGADO']).toContain(erro.codigo)
+      expect(await ultimaAuditoria()).toMatchObject({ acao: 'ACESSO_NEGADO', entidade: 'OcorrenciaEscolar' })
+    }
+  })
+
+})
+
 describe('regra 5 — revogacao com efeito imediato', () => {
   it('a leitura seguinte a revogacao ja e negada e auditada', async () => {
     await entrarComo('PROFESSOR')
@@ -586,6 +670,15 @@ describe('regra 5 — revogacao com efeito imediato', () => {
 })
 
 describe('regra 6 — auditoria imutavel', () => {
+  it('valorAnterior e nulo em criacao, leitura e acesso negado', async () => {
+    await entrarComo('COORDENADOR')
+    const pagina = await chamar(s.auditoria.listar({ porPagina: 100 }))
+    const semVersaoAnterior = pagina.itens.filter((r) => r.acao !== 'ALTERACAO')
+    expect(semVersaoAnterior.length).toBeGreaterThan(0)
+    for (const r of semVersaoAnterior) expect(r.valorAnterior).toBeNull()
+  })
+
+
   it('exportar traz o recorte inteiro, nao a pagina visivel', async () => {
     await entrarComo('COORDENADOR')
     const pagina = await chamar(s.auditoria.listar({ porPagina: 5 }))

@@ -7,6 +7,7 @@ import {
   consentimentoVigente, podeCorrigirOcorrencia, situacaoConsentimento, verificarAcessoEscola,
   type MotivoNegacao,
 } from '../../dominio/regras'
+import { jsonCanonico } from '../../dominio/hash'
 import {
   auditar, banco, exigirPerfil, exigirValido, gerarId, naoEncontrado, paginar, relogio, responder,
   type SessaoServidor,
@@ -186,11 +187,17 @@ export const areaEscolaMock: ServicoAreaEscola = {
     }
     validarOcorrencia(dados)
 
-    // A versao original fica preservada na trilha de auditoria.
+    /*
+     * A versao original fica preservada na trilha, em valorAnterior: so os
+     * tres campos que mudam, e nao o registro inteiro. O detalhe continua
+     * sendo a frase que alguem le na tela 13.
+     */
     const { tipo, intensidade, contexto } = ocorrencia
     auditar(sessao, {
-      acao: 'ALTERACAO', entidade: 'OcorrenciaEscolar', idEntidade: ocorrencia.id, pacienteId: ocorrencia.pacienteId,
-      detalhe: `Versão original: ${JSON.stringify({ tipo, intensidade, contexto })}`,
+      acao: 'ALTERACAO', entidade: 'OcorrenciaEscolar', idEntidade: ocorrencia.id,
+      pacienteId: ocorrencia.pacienteId,
+      detalhe: 'Ocorrência corrigida pelo professor que a registrou, dentro da janela de 30 minutos.',
+      valorAnterior: jsonCanonico({ tipo, intensidade, contexto }),
     })
 
     ocorrencia.tipo = dados.tipo.trim()

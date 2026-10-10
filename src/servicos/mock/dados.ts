@@ -593,7 +593,10 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
   // ------------------------------------------------------------ Auditoria inicial
 
   const semId: Omit<RegistroAuditoria, 'id'>[] = []
-  const auditar = (r: Omit<RegistroAuditoria, 'id'>) => semId.push(r)
+  // valorAnterior so existe em alteracao com versao anterior a preservar;
+  // nenhum registro semeado e desses.
+  const auditar = (r: Omit<RegistroAuditoria, 'id' | 'valorAnterior'>) =>
+    semId.push({ ...r, valorAnterior: null })
 
   for (const c of consentimentos) {
     const resp = responsaveis.find((r) => r.id === c.responsavelId)!

@@ -223,6 +223,10 @@ termo, e a família reabre o texto da versão registrada pela própria tela 17.
 - 21/09/2026 — `Objetivo` ganhou `dominadoEm`; `OcorrenciaComportamental` trocou
   `preliminar` por `leituraClinicaEm`. As duas datas existem para o painel da
   coordenação poder contar quando cada transição aconteceu
+- 11/10/2026 — `RegistroAuditoria` ganhou `valorAnterior : String`. Guarda o JSON
+  canônico **apenas dos campos que mudaram**, na versão anterior — nunca o
+  registro inteiro, por minimização. Hoje só a correção de ocorrência escolar o
+  preenche; nas demais ações é nulo
 - 26/09/2026 — `RelatorioEvolucao` criada, a 22ª classe. Relatório emitido é
   documento clínico: guarda o conteúdo como saiu e o hash dele, porque gerar de
   novo a partir dos dados de hoje produziria outro documento

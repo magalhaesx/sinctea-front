@@ -1,3 +1,4 @@
+import { semPontuacaoFinal } from './texto'
 import { acento, type Area } from './tokens'
 
 /**
@@ -17,7 +18,7 @@ export function Medidor({ valor, area = 'cli', rotulo, emPalavras }: {
   emPalavras?: string
 }) {
   const exposicao = emPalavras
-    ? { role: 'img' as const, 'aria-label': `${rotulo}: ${emPalavras}` }
+    ? { role: 'img' as const, 'aria-label': `${semPontuacaoFinal(rotulo)}: ${emPalavras}` }
     : {
       role: 'meter' as const,
       'aria-valuenow': valor,
