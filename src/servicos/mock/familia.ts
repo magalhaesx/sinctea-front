@@ -12,6 +12,7 @@ import {
 import { resumoDoTermo, VERSAO_CORRENTE_DO_TERMO } from '../../dominio/termo'
 import {
   ehResponsavelDe, exigirPacienteClinico, exigirPacienteClinicoOuFamilia, exigirPacienteDaFamilia,
+  exigirResponsavelLegal,
 } from './acesso'
 import {
   auditar, banco, exigirPerfil, exigirValido, gerarId, gravarSessao, naoEncontrado, paginar,
@@ -118,6 +119,8 @@ export const familiaMock: ServicoFamilia = {
   listarFilhos: (filtro = {}) => responder(() => {
     const sessao = exigirPerfil(['RESPONSAVEL'], 'Paciente')
     const agora = relogio.agora()
+    const vinculoCom = (pacienteId: string) => banco.vinculosFamiliares
+      .find((v) => v.pacienteId === pacienteId && v.responsavelId === sessao.usuario.id)
     const itens = banco.pacientes
       .filter((p) => p.ativo && ehResponsavelDe(sessao, p))
       .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
@@ -127,8 +130,9 @@ export const familiaMock: ServicoFamilia = {
         idade: idadeEmAnos(p.dataNascimento, agora),
         // O parentesco e da relacao, nao da pessoa: quem olha pode ser mae de
         // um e avo de outro.
-        parentesco: banco.vinculosFamiliares
-          .find((v) => v.pacienteId === p.id && v.responsavelId === sessao.usuario.id)?.parentesco ?? '',
+        parentesco: vinculoCom(p.id)?.parentesco ?? '',
+        // Tambem da relacao: decide se a tela 17 oferece autorizar uma escola.
+        responsavelLegal: vinculoCom(p.id)?.responsavelLegal ?? false,
       }))
     return paginar(itens, filtro)
   }),
@@ -160,6 +164,7 @@ function detalharConsentimento(c: Consentimento): ConsentimentoDetalhe {
   return {
     ...c,
     situacao: situacaoConsentimento(c, relogio.agora()),
+    responsavel: banco.responsaveis.find((r) => r.id === c.responsavelId)?.nome ?? '—',
     escola: banco.escolas.find((e) => e.id === c.escolaId)?.nome ?? '—',
     vinculoId: vinculo?.id ?? null,
     professor: vinculo ? banco.professores.find((p) => p.id === vinculo.professorId)?.nome ?? '—' : null,
@@ -239,16 +244,17 @@ export const consentimentosMock: ServicoConsentimento = {
   }),
 
   conceder: (dados) => responder(async () => {
-    // Regra 1: quem autoriza e o Responsavel do paciente — nunca a escola, nunca a clinica.
+    // Regra 1: quem autoriza e o Responsavel legal do paciente — nunca a
+    // escola, nunca a clinica, nem outro responsavel vinculado sem essa autoridade.
     exigirPerfil(['RESPONSAVEL'], 'Consentimento', dados.pacienteId)
-    const { sessao } = exigirPacienteDaFamilia(dados.pacienteId, 'Consentimento')
+    const { sessao, paciente } = exigirPacienteDaFamilia(dados.pacienteId, 'Consentimento')
+    exigirResponsavelLegal(sessao, paciente, 'Consentimento')
     const agora = relogio.agora()
     const erros = validarNovoConsentimento(dados, agora)
     if (dados.escolaId && !banco.escolas.some((e) => e.id === dados.escolaId)) erros.escolaId = 'Escola não encontrada.'
     exigirValido(erros)
 
     const escolaDoTermo = banco.escolas.find((e) => e.id === dados.escolaId)!
-    const paciente = banco.pacientes.find((p) => p.id === dados.pacienteId)!
     const escopos = [...new Set(dados.escopos)]
     const concedidoEm = agora.toISOString()
 
@@ -299,7 +305,10 @@ export const consentimentosMock: ServicoConsentimento = {
     await resumosSemeados
     const consentimento = banco.consentimentos.find((c) => c.id === consentimentoId) ?? naoEncontrado('Consentimento')
     exigirPerfil(['RESPONSAVEL'], 'ConviteEscolar', consentimento.pacienteId)
-    const { sessao } = exigirPacienteDaFamilia(consentimento.pacienteId, 'ConviteEscolar')
+    const { sessao, paciente } = exigirPacienteDaFamilia(consentimento.pacienteId, 'ConviteEscolar')
+    // Convite novo e porta nova: quem aceitar passa a ver o cartao. Ampliar o
+    // acesso, como conceder, exige a autoridade legal.
+    exigirResponsavelLegal(sessao, paciente, 'ConviteEscolar')
     const agora = relogio.agora()
     if (!consentimentoVigente(consentimento, agora)) {
       throw new ErroServico('CONFLITO', 'Este acesso não está mais vigente. Autorize de novo para gerar um convite.')
@@ -320,6 +329,13 @@ export const consentimentosMock: ServicoConsentimento = {
     await resumosSemeados
     const consentimento = banco.consentimentos.find((c) => c.id === consentimentoId) ?? naoEncontrado('Consentimento')
     exigirPerfil(['RESPONSAVEL'], 'Consentimento', consentimento.pacienteId)
+    /*
+     * Sem exigirResponsavelLegal, de proposito. A regra e assimetrica: ampliar
+     * o acesso de quem esta fora da clinica exige autoridade legal; encerrar
+     * nao pode ser dificultado. Qualquer responsavel vinculado que perceba um
+     * problema fecha a porta na hora — e quem tem a autoridade abre de novo,
+     * se for o caso.
+     */
     const { sessao } = exigirPacienteDaFamilia(consentimento.pacienteId, 'Consentimento')
     if (consentimento.revogadoEm === null) {
       // Regra 5: efeito imediato. Nao ha cache a invalidar — toda leitura da escola

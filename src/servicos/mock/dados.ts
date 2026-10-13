@@ -421,9 +421,11 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
     consentimento('c-005', 'u-resp-1', 'p-002', 'esc-1', ambos, horasAtras(1), em(-90, 23, 59)),
     consentimento('c-006', 'u-resp-1', 'p-002', 'esc-2', ['CARTAO_ESTRATEGIA'], em(5, 10), em(-90, 23, 59)),
     consentimento('c-007', 'u-resp-4', 'p-005', 'esc-1', ambos, em(1, 10), em(-90, 23, 59), horasAtras(2)),
+    // Noah tem dois responsaveis: a mae, legal, autorizou; o pai so pode encerrar.
+    consentimento('c-008', 'u-resp-13', 'p-014', 'esc-2', ['CARTAO_ESTRATEGIA'], em(25, 9), em(-150, 23, 59)),
   ]
 
-  const [c1, c2, c3, c4, c5, c6, c7] = consentimentos
+  const [c1, c2, c3, c4, c5, c6, c7, c8] = consentimentos
   const depoisDe = (iso: string, horas: number) => new Date(Date.parse(iso) + horas * 3_600_000).toISOString()
 
   /** Uso unico, 72 horas. O vinculo so nasce quando ele e aceito. */
@@ -442,6 +444,7 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
     convite('cv-005', c5, 'demo-convite-valido', null),
     convite('cv-006', c6, 'demo-convite-expirado', null),
     convite('cv-007', c7, 'demo-convite-revogado', null),
+    convite('cv-008', c8, 'demo-convite-noah', depoisDe(c8.concedidoEm, 22)),
   ]
 
   const vinculo = (id: string, cv: ConviteEscolar, c: Consentimento, professorId: string,
@@ -456,6 +459,7 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
     // A mesma professora, outra atuacao com outro aluno.
     vinculo('v-003', convites[2], c3, 'u-profe-1', '1º ano C', 'Matutino', 'Atendimento educacional especializado'),
     vinculo('v-004', convites[3], c4, 'u-profe-2', '3º ano B', 'Vespertino', 'Professor regente'),
+    vinculo('v-005', convites[7], c8, 'u-profe-2', '2º ano A', 'Vespertino', 'Atendimento educacional especializado'),
   ]
 
   // ------------------------------------------------------------ Cartoes de estrategia

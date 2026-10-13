@@ -19,6 +19,7 @@ Orientadora: Profa. Luana Leal · Entrega final: 23/11/2026
 | `docs/03-TELAS-SISTEMA.md` | Antes de construir cada tela |
 | `docs/04-SITE-COMERCIAL.md` | Ao trabalhar nas páginas públicas |
 | `docs/05-ROTEIRO-CLAUDE-CODE.md` | A ordem das etapas de implementação |
+| `docs/06-VERIFICACAO-DAS-REGRAS.md` | Ao afirmar que uma regra está garantida |
 | `docs/PROMPT.md` | O prompt que originou a interface (entrega acadêmica) |
 | `docs/USO-DA-IA.md` | Como a IA foi empregada, e onde errou |
 
@@ -63,13 +64,18 @@ por permissão. A separação é estrutural e sustenta a minimização de dados 
 **Se um pedido conflitar com qualquer uma destas, pare e avise. Não decida
 sozinho.**
 
-1. **Quem autoriza o acesso da escola é o Responsável — nunca a escola.** O
-   professor cria conta a partir de convite de uso único, com expiração em 72
-   horas. Não existe autocadastro de professor.
+1. **Quem autoriza o acesso da escola é o Responsável legal — nunca a escola.**
+   Responsável legal é quem tem `responsavelLegal` verdadeiro no `VinculoFamiliar`
+   com aquele paciente: a autoridade é da relação, não do perfil. O professor cria
+   conta a partir de convite de uso único, com expiração em 72 horas. Não existe
+   autocadastro de professor.
 
 2. **Nenhum dado atravessa a fronteira do contexto clínico sem verificação de
    consentimento vigente e de escopo.** A verificação ocorre a cada leitura, antes
    de qualquer retorno de dado. É o UC21 e o passo 15 do diagrama de sequência.
+   A lista de alunos do professor (UC22) é calculada a partir dos vínculos do
+   próprio professor e carrega nome e situação do consentimento, sem conteúdo
+   clínico — é a exceção prevista no passo 27 do diagrama de sequência.
 
 3. **A escola nunca acessa evolução, plano terapêutico, diagnóstico, laudo ou
    histórico de sessões.** Restrição de estrutura de dados, não de tela.
@@ -81,8 +87,10 @@ sozinho.**
 5. **A revogação de consentimento produz efeito imediato.** Sem carência, sem cache
    que sobreviva a ela.
 
-6. **Auditoria em três momentos:** concessão de acesso, leitura autorizada de dado
-   sensível e **tentativa de acesso negada**. Registro imutável.
+6. **Auditoria em três momentos:** concessão de acesso, leitura de dado do
+   paciente por quem está fora do contexto clínico e **tentativa de acesso
+   negada**. Leitura por terapeuta da própria equipe é uso, não compartilhamento,
+   e não se audita. Registro imutável.
 
 ### Documento clínico emitido
 

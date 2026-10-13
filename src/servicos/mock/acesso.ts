@@ -43,6 +43,24 @@ export function exigirPacienteDaFamilia(pacienteId: string, entidade: string): {
   return { sessao, paciente }
 }
 
+/**
+ * Ampliar o acesso de quem esta fora da clinica exige autoridade legal sobre a
+ * crianca (regra 1; LGPD, art. 14, § 1º). Quem decide e o `responsavelLegal`
+ * do VinculoFamiliar, e nao o perfil: a mesma pessoa pode responder
+ * legalmente por um filho e nao por outro.
+ */
+export function exigirResponsavelLegal(sessao: SessaoServidor, paciente: Paciente, entidade: string): void {
+  const legal = banco.vinculosFamiliares.some((v) =>
+    v.pacienteId === paciente.id && v.responsavelId === sessao.usuario.id && v.responsavelLegal)
+  if (!legal) {
+    negar(
+      sessao,
+      { entidade, pacienteId: paciente.id, detalhe: 'Responsável sem responsabilidade legal pelo paciente.' },
+      'Somente o responsável legal pode autorizar o acesso da escola.',
+    )
+  }
+}
+
 /** Clinica ou familia do paciente — usado em atividades e consentimentos. */
 export function exigirPacienteClinicoOuFamilia(pacienteId: string, entidade: string): { sessao: SessaoServidor; paciente: Paciente } {
   const sessao = exigirSessao()

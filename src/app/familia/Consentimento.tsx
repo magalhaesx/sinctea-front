@@ -24,9 +24,13 @@ import { NUNCA_VISIVEL } from '../limites'
 /**
  * Tela 17 · Autorizar o acesso da escola · /app/familia/consentimento
  *
- * Quem autoriza e o Responsavel (regra 1). A familia nomeia a ESCOLA ao
+ * Quem autoriza e o Responsavel legal (regra 1). A familia nomeia a ESCOLA ao
  * conceder — consentimento precisa ser especifico e informado —, e o professor
  * declara turma, turno e atuacao ao aceitar o convite.
+ *
+ * Quem e responsavel mas nao responde legalmente pela crianca nao ve o
+ * formulario nem o "Gerar novo convite": ve as autorizacoes e pode encerra-las.
+ * O servico recusa do mesmo jeito; a tela so nao oferece o que vai ser negado.
  *
  * A revogacao vale na hora (regra 5) e tem confirmacao em duas etapas.
  *
@@ -233,9 +237,10 @@ export function Consentimento() {
     setTermoAberto({
       consentimentoId: c.id,
       // Os nomes sao de hoje, e so servem para escrever o texto: o resumo
-      // cobre as identidades, nao as palavras que as nomeiam.
+      // cobre as identidades, nao as palavras que as nomeiam. O responsavel e
+      // quem concedeu, que pode nao ser quem esta lendo.
       texto: textoDoTermo(versao, {
-        responsavel: usuario?.nome ?? '',
+        responsavel: c.responsavel,
         escola: c.escola,
         aluno: nomeDoFilho(c.pacienteId),
         escopos: c.escopos,
@@ -247,20 +252,23 @@ export function Consentimento() {
     setTermoAberto((atual) => atual?.consentimentoId === c.id ? { ...atual, confere } : atual)
   }
 
+  const filho = estado.tipo === 'pronto' ? estado.filhos.find((f) => f.id === pacienteId) : undefined
   // Linguagem da familia: o filho e chamado pelo primeiro nome.
-  const primeiroNome = estado.tipo === 'pronto'
-    ? estado.filhos.find((f) => f.id === pacienteId)?.nome.split(' ')[0] ?? 'seu filho'
-    : 'seu filho'
+  const primeiroNome = filho?.nome.split(' ')[0] ?? 'seu filho'
+  // Enquanto carrega, nada se afirma sobre quem autoriza.
+  const semAutoridadeLegal = filho !== undefined && !filho.responsavelLegal
 
   return (
     <Tela
       area="fam"
       nome="Acesso da escola"
-      papel="Quem autoriza é você"
+      papel={semAutoridadeLegal ? 'Quem autoriza é o responsável legal' : 'Quem autoriza é você'}
       caminho={['Área da família', 'Autorizar o acesso da escola']}
       estreito
     >
-      <Titulo sub="Você escolhe a escola, o que ela vê e por quanto tempo. Pode encerrar a qualquer momento, e o encerramento vale na hora.">
+      <Titulo sub={semAutoridadeLegal
+        ? 'Somente o responsável legal pode autorizar uma escola. Você pode encerrar um acesso já autorizado.'
+        : 'Você escolhe a escola, o que ela vê e por quanto tempo. Pode encerrar a qualquer momento, e o encerramento vale na hora.'}>
         Autorizar o acesso da escola
       </Titulo>
 
@@ -289,7 +297,7 @@ export function Consentimento() {
             </Cartao>
           )}
 
-          {etapa === 'formulario' && (
+          {etapa === 'formulario' && !semAutoridadeLegal && (
           <Cartao>
             <h2 className="text-lg font-bold">Autorizar uma escola</h2>
             <form className="mt-3 flex flex-col gap-4" onSubmit={revisarTermo} noValidate>
@@ -364,7 +372,7 @@ export function Consentimento() {
           {/* Etapa 2: o termo inteiro, com os valores preenchidos. Consentimento
               para dado de saude precisa ser especifico e destacado — a pessoa le
               o que esta autorizando antes de autorizar (LGPD, art. 11, I). */}
-          {etapa === 'termo' && (
+          {etapa === 'termo' && !semAutoridadeLegal && (
             <Cartao>
               <h2 className="text-lg font-bold">Leia antes de autorizar</h2>
               <p className="mt-1 text-sm text-tinta2">
@@ -422,12 +430,13 @@ export function Consentimento() {
             <h2 id="ativos" className="text-lg font-bold">Autorizações deste filho</h2>
 
             {/* Sem EstadoVazio aqui: a acao que ele ofereceria — autorizar uma
-                escola — ja esta visivel logo acima (docs/02, secao 4). */}
+                escola — ja esta visivel logo acima (docs/02, secao 4). Para
+                quem nao pode autorizar, nao ha acao a oferecer. */}
             {estado.consentimentos.length === 0 && (
               <Cartao>
                 <p className="text-tinta2">
-                  Nenhuma escola tem acesso aos dados de {primeiroNome}. Quando você quiser
-                  autorizar uma, use o formulário acima.
+                  Nenhuma escola tem acesso aos dados de {primeiroNome}.
+                  {!semAutoridadeLegal && ' Quando você quiser autorizar uma, use o formulário acima.'}
                 </p>
               </Cartao>
             )}
@@ -439,7 +448,9 @@ export function Consentimento() {
                   {c.situacao === 'VIGENTE'
                     ? <Etiqueta tom="ok" simbolo="✓">Acesso ativo</Etiqueta>
                     : c.situacao === 'REVOGADO'
-                      ? <Etiqueta simbolo="○">Encerrado por você</Etiqueta>
+                      // Sem "por você": qualquer responsavel vinculado encerra, e o
+                      // consentimento nao guarda quem foi. A trilha guarda.
+                      ? <Etiqueta simbolo="○">Acesso encerrado</Etiqueta>
                       : <Etiqueta simbolo="○">Prazo terminado</Etiqueta>}
                 </div>
 
@@ -455,7 +466,7 @@ export function Consentimento() {
                   ))}
                 </ul>
 
-                {c.situacao === 'VIGENTE' && !c.conviteAceito && (
+                {c.situacao === 'VIGENTE' && !c.conviteAceito && !semAutoridadeLegal && (
                   <p className="mt-3">
                     <Botao area="fam" variante="secundaria" onClick={() => void reemitir(c.id)}>
                       Gerar novo convite
@@ -496,7 +507,9 @@ export function Consentimento() {
                   <Botao area="fam" variante="secundaria"
                     aria-expanded={termoAberto?.consentimentoId === c.id}
                     onClick={() => void verTermo(c)}>
-                    {termoAberto?.consentimentoId === c.id ? 'Fechar o termo' : 'Ver o termo que aceitei'}
+                    {termoAberto?.consentimentoId === c.id
+                      ? 'Fechar o termo'
+                      : c.responsavelId === usuario?.id ? 'Ver o termo que aceitei' : 'Ver o termo aceito'}
                   </Botao>
                 </p>
 

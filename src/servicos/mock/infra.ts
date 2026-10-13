@@ -163,10 +163,17 @@ export function auditar(sessao: SessaoServidor | null, evento: EventoAuditoria):
 
 // ---------------------------------------------------------------- Controle de acesso
 
-/** Nega, registra a tentativa negada (regra 6) e interrompe a operacao. */
-export function negar(sessao: SessaoServidor | null, evento: Omit<EventoAuditoria, 'acao'>): never {
+/**
+ * Nega, registra a tentativa negada (regra 6) e interrompe a operacao. A
+ * mensagem so muda quando dizer o motivo ajuda quem foi negado a agir.
+ */
+export function negar(
+  sessao: SessaoServidor | null,
+  evento: Omit<EventoAuditoria, 'acao'>,
+  mensagem = 'Você não tem permissão para acessar esta informação.',
+): never {
   auditar(sessao, { ...evento, acao: 'ACESSO_NEGADO' })
-  throw new ErroServico('ACESSO_NEGADO', 'Você não tem permissão para acessar esta informação.')
+  throw new ErroServico('ACESSO_NEGADO', mensagem)
 }
 
 export function exigirSessao(): SessaoServidor {

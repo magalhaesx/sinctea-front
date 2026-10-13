@@ -551,6 +551,8 @@ export interface FilhoResumo {
   idade: number
   /** Como ESTE responsavel se relaciona com a crianca: vem do VinculoFamiliar. */
   parentesco: string
+  /** Se ESTE responsavel responde legalmente pela crianca. So ele autoriza a escola. */
+  responsavelLegal: boolean
 }
 
 /** O que a familia ve de um objetivo: so a redacao acessivel. Nenhum termo clinico. */
@@ -636,6 +638,11 @@ export interface VinculoEscolar {
 
 export interface ConsentimentoDetalhe extends Consentimento {
   situacao: SituacaoConsentimento
+  /**
+   * Nome, hoje, de quem concedeu. Com dois responsaveis, quem le a autorizacao
+   * pode nao ser quem a deu, e o termo reconstruido tem de nomear quem a deu.
+   */
+  responsavel: string
   /** Conhecida desde a concessao. */
   escola: string
   /** Os tres a seguir so existem depois que o professor aceita o convite. */

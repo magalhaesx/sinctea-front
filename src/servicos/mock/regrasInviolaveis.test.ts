@@ -480,6 +480,66 @@ describe('regra 1 — quem autoriza a escola e o responsavel', () => {
     expect((await chamar(s.convites.obter('demo-convite-valido'))).situacao).toBe('USADO')
     expect((await erroDe(s.convites.aceitar('demo-convite-valido', { nome: 'Outra', email: 'outra@escola.example', senha: '12345678', turma: '2º ano A', turno: 'Matutino', atuacao: 'Regente' }))).codigo).toBe('CONFLITO')
   })
+
+  /*
+   * Noah (p-014) tem dois responsaveis. Rosa responde legalmente por ele;
+   * Gustavo, nao. Ampliar o acesso e de quem tem a autoridade legal; encerrar,
+   * de qualquer um dos dois.
+   */
+  describe('so o responsavel legal amplia o acesso; qualquer responsavel encerra', () => {
+    const entrarPorEmail = async (email: string) => {
+      await chamar(s.autenticacao.sair())
+      await chamar(s.autenticacao.entrar(email, 'demonstracao'))
+    }
+    const GUSTAVO = 'gustavo.ferrer@familia.example'
+    const ROSA = 'rosa.ferrer@familia.example'
+    const doNoah = () => banco.consentimentos.filter((c) => c.pacienteId === 'p-014')
+
+    it('responsavel nao legal recebe ACESSO_NEGADO ao conceder, e a negativa fica na auditoria', async () => {
+      await entrarPorEmail(GUSTAVO)
+      const antes = doNoah().length
+
+      const erro = await erroDe(s.consentimentos.conceder({
+        pacienteId: 'p-014', escolaId: 'esc-1', escopos: ['CARTAO_ESTRATEGIA'], validadeAte: '2099-01-01T00:00:00Z',
+      }))
+      expect(erro.codigo).toBe('ACESSO_NEGADO')
+      expect(erro.message).toBe('Somente o responsável legal pode autorizar o acesso da escola.')
+      // Nada nasceu: nem consentimento, nem convite.
+      expect(doNoah()).toHaveLength(antes)
+      expect(await ultimaAuditoria()).toMatchObject({
+        acao: 'ACESSO_NEGADO', entidade: 'Consentimento', pacienteId: 'p-014', usuarioNome: 'Gustavo Ferrer',
+      })
+    })
+
+    it('responsavel legal do mesmo paciente concede normalmente', async () => {
+      await entrarPorEmail(ROSA)
+      const { consentimento, tokenConvite } = await chamar(s.consentimentos.conceder({
+        pacienteId: 'p-014', escolaId: 'esc-1', escopos: ['CARTAO_ESTRATEGIA'], validadeAte: '2099-01-01T00:00:00Z',
+      }))
+      expect(consentimento).toMatchObject({ pacienteId: 'p-014', situacao: 'VIGENTE', responsavel: 'Rosa Ferrer' })
+      expect((await chamar(s.convites.obter(tokenConvite))).situacao).toBe('VALIDO')
+    })
+
+    it('gerar convite novo tambem amplia o acesso, e tambem exige a autoridade legal', async () => {
+      await entrarPorEmail(GUSTAVO)
+      const daRosa = doNoah().find((c) => c.revogadoEm === null && c.escolaId === 'esc-1')!
+      const erro = await erroDe(s.consentimentos.reemitirConvite(daRosa.id))
+      expect(erro.codigo).toBe('ACESSO_NEGADO')
+      expect(await ultimaAuditoria()).toMatchObject({ acao: 'ACESSO_NEGADO', entidade: 'ConviteEscolar' })
+    })
+
+    it('responsavel nao legal consegue revogar um consentimento vigente do mesmo paciente', async () => {
+      await entrarPorEmail(GUSTAVO)
+      // Concedido pela Rosa, nos dados de demonstracao.
+      expect(doNoah().find((c) => c.id === 'c-008')).toMatchObject({ responsavelId: 'u-resp-13', revogadoEm: null })
+
+      const revogado = await chamar(s.consentimentos.revogar('c-008'))
+      expect(revogado.situacao).toBe('REVOGADO')
+      expect(await ultimaAuditoria()).toMatchObject({
+        acao: 'REVOGACAO_ACESSO', idEntidade: 'c-008', usuarioNome: 'Gustavo Ferrer',
+      })
+    })
+  })
 })
 
 describe('regras 2 e 3 — escola so le o cartao, com consentimento', () => {
