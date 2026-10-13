@@ -41,13 +41,19 @@ interface DadosDoFilho {
   consentimentos: ConsentimentoDetalhe[]
 }
 
-/** O que dizer sobre o acesso da escola, caso a caso. */
-function situacaoDaEscola(c: ConsentimentoDetalhe): { tom: 'ok' | 'at' | 'neutro'; titulo: string; texto: string } {
+/**
+ * O que dizer sobre o acesso da escola, caso a caso.
+ *
+ * Nenhum texto diz "voce" sobre o que outra pessoa fez: com dois responsaveis,
+ * quem le pode nao ser quem autorizou, entregou o convite ou encerrou. E so
+ * quem responde legalmente pela crianca ouve que pode autorizar de novo.
+ */
+function situacaoDaEscola(c: ConsentimentoDetalhe, podeAutorizar: boolean): { tom: 'ok' | 'at' | 'neutro'; titulo: string; texto: string } {
   if (c.situacao === 'VIGENTE' && !c.conviteAceito) {
     return {
       tom: 'at',
       titulo: `Convite entregue, ${c.escola} ainda não entrou`,
-      texto: 'O professor precisa criar a conta pelo convite que você entregou. Enquanto isso, ninguém da escola vê nada.',
+      texto: 'O professor precisa criar a conta pelo convite que a família entregou. Enquanto isso, ninguém da escola vê nada.',
     }
   }
   if (c.situacao === 'VIGENTE') {
@@ -61,20 +67,20 @@ function situacaoDaEscola(c: ConsentimentoDetalhe): { tom: 'ok' | 'at' | 'neutro
     return {
       tom: 'neutro',
       titulo: `${c.escola} ainda não começou a acessar`,
-      texto: `O acesso que você autorizou começa a valer e vai até ${emData(c.validadeAte)}.`,
+      texto: `O acesso autorizado começa a valer e vai até ${emData(c.validadeAte)}.`,
     }
   }
   if (c.situacao === 'REVOGADO') {
     return {
       tom: 'neutro',
-      titulo: `Você encerrou o acesso de ${c.escola}`,
-      texto: 'A escola não vê mais nada. Se quiser autorizar de novo, é só fazer uma autorização nova.',
+      titulo: 'Acesso encerrado',
+      texto: `${c.escola} não vê mais nada.${podeAutorizar ? ' Se quiser autorizar de novo, é só fazer uma autorização nova.' : ''}`,
     }
   }
   return {
     tom: 'neutro',
     titulo: `O prazo de ${c.escola} terminou`,
-    texto: `O acesso valia até ${emData(c.validadeAte)} e se encerrou sozinho. Para voltar, faça uma autorização nova.`,
+    texto: `O acesso valia até ${emData(c.validadeAte)} e se encerrou sozinho.${podeAutorizar ? ' Para voltar, faça uma autorização nova.' : ''}`,
   }
 }
 
@@ -124,6 +130,7 @@ export function PainelFamilia() {
     ? filhos.dados.find((f) => f.id === pacienteId)
     : undefined
   const primeiroNome = filho?.nome.split(' ')[0] ?? ''
+  const podeAutorizar = filho?.responsavelLegal ?? false
   const campo = 'min-h-11 w-full rounded-lg border-2 border-linha bg-sup px-3 py-2.5 text-tinta'
 
   return (
@@ -256,24 +263,40 @@ export function PainelFamilia() {
 
                 {dados.dados.consentimentos.length === 0 ? (
                   <Cartao>
-                    <p className="text-tinta2">
-                      Nenhuma escola tem acesso aos dados de {primeiroNome}.
-                    </p>
-                    <p className="mt-3">
-                      <Link to="/app/familia/consentimento" className="font-bold text-fam-ink underline">
-                        Autorizar uma escola
-                      </Link>
-                    </p>
+                    {podeAutorizar ? (
+                      <>
+                        <p className="text-tinta2">
+                          Nenhuma escola tem acesso aos dados de {primeiroNome}.
+                        </p>
+                        <p className="mt-3">
+                          <Link to="/app/familia/consentimento" className="font-bold text-fam-ink underline">
+                            Autorizar uma escola
+                          </Link>
+                        </p>
+                      </>
+                    ) : (
+                      <p className="text-tinta2">
+                        Nenhuma escola tem acesso aos dados de {primeiroNome}. Somente o
+                        responsável legal pode autorizar.
+                      </p>
+                    )}
                   </Cartao>
                 ) : (
                   dados.dados.consentimentos.map((c) => {
-                    const s = situacaoDaEscola(c)
+                    const s = situacaoDaEscola(c, podeAutorizar)
                     return (
                       <Aviso key={c.id} tom={s.tom} titulo={s.titulo}>
-                        {s.texto}{' '}
-                        <Link to="/app/familia/consentimento" className="font-bold text-fam-ink underline">
-                          Ver a autorização
-                        </Link>
+                        {s.texto}
+                        {/* Sem autoridade legal, a tela 17 so serve para encerrar:
+                            o caminho aparece quando ha o que encerrar. */}
+                        {(podeAutorizar || c.situacao === 'VIGENTE') && (
+                          <>
+                            {' '}
+                            <Link to="/app/familia/consentimento" className="font-bold text-fam-ink underline">
+                              Ver a autorização
+                            </Link>
+                          </>
+                        )}
                       </Aviso>
                     )
                   })

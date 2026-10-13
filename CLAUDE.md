@@ -74,8 +74,9 @@ sozinho.**
    consentimento vigente e de escopo.** A verificação ocorre a cada leitura, antes
    de qualquer retorno de dado. É o UC21 e o passo 15 do diagrama de sequência.
    A lista de alunos do professor (UC22) é calculada a partir dos vínculos do
-   próprio professor e carrega nome e situação do consentimento, sem conteúdo
-   clínico — é a exceção prevista no passo 27 do diagrama de sequência.
+   próprio professor e carrega nome do aluno, escola, turma, turno, situação do
+   consentimento e validade — sem nenhum conteúdo clínico. É a exceção prevista no
+   passo 27 do diagrama de sequência.
 
 3. **A escola nunca acessa evolução, plano terapêutico, diagnóstico, laudo ou
    histórico de sessões.** Restrição de estrutura de dados, não de tela.
@@ -88,9 +89,14 @@ sozinho.**
    que sobreviva a ela.
 
 6. **Auditoria em três momentos:** concessão de acesso, leitura de dado do
-   paciente por quem está fora do contexto clínico e **tentativa de acesso
-   negada**. Leitura por terapeuta da própria equipe é uso, não compartilhamento,
-   e não se audita. Registro imutável.
+   paciente por quem está fora da clínica — hoje, a escola — e **tentativa de
+   acesso negada**. Registro imutável.
+
+   A regra é piso, não teto: leituras internas também podem ser auditadas, e
+   várias são. Leitura por terapeuta da própria equipe, e leitura da família
+   sobre o próprio filho, são uso, não compartilhamento — o titular lendo o que é
+   dele — e não exigem registro. O `convites.obter` não é auditado: quem responde
+   pela entrega do convite é o aceite, que é.
 
 ### Documento clínico emitido
 

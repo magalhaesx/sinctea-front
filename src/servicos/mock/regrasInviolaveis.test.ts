@@ -1213,7 +1213,7 @@ describe('relatorio de evolucao — documento clinico (UC09)', () => {
       acao: 'CRIACAO', entidade: 'RelatorioEvolucao', idEntidade: relatorio.id, pacienteId: 'p-001',
     })
 
-    // Abrir o emitido e leitura de dado sensivel.
+    // Abrir o emitido fica auditado, acima do piso da regra 6.
     await entrarComo('TERAPEUTA')
     const aberto = await chamar(s.relatorios.obter(relatorio.id))
     expect(aberto.hashConteudo).toBe(relatorio.hashConteudo)
