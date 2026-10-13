@@ -35,17 +35,33 @@ export type CodigoErro =
   | 'CONFLITO'
   | 'INDISPONIVEL'
 
+/**
+ * Por que um ACESSO_NEGADO aconteceu, quando a tela precisa saber para dizer
+ * algo diferente de "tente de novo". Mora no contrato porque o servidor
+ * devolve o mesmo campo.
+ */
+export type MotivoNegativa =
+  | 'CONSENTIMENTO_REVOGADO'
+  | 'CONSENTIMENTO_EXPIRADO'
+  | 'ESCOPO_NAO_AUTORIZADO'
+  | 'FORA_DO_ALCANCE'
+
 /** Erro unico da camada de servicos. A interface decide o texto a partir do codigo. */
 export class ErroServico extends Error {
   readonly codigo: CodigoErro
   /** Mensagens por campo, quando o codigo e VALIDACAO. */
   readonly campos: Record<string, string>
+  /** So em ACESSO_NEGADO, e so quando o motivo muda o que a tela diz. */
+  readonly motivo?: MotivoNegativa
 
-  constructor(codigo: CodigoErro, mensagem: string, campos: Record<string, string> = {}) {
+  constructor(
+    codigo: CodigoErro, mensagem: string, campos: Record<string, string> = {}, motivo?: MotivoNegativa,
+  ) {
     super(mensagem)
     this.name = 'ErroServico'
     this.codigo = codigo
     this.campos = campos
+    if (motivo) this.motivo = motivo
   }
 }
 

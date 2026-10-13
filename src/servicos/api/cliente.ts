@@ -1,4 +1,4 @@
-import { ErroServico, type CodigoErro } from '../tipos'
+import { ErroServico, type CodigoErro, type MotivoNegativa } from '../tipos'
 
 /**
  * Cliente HTTP da API real (NestJS, prevista para S06).
@@ -47,11 +47,15 @@ export async function requisitar<T>(metodo: 'GET' | 'POST' | 'PUT' | 'PATCH' | '
   }
 
   if (!resposta.ok) {
-    const corpoErro = await resposta.json().catch(() => ({})) as { mensagem?: string; campos?: Record<string, string> }
+    const corpoErro = await resposta.json().catch(() => ({})) as {
+      mensagem?: string; campos?: Record<string, string>; motivo?: MotivoNegativa
+    }
     throw new ErroServico(
       CODIGO_POR_STATUS[resposta.status] ?? 'INDISPONIVEL',
       corpoErro.mensagem ?? 'O servidor não conseguiu concluir a operação.',
       corpoErro.campos ?? {},
+      // O mesmo campo que o mock preenche: a tela 18 nao sabe de onde veio.
+      corpoErro.motivo,
     )
   }
   if (resposta.status === 204) return undefined as T

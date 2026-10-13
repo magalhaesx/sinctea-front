@@ -76,7 +76,8 @@ export function Consentimento() {
   const [salvando, setSalvando] = useState(false)
   const [convite, setConvite] = useState<ConsentimentoConcedido | null>(null)
   const [confirmando, setConfirmando] = useState<string | null>(null)
-  const [aviso, setAviso] = useState<string | null>(null)
+  /** O resultado da ultima acao. Falha nao se anuncia com o titulo "Pronto". */
+  const [aviso, setAviso] = useState<{ tom: 'ok' | 'cr'; texto: string } | null>(null)
   /** 'formulario' escolhe; 'termo' le e autoriza. */
   const [etapa, setEtapa] = useState<'formulario' | 'termo'>('formulario')
   const [termoAberto, setTermoAberto] = useState<
@@ -90,13 +91,26 @@ export function Consentimento() {
    */
   const caixaDoTermo = useRef<HTMLDivElement>(null)
   const selectDaEscola = useRef<HTMLSelectElement>(null)
-  const focoPendente = useRef<'termo' | 'escola' | null>(null)
+  /*
+   * O mesmo vale para encerrar, que tambem tem duas etapas: abrir a
+   * confirmacao desmonta o botao, e cancelar desmonta a confirmacao. Cada
+   * passo diz para onde o foco vai, como no Relatorio.tsx e na tela 8.
+   */
+  const caixaConfirmacao = useRef<HTMLDivElement>(null)
+  const botoesEncerrar = useRef(new Map<string, HTMLButtonElement>())
+  const encerrarDeQuem = useRef<string | null>(null)
+  const regiaoResultado = useRef<HTMLDivElement>(null)
+  const focoPendente = useRef<'termo' | 'escola' | 'confirmacao' | 'encerrar' | 'resultado' | null>(null)
 
   useEffect(() => {
     const alvo = focoPendente.current
     if (!alvo) return
     focoPendente.current = null
-    const no = alvo === 'termo' ? caixaDoTermo.current : selectDaEscola.current
+    const no = alvo === 'termo' ? caixaDoTermo.current
+      : alvo === 'escola' ? selectDaEscola.current
+        : alvo === 'confirmacao' ? caixaConfirmacao.current
+          : alvo === 'encerrar' ? botoesEncerrar.current.get(encerrarDeQuem.current ?? '')
+            : regiaoResultado.current
     no?.focus()
   })
 
@@ -160,7 +174,7 @@ export function Consentimento() {
       })
       setEtapa('formulario')
       setConvite(concedido)
-      setAviso(`Acesso autorizado para ${concedido.consentimento.escola}. Entregue o convite ao professor.`)
+      setAviso({ tom: 'ok', texto: `Acesso autorizado para ${concedido.consentimento.escola}. Entregue o convite ao professor.` })
       recarregar()
     } catch (e) {
       const erro = e as { campos?: Record<string, string>; message?: string }
@@ -178,21 +192,43 @@ export function Consentimento() {
     try {
       const novo = await servicos.consentimentos.reemitirConvite(consentimentoId)
       setConvite(novo)
-      setAviso('Convite novo gerado. O anterior deixou de valer neste momento.')
+      setAviso({ tom: 'ok', texto: 'Convite novo gerado. O anterior deixou de valer neste momento.' })
       recarregar()
     } catch (e) {
-      setAviso((e as Error).message)
+      setAviso({ tom: 'cr', texto: (e as Error).message })
     }
+  }
+
+  const abrirEncerramento = (consentimentoId: string) => {
+    setAviso(null)
+    setConfirmando(consentimentoId)
+    focoPendente.current = 'confirmacao'
+  }
+
+  const cancelarEncerramento = (consentimentoId: string) => {
+    setConfirmando(null)
+    encerrarDeQuem.current = consentimentoId
+    focoPendente.current = 'encerrar'
   }
 
   const revogar = async (consentimentoId: string) => {
     try {
       const revogado = await servicos.consentimentos.revogar(consentimentoId)
-      setConfirmando(null)
-      setAviso(`O acesso de ${revogado.escola} foi encerrado agora.`)
-      recarregar()
+      /*
+       * Sem recarregar a tela: a recarga desmontaria a regiao que anuncia o
+       * resultado, e o foco cairia no <body> de novo. So a autorizacao
+       * encerrada muda — e o convite dela, se estava na tela, deixa de valer.
+       */
+      setEstado((atual) => atual.tipo === 'pronto'
+        ? { ...atual, consentimentos: atual.consentimentos.map((c) => c.id === revogado.id ? revogado : c) }
+        : atual)
+      setConvite((atual) => atual?.consentimento.id === revogado.id ? null : atual)
+      setAviso({ tom: 'ok', texto: `O acesso de ${revogado.escola} foi encerrado agora.` })
     } catch (e) {
-      setAviso((e as Error).message)
+      setAviso({ tom: 'cr', texto: (e as Error).message || 'Não foi possível encerrar agora. Tente de novo.' })
+    } finally {
+      setConfirmando(null)
+      focoPendente.current = 'resultado'
     }
   }
 
@@ -409,8 +445,12 @@ export function Consentimento() {
             </Cartao>
           )}
 
-          <div aria-live="polite">
-            {aviso && <Aviso tom="ok" titulo="Pronto">{aviso}</Aviso>}
+          <div ref={regiaoResultado} tabIndex={-1} aria-live="polite">
+            {aviso && (
+              <Aviso tom={aviso.tom} titulo={aviso.tom === 'ok' ? 'Pronto' : 'Não foi possível concluir'}>
+                {aviso.texto}
+              </Aviso>
+            )}
           </div>
 
           {convite && (
@@ -481,20 +521,34 @@ export function Consentimento() {
                 {/* Acao destrutiva com efeito imediato: confirmacao em duas etapas. */}
                 {c.situacao === 'VIGENTE' && (
                   confirmando === c.id ? (
-                    <div className="mt-3 rounded-lg border border-cr bg-cr-sup p-3.5">
-                      <p className="font-bold">Encerrar o acesso de {c.escola}?</p>
+                    <div
+                      ref={caixaConfirmacao}
+                      tabIndex={-1}
+                      role="group"
+                      aria-labelledby={`encerrar-${c.id}`}
+                      className="mt-3 rounded-lg border border-cr bg-cr-sup p-3.5"
+                    >
+                      <p id={`encerrar-${c.id}`} className="font-bold">Encerrar o acesso de {c.escola}?</p>
                       <p className="mt-1 text-sm text-tinta2">
                         A partir de agora a escola deixa de ver o cartão de estratégias e não
                         consegue mais registrar ocorrências. Você pode autorizar de novo quando quiser.
                       </p>
                       <div className="mt-3 flex flex-wrap gap-2">
                         <Botao area="fam" onClick={() => void revogar(c.id)}>Sim, encerrar agora</Botao>
-                        <Botao area="fam" variante="secundaria" onClick={() => setConfirmando(null)}>Cancelar</Botao>
+                        <Botao area="fam" variante="secundaria" onClick={() => cancelarEncerramento(c.id)}>Cancelar</Botao>
                       </div>
                     </div>
                   ) : (
                     <p className="mt-3">
-                      <Botao area="fam" variante="secundaria" onClick={() => setConfirmando(c.id)}>
+                      <Botao
+                        area="fam"
+                        variante="secundaria"
+                        ref={(no) => {
+                          if (no) botoesEncerrar.current.set(c.id, no)
+                          else botoesEncerrar.current.delete(c.id)
+                        }}
+                        onClick={() => abrirEncerramento(c.id)}
+                      >
                         Encerrar este acesso
                       </Botao>
                     </p>

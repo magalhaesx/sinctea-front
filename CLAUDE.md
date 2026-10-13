@@ -196,7 +196,7 @@ Atualizado em 13/10/2026, lendo o código — não a memória.
 - **Camada de serviços**: `servicos/contratos.ts` com 16 serviços; implementação
   simulada que aplica controle de acesso e auditoria; stubs de API que não
   aplicam regra nenhuma; a escolha entre as duas por `VITE_API_URL`
-- **177 testes em 10 arquivos.** O principal é
+- **178 testes em 10 arquivos.** O principal é
   `servicos/mock/regrasInviolaveis.test.ts`, que verifica as regras invioláveis
   na camada de dados, e não na tela
 - **As seis regras verificadas** em `docs/06`: para cada teste citado, a regra foi
@@ -212,12 +212,6 @@ Atualizado em 13/10/2026, lendo o código — não a memória.
 O `docs/07` substitui as etapas 9 e 10 do `docs/05`. No código, hoje:
 - Nada do servidor existe: não há `api/`, `compartilhado/` nem *workspaces*.
   Tipos, contratos e domínio continuam em `src/`
-- Três restos da etapa 8 continuam abertos:
-  - a negativa da escola não tem tipo próprio: o motivo viaja como texto em
-    `ErroServico.campos.motivo`;
-  - a tela 18, com acesso revogado, mostra o erro genérico com "Tentar de novo",
-    e não a tela de acesso encerrado que o `docs/03` pede;
-  - a confirmação de encerramento da tela 17 deixa o foco cair no `<body>`
 - A regra 6 exige o registro de toda leitura e escrita de dado do paciente, e o
   mock registra só parte. Ele não vai ser ajustado: sai na Etapa 12, e no
   servidor o registro é do interceptador, na Etapa 10. O que falta cobrir está

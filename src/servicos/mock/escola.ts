@@ -1,6 +1,6 @@
 import type { ServicoAreaEscola } from '../contratos'
 import {
-  ErroServico, type CartaoEscola, type Consentimento, type EscopoAcesso,
+  ErroServico, type CartaoEscola, type Consentimento, type EscopoAcesso, type MotivoNegativa,
   type NovaOcorrenciaEscolar, type OcorrenciaEscolar, type VinculoEscolar,
 } from '../tipos'
 import {
@@ -28,10 +28,23 @@ const MENSAGEM_NEGACAO: Record<MotivoNegacao, string> = {
 }
 
 /**
+ * O motivo do dominio, traduzido para o do contrato. Sem vinculo e acesso que
+ * ainda nao comecou sao a mesma coisa para quem pede: o aluno esta fora do
+ * alcance agora.
+ */
+const MOTIVO_NO_CONTRATO: Record<MotivoNegacao, MotivoNegativa> = {
+  SEM_CONSENTIMENTO: 'FORA_DO_ALCANCE',
+  AGUARDANDO_INICIO: 'FORA_DO_ALCANCE',
+  REVOGADO: 'CONSENTIMENTO_REVOGADO',
+  EXPIRADO: 'CONSENTIMENTO_EXPIRADO',
+  FORA_DO_ESCOPO: 'ESCOPO_NAO_AUTORIZADO',
+}
+
+/**
  * Percorre a cadeia Consentimento → VinculoEscolar do professor autenticado.
  * Se nenhum vinculo permite o escopo pedido, registra a tentativa negada
- * (regra 6) e interrompe. O motivo vai em `campos.motivo` para a tela de
- * acesso encerrado.
+ * (regra 6) e interrompe. O motivo vai em `ErroServico.motivo`, e e ele que
+ * faz a tela 18 dizer "acesso encerrado" em vez de "tente de novo".
  */
 function exigirAcessoEscola(pacienteId: string, escopo: EscopoAcesso, entidade: string): {
   sessao: SessaoServidor
@@ -51,7 +64,7 @@ function exigirAcessoEscola(pacienteId: string, escopo: EscopoAcesso, entidade: 
   }
 
   auditar(sessao, { acao: 'ACESSO_NEGADO', entidade, pacienteId, detalhe: `Negado: ${motivo}.` })
-  throw new ErroServico('ACESSO_NEGADO', MENSAGEM_NEGACAO[motivo], { motivo })
+  throw new ErroServico('ACESSO_NEGADO', MENSAGEM_NEGACAO[motivo], {}, MOTIVO_NO_CONTRATO[motivo])
 }
 
 function validarOcorrencia(dados: NovaOcorrenciaEscolar): void {
@@ -180,7 +193,7 @@ export const areaEscolaMock: ServicoAreaEscola = {
     const { sessao } = exigirAcessoEscola(ocorrencia.pacienteId, 'REGISTRO_OCORRENCIA', 'OcorrenciaEscolar')
     if (ocorrencia.professorId !== sessao.usuario.id) {
       auditar(sessao, { acao: 'ACESSO_NEGADO', entidade: 'OcorrenciaEscolar', idEntidade: ocorrencia.id, pacienteId: ocorrencia.pacienteId, detalhe: 'Correção por quem não registrou.' })
-      throw new ErroServico('ACESSO_NEGADO', 'Somente quem registrou a ocorrência pode corrigi-la.')
+      throw new ErroServico('ACESSO_NEGADO', 'Somente quem registrou a ocorrência pode corrigi-la.', {}, 'FORA_DO_ALCANCE')
     }
     if (!podeCorrigirOcorrencia(ocorrencia.registradaEm, relogio.agora())) {
       throw new ErroServico('CONFLITO', 'O prazo de 30 minutos para correção terminou.')

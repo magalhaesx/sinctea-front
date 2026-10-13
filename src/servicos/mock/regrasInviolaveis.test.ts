@@ -573,7 +573,16 @@ describe('regras 2 e 3 — escola so le o cartao, com consentimento', () => {
     await chamar(s.autenticacao.entrar('tiago.rezende@escola.example', 'demonstracao'))
     const erro = await erroDe(s.areaEscola.registrarOcorrencia('p-003', { tipo: 'Chorou', intensidade: 2, contexto: 'Recreio' }))
     expect(erro.codigo).toBe('ACESSO_NEGADO')
-    expect(erro.campos.motivo).toBe('FORA_DO_ESCOPO')
+    expect(erro.motivo).toBe('ESCOPO_NAO_AUTORIZADO')
+  })
+
+  it('consentimento vencido nega com o proprio motivo, e nao com "tente de novo"', async () => {
+    await chamar(s.autenticacao.sair())
+    // Laura (p-005): a autorizacao que Tiago tinha venceu nos dados de demonstracao.
+    await chamar(s.autenticacao.entrar('tiago.rezende@escola.example', 'demonstracao'))
+    const erro = await erroDe(s.areaEscola.obterCartao('p-005'))
+    expect(erro.codigo).toBe('ACESSO_NEGADO')
+    expect(erro.motivo).toBe('CONSENTIMENTO_EXPIRADO')
   })
 
   it('a familia recebe so a redacao acessivel', async () => {
@@ -708,7 +717,8 @@ describe('regra 5 — revogacao com efeito imediato', () => {
     await entrarComo('PROFESSOR')
     const erro = await erroDe(s.areaEscola.obterCartao('p-001'))
     expect(erro.codigo).toBe('ACESSO_NEGADO')
-    expect(erro.campos.motivo).toBe('REVOGADO')
+    // O motivo mora no contrato: e ele que faz a tela 18 dizer "acesso encerrado".
+    expect(erro.motivo).toBe('CONSENTIMENTO_REVOGADO')
     expect(await ultimaAuditoria()).toMatchObject({ acao: 'ACESSO_NEGADO', entidade: 'CartaoEstrategia', pacienteId: 'p-001' })
     // Tela 22: a linha permanece, marcada, mas sem escopo nem caminho de entrada.
     const aluno = (await chamar(s.areaEscola.listarAlunos())).itens.find((a) => a.pacienteId === 'p-001')
