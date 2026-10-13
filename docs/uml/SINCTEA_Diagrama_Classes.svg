@@ -33,7 +33,7 @@
 <path d="M348.0,1012.5 L324.0,1012.5" fill="none" stroke="#5C7479" stroke-width="1.35"/>
 <path d="M324.0,99.5 L324.0,1012.5" fill="none" stroke="#5C7479" stroke-width="1.35"/>
 <path d="M324.0,403.0 L304.0,403.0" fill="none" stroke="#5C7479" stroke-width="1.35" marker-end="url(#heranca)"/>
-<path d="M42.0,450.1 L22.0,450.1 L22.0,1000.5 L42.0,1000.5" fill="none" stroke="#5C7479" stroke-width="1.35" stroke-linejoin="round" stroke-dasharray="none"/>
+<path d="M42.0,450.1 L22.0,450.1 L22.0,1005.6 L42.0,1005.6" fill="none" stroke="#5C7479" stroke-width="1.35" stroke-linejoin="round" stroke-dasharray="none"/>
 <path d="M173.0,510.0 L173.0,700.0" fill="none" stroke="#5C7479" stroke-width="1.35" stroke-linejoin="round" stroke-dasharray="6 4" marker-end="url(#seta)"/>
 <path d="M115.4,936.0 L115.4,845.0" fill="none" stroke="#5C7479" stroke-width="1.35" stroke-linejoin="round" stroke-dasharray="6 4" marker-end="url(#seta)"/>
 <path d="M610.0,99.5 L634.0,99.5 L634.0,104.6 L654.0,104.6" fill="none" stroke="#5C7479" stroke-width="1.35" stroke-linejoin="round" stroke-dasharray="none"/>
@@ -48,6 +48,7 @@
 <path d="M1222.0,136.8 L1246.0,136.8 L1246.0,226.9 L1266.0,226.9" fill="none" stroke="#5C7479" stroke-width="1.35" stroke-linejoin="round" stroke-dasharray="none"/>
 <path d="M1339.4,274.0 L1339.4,430.0" fill="none" stroke="#5C7479" stroke-width="1.35" stroke-linejoin="round" stroke-dasharray="none"/>
 <path d="M1454.6,274.0 L1454.6,318.0 L1703.0,318.0 L1703.0,430.0" fill="none" stroke="#5C7479" stroke-width="1.35" stroke-linejoin="round" stroke-dasharray="none"/>
+<path d="M1528.0,244.0 L1550.0,244.0 L1550.0,640.0 L1703.0,640.0 L1703.0,668.0" fill="none" stroke="#5C7479" stroke-width="1.35" stroke-linejoin="round" stroke-dasharray="none"/>
 <path d="M544.5,492.0 L544.5,748.0 L654.0,748.0" fill="none" stroke="#5C7479" stroke-width="1.35" stroke-linejoin="round" stroke-dasharray="none"/>
 <path d="M785.0,700.0 L785.0,593.0" fill="none" stroke="#5C7479" stroke-width="1.35" stroke-linejoin="round" stroke-dasharray="none"/>
 <path d="M1397.0,628.0 L1397.0,700.0" fill="none" stroke="#5C7479" stroke-width="1.35" stroke-linejoin="round" stroke-dasharray="none"/>
@@ -93,7 +94,7 @@
 <text x="53.0" y="832.0" font-family="Carlito" font-size="11.5" fill="#13272B">PROFESSOR</text>
 </g>
 <g>
-<rect x="42.0" y="936.0" width="262.0" height="215.0" rx="4" ry="4" fill="#FFFFFF" stroke="#9DB0B5" stroke-width="1.25"/>
+<rect x="42.0" y="936.0" width="262.0" height="232.0" rx="4" ry="4" fill="#FFFFFF" stroke="#9DB0B5" stroke-width="1.25"/>
 <path d="M46.0,936.6 h254.0 v0.0 h0.0 z" fill="#E9EEEF"/>
 <path d="M42.6 940.0 a4 4 0 0 1 4 -4 h254.0 a4 4 0 0 1 4 4 v24.4 h-260.8 z" fill="#E9EEEF"/>
 <line x1="42.0" y1="965.0" x2="304.0" y2="965.0" stroke="#9DB0B5" stroke-width="1.25"/>
@@ -108,6 +109,7 @@
 <text x="53.0" y="1104.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> origem : OrigemAuditoria</text>
 <text x="53.0" y="1121.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> ipOrigem : String [0..1]</text>
 <text x="53.0" y="1138.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> detalhe : String</text>
+<text x="53.0" y="1155.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> valorAnterior : String [0..1]</text>
 </g>
 <g>
 <rect x="348.0" y="60.0" width="262.0" height="79.0" rx="4" ry="4" fill="#FFFFFF" stroke="#5FAEB6" stroke-width="1.25"/>
@@ -290,6 +292,22 @@
 <text x="1277.0" y="800.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> observacao : String [0..1]</text>
 </g>
 <g>
+<rect x="1572.0" y="668.0" width="262.0" height="198.0" rx="4" ry="4" fill="#FFFFFF" stroke="#5FAEB6" stroke-width="1.25"/>
+<path d="M1576.0,668.6 h254.0 v0.0 h0.0 z" fill="#DFF2F4"/>
+<path d="M1572.6 672.0 a4 4 0 0 1 4 -4 h254.0 a4 4 0 0 1 4 4 v24.4 h-260.8 z" fill="#DFF2F4"/>
+<line x1="1572.0" y1="697.0" x2="1834.0" y2="697.0" stroke="#5FAEB6" stroke-width="1.25"/>
+<text x="1703.0" y="687.5" font-family="Carlito" font-size="14" font-weight="bold" fill="#0A6C75" text-anchor="middle">RelatorioEvolucao</text>
+<text x="1583.0" y="717.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> id : UUID</text>
+<text x="1583.0" y="734.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> periodoInicio : Date</text>
+<text x="1583.0" y="751.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> periodoFim : Date</text>
+<text x="1583.0" y="768.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> consideracoes : String</text>
+<text x="1583.0" y="785.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> autorNome : String</text>
+<text x="1583.0" y="802.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> autorRegistro : String</text>
+<text x="1583.0" y="819.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> emitidoEm : DateTime</text>
+<text x="1583.0" y="836.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> conteudoEmitido : Blob</text>
+<text x="1583.0" y="853.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> hashConteudo : String</text>
+</g>
+<g>
 <rect x="654.0" y="986.0" width="262.0" height="197.0" rx="4" ry="4" fill="#FFFFFF" stroke="#D19184" stroke-width="1.25"/>
 <path d="M658.0,986.6 h254.0 v0.0 h0.0 z" fill="#FBE9E5"/>
 <path d="M654.6 990.0 a4 4 0 0 1 4 -4 h254.0 a4 4 0 0 1 4 4 v24.4 h-260.8 z" fill="#FBE9E5"/>
@@ -359,7 +377,7 @@
 <text x="665.0" y="1352.0" font-family="Carlito" font-size="11.5" fill="#13272B"><tspan fill="#7A8F94">-</tspan> municipio : String</text>
 </g>
 <text x="35.0" y="443.1" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="end">0..1</text>
-<text x="35.0" y="993.5" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="end">0..*</text>
+<text x="35.0" y="998.6" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="end">0..*</text>
 <rect x="50.8" y="879.0" width="42.5" height="14" fill="#FFFFFF" opacity="0.92"/><text x="72.0" y="890.0" font-family="Carlito" font-size="11" font-style="italic" fill="#3F585D" text-anchor="middle">registra</text>
 <text x="617.0" y="113.5" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="start">1</text>
 <text x="647.0" y="118.6" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="end">0..*</text>
@@ -390,6 +408,9 @@
 <text x="1348.4" y="422.0" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="start">0..*</text>
 <text x="1463.6" y="290.0" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="start">1</text>
 <text x="1712.0" y="422.0" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="start">0..*</text>
+<text x="1536.0" y="237.0" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="start">1..*</text>
+<text x="1712.0" y="660.0" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="start">0..*</text>
+<rect x="1617.3" y="623.0" width="45.3" height="14" fill="#FFFFFF" opacity="0.92"/><text x="1640.0" y="634.0" font-family="Carlito" font-size="11" font-style="italic" fill="#3F585D" text-anchor="middle">abrange</text>
 <text x="553.5" y="508.0" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="start">1</text>
 <text x="647.0" y="762.0" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="end">0..*</text>
 <text x="794.0" y="692.0" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="start">0..*</text>
@@ -422,7 +443,7 @@
 <text x="1406.0" y="1132.0" font-family="Carlito" font-size="11" fill="#3F585D" text-anchor="start">0..*</text>
 <rect x="917.5" y="1425.0" width="45.1" height="14" fill="#FFFFFF" opacity="0.92"/><text x="940.0" y="1436.0" font-family="Carlito" font-size="11" font-style="italic" fill="#3F585D" text-anchor="middle">atua em</text>
 <rect x="1400.2" y="917.0" width="39.6" height="14" fill="#FFFFFF" opacity="0.92"/><text x="1420.0" y="928.0" font-family="Carlito" font-size="11" font-style="italic" fill="#3F585D" text-anchor="middle">«gera»</text>
-<text x="42" y="70" font-family="Caladea" font-size="23" font-weight="bold" fill="#13272B">SINCTEA</text><text x="42" y="97" font-family="Carlito" font-size="14.5" fill="#3F585D">Sistema Integrado de Continuidade</text><text x="42" y="116" font-family="Carlito" font-size="14.5" fill="#3F585D">Terapêutica no TEA</text><line x1="42" y1="136" x2="304" y2="136" stroke="#9DB0B5" stroke-width="1.2"/><text x="42" y="158" font-family="Carlito" font-size="13" font-weight="bold" fill="#13272B">Diagrama de classes</text><text x="42" y="177" font-family="Carlito" font-size="11.5" fill="#3F585D">21 classes · revisão de 21/09/2026</text><text x="42" y="207" font-family="Carlito" font-size="11" font-style="italic" fill="#5C7479">Modelo de domínio e de persistência.</text><text x="42" y="223" font-family="Carlito" font-size="11" font-style="italic" fill="#5C7479">Chave estrangeira, campo derivado e</text><text x="42" y="239" font-family="Carlito" font-size="11" font-style="italic" fill="#5C7479">recorte de resposta pertencem à camada</text><text x="42" y="255" font-family="Carlito" font-size="11" font-style="italic" fill="#5C7479">de serviços e não aparecem aqui.</text>
+<text x="42" y="70" font-family="Caladea" font-size="23" font-weight="bold" fill="#13272B">SINCTEA</text><text x="42" y="97" font-family="Carlito" font-size="14.5" fill="#3F585D">Sistema Integrado de Continuidade</text><text x="42" y="116" font-family="Carlito" font-size="14.5" fill="#3F585D">Terapêutica no TEA</text><line x1="42" y1="136" x2="304" y2="136" stroke="#9DB0B5" stroke-width="1.2"/><text x="42" y="158" font-family="Carlito" font-size="13" font-weight="bold" fill="#13272B">Diagrama de classes</text><text x="42" y="177" font-family="Carlito" font-size="11.5" fill="#3F585D">22 classes · revisão de 11/10/2026</text><text x="42" y="207" font-family="Carlito" font-size="11" font-style="italic" fill="#5C7479">Modelo de domínio e de persistência.</text><text x="42" y="223" font-family="Carlito" font-size="11" font-style="italic" fill="#5C7479">Chave estrangeira, campo derivado e</text><text x="42" y="239" font-family="Carlito" font-size="11" font-style="italic" fill="#5C7479">recorte de resposta pertencem à camada</text><text x="42" y="255" font-family="Carlito" font-size="11" font-style="italic" fill="#5C7479">de serviços e não aparecem aqui.</text>
 <g>
 <path d="M42.0,1290.0 h389.0 l11.0,11.0 v61.0 h-400.0 z" fill="#FFFDF4" stroke="#C7B98A" stroke-width="1.1" stroke-linejoin="round"/>
 <path d="M431.0,1290.0 v11.0 h11.0" fill="none" stroke="#C7B98A" stroke-width="1.1"/>
@@ -445,6 +466,12 @@
 <text x="51.0" y="1196.0" font-family="Carlito" font-size="11" fill="#5A4E26">ProfessorAEE não tem atributo próprio:</text>
 <text x="51.0" y="1211.0" font-family="Carlito" font-size="11" fill="#5A4E26">escola, turma e atuação descrevem o</text>
 <text x="51.0" y="1226.0" font-family="Carlito" font-size="11" fill="#5A4E26">vínculo, não a pessoa.</text>
+</g>
+<g>
+<path d="M1572.0,876.0 h251.0 l11.0,11.0 v31.0 h-262.0 z" fill="#FFFDF4" stroke="#C7B98A" stroke-width="1.1" stroke-linejoin="round"/>
+<path d="M1823.0,876.0 v11.0 h11.0" fill="none" stroke="#C7B98A" stroke-width="1.1"/>
+<text x="1581.0" y="892.0" font-family="Carlito" font-size="10.5" fill="#5A4E26">Autor e registro: fotografia da emissão.</text>
+<text x="1581.0" y="907.0" font-family="Carlito" font-size="10.5" fill="#5A4E26">O hash prova que o emitido não mudou.</text>
 </g>
 <text x="1572" y="1360" font-family="Carlito" font-size="12.5" font-weight="bold" fill="#13272B">Contextos</text>
 <rect x="1572" y="1369" width="28" height="14" rx="2.5" fill="#E9EEEF" stroke="#9DB0B5" stroke-width="1.1"/>
