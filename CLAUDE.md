@@ -175,7 +175,7 @@ Atualizado em 21/09/2026, lendo o código — não a memória.
 **Concluído**
 - Pré-projeto entregue em 17/08 — não pode mais ser alterado
 - Alinhamento aos 5 eixos · cronograma de 13 semanas · quadro Kanban
-- Modelagem UML: casos de uso, classes (revisão de 21/09 em `docs/uml/`), sequência
+- Modelagem UML: casos de uso, classes (revisão de 11/10 em `docs/uml/`), sequência
 - Documento de IHC e UX/UI com avaliação heurística e conformidade
 - **Camada de serviços completa**: `servicos/contratos.ts` com 15 serviços, mock
   que aplica controle de acesso e auditoria, stubs de API, e a escolha entre os
