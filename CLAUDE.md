@@ -20,6 +20,7 @@ Orientadora: Profa. Luana Leal · Entrega final: 23/11/2026
 | `docs/04-SITE-COMERCIAL.md` | Ao trabalhar nas páginas públicas |
 | `docs/05-ROTEIRO-CLAUDE-CODE.md` | A ordem das etapas de implementação |
 | `docs/06-VERIFICACAO-DAS-REGRAS.md` | Ao afirmar que uma regra está garantida |
+| `docs/07-BACKEND.md` | Antes de qualquer trabalho no servidor |
 | `docs/PROMPT.md` | O prompt que originou a interface (entrega acadêmica) |
 | `docs/USO-DA-IA.md` | Como a IA foi empregada, e onde errou |
 
@@ -46,7 +47,7 @@ O repositório contém **duas coisas**: o site comercial em `/` e o sistema em
 ### Fora de escopo, declarado
 Módulo financeiro, faturamento e TISS · homologação RNDS · aplicativos nativos ·
 telessupervisão com vídeo · correlação de contexto com aprendizado de máquina ·
-integração com wearables.
+integração com wearables · fila de processamento assíncrono (Redis + BullMQ).
 
 ## 2. Atores e áreas
 
@@ -163,9 +164,9 @@ mesma separação que mantém chave estrangeira fora do diagrama.
 |---|---|---|
 | Front-end | React 18 + TypeScript + Vite + TailwindCSS | Em construção |
 | Dados | Camada de serviços com implementação simulada | Ver `docs/01` seção 4 |
-| Back-end | NestJS + Node.js 20 | Previsto, S06 |
-| Banco | PostgreSQL 16 + Prisma | Previsto, S06 |
-| Fila | Redis + BullMQ | Previsto |
+| Back-end | NestJS sobre Node.js 22 LTS | Em construção, `docs/07` |
+| Banco | PostgreSQL + Prisma, hospedado no Neon | Em construção, `docs/07` |
+| Hospedagem | Render, servindo front e API no mesmo endereço | Em construção, `docs/07` |
 
 Qualidade: ISO/IEC 25010:2023. Método: Kanban com limites de trabalho em progresso.
 
@@ -184,46 +185,69 @@ Qualidade: ISO/IEC 25010:2023. Método: Kanban com limites de trabalho em progre
 
 ## 7. Estado atual
 
-Atualizado em 21/09/2026, lendo o código — não a memória.
+Atualizado em 12/10/2026, lendo o código — não a memória.
 
 **Concluído**
 - Pré-projeto entregue em 17/08 — não pode mais ser alterado
 - Alinhamento aos 5 eixos · cronograma de 13 semanas · quadro Kanban
 - Modelagem UML: casos de uso, classes (revisão de 11/10 em `docs/uml/`), sequência
 - Documento de IHC e UX/UI com avaliação heurística e conformidade
-- **Camada de serviços completa**: `servicos/contratos.ts` com 15 serviços, mock
-  que aplica controle de acesso e auditoria, stubs de API, e a escolha entre os
-  dois por `VITE_API_URL`. 122 testes automatizados
-- **Telas sobre serviços**: 1 e 2 (entrar e convite) · 3 a 9 e 11 (clínica e
-  coordenação) · 17 e 18 (consentimento da família e cartão da escola) · 22 (meus
-  alunos). A 21 usa o contexto de sessão, que fala com a mesma camada. 20 rotas
-  do produto, mais a vitrine `/dev/estados`
-- Publicação automática no GitHub Pages, com testes antes do build
+- **As 22 telas existem e falam com a camada de serviços**, em 24 rotas do
+  produto, mais `/sobre` e a vitrine `/dev/estados`, que só existe no servidor de
+  desenvolvimento. Nenhuma tela lê dado fixo: `src/dados` foi removido, e o teste
+  de arquitetura impede que volte. A tela 20, ajuda, é texto fixo por natureza
+- **Camada de serviços**: `servicos/contratos.ts` com 16 serviços; implementação
+  simulada que aplica controle de acesso e auditoria; stubs de API que não
+  aplicam regra nenhuma; a escolha entre as duas por `VITE_API_URL`
+- **177 testes em 10 arquivos.** O principal é
+  `servicos/mock/regrasInviolaveis.test.ts`, que verifica as regras invioláveis
+  na camada de dados, e não na tela
+- **As seis regras verificadas** em `docs/06`: para cada teste citado, a regra foi
+  quebrada de propósito para confirmar que ele falha, e as quebras que não
+  derrubaram teste nenhum estão registradas
+- Termo de consentimento versionado, com resumo verificável (abaixo)
+- Publicação automática no GitHub Pages, com testes antes do build; em pull
+  request, `verificar.yml` roda testes e build
+- Uma tag por etapa fechada: `entrega-2026-09-14`, `etapa-6`, `etapa-7`, `etapa-8`
 
-**Em construção**
-- Etapa 7, telas 12, 13 e 14: validar planos, registro de auditoria e gerenciar
-  usuários. As três já têm serviço. A tela 10, emitir relatório, está pronta —
-  `RelatorioEvolucao` entrou no modelo e o documento emitido carrega o hash do
-  próprio conteúdo
-- Etapa 8, área da família e registro de ocorrência da escola: as telas 15, 16 e
-  19 ainda leem `src/dados/exemplo.ts`, fixo no código
-- Etapa 9, site comercial: só existe `/sobre`; a raiz leva ao login
+**Em construção — Etapa 9, a fundação do servidor (`docs/07`, até 19/10)**
 
-**Próximo, pelo cronograma**
-- S02 (atrasado) — documento de requisitos com **matriz de rastreabilidade**
-- S03 (atrasado) — **BPMN** do fluxo atual e proposto
-- S05 — C4 nos três níveis, diagrama de estados do Objetivo, segundo diagrama de
-  sequência (sincronização offline)
-- S06 — DER, dicionário de dados, publicação em nuvem
+O `docs/07` substitui as etapas 9 e 10 do `docs/05`. No código, hoje:
+- Nada do servidor existe: não há `api/`, `compartilhado/` nem *workspaces*.
+  Tipos, contratos e domínio continuam em `src/`
+- Os dois fluxos do GitHub Actions ainda rodam em Node 20
+- Três restos da etapa 8 continuam abertos:
+  - a negativa da escola não tem tipo próprio: o motivo viaja como texto em
+    `ErroServico.campos.motivo`;
+  - a tela 18, com acesso revogado, mostra o erro genérico com "Tentar de novo",
+    e não a tela de acesso encerrado que o `docs/03` pede;
+  - a confirmação de encerramento da tela 17 deixa o foco cair no `<body>`
+
+**Próximo, pelo `docs/07`**
+- Etapa 10, até 26/10 — autenticação, *guards*, auditoria com *trigger* e os
+  módulos do caminho crítico das regras
+- Etapa 11, até 09/11 — os demais serviços
+- Etapa 12, até 15/11 — a virada: o front só com a API, e `servicos/mock` removido
+- Etapa 13, de 16/11 a 23/11 — artigo, slides, vídeo e ensaio
+
+As entregas de documentação do cronograma original — S02 (matriz de
+rastreabilidade), S03 (BPMN) e S05 (C4, estados do Objetivo, sequência da
+sincronização) — não vivem neste repositório, e o estado delas não se lê no
+código. Da S06, a publicação em nuvem passou para o `docs/07`; DER e dicionário
+de dados não aparecem nele.
 
 **Afirmações que o código ainda não sustenta**
 
-Restou uma, e ela aparece em texto de entrega. Enquanto não se resolver, não
-deve ser afirmada na defesa:
+Enquanto não se resolverem, não devem ser afirmadas na defesa:
 
 1. **A meta 8.5 da ODS 8 não tem sustentação no modelo.** Ela depende de uma
    entidade de registro funcional que não existe em nenhuma das 22 classes. Ou a
    entidade entra no modelo, ou a justificativa é reescrita.
+2. **O sistema não funciona sem rede.** A seção 1 diz "PWA, offline-first", e a
+   seção 2 promete registro offline na clínica. Não há manifesto nem *service
+   worker*. O registro de sessão (tela 7) mostra o estado da conexão e marca como
+   pendente o que ainda não subiu, mas a fila de sincronização nunca foi escrita,
+   e o `docs/07` não a prevê.
 
 O hash do termo de consentimento saiu desta lista em 04/10/2026: `hashTermo`
 passou a ser `sha256:<versão>:<hex>` calculado sobre os campos que compõem o
@@ -237,13 +261,13 @@ termo, e a família reabre o texto da versão registrada pela própria tela 17.
 - 21/09/2026 — `Objetivo` ganhou `dominadoEm`; `OcorrenciaComportamental` trocou
   `preliminar` por `leituraClinicaEm`. As duas datas existem para o painel da
   coordenação poder contar quando cada transição aconteceu
+- 26/09/2026 — `RelatorioEvolucao` criada, a 22ª classe. Relatório emitido é
+  documento clínico: guarda o conteúdo como saiu e o hash dele, porque gerar de
+  novo a partir dos dados de hoje produziria outro documento
 - 11/10/2026 — `RegistroAuditoria` ganhou `valorAnterior : String`. Guarda o JSON
   canônico **apenas dos campos que mudaram**, na versão anterior — nunca o
   registro inteiro, por minimização. Hoje só a correção de ocorrência escolar o
   preenche; nas demais ações é nulo
-- 26/09/2026 — `RelatorioEvolucao` criada, a 22ª classe. Relatório emitido é
-  documento clínico: guarda o conteúdo como saiu e o hash dele, porque gerar de
-  novo a partir dos dados de hoje produziria outro documento
 
 **Termo de consentimento**
 
