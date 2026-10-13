@@ -13,8 +13,8 @@ import { FaixasContexto } from '../../graficos/FaixasContexto'
 import { LinhaEvolucao, type PontoSessao } from '../../graficos/LinhaEvolucao'
 import {
   objetivoAtingiuCriterio, percentualIndependente, suficienciaComparacao, SUFICIENCIA_MINIMA,
-} from '../../dominio/regras'
-import { emData } from '../../dominio/datas'
+} from '@sinctea/compartilhado/dominio/regras'
+import { emData } from '@sinctea/compartilhado/dominio/datas'
 import {
   ErroServico, servicos, type AtividadeCasa, type Desempenho, type ExecucaoAtividadeCasa,
   type Objetivo, type OcorrenciaComportamental, type Origem, type Sessao,

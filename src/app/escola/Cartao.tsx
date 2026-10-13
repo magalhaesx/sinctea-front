@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { Tela } from '../LayoutApp'
-import { emData } from '../../dominio/datas'
+import { emData } from '@sinctea/compartilhado/dominio/datas'
 import { BotaoLink } from '../../ui/Botao'
 import { Titulo } from '../../ui/Titulo'
 import { usarSessao } from '../../contexto/Sessao'

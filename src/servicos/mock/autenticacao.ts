@@ -1,5 +1,5 @@
-import type { ServicoAutenticacao } from '../contratos'
-import { ErroServico } from '../tipos'
+import type { ServicoAutenticacao } from '@sinctea/compartilhado'
+import { ErroServico } from '@sinctea/compartilhado'
 import { SENHA_DEMONSTRACAO, USUARIOS_DEMONSTRACAO } from './dados'
 import {
   exigirSessao, gravarSessao, paraSessaoUsuario, relogio, responder, sessaoServidor,

@@ -11,8 +11,8 @@ import { Titulo } from '../../ui/Titulo'
 import { EstadoCarregando } from '../../ui/EstadoCarregando'
 import { EstadoErro } from '../../ui/EstadoErro'
 import { usarSessao } from '../../contexto/Sessao'
-import { emData } from '../../dominio/datas'
-import { frequenciaEmLinguagemCotidiana, frequenciaSemanalEmPalavras } from '../../dominio/regras'
+import { emData } from '@sinctea/compartilhado/dominio/datas'
+import { frequenciaEmLinguagemCotidiana, frequenciaSemanalEmPalavras } from '@sinctea/compartilhado/dominio/regras'
 import {
   servicos, type AtividadeCasa, type ConsentimentoDetalhe, type FilhoResumo,
   type ObjetivoAcessivel,

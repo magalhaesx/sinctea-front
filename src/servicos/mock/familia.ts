@@ -1,15 +1,15 @@
 import type {
   ServicoAtividadeCasa, ServicoConsentimento, ServicoConvite, ServicoFamilia,
-} from '../contratos'
+} from '@sinctea/compartilhado'
 import {
   ErroServico, type AtividadeCasa, type Consentimento, type ConsentimentoDetalhe,
   type ConviteEscolar, type ExecucaoAtividadeCasa, type ProfessorAEE, type VinculoEscolar,
-} from '../tipos'
+} from '@sinctea/compartilhado'
 import {
   calcularExpiracaoConvite, consentimentoVigente, idadeEmAnos, situacaoConsentimento,
   situacaoConvite, validarNovoConsentimento,
-} from '../../dominio/regras'
-import { resumoDoTermo, VERSAO_CORRENTE_DO_TERMO } from '../../dominio/termo'
+} from '@sinctea/compartilhado/dominio/regras'
+import { resumoDoTermo, VERSAO_CORRENTE_DO_TERMO } from '@sinctea/compartilhado/dominio/termo'
 import {
   ehResponsavelDe, exigirPacienteClinico, exigirPacienteClinicoOuFamilia, exigirPacienteDaFamilia,
   exigirResponsavelLegal,

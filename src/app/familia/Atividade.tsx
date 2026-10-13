@@ -10,7 +10,7 @@ import { Titulo } from '../../ui/Titulo'
 import { EstadoCarregando } from '../../ui/EstadoCarregando'
 import { EstadoErro } from '../../ui/EstadoErro'
 import { CartaoAtividadeFamilia } from '../../componentes/CartaoAtividadeFamilia'
-import { emData } from '../../dominio/datas'
+import { emData } from '@sinctea/compartilhado/dominio/datas'
 import {
   ErroServico, servicos, type AtividadeCasa, type Desempenho, type ExecucaoAtividadeCasa,
 } from '../../servicos'

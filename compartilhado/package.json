@@ -1,0 +1,26 @@
+{
+  "name": "@sinctea/compartilhado",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Tipos, contratos e dominio do SINCTEA — o mesmo codigo no front e no servidor",
+  "exports": {
+    ".": {
+      "fonte": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./dominio/*": {
+      "fonte": "./src/dominio/*.ts",
+      "types": "./dist/dominio/*.d.ts",
+      "default": "./dist/dominio/*.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json && tsc -p tsconfig.build.json",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0"
+  }
+}

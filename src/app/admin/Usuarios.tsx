@@ -14,7 +14,7 @@ import { Paginacao } from '../../ui/Paginacao'
 import { Tabela, type Coluna } from '../../ui/Tabela'
 import { NOME_DO_PERFIL } from '../perfis'
 import { usarSessao } from '../../contexto/Sessao'
-import { emData } from '../../dominio/datas'
+import { emData } from '@sinctea/compartilhado/dominio/datas'
 import { ErroServico, servicos, type Pagina, type Perfil, type Usuario } from '../../servicos'
 
 /**

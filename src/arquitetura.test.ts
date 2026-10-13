@@ -14,6 +14,45 @@ const fontes = import.meta.glob<string>(['/src/**/*.{ts,tsx}', '!/src/**/*.test.
   eager: true,
 })
 
+/**
+ * A dependencia entre pacotes so vai num sentido: front e servidor importam de
+ * compartilhado/, e compartilhado/ nao importa de nenhum dos dois. Se
+ * importasse, o servidor passaria a carregar codigo de tela — ou o front, de
+ * servidor —, e o dominio deixaria de ser o mesmo nos dois lados.
+ *
+ * Os testes do compartilhado entram na conferencia: tambem nao podem depender
+ * do front.
+ */
+const doCompartilhado = import.meta.glob<string>('/compartilhado/src/**/*.ts', {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+})
+
+const ESPECIFICADOR = /(?:\bfrom\s*|\bimport\s*\(\s*|\bimport\s+)['"]([^'"]+)['"]/g
+const PACOTE_DE_FORA = /^(sinctea-front|@sinctea\/servidor)(\/|$)/
+
+/** Para onde aponta um especificador relativo, a partir da raiz do repositorio. */
+function resolver(arquivo: string, especificador: string): string {
+  if (especificador.startsWith('/')) return especificador
+  const partes = arquivo.split('/').slice(0, -1)
+  for (const parte of especificador.split('/')) {
+    if (parte === '..') partes.pop()
+    else if (parte !== '.') partes.push(parte)
+  }
+  return partes.join('/')
+}
+
+/** Os imports de um arquivo que saem de compartilhado/. */
+function saidasDoCompartilhado(arquivo: string, codigo: string): string[] {
+  return [...codigo.matchAll(ESPECIFICADOR)]
+    .map(([, especificador]) => especificador)
+    .filter((especificador) => /^[./]/.test(especificador)
+      ? !resolver(arquivo, especificador).startsWith('/compartilhado/')
+      : PACOTE_DE_FORA.test(especificador))
+    .map((especificador) => `${arquivo} -> ${especificador}`)
+}
+
 const IMPORTA_MOCK = /from\s+['"][^'"]*servicos\/mock[^'"]*['"]|import\(\s*['"][^'"]*servicos\/mock/
 const IMPORTA_DADOS = /from\s+['"][^'"]*\/dados\/[^'"]*['"]/
 
@@ -35,6 +74,16 @@ describe('arquitetura', () => {
       .filter(([caminho]) => caminho.startsWith('/src/app/'))
       .filter(([, codigo]) => IMPORTA_DADOS.test(codigo))
       .map(([caminho]) => caminho)
+    expect(violacoes).toEqual([])
+  })
+
+  it('encontra os arquivos do compartilhado', () => {
+    expect(Object.keys(doCompartilhado).length).toBeGreaterThan(10)
+  })
+
+  it('nada em compartilhado/ importa de src/ nem de servidor/', () => {
+    const violacoes = Object.entries(doCompartilhado)
+      .flatMap(([caminho, codigo]) => saidasDoCompartilhado(caminho, codigo))
     expect(violacoes).toEqual([])
   })
 

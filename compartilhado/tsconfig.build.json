@@ -1,0 +1,13 @@
+{
+  // O que o servidor importa em tempo de execucao: JavaScript ESM com os
+  // tipos ao lado, em dist/. O front nao usa dist/ — ele compila o fonte,
+  // pela condicao "fonte" do package.json.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": true,
+    "outDir": "dist",
+    "rootDir": "src"
+  },
+  "exclude": ["src/**/*.test.ts"]
+}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { jsonCanonico, resumoSha256 } from './hash'
+import { jsonCanonico, resumoSha256 } from './hash.js'
 
 describe('jsonCanonico', () => {
   it('ordena as chaves, em qualquer profundidade', () => {

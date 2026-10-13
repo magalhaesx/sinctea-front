@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { BOM_UTF8, celulaCsv, montarCsv } from './csv'
+import { BOM_UTF8, celulaCsv, montarCsv } from './csv.js'
 
 describe('celulaCsv', () => {
   it('escapa o que a planilha interpretaria como formula', () => {

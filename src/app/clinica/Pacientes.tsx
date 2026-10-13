@@ -11,8 +11,8 @@ import { EstadoVazio } from '../../ui/EstadoVazio'
 import { Paginacao } from '../../ui/Paginacao'
 import { Tabela, type Coluna } from '../../ui/Tabela'
 import { usarSessao } from '../../contexto/Sessao'
-import { descricaoNivelSuporte } from '../../dominio/regras'
-import { emData } from '../../dominio/datas'
+import { descricaoNivelSuporte } from '@sinctea/compartilhado/dominio/regras'
+import { emData } from '@sinctea/compartilhado/dominio/datas'
 import {
   servicos, type NivelSuporte, type Pagina, type PacienteResumo, type Profissional,
   type SituacaoPlano,

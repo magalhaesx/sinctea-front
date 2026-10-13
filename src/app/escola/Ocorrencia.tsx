@@ -6,8 +6,8 @@ import { Botao } from '../../ui/Botao'
 import { Titulo } from '../../ui/Titulo'
 import { EstadoCarregando } from '../../ui/EstadoCarregando'
 import { EstadoErro } from '../../ui/EstadoErro'
-import { dataIsoParaLocal } from '../../dominio/datas'
-import { JANELA_CORRECAO_OCORRENCIA_MINUTOS, podeCorrigirOcorrencia } from '../../dominio/regras'
+import { dataIsoParaLocal } from '@sinctea/compartilhado/dominio/datas'
+import { JANELA_CORRECAO_OCORRENCIA_MINUTOS, podeCorrigirOcorrencia } from '@sinctea/compartilhado/dominio/regras'
 import {
   ErroServico, servicos, type AlunoEscola, type Intensidade, type OcorrenciaEscolar,
 } from '../../servicos'

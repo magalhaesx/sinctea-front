@@ -4,14 +4,20 @@
   "version": "0.1.0",
   "type": "module",
   "description": "Front-end do SINCTEA — Sistema Integrado de Continuidade Terapeutica no TEA",
+  "workspaces": [
+    "compartilhado",
+    "servidor"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:servidor": "npm run build -w @sinctea/servidor",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@sinctea/compartilhado": "*",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.28.0"

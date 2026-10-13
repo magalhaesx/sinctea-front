@@ -1,10 +1,10 @@
-import type { ServicoRelatorio } from '../contratos'
+import type { ServicoRelatorio } from '@sinctea/compartilhado'
 import {
   ErroServico, type ConteudoRelatorio, type ObjetivoNoRelatorio, type PedidoRelatorio,
   type RelatorioEvolucao, type Sessao,
-} from '../tipos'
-import { percentualIndependente, textoDoCriterio, textoDoPeriodo } from '../../dominio/regras'
-import { resumoSha256 } from '../../dominio/hash'
+} from '@sinctea/compartilhado'
+import { percentualIndependente, textoDoCriterio, textoDoPeriodo } from '@sinctea/compartilhado/dominio/regras'
+import { resumoSha256 } from '@sinctea/compartilhado/dominio/hash'
 import { exigirPacienteClinico } from './acesso'
 import { auditar, banco, exigirValido, gerarId, naoEncontrado, paginar, relogio, responder } from './infra'
 

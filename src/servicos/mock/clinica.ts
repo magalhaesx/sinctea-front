@@ -1,11 +1,11 @@
-import type { ServicoOcorrencia, ServicoPlano, ServicoSessao } from '../contratos'
+import type { ServicoOcorrencia, ServicoPlano, ServicoSessao } from '@sinctea/compartilhado'
 import {
   ErroServico, type ItemAgenda, type Objetivo, type OcorrenciaComportamental, type PlanoTerapeutico,
   type Sessao,
-} from '../tipos'
+} from '@sinctea/compartilhado'
 import {
   ehPreliminar, objetivoAtingiuCriterio, validarDevolucaoPlano, validarNovoObjetivo,
-} from '../../dominio/regras'
+} from '@sinctea/compartilhado/dominio/regras'
 import { alcancaClinicamente, exigirPacienteClinico } from './acesso'
 import {
   auditar, banco, exigirPerfil, exigirSessao, exigirValido, gerarId, naoEncontrado, paginar,

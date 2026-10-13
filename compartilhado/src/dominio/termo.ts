@@ -1,6 +1,6 @@
-import { resumoSha256 } from './hash'
-import { emData } from './datas'
-import type { DataIso, EscopoAcesso } from '../servicos/tipos'
+import { resumoSha256 } from './hash.js'
+import { emData } from './datas.js'
+import type { DataIso, EscopoAcesso } from '../tipos.js'
 
 /**
  * O termo de autorizacao de acesso da escola, versionado.

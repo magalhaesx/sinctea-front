@@ -11,7 +11,7 @@ import { EstadoCarregando } from '../../ui/EstadoCarregando'
 import { EstadoErro } from '../../ui/EstadoErro'
 import { Paginacao } from '../../ui/Paginacao'
 import { usarSessao } from '../../contexto/Sessao'
-import { dataIsoParaLocal, diaIso } from '../../dominio/datas'
+import { dataIsoParaLocal, diaIso } from '@sinctea/compartilhado/dominio/datas'
 import {
   servicos, type AvisoOcorrenciaEscolar, type ItemAgenda, type Pagina, type SituacaoSessao,
 } from '../../servicos'

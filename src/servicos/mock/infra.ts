@@ -1,7 +1,7 @@
 import {
   ErroServico, type FiltroPaginacao, type Pagina, type Perfil, type RegistroAuditoria,
   type SessaoUsuario, type UsuarioQualquer,
-} from '../tipos'
+} from '@sinctea/compartilhado'
 import { criarDadosDemonstracao, type BancoDemonstracao } from './dados'
 
 /**

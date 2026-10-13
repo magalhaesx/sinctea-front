@@ -12,13 +12,18 @@ permissions:
 
 jobs:
   verificar:
-    runs-on: ubuntu-latest
+    # Versao fixa, e nao ubuntu-latest: o latest muda de sistema no meio do
+    # semestre, e a entrega nao pode depender disso.
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
       - run: npm ci
+      # Os tres pacotes: front, compartilhado e servidor (vite.config.ts, test.projects).
       - run: npm test
       - run: npm run build
+      # Compila o compartilhado para dist/ e, sobre ele, o servidor.
+      - run: npm run build:servidor

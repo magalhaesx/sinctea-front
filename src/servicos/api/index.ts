@@ -1,4 +1,4 @@
-import type { Servicos } from '../contratos'
+import type { Servicos } from '@sinctea/compartilhado'
 import { comParametros as q, requisitar as r } from './cliente'
 
 /**

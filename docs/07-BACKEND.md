@@ -63,7 +63,7 @@ commit de código da Etapa 9.
 sinctea-front/            (a raiz continua sendo o front, no mesmo lugar)
 ├── src/                  front
 ├── compartilhado/        tipos, contratos e domínio — usados pelos dois lados
-└── api/                  NestJS
+└── servidor/             NestJS
 ```
 
 `npm workspaces` na raiz. Tipos, contratos e domínio **saem de `src/` para
@@ -72,6 +72,10 @@ serviço mudar, o compilador acusa nos dois lados ao mesmo tempo — é impossí
 front e a API discordarem em silêncio.
 
 O front não muda de lugar, para não quebrar caminhos e fluxos de CI.
+
+A pasta do NestJS se chama `servidor/`, e não `api/`: `src/servicos/api/` já é o
+cliente do front, e duas pastas `api/` no mesmo repositório deixariam ambíguo de
+que lado da rede cada uma está. A rota continua em `/api`.
 
 ### D3 · Um endereço só
 
@@ -212,7 +216,7 @@ slides e o ensaio.
    não é feita** — o mock vai embora, e no servidor a proteção é o *trigger*.
 3. `npm workspaces` e a pasta `compartilhado/`, com tipos, contratos e domínio. Os
    177 testes continuam verdes.
-4. `api/` com NestJS, o esquema Prisma das 22 classes, a primeira migração e a
+4. `servidor/` com NestJS, o esquema Prisma das 22 classes, a primeira migração e a
    semente portada do `dados.ts`.
 5. **Deploy de ponta a ponta antes de qualquer serviço:** o endereço público abre
    o front, e `/api/saude` responde lendo o banco.

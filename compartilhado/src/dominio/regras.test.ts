@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { Consentimento, NovoObjetivo, RegistroAtividade, Resultado, Sessao } from '../servicos/tipos'
+import type { Consentimento, NovoObjetivo, RegistroAtividade, Resultado, Sessao } from '../tipos.js'
 import {
   ehPreliminar, objetivoSemAvanco,
   calcularExpiracaoConvite, consentimentoVencendo, consentimentoVigente, descricaoNivelSuporte,
@@ -9,7 +9,7 @@ import {
   podeDesativarUsuario, situacaoConsentimento, situacaoConvite, suficienciaComparacao,
   textoDoCriterio, textoDoPeriodo,
   validarDevolucaoPlano, validarNovoConsentimento, validarNovoObjetivo, verificarAcessoEscola,
-} from './regras'
+} from './regras.js'
 
 const AGORA = new Date('2026-09-19T12:00:00Z')
 const horas = (h: number) => new Date(AGORA.getTime() + h * 3_600_000).toISOString()

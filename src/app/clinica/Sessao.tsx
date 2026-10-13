@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { Tela } from '../LayoutApp'
-import { dataIsoParaLocal } from '../../dominio/datas'
+import { dataIsoParaLocal } from '@sinctea/compartilhado/dominio/datas'
 import { Aviso } from '../../ui/Aviso'
 import { Botao, BotaoLink } from '../../ui/Botao'
 import { Campo } from '../../ui/Campo'
@@ -11,7 +11,7 @@ import { Medidor } from '../../ui/Medidor'
 import { Titulo } from '../../ui/Titulo'
 import { EstadoCarregando } from '../../ui/EstadoCarregando'
 import { EstadoErro } from '../../ui/EstadoErro'
-import { percentualIndependente } from '../../dominio/regras'
+import { percentualIndependente } from '@sinctea/compartilhado/dominio/regras'
 import {
   ErroServico, servicos, type Intensidade, type Objetivo, type Resultado, type Sessao,
 } from '../../servicos'

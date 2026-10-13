@@ -1,4 +1,4 @@
-import { frequenciaSemanalEmPalavras } from '../dominio/regras'
+import { frequenciaSemanalEmPalavras } from '@sinctea/compartilhado/dominio/regras'
 
 /**
  * A atividade como a familia le. E o mesmo cartao nos dois lugares: na tela 9

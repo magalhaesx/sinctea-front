@@ -11,8 +11,8 @@ import { EstadoCarregando } from '../../ui/EstadoCarregando'
 import { EstadoErro } from '../../ui/EstadoErro'
 import { Paginacao } from '../../ui/Paginacao'
 import { CartaoAtividadeFamilia } from '../../componentes/CartaoAtividadeFamilia'
-import { frequenciaSemanalEmPalavras } from '../../dominio/regras'
-import { emData } from '../../dominio/datas'
+import { frequenciaSemanalEmPalavras } from '@sinctea/compartilhado/dominio/regras'
+import { emData } from '@sinctea/compartilhado/dominio/datas'
 import {
   ErroServico, servicos, type AtividadeCasa, type Desempenho, type ExecucaoAtividadeCasa,
   type NovaAtividadeCasa, type Objetivo, type Pagina, type PlanoTerapeutico,

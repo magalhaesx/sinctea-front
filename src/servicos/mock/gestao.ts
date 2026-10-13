@@ -1,11 +1,11 @@
-import type { ServicoAuditoria, ServicoUsuario } from '../contratos'
+import type { ServicoAuditoria, ServicoUsuario } from '@sinctea/compartilhado'
 import {
   ErroServico, type FiltroAuditoria, type Perfil, type Profissional, type RegistroAuditoria,
   type Usuario, type UsuarioQualquer,
-} from '../tipos'
-import { podeDesativarUsuario } from '../../dominio/regras'
-import { montarCsv } from '../../dominio/csv'
-import { versaoAnteriorEmTexto } from '../../dominio/auditoria'
+} from '@sinctea/compartilhado'
+import { podeDesativarUsuario } from '@sinctea/compartilhado/dominio/regras'
+import { montarCsv } from '@sinctea/compartilhado/dominio/csv'
+import { versaoAnteriorEmTexto } from '@sinctea/compartilhado/dominio/auditoria'
 import {
   auditar, banco, exigirPerfil, exigirSessao, exigirValido, gerarId, naoEncontrado, paginar,
   responder, todosUsuarios, usuarioPorId,

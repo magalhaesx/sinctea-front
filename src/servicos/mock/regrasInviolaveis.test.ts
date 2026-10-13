@@ -1,11 +1,11 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
-import { ErroServico, type OcorrenciaComportamental, type Sessao } from '../tipos'
+import { ErroServico, type OcorrenciaComportamental, type Sessao } from '@sinctea/compartilhado'
 import { servicosMock as s } from '.'
 import { banco, relogio } from './infra'
-import { jsonCanonico, resumoSha256 } from '../../dominio/hash'
+import { jsonCanonico, resumoSha256 } from '@sinctea/compartilhado/dominio/hash'
 import {
   conferirResumoDoTermo, textoDoTermo, VERSAO_CORRENTE_DO_TERMO, versaoDoResumo,
-} from '../../dominio/termo'
+} from '@sinctea/compartilhado/dominio/termo'
 
 /**
  * As regras inviolaveis do CLAUDE.md verificadas na camada de dados, e nao

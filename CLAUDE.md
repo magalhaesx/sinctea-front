@@ -193,12 +193,12 @@ Atualizado em 13/10/2026, lendo o código — não a memória.
   produto, mais `/sobre` e a vitrine `/dev/estados`, que só existe no servidor de
   desenvolvimento. Nenhuma tela lê dado fixo: `src/dados` foi removido, e o teste
   de arquitetura impede que volte. A tela 20, ajuda, é texto fixo por natureza
-- **Camada de serviços**: `servicos/contratos.ts` com 16 serviços; implementação
+- **Camada de serviços**: `compartilhado/src/contratos.ts` com 16 serviços; implementação
   simulada que aplica controle de acesso e auditoria; stubs de API que não
   aplicam regra nenhuma; a escolha entre as duas por `VITE_API_URL`
-- **178 testes em 10 arquivos.** O principal é
-  `servicos/mock/regrasInviolaveis.test.ts`, que verifica as regras invioláveis
-  na camada de dados, e não na tela
+- **182 testes em 11 arquivos, nos três pacotes**, rodados por um único
+  `npm test` na raiz. O principal é `src/servicos/mock/regrasInviolaveis.test.ts`,
+  que verifica as regras invioláveis na camada de dados, e não na tela
 - **As seis regras verificadas** em `docs/06`: para cada teste citado, a regra foi
   quebrada de propósito para confirmar que ele falha, e as quebras que não
   derrubaram teste nenhum estão registradas
@@ -210,8 +210,14 @@ Atualizado em 13/10/2026, lendo o código — não a memória.
 **Em construção — Etapa 9, a fundação do servidor (`docs/07`, até 19/10)**
 
 O `docs/07` substitui as etapas 9 e 10 do `docs/05`. No código, hoje:
-- Nada do servidor existe: não há `api/`, `compartilhado/` nem *workspaces*.
-  Tipos, contratos e domínio continuam em `src/`
+- Passos 1 a 3 feitos: `docs/07` e `CLAUDE.md`, os restos da Etapa 8 e
+  *npm workspaces* com três pacotes — o front na raiz, `compartilhado/` com
+  tipos, contratos e domínio, e `servidor/` com um NestJS mínimo. A única rota,
+  `GET /api/saude`, responde com uma função do domínio importada de
+  `@sinctea/compartilhado`. Ainda sem banco
+- Os três pacotes são ESM. O front compila o fonte do compartilhado pela
+  condição `fonte` do `package.json`; o servidor importa o JavaScript de
+  `compartilhado/dist`, que o build dele gera antes
 - A regra 6 exige o registro de toda leitura e escrita de dado do paciente, e o
   mock registra só parte. Ele não vai ser ajustado: sai na Etapa 12, e no
   servidor o registro é do interceptador, na Etapa 10. O que falta cobrir está
@@ -271,7 +277,7 @@ termo, e a família reabre o texto da versão registrada pela própria tela 17.
 
 **Termo de consentimento**
 
-O texto do termo vive em `src/dominio/termo.ts`, versionado. **Versão antiga
+O texto do termo vive em `compartilhado/src/dominio/termo.ts`, versionado. **Versão antiga
 nunca é removida:** um termo aceito há seis meses precisa poder ser
 reapresentado com as palavras daquela época. O texto renderizado não é gravado —
 ele se reproduz da versão mais os campos do `Consentimento`, e o resumo prova

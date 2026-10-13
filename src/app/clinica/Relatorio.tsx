@@ -10,7 +10,7 @@ import { EstadoCarregando } from '../../ui/EstadoCarregando'
 import { EstadoErro } from '../../ui/EstadoErro'
 import { Paginacao } from '../../ui/Paginacao'
 import { FolhaRelatorio, NOME_DO_DESTINATARIO } from '../../componentes/FolhaRelatorio'
-import { diaIso, emData } from '../../dominio/datas'
+import { diaIso, emData } from '@sinctea/compartilhado/dominio/datas'
 import {
   ErroServico, servicos, type ConteudoRelatorio, type Destinatario, type Pagina,
   type PedidoRelatorio, type PlanoTerapeutico, type RelatorioEvolucao,

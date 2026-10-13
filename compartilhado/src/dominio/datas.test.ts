@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { dataIsoParaLocal, diaIso, emData } from './datas'
+import { dataIsoParaLocal, diaIso, emData } from './datas.js'
 
 describe('dataIsoParaLocal', () => {
   it('data sem hora nao volta um dia, qualquer que seja o fuso a oeste', () => {

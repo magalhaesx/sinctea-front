@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Tela } from '../LayoutApp'
 import { usarSessao } from '../../contexto/Sessao'
-import { dataIsoParaLocal, emData } from '../../dominio/datas'
-import { validarNovoConsentimento } from '../../dominio/regras'
+import { dataIsoParaLocal, emData } from '@sinctea/compartilhado/dominio/datas'
+import { validarNovoConsentimento } from '@sinctea/compartilhado/dominio/regras'
 import {
   conferirResumoDoTermo, textoDoTermo, VERSAO_CORRENTE_DO_TERMO, versaoConhecida, versaoDoResumo,
   type DadosDoResumo,
-} from '../../dominio/termo'
+} from '@sinctea/compartilhado/dominio/termo'
 import { Aviso } from '../../ui/Aviso'
 import { Botao } from '../../ui/Botao'
 import { Campo } from '../../ui/Campo'

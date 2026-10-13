@@ -1,0 +1,23 @@
+{
+  // ESM, como o front e o compartilhado: o NestJS 12 ja e publicado como ESM,
+  // e o mesmo formato nos tres pacotes dispensa build duplo e require() de
+  // modulo ESM. Imports relativos levam ".js", como o Node exige.
+  //
+  // Este arquivo confere src/ e test/ sem emitir; tsconfig.build.json emite.
+  "compilerOptions": {
+    "target": "ES2023",
+    "lib": ["ES2023"],
+    "types": ["node"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "skipLibCheck": true,
+    "noEmit": true
+  },
+  "include": ["src", "test"]
+}

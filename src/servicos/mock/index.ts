@@ -1,4 +1,4 @@
-import type { Servicos } from '../contratos'
+import type { Servicos } from '@sinctea/compartilhado'
 import { autenticacaoMock } from './autenticacao'
 import { ocorrenciasMock, planosMock, sessoesMock } from './clinica'
 import { areaEscolaMock } from './escola'

@@ -1,6 +1,6 @@
 import { useId, useState } from 'react'
 import { Botao } from '../ui/Botao'
-import { dataIsoParaLocal, emData } from '../dominio/datas'
+import { dataIsoParaLocal, emData } from '@sinctea/compartilhado/dominio/datas'
 import type { Desempenho } from '../servicos'
 
 /**

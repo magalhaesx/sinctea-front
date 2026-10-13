@@ -1,4 +1,4 @@
-import { ErroServico, type CodigoErro, type MotivoNegativa } from '../tipos'
+import { ErroServico, type CodigoErro, type MotivoNegativa } from '@sinctea/compartilhado'
 
 /**
  * Cliente HTTP da API real (NestJS, prevista para S06).

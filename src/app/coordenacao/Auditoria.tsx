@@ -12,10 +12,10 @@ import { EstadoVazio } from '../../ui/EstadoVazio'
 import { Paginacao } from '../../ui/Paginacao'
 import { Tabela, type Coluna } from '../../ui/Tabela'
 import { NOME_DO_PERFIL } from '../perfis'
-import { dataIsoParaLocal, diaIso } from '../../dominio/datas'
+import { dataIsoParaLocal, diaIso } from '@sinctea/compartilhado/dominio/datas'
 // A leitura do valorAnterior mora no dominio: a tela e o CSV exportado dizem
 // a mesma coisa porque leem do mesmo lugar.
-import { camposAnteriores, NOME_DO_CAMPO } from '../../dominio/auditoria'
+import { camposAnteriores, NOME_DO_CAMPO } from '@sinctea/compartilhado/dominio/auditoria'
 import {
   servicos, type AcaoAuditoria, type FiltroAuditoria, type OrigemAuditoria, type Pagina,
   type PacienteResumo, type RegistroAuditoria,

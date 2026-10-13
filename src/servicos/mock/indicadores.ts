@@ -1,12 +1,12 @@
-import type { ServicoIndicadores } from '../contratos'
+import type { ServicoIndicadores } from '@sinctea/compartilhado'
 import type {
   AlertaAtencao, Indicador, MotivoAtencao, Objetivo, OcorrenciaComportamental, Paciente,
   PlanoTerapeutico, Sessao,
-} from '../tipos'
+} from '@sinctea/compartilhado'
 import {
   consentimentoVencendo, consentimentoVigente, objetivoSemAvanco, pacienteSemSessaoRecente,
   percentualIndependente, planoPrecisaRevisao,
-} from '../../dominio/regras'
+} from '@sinctea/compartilhado/dominio/regras'
 import { auditar, banco, exigirPerfil, paginar, relogio, responder } from './infra'
 import { ultimaSessaoDe } from './pacientes'
 

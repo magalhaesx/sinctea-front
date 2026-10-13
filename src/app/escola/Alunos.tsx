@@ -8,7 +8,7 @@ import { EstadoCarregando } from '../../ui/EstadoCarregando'
 import { EstadoErro } from '../../ui/EstadoErro'
 import { EstadoVazio } from '../../ui/EstadoVazio'
 import { Tela } from '../LayoutApp'
-import { emData } from '../../dominio/datas'
+import { emData } from '@sinctea/compartilhado/dominio/datas'
 
 /**
  * Lista de alunos do professor · /app/escola

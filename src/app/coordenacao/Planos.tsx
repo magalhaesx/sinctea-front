@@ -12,8 +12,8 @@ import { EstadoErro } from '../../ui/EstadoErro'
 import { EstadoVazio } from '../../ui/EstadoVazio'
 import { Paginacao } from '../../ui/Paginacao'
 import { usarSessao } from '../../contexto/Sessao'
-import { emData } from '../../dominio/datas'
-import { validarDevolucaoPlano } from '../../dominio/regras'
+import { emData } from '@sinctea/compartilhado/dominio/datas'
+import { validarDevolucaoPlano } from '@sinctea/compartilhado/dominio/regras'
 import {
   ErroServico, servicos, type Pagina, type PlanoParaValidacao, type PlanoTerapeutico,
 } from '../../servicos'

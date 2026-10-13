@@ -6,7 +6,7 @@ import { Campo } from '../../ui/Campo'
 import { Cartao } from '../../ui/Cartao'
 import { Titulo } from '../../ui/Titulo'
 import { usarSessao } from '../../contexto/Sessao'
-import { descricaoNivelSuporte } from '../../dominio/regras'
+import { descricaoNivelSuporte } from '@sinctea/compartilhado/dominio/regras'
 import { ErroServico, servicos, type NivelSuporte, type Profissional } from '../../servicos'
 
 /**

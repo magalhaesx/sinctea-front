@@ -4,8 +4,8 @@ import type {
   ProfessorAEE, Profissional, RegistroAtividade, RegistroAuditoria, RelatorioEvolucao, Responsavel,
   Resultado,
   Sessao, VinculoEscolar, VinculoFamiliar, ConviteEscolar,
-} from '../tipos'
-import { calcularExpiracaoConvite } from '../../dominio/regras'
+} from '@sinctea/compartilhado'
+import { calcularExpiracaoConvite } from '@sinctea/compartilhado/dominio/regras'
 
 /**
  * DADOS DE DEMONSTRACAO — TODOS FICTICIOS.

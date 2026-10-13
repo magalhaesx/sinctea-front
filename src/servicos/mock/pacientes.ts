@@ -1,6 +1,6 @@
-import type { ServicoEscola, ServicoPaciente, ServicoProfissional } from '../contratos'
-import type { Paciente, PacienteDetalhe, PacienteResumo, SituacaoPlano } from '../tipos'
-import { idadeEmAnos, situacaoConsentimento } from '../../dominio/regras'
+import type { ServicoEscola, ServicoPaciente, ServicoProfissional } from '@sinctea/compartilhado'
+import type { Paciente, PacienteDetalhe, PacienteResumo, SituacaoPlano } from '@sinctea/compartilhado'
+import { idadeEmAnos, situacaoConsentimento } from '@sinctea/compartilhado/dominio/regras'
 import { alcancaClinicamente, exigirPacienteClinico } from './acesso'
 import {
   auditar, banco, exigirPerfil, exigirValido, gerarId, paginar, relogio, responder, usuarioPorId,

@@ -1,4 +1,4 @@
-import type { Paciente } from '../tipos'
+import type { Paciente } from '@sinctea/compartilhado'
 import { banco, exigirSessao, naoEncontrado, negar, type SessaoServidor } from './infra'
 
 /**

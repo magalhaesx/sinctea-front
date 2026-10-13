@@ -9,8 +9,8 @@ import { Titulo } from '../../ui/Titulo'
 import { EstadoCarregando } from '../../ui/EstadoCarregando'
 import { EstadoErro } from '../../ui/EstadoErro'
 import { Paginacao } from '../../ui/Paginacao'
-import { descricaoNivelSuporte, ehPreliminar } from '../../dominio/regras'
-import { emData } from '../../dominio/datas'
+import { descricaoNivelSuporte, ehPreliminar } from '@sinctea/compartilhado/dominio/regras'
+import { emData } from '@sinctea/compartilhado/dominio/datas'
 import {
   ErroServico, servicos, type OcorrenciaComportamental, type Origem, type Pagina,
   type PacienteDetalhe, type SituacaoConsentimento, type SituacaoPlano,

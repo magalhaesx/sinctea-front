@@ -1,13 +1,13 @@
-import type { ServicoAreaEscola } from '../contratos'
+import type { ServicoAreaEscola } from '@sinctea/compartilhado'
 import {
   ErroServico, type CartaoEscola, type Consentimento, type EscopoAcesso, type MotivoNegativa,
   type NovaOcorrenciaEscolar, type OcorrenciaEscolar, type VinculoEscolar,
-} from '../tipos'
+} from '@sinctea/compartilhado'
 import {
   consentimentoVigente, podeCorrigirOcorrencia, situacaoConsentimento, verificarAcessoEscola,
   type MotivoNegacao,
-} from '../../dominio/regras'
-import { jsonCanonico } from '../../dominio/hash'
+} from '@sinctea/compartilhado/dominio/regras'
+import { jsonCanonico } from '@sinctea/compartilhado/dominio/hash'
 import {
   auditar, banco, exigirPerfil, exigirValido, gerarId, naoEncontrado, paginar, relogio, responder,
   type SessaoServidor,

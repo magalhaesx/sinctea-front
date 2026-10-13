@@ -1,6 +1,6 @@
 import { useId, useState } from 'react'
 import { Botao } from '../ui/Botao'
-import { emData } from '../dominio/datas'
+import { emData } from '@sinctea/compartilhado/dominio/datas'
 
 /**
  * Serie unica: nao leva legenda — o titulo nomeia a serie (docs/02, secao 5).

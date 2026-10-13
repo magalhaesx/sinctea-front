@@ -2,7 +2,7 @@ import type {
   Consentimento, ConviteEscolar, CriterioDominio, DataIso, Destinatario, EscopoAcesso, NivelSuporte,
   NovoConsentimento, NovoObjetivo, OcorrenciaComportamental, Origem, PlanoTerapeutico,
   RegistroAtividade, Sessao, SituacaoConsentimento, SituacaoConvite, StatusObjetivo,
-} from '../servicos/tipos'
+} from '../tipos.js'
 
 /**
  * Regras de negocio puras: sem React, sem rede, sem relogio implicito.

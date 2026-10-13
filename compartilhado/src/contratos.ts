@@ -10,7 +10,7 @@ import type {
   Perfil, PlanoParaValidacao, PlanoTerapeutico, PonteEscola, Profissional, RegistroAtividade,
   RegistroAuditoria, RelatorioEvolucao, ResumoClinica, Resultado, Sessao, SessaoUsuario,
   SessoesPorProfissional, Usuario,
-} from './tipos'
+} from './tipos.js'
 
 /**
  * Contratos da camada de dados. Os componentes conhecem apenas estas

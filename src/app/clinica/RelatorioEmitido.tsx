@@ -7,8 +7,8 @@ import { Titulo } from '../../ui/Titulo'
 import { EstadoCarregando } from '../../ui/EstadoCarregando'
 import { EstadoErro } from '../../ui/EstadoErro'
 import { FolhaRelatorio } from '../../componentes/FolhaRelatorio'
-import { resumoSha256 } from '../../dominio/hash'
-import { dataIsoParaLocal } from '../../dominio/datas'
+import { resumoSha256 } from '@sinctea/compartilhado/dominio/hash'
+import { dataIsoParaLocal } from '@sinctea/compartilhado/dominio/datas'
 import { ErroServico, servicos, type RelatorioEvolucao } from '../../servicos'
 
 /**

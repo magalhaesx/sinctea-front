@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { emData } from '../dominio/datas'
+import { emData } from '@sinctea/compartilhado/dominio/datas'
 import type { ConteudoRelatorio, Destinatario, ObjetivoNoRelatorio } from '../servicos'
 
 /**

@@ -1,4 +1,4 @@
-import type { Servicos } from './contratos'
+import type { Servicos } from '@sinctea/compartilhado'
 import { servicosApi } from './api'
 import { servicosMock } from './mock'
 
@@ -12,5 +12,6 @@ const usarApi = Boolean(import.meta.env.VITE_API_URL)
 
 export const servicos: Servicos = usarApi ? servicosApi : servicosMock
 
-export type * from './contratos'
-export * from './tipos'
+// Tipos e contratos moram em compartilhado/, junto com o dominio: o servidor
+// importa os mesmos. Componentes continuam importando daqui.
+export * from '@sinctea/compartilhado'

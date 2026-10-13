@@ -1,0 +1,24 @@
+{
+  // Confere o pacote inteiro, testes inclusive, sem emitir nada.
+  //
+  // Sem a biblioteca DOM, de proposito: o dominio roda no navegador e no
+  // Node, e so pode usar o que existe nos dois. Quem usar `window` quebra
+  // aqui; quem usar `Buffer` quebra na compilacao do front, que nao tem os
+  // tipos do Node.
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "types": ["node"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "skipLibCheck": true,
+    "noEmit": true
+  },
+  "include": ["src"]
+}
