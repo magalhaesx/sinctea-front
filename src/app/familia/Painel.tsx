@@ -261,45 +261,48 @@ export function PainelFamilia() {
               <section aria-labelledby="h-escola" className="flex flex-col gap-3">
                 <h2 id="h-escola" className="text-lg font-bold">Acesso da escola</h2>
 
-                {dados.dados.consentimentos.length === 0 ? (
-                  <Cartao>
-                    {podeAutorizar ? (
-                      <>
-                        <p className="text-tinta2">
-                          Nenhuma escola tem acesso aos dados de {primeiroNome}.
-                        </p>
-                        <p className="mt-3">
+                {dados.dados.consentimentos.map((c) => {
+                  const s = situacaoDaEscola(c, podeAutorizar)
+                  return (
+                    <Aviso key={c.id} tom={s.tom} titulo={s.titulo}>
+                      {s.texto}
+                      {/* Sem autoridade legal, a tela 17 so serve para encerrar:
+                          o caminho aparece quando ha o que encerrar. */}
+                      {(podeAutorizar || c.situacao === 'VIGENTE') && (
+                        <>
+                          {' '}
                           <Link to="/app/familia/consentimento" className="font-bold text-fam-ink underline">
-                            Autorizar uma escola
+                            Ver a autorização
                           </Link>
-                        </p>
-                      </>
-                    ) : (
-                      <p className="text-tinta2">
-                        Nenhuma escola tem acesso aos dados de {primeiroNome}. Somente o
-                        responsável legal pode autorizar.
-                      </p>
-                    )}
+                        </>
+                      )}
+                    </Aviso>
+                  )
+                })}
+
+                {podeAutorizar && dados.dados.consentimentos.length === 0 && (
+                  <Cartao>
+                    <p className="text-tinta2">
+                      Nenhuma escola tem acesso aos dados de {primeiroNome}.
+                    </p>
+                    <p className="mt-3">
+                      <Link to="/app/familia/consentimento" className="font-bold text-fam-ink underline">
+                        Autorizar uma escola
+                      </Link>
+                    </p>
                   </Cartao>
-                ) : (
-                  dados.dados.consentimentos.map((c) => {
-                    const s = situacaoDaEscola(c, podeAutorizar)
-                    return (
-                      <Aviso key={c.id} tom={s.tom} titulo={s.titulo}>
-                        {s.texto}
-                        {/* Sem autoridade legal, a tela 17 so serve para encerrar:
-                            o caminho aparece quando ha o que encerrar. */}
-                        {(podeAutorizar || c.situacao === 'VIGENTE') && (
-                          <>
-                            {' '}
-                            <Link to="/app/familia/consentimento" className="font-bold text-fam-ink underline">
-                              Ver a autorização
-                            </Link>
-                          </>
-                        )}
-                      </Aviso>
-                    )
-                  })
+                )}
+
+                {/* Sem autoridade legal e sem acesso vigente, nao ha o que fazer
+                    aqui — a frase diz isso e por que, mesmo com autorizacoes
+                    encerradas ou vencidas listadas acima. */}
+                {!podeAutorizar && !dados.dados.consentimentos.some((c) => c.situacao === 'VIGENTE') && (
+                  <Cartao>
+                    <p className="text-tinta2">
+                      Nenhuma escola tem acesso aos dados de {primeiroNome}. Somente o
+                      responsável legal pode autorizar.
+                    </p>
+                  </Cartao>
                 )}
               </section>
             </>
