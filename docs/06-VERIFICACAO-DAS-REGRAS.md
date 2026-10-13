@@ -131,13 +131,14 @@ abertura e o encerramento de sessão, a ocorrência da escola e a leitura clíni
 o cadastro de paciente e a emissão de relatório; a concessão, a revogação e o
 convite; e a exportação da trilha.
 
-**A confirmar com o Cowork,** porque a regra nova não fala deles:
+**Decidido pelo Cowork em 13/10, fora da regra 6:**
 
-- os indicadores `resumo`, `sessoesPorProfissional` e `ponteEscola` devolvem
-  contagens da clínica inteira, sem paciente identificado;
-- a listagem da trilha, `auditoria.listar`, não registra a si mesma, por decisão
+- os indicadores agregados — `resumo`, `sessoesPorProfissional` e `ponteEscola` —
+  devolvem contagens da clínica inteira, sem paciente identificado. Não são dado
+  do paciente, e ficam fora da regra 6;
+- a listagem da trilha, `auditoria.listar`, continua sem registro, pela decisão
   escrita em `mock/gestao.ts:45`: a trilha registrando a própria leitura viraria
-  ruído.
+  ruído. A exportação, `auditoria.exportar`, continua registrada.
 
 ### Achado 3 — a lista de alunos não passa pela verificação de consentimento (registrado)
 

@@ -26,8 +26,9 @@ import {
  * ESTADO DE CONEXAO, HONESTO: nao existe back-end ainda. O indicador reflete
  * navigator.onLine e o statusSync que o servico devolve — e o servico marca
  * como PENDENTE o que foi registrado agora, porque nao subiu a lugar nenhum.
- * A fila de sincronizacao de verdade chega com o back-end, na S06 do
- * cronograma; ate la nada aqui diz "sincronizado".
+ * A fila de sincronizacao de verdade — IndexedDB e chave de idempotencia
+ * gerada no aparelho — esta prevista depois da Etapa 11 (docs/07, secao 3A);
+ * ate la nada aqui diz "sincronizado".
  */
 
 const RESPOSTAS: { valor: Resultado; rotulo: string }[] = [

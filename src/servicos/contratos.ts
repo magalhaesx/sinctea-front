@@ -164,7 +164,7 @@ export interface ServicoRelatorio {
   /** Grava o conteudo e o seu hash. Auditado como CRIACAO. */
   emitir(pacienteId: string, pedido: PedidoRelatorio): Promise<RelatorioEvolucao>
   listarPorPaciente(pacienteId: string, filtro?: FiltroPaginacao): Promise<Pagina<RelatorioEvolucao>>
-  /** Abrir um emitido e auditado, acima do piso da regra 6: e documento clinico. */
+  /** Abrir um emitido e leitura de dado do paciente: auditado (regra 6). */
   obter(relatorioId: string): Promise<RelatorioEvolucao>
 }
 

@@ -212,7 +212,6 @@ Atualizado em 13/10/2026, lendo o código — não a memória.
 O `docs/07` substitui as etapas 9 e 10 do `docs/05`. No código, hoje:
 - Nada do servidor existe: não há `api/`, `compartilhado/` nem *workspaces*.
   Tipos, contratos e domínio continuam em `src/`
-- Os dois fluxos do GitHub Actions ainda rodam em Node 20
 - Três restos da etapa 8 continuam abertos:
   - a negativa da escola não tem tipo próprio: o motivo viaja como texto em
     `ErroServico.campos.motivo`;

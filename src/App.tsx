@@ -97,7 +97,8 @@ export function App() {
 
   return (
     <Routes>
-      {/* A etapa 9 coloca o site comercial na raiz; ate la, a raiz leva ao login. */}
+      {/* A raiz leva ao login. Uma pagina institucional pode ocupa-la, se houver
+          tempo (docs/07, Etapa 13). */}
       <Route path="/" element={<Navigate to="/app/entrar" replace />} />
       <Route path="/sobre" element={<Solta><Sobre /></Solta>} />
 

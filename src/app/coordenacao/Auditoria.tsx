@@ -337,7 +337,7 @@ export function Auditoria() {
         ) : (
           <EstadoVazio
             titulo="Nenhuma operação registrada ainda"
-            explicacao="A trilha se preenche sozinha, conforme o sistema for usado: concessão de acesso, leitura autorizada de dado sensível e tentativa de acesso negada."
+            explicacao="A trilha se preenche sozinha, conforme o sistema for usado: toda leitura e escrita de dado do paciente, concessão de acesso e tentativa de acesso negada."
             acao={{ rotulo: 'Atualizar', aoAcionar: () => setTentativa((t) => t + 1) }}
           />
         )
