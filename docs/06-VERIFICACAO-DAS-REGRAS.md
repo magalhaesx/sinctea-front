@@ -2,7 +2,9 @@
 
 Lido no código em 12/10/2026 — não na memória, nem nos outros documentos.
 Atualizado no mesmo dia, com a correção do achado 1 e as novas redações das
-regras 1, 2 e 6 no CLAUDE.md. Os números de linha valem para essa versão.
+regras 1 e 2 no CLAUDE.md. Revisto em 13/10/2026: a regra 6 voltou a exigir o
+registro de toda leitura e escrita de dado do paciente (achado 2). Os números de
+linha valem para essa versão.
 
 ---
 
@@ -42,7 +44,7 @@ que apenas o responsável legal autoriza a escola — passou a valer no serviço
 | **3 · A escola nunca acessa evolução, plano, diagnóstico, laudo ou histórico de sessões** | Tipo `CartaoEscola` (`servicos/tipos.ts:714`) e projeção campo a campo em `obterCartao` (`mock/escola.ts:122`).<br>Contrato `ServicoAreaEscola` (`contratos.ts:141`): quatro operações, nenhuma clínica.<br>Nos demais serviços, `alcancaClinicamente` (`mock/acesso.ts:11`) devolve `false` para `PROFESSOR`, e as listas de `exigirPerfil` não o incluem. | *o cartao nao carrega nenhum campo clinico*<br>*professor nao alcanca nenhum servico clinico, e a tentativa e auditada*<br>*a escola nunca alcanca o relatorio, e a tentativa fica auditada*<br>*so quem alcanca o paciente confirma dominio ou registra leitura* | **O teste do cartão é uma lista de proibidos** (oito termos). Um campo clínico novo com outro nome — `hipotese`, `cid` — passaria.<br>**O tipo protege menos do que parece:** o compilador recusa `nivelSuporte` escrito direto no objeto (TS2353), mas aceita o mesmo campo vindo por *spread*. Conferido com `tsc`.<br>Nos testes, o professor só chama três serviços clínicos, o relatório, `confirmarDominio`, `registrarLeituraClinica` e o painel da coordenação. Os outros ficam fechados por construção, pelos mesmos `exigirPacienteClinico` e `exigirPerfil`. |
 | **4 · Duas redações; a acessível é escrita pelo terapeuta, nunca gerada** | `validarNovoObjetivo` (`dominio/regras.ts:132`) recusa a acessível vazia.<br>`planosMock.adicionarObjetivo` (`mock/clinica.ts:56`) grava `dados.descricaoAcessivel.trim()`. É a única escrita do campo no código.<br>Projeções: `familia.listarObjetivos` (`mock/familia.ts:140`), `obterCartao` (`paraQue`), relatório por destinatário. | *objetivo sem descricao acessivel e recusado* · *recusa descricao acessivel vazia explicando por que o campo existe*<br>*a descricao acessivel e gravada como foi escrita*<br>*a familia recebe so a redacao acessivel* | **Os dois testes da regra provam a metade positiva:** a redação acessível é obrigatória na entrada e gravada como chegou. **Nenhum prova a metade negativa, "nunca gerada automaticamente".**<br>Um botão na tela 6 que preenchesse o campo a partir da redação técnica passou pelos 173 testes. O serviço recebe uma *string* e não tem como saber quem a escreveu.<br>Hoje vale por construção (não existe gerador, e não existe operação que altere a acessível depois de gravada) e por revisão de código. Nada impede que um gerador entre depois. |
 | **5 · A revogação produz efeito imediato, sem cache que sobreviva a ela** | `consentimentosMock.revogar` (`mock/familia.ts:328`) grava `revogadoEm` no próprio consentimento.<br>`situacaoConsentimento` (`dominio/regras.ts:218`) testa a revogação antes de tudo, sem carência.<br>`exigirAcessoEscola` relê o consentimento a cada chamada.<br>No cliente de API, `cache: 'no-store'` (`api/cliente.ts:41`). | *revogacao tem efeito imediato, sem carencia*<br>*a leitura seguinte a revogacao ja e negada e auditada*<br>*revogacao feita durante a latencia de uma leitura ja vale para ela* | **A ausência de cache é estrutural — não há camada de cache —, mas a verificação vai um pouco além do que parece.** O teste lê o cartão *antes* de revogar. Um cache dentro do serviço, da decisão ou do cartão, seria aquecido por essa leitura e serviria a seguinte. A quebra com um `Map` de permissões derrubou o teste.<br>**Não é verificado nada fora do serviço:** o `no-store` do cliente de API (stub, sem teste); um *service worker* (não existe ainda; quando o PWA offline entrar, a leitura da escola precisa ficar fora do cache em tempo de execução); e o que já está na tela. A revogação vale para a próxima leitura, e um cartão aberto continua aberto até o professor sair dele. |
-| **6 · Auditoria em três momentos; registro imutável** | `auditar` (`mock/infra.ts:143`): `Object.freeze` em cada registro, acrescentado ao fim da trilha.<br>`negar` (`mock/infra.ts:170`) audita toda negativa de perfil ou alcance; `exigirAcessoEscola` audita a negativa por consentimento (`mock/escola.ts:53`).<br>Concessão em `conceder` e `aceitar`. Leitura autorizada em `obterCartao`, `listarAlunos`, `pacientes.obter`, `planos.obterPorPaciente`, `sessoes.listarPorPaciente`, `ocorrencias.listarPorPaciente`, `familia.listarObjetivos`, `relatorios.obter`, `indicadores.listarAlertas` e `auditoria.exportar`.<br>Contrato `ServicoAuditoria` (`contratos.ts:150`): só `listar` e `exportar`. Tipo `RegistroAuditoria` com campos `readonly` (`servicos/tipos.ts:756`). | *registros sao congelados*<br>*o contrato de auditoria so tem leitura*<br>*a concessao fica auditada com o nome da escola*<br>*le o cartao com consentimento vigente, e a leitura e auditada* · *a lista de alunos nao mostra quem nunca concedeu, e a consulta e auditada*<br>*a ficha de paciente de outro profissional e negada ao terapeuta*, e outras três que conferem a negativa na trilha | **Imutável, mas só o registro, não a trilha.** Os campos são `readonly`, o que o TypeScript verifica em tempo de compilação. **Em tempo de execução também há algo:** `Object.freeze` em cada registro, e um teste confere. Só que `banco.auditoria` é um *array* comum. Remover um registro — a quebra apagou a concessão ao revogar — passou pelos 173 testes. Imutabilidade de verdade é permissão de banco, tabela só de inserção, e isso é do servidor.<br>**O piso da regra 6 são as leituras da escola**, `obterCartao` e `listarAlunos`, e cada uma tem um teste que falha sem o registro. As demais leituras auditadas estão acima do piso, e nenhum teste as fixa: tirar a auditoria da leitura da ficha passou pelos 173. O teste dos três momentos só confere que cada tipo aparece ao menos uma vez. Ver achado 2.<br>Tentativa sem sessão (`NAO_AUTENTICADO`) não entra na trilha: não há quem registrar. |
+| **6 · Toda leitura e escrita de dado do paciente é registrada, com a concessão e a negativa; registro imutável** | `auditar` (`mock/infra.ts:143`): `Object.freeze` em cada registro, acrescentado ao fim da trilha.<br>`negar` (`mock/infra.ts:170`) audita toda negativa de perfil ou alcance; `exigirAcessoEscola` audita a negativa por consentimento (`mock/escola.ts:53`).<br>Concessão em `conceder` e `aceitar`. Leitura autorizada em `obterCartao`, `listarAlunos`, `pacientes.obter`, `planos.obterPorPaciente`, `sessoes.listarPorPaciente`, `ocorrencias.listarPorPaciente`, `familia.listarObjetivos`, `relatorios.obter`, `indicadores.listarAlertas` e `auditoria.exportar`.<br>Contrato `ServicoAuditoria` (`contratos.ts:150`): só `listar` e `exportar`. Tipo `RegistroAuditoria` com campos `readonly` (`servicos/tipos.ts:756`). | *registros sao congelados*<br>*o contrato de auditoria so tem leitura*<br>*a concessao fica auditada com o nome da escola*<br>*le o cartao com consentimento vigente, e a leitura e auditada* · *a lista de alunos nao mostra quem nunca concedeu, e a consulta e auditada*<br>*a ficha de paciente de outro profissional e negada ao terapeuta*, e outras três que conferem a negativa na trilha | **Imutável, mas só o registro, não a trilha.** Os campos são `readonly`, o que o TypeScript verifica em tempo de compilação. **Em tempo de execução também há algo:** `Object.freeze` em cada registro, e um teste confere. Só que `banco.auditoria` é um *array* comum. Remover um registro — a quebra apagou a concessão ao revogar — passou pelos 173 testes. Imutabilidade de verdade é permissão de banco, tabela só de inserção, e isso é do servidor.<br>**O mock não cumpre a regra 6.** Parte das leituras e escritas de dado do paciente não deixa registro; a lista está no achado 2, com destino na Etapa 10. Das que deixam, só as duas leituras da escola, `obterCartao` e `listarAlunos`, têm teste que falha sem o registro: tirar a auditoria da leitura da ficha passou pelos 173. O teste dos três momentos só confere que cada tipo aparece ao menos uma vez.<br>Tentativa sem sessão (`NAO_AUTENTICADO`) não entra na trilha: não há quem registrar. |
 
 ### A mesma tabela, separada pelos três tipos de garantia
 
@@ -67,8 +69,7 @@ que apenas o responsável legal autoriza a escola — passou a valer no serviço
 ## 3. Achados
 
 A primeira leitura encontrou três. O primeiro foi corrigido no código; o
-segundo virou uma decisão sobre o que a regra 6 obriga; o terceiro virou texto
-da regra 2.
+segundo é pendência, com destino na Etapa 10; o terceiro virou texto da regra 2.
 
 ### Achado 1 — a restrição ao responsável legal só existia na interface (resolvido)
 
@@ -86,42 +87,57 @@ ampliar o acesso exige a autoridade legal, e encerrar não pode ser dificultado.
 Nas telas 15 e 17, quem não é responsável legal vê as autorizações e pode
 encerrá-las, sem nenhuma oferta de autorizar.
 
-### Achado 2 — o que a regra 6 obriga a registrar (decidido)
+### Achado 2 — leituras e escritas de dado do paciente sem registro (pendente, Etapa 10)
 
-A primeira redação falava em "leitura autorizada de dado sensível", e estava
-imprecisa. Dado de saúde é dado sensível pela LGPD: ao pé da letra, a regra
-exigiria registro de cada leitura da própria equipe, e o código nunca fez isso.
-Na prática, a lista de leituras auditadas foi crescendo tela a tela, sem
-critério escrito.
+A regra 6 exige o registro de toda leitura e escrita de dado do paciente: é a
+meta do pré-projeto, *100% das operações de leitura e escrita sobre dado
+sensível registradas*. A redação de 12/10, que tratava a regra como piso e só
+obrigava o registro na fronteira da clínica, foi revogada em 13/10 (`docs/08`):
+foi escrita sem o pré-projeto à vista.
 
-**A decisão, de 12/10/2026, está na regra 6.** A regra é piso, não teto. A
-fronteira que obriga registro é a da clínica: a leitura de dado do paciente por
-quem está fora dela — hoje, a escola. Leitura por terapeuta da própria equipe,
-e leitura da família sobre o próprio filho, são uso, não compartilhamento, e não
-exigem registro. O `convites.obter` também não: quem responde pela entrega do
-convite é o aceite, que é auditado.
+**O mock não cumpre a regra, e não vai ser ajustado** — ele sai na Etapa 12. No
+servidor, um interceptador registra toda leitura e escrita de dado do paciente,
+sem depender de cada função lembrar de auditar (`docs/07`, D7, Etapa 10). As
+tabelas abaixo são o que o interceptador precisa cobrir, e o que o teste portado
+precisa conferir.
 
-**O piso está cumprido.** As duas leituras da escola, `areaEscola.obterCartao` e
-`areaEscola.listarAlunos`, são auditadas, e cada uma tem um teste que falha sem o
-registro (seção 4).
+**Leituras sem registro**
 
-**Acima do piso, auditadas por escolha:** `pacientes.obter`,
+| Operação | Quem lê |
+|---|---|
+| `sessoes.obter`, `sessoes.listarAgenda`, `sessoes.listarPendentesDeSincronizacao` | Equipe clínica |
+| `pacientes.listar`, `planos.listarAguardandoValidacao` | Equipe clínica |
+| `relatorios.previsualizar`, `relatorios.listarPorPaciente` | Equipe clínica |
+| `ocorrencias.listarAvisosDaEscola` | Equipe clínica |
+| `atividades.listarPorPaciente`, `obter` e `listarExecucoes` | Equipe clínica ou família |
+| `consentimentos.listarPorPaciente` | Equipe clínica ou família |
+| `familia.listarFilhos` | Família |
+| `convites.obter` | Quem tem o token, sem sessão |
+
+**Escritas sem registro**
+
+| Operação | Quem escreve |
+|---|---|
+| `sessoes.registrarAtividade`, `sessoes.desfazerUltimoRegistro`, `sessoes.pausar` | Quem conduz a sessão |
+| `ocorrencias.registrarNaSessao` | Quem conduz a sessão |
+| `atividades.registrarExecucao` | Família |
+
+**Já registradas no mock:** as leituras `pacientes.obter`,
 `planos.obterPorPaciente`, `sessoes.listarPorPaciente`,
-`ocorrencias.listarPorPaciente`, `relatorios.obter`,
-`indicadores.listarAlertas` e `familia.listarObjetivos`. A exportação da trilha,
-`auditoria.exportar`, é auditada por outro motivo: é dado saindo do sistema.
+`ocorrencias.listarPorPaciente`, `relatorios.obter`, `indicadores.listarAlertas`,
+`familia.listarObjetivos`, `areaEscola.obterCartao` e `areaEscola.listarAlunos`;
+as escritas de plano e objetivo, a prescrição e o encerramento de atividade, a
+abertura e o encerramento de sessão, a ocorrência da escola e a leitura clínica,
+o cadastro de paciente e a emissão de relatório; a concessão, a revogação e o
+convite; e a exportação da trilha.
 
-**Constatação, não pendência — as leituras que não deixam registro.** Estão aqui
-para que ninguém as confunda com descuido.
+**A confirmar com o Cowork,** porque a regra nova não fala deles:
 
-| Operação | Quem lê | Por que não exige registro |
-|---|---|---|
-| `sessoes.obter`, `relatorios.previsualizar`, `relatorios.listarPorPaciente`, `ocorrencias.listarAvisosDaEscola` | Equipe clínica | Uso interno |
-| `pacientes.listar`, `sessoes.listarAgenda`, `listarPendentesDeSincronizacao` e os indicadores `resumo`, `sessoesPorProfissional` e `ponteEscola` | Equipe clínica | Uso interno; listas e agregados |
-| `atividades.listarPorPaciente`, `obter` e `listarExecucoes`; `consentimentos.listarPorPaciente` | Equipe clínica ou família | Uso: a equipe sobre o próprio paciente, a família sobre o próprio filho |
-| `familia.listarFilhos` | Família | Idem |
-| `convites.obter` | Quem tem o token, sem sessão | O aceite, que é auditado, responde pela entrega |
-| `auditoria.listar` | Coordenação | A trilha registrando a própria leitura viraria ruído (`mock/gestao.ts:45`) |
+- os indicadores `resumo`, `sessoesPorProfissional` e `ponteEscola` devolvem
+  contagens da clínica inteira, sem paciente identificado;
+- a listagem da trilha, `auditoria.listar`, não registra a si mesma, por decisão
+  escrita em `mock/gestao.ts:45`: a trilha registrando a própria leitura viraria
+  ruído.
 
 ### Achado 3 — a lista de alunos não passa pela verificação de consentimento (registrado)
 

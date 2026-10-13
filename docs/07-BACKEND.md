@@ -40,8 +40,8 @@ executável**: cada regra de acesso, cada verificação de consentimento, cada
 registro de auditoria já está escrito e coberto por 177 testes. O trabalho é
 portar, não inventar.
 
-E as regras de domínio — `regras.ts`, `termo.ts`, `hash.ts`, `datas.ts`, `csv.ts`
-— são TypeScript puro, sem dependência de navegador. O servidor **importa o mesmo
+E as regras de domínio — **todo o `src/dominio/`**, inclusive o `auditoria.ts` —
+são TypeScript puro, sem dependência de navegador. O servidor **importa o mesmo
 código**, e não uma reescrita dele. É a mesma regra nos dois lados, com o mesmo
 teste.
 
@@ -54,7 +54,8 @@ teste.
 É o que o `CLAUDE.md` já previa, e trocar de framework agora abriria uma
 divergência a justificar. Uma correção: **Node 22 LTS, não Node 20.** O Node 20
 chegou ao fim do suporte em 30/04/2026 e não recebe mais correções de segurança.
-O front já roda em Node 22.
+Os dois fluxos do GitHub Actions ainda usam Node 20; passam para 22 no primeiro
+commit de código da Etapa 9.
 
 ### D2 · Um repositório, três pacotes
 
@@ -144,6 +145,12 @@ Os auxiliares de acesso — `exigirSessao`, `exigirPerfil`, `alcancaClinicamente
 viram *guards* e serviços do NestJS. A partir daqui, o que o `docs/06` classifica
 como "convenção de front-end" passa a valer contra quem controla o navegador.
 
+**Auditoria de toda leitura e escrita.** O pré-projeto promete *100% das
+operações de leitura e escrita sobre dado sensível registradas*. A redação
+"piso, não teto" da regra 6, adotada em 13/10 sem o pré-projeto à vista, fica
+revogada. No servidor isso é barato: um **interceptador** registra toda leitura e
+escrita de dado do paciente, sem depender de cada função lembrar de auditar.
+
 **Auditoria só cresce, de verdade.** Um *trigger* no PostgreSQL recusa `UPDATE` e
 `DELETE` na tabela de auditoria. Um teste de integração tenta apagar um registro e
 espera a recusa. É o que sobe a regra 6 de "garantida por construção" para
@@ -156,7 +163,7 @@ espera a recusa. É o que sobe a regra 6 de "garantida por construção" para
   contra um banco de teste. É ele que diz quando a API está pronta: quando passa a
   mesma suíte que o mock passava.
 - No CI, o PostgreSQL de teste sobe como serviço do próprio GitHub Actions.
-- Na virada, as **18 quebras** do `docs/06` são refeitas contra o servidor.
+- Na virada, as **22 quebras** do `docs/06` são refeitas contra o servidor.
 
 ### D9 · Uma linha de transparência
 
@@ -168,6 +175,28 @@ visitante de achar que encontrou um vazamento. Se a orientadora pedir para tirar
 tira.
 
 ---
+
+## 3A. O que o pré-projeto acrescenta
+
+Levantado em 13/10, depois desta decisão. O detalhe está em
+`docs/08-ADERENCIA-AO-PRE-PROJETO.md`. O que entra no plano, já decidido:
+
+- **Itens baratos do pré-projeto:** documentação OpenAPI (`@nestjs/swagger`),
+  `Dockerfile` da API (o Render implanta a partir dele), relatório de cobertura e
+  verificação com axe-core e Playwright na integração contínua.
+- **DER e dicionário de dados:** entregues pelo Cowork, **gerados do esquema
+  Prisma** logo depois do commit 4 da Etapa 9, para não divergirem do banco.
+- **Offline reduzido ao registro de sessão** (tela 7): manifesto e service worker
+  para instalar como PWA, fila no IndexedDB, e **chave de idempotência gerada no
+  aparelho** como política de conflito — a mesma sessão enviada duas vezes grava
+  uma só. Entra depois da Etapa 11.
+- **Avaliação com usuários** (SUS e testes de tarefa cronometrados) na semana do
+  pré-projeto, E13. O recrutamento — inclusive de **cinco educadores** — começa
+  agora.
+
+**Duas decisões aguardam a orientadora:** a data final (23/11 ou 30/11) e a
+Trilha de Autonomia (versão mínima derivada ou desvio declarado). As datas das
+etapas abaixo serão revistas quando ela responder.
 
 ## 4. Etapas
 
@@ -209,7 +238,7 @@ gestão de usuários, área da família. O restante da suíte portado.
 ### Etapa 12 · A virada — até 15/11
 
 O front passa a usar só a API. `servicos/mock` é removido, junto com
-`entrarDemonstracao`, os avisos de demonstração e `/dev/estados`. As 18 quebras do
+`entrarDemonstracao`, os avisos de demonstração e `/dev/estados`. As 22 quebras do
 `docs/06` refeitas contra o servidor, e o documento atualizado — as categorias
 sobem. Diagrama de componentes revisado: o que era "previsto" deixa de ser.
 

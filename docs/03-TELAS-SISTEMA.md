@@ -240,10 +240,9 @@ garantem o artigo 37, esta é a resposta.
 **Conteúdo:** filtros por período, usuário, ação e paciente · tabela com data e
 hora, usuário, perfil, ação, entidade e origem · exportação.
 
-**Registra três momentos:** concessão de acesso · leitura de dado do paciente por
-quem está fora da clínica (hoje, a escola) · **tentativa de acesso negada**.
-A regra é piso, não teto: leituras internas também podem ser auditadas, e várias
-são (regra 6 do CLAUDE.md).
+**Registra:** toda leitura e escrita de dado do paciente · concessão de acesso ·
+**tentativa de acesso negada** (regra 6 do CLAUDE.md). O pré-projeto promete
+100% dessas operações registradas; no servidor, quem registra é um interceptador.
 
 **Regras:** registro de auditoria é imutável. Nenhuma tela oferece editar ou
 excluir. Registrar o acesso que não ocorreu é tão relevante quanto registrar o que

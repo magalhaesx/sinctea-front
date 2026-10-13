@@ -1,5 +1,7 @@
 # 04 · Site comercial
 
+> **Suspenso em 13/10/2026. Ver `docs/07`, Etapa 13.**
+
 Cinco páginas públicas. O texto abaixo é **final** — copie como está. Se precisar
 mudar, mude com intenção, não por preferência de estilo.
 

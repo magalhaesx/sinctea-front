@@ -17,10 +17,11 @@ Orientadora: Profa. Luana Leal · Entrega final: 23/11/2026
 | `docs/01-ARQUITETURA.md` | Antes de criar qualquer pasta, rota ou serviço |
 | `docs/02-DESIGN-SYSTEM.md` | Antes de escrever qualquer CSS ou componente |
 | `docs/03-TELAS-SISTEMA.md` | Antes de construir cada tela |
-| `docs/04-SITE-COMERCIAL.md` | Ao trabalhar nas páginas públicas |
+| `docs/04-SITE-COMERCIAL.md` | Suspenso em 13/10/2026 — ver `docs/07`, Etapa 13 |
 | `docs/05-ROTEIRO-CLAUDE-CODE.md` | A ordem das etapas de implementação |
 | `docs/06-VERIFICACAO-DAS-REGRAS.md` | Ao afirmar que uma regra está garantida |
 | `docs/07-BACKEND.md` | Antes de qualquer trabalho no servidor |
+| `docs/08-ADERENCIA-AO-PRE-PROJETO.md` | Ao afirmar que um objetivo do pré-projeto foi atendido |
 | `docs/PROMPT.md` | O prompt que originou a interface (entrega acadêmica) |
 | `docs/USO-DA-IA.md` | Como a IA foi empregada, e onde errou |
 
@@ -28,9 +29,9 @@ Orientadora: Profa. Luana Leal · Entrega final: 23/11/2026
 
 ## 1. O que o sistema é
 
-Sistema de informação web (PWA, offline-first) para gestão e acompanhamento
-terapêutico de pessoas com Transtorno do Espectro Autista, em contexto
-multidisciplinar.
+Sistema de informação web para gestão e acompanhamento terapêutico de pessoas
+com Transtorno do Espectro Autista, em contexto multidisciplinar. Previsto como
+PWA, com registro de sessão offline (`docs/07`, seção 3A).
 
 O diferencial não é a clínica: é a **continuidade entre os três ambientes** em que
 a pessoa vive — clínica, casa e escola. O sistema não faz diagnóstico e não
@@ -41,8 +42,9 @@ pessoas com TEA recebem no máximo duas horas semanais de terapia e 16,4% não
 recebem nenhuma. A maior parte do tempo de vigília transcorre fora do ambiente
 terapêutico.
 
-O repositório contém **duas coisas**: o site comercial em `/` e o sistema em
-`/app`. Compartilham design system e deploy. Ver `docs/01-ARQUITETURA.md`.
+O repositório contém o sistema em `/app` e, em `/`, uma página institucional, se
+houver tempo (`docs/07`, Etapa 13). Os dois compartilham design system e deploy.
+Ver `docs/01-ARQUITETURA.md`.
 
 ### Fora de escopo, declarado
 Módulo financeiro, faturamento e TISS · homologação RNDS · aplicativos nativos ·
@@ -89,15 +91,10 @@ sozinho.**
 5. **A revogação de consentimento produz efeito imediato.** Sem carência, sem cache
    que sobreviva a ela.
 
-6. **Auditoria em três momentos:** concessão de acesso, leitura de dado do
-   paciente por quem está fora da clínica — hoje, a escola — e **tentativa de
-   acesso negada**. Registro imutável.
-
-   A regra é piso, não teto: leituras internas também podem ser auditadas, e
-   várias são. Leitura por terapeuta da própria equipe, e leitura da família
-   sobre o próprio filho, são uso, não compartilhamento — o titular lendo o que é
-   dele — e não exigem registro. O `convites.obter` não é auditado: quem responde
-   pela entrega do convite é o aceite, que é.
+6. **Toda leitura e escrita de dado do paciente é registrada**, assim como a
+   concessão de acesso e a **tentativa de acesso negada**. Registro imutável. No
+   servidor, quem registra é um interceptador, e não cada função lembrando de
+   auditar (`docs/07`, Etapa 10).
 
 ### Documento clínico emitido
 
@@ -185,7 +182,7 @@ Qualidade: ISO/IEC 25010:2023. Método: Kanban com limites de trabalho em progre
 
 ## 7. Estado atual
 
-Atualizado em 12/10/2026, lendo o código — não a memória.
+Atualizado em 13/10/2026, lendo o código — não a memória.
 
 **Concluído**
 - Pré-projeto entregue em 17/08 — não pode mais ser alterado
@@ -222,6 +219,10 @@ O `docs/07` substitui as etapas 9 e 10 do `docs/05`. No código, hoje:
   - a tela 18, com acesso revogado, mostra o erro genérico com "Tentar de novo",
     e não a tela de acesso encerrado que o `docs/03` pede;
   - a confirmação de encerramento da tela 17 deixa o foco cair no `<body>`
+- A regra 6 exige o registro de toda leitura e escrita de dado do paciente, e o
+  mock registra só parte. Ele não vai ser ajustado: sai na Etapa 12, e no
+  servidor o registro é do interceptador, na Etapa 10. O que falta cobrir está
+  no achado 2 do `docs/06`
 
 **Próximo, pelo `docs/07`**
 - Etapa 10, até 26/10 — autenticação, *guards*, auditoria com *trigger* e os
@@ -229,12 +230,16 @@ O `docs/07` substitui as etapas 9 e 10 do `docs/05`. No código, hoje:
 - Etapa 11, até 09/11 — os demais serviços
 - Etapa 12, até 15/11 — a virada: o front só com a API, e `servicos/mock` removido
 - Etapa 13, de 16/11 a 23/11 — artigo, slides, vídeo e ensaio
+- Depois da Etapa 11, o offline reduzido ao registro de sessão (`docs/07`,
+  seção 3A)
 
-As entregas de documentação do cronograma original — S02 (matriz de
-rastreabilidade), S03 (BPMN) e S05 (C4, estados do Objetivo, sequência da
-sincronização) — não vivem neste repositório, e o estado delas não se lê no
-código. Da S06, a publicação em nuvem passou para o `docs/07`; DER e dicionário
-de dados não aparecem nele.
+Duas decisões aguardam a orientadora, e as datas acima serão revistas quando ela
+responder: a data final (23/11 ou 30/11) e a Trilha de Autonomia (`docs/08`).
+
+As entregas de documentação do pré-projeto — matriz de rastreabilidade, BPMN, C4
+e estados do Objetivo — não vivem neste repositório; o estado de cada uma está no
+`docs/08`. DER e dicionário de dados saem do esquema Prisma, pelo Cowork, depois
+do commit 4 da Etapa 9.
 
 **Afirmações que o código ainda não sustenta**
 
@@ -242,12 +247,14 @@ Enquanto não se resolverem, não devem ser afirmadas na defesa:
 
 1. **A meta 8.5 da ODS 8 não tem sustentação no modelo.** Ela depende de uma
    entidade de registro funcional que não existe em nenhuma das 22 classes. Ou a
-   entidade entra no modelo, ou a justificativa é reescrita.
-2. **O sistema não funciona sem rede.** A seção 1 diz "PWA, offline-first", e a
-   seção 2 promete registro offline na clínica. Não há manifesto nem *service
-   worker*. O registro de sessão (tela 7) mostra o estado da conexão e marca como
-   pendente o que ainda não subiu, mas a fila de sincronização nunca foi escrita,
-   e o `docs/07` não a prevê.
+   entidade entra no modelo, ou a justificativa é reescrita. A decisão está com a
+   orientadora (`docs/08`, decisão 2).
+2. **O sistema não funciona sem rede.** O registro de sessão offline está
+   previsto (`docs/07`, seção 3A): manifesto e *service worker* para instalar
+   como PWA, fila no IndexedDB e chave de idempotência gerada no aparelho. Até
+   ser construído, não há manifesto nem *service worker*. O registro de sessão
+   (tela 7) mostra o estado da conexão e marca como pendente o que ainda não
+   subiu, mas a fila de sincronização não existe.
 
 O hash do termo de consentimento saiu desta lista em 04/10/2026: `hashTermo`
 passou a ser `sha256:<versão>:<hex>` calculado sobre os campos que compõem o
@@ -280,7 +287,8 @@ viaja dentro do próprio `hashTermo`.
 
 **Pendências conhecidas do modelo**
 - Não existe entidade de registro funcional (ver a afirmação 1 acima)
-- Trilha de Autonomia movida para trabalhos futuros
+- Trilha de Autonomia: movida para trabalhos futuros em setembro; a decisão
+  voltou à orientadora (`docs/08`)
 
 ## 8. Divisão de trabalho entre as duas sessões de IA
 
