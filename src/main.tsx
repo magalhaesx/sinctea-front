@@ -8,7 +8,7 @@ import './index.css'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    {/* HashRouter: o site funciona no GitHub Pages sem configuracao de servidor. */}
+    {/* HashRouter: a rota fica depois do #, e o servidor so precisa entregar o index.html na raiz. */}
     <HashRouter>
       <ProvedorPreferencias>
         <ProvedorSessao>

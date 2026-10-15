@@ -13,8 +13,8 @@ import tailwindcss from '@tailwindcss/vite'
  */
 const FONTE = 'fonte'
 
-// base relativo: o site funciona em qualquer caminho do GitHub Pages
-// (usuario.github.io/qualquer-nome-de-repositorio) sem precisar reconfigurar.
+// base relativo: o mesmo build funciona na raiz, servido pelo Nest (docs/07,
+// D3), ou em qualquer outro caminho, sem precisar reconfigurar.
 export default defineConfig({
   base: './',
   plugins: [react(), tailwindcss()],

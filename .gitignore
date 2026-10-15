@@ -10,3 +10,8 @@ publicar
 servidor/.banco/
 servidor/src/gerado/
 .env
+.env.*
+!.env.exemplo
+# O SQL do papel da aplicacao, com a senha de verdade. O modelo versionado e
+# servidor/prisma/papel-aplicacao.exemplo.sql.
+servidor/prisma/papel-aplicacao.sql

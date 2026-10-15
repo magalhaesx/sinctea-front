@@ -23,7 +23,6 @@
     "@prisma/client": "7.10.0",
     "@sinctea/compartilhado": "*",
     "argon2": "0.45.1",
-    "prisma": "7.10.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2"
   },
@@ -31,6 +30,7 @@
     "@swc/core": "1.16.18",
     "@types/node": "^22.10.0",
     "embedded-postgres": "17.10.0-beta.17",
+    "prisma": "7.10.0",
     "unplugin-swc": "2.0.0"
   }
 }

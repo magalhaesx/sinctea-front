@@ -1,0 +1,13 @@
+# O que nao entra no contexto do docker build. Dependencia e build se refazem
+# dentro da imagem; segredo nao entra nem no estagio de build.
+**/node_modules
+**/dist
+servidor/.banco
+servidor/src/gerado
+**/.env*
+servidor/prisma/papel-aplicacao.sql
+.git
+.claude
+docs
+publicar
+**/*.tsbuildinfo

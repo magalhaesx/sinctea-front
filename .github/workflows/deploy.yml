@@ -1,5 +1,10 @@
-name: Publicar no GitHub Pages
+name: Publicar
 
+# docs/07, D3 e D4. Em todo push na main: testa, constroi a imagem Docker e a
+# poe para rodar; so entao migra o banco do Neon, com o papel dono. O Render
+# publica com o auto-deploy em "After CI Checks Pass": codigo que nao passou
+# aqui, ou cujo banco nao migrou, nao vai ao ar. A credencial de dono so
+# existe neste workflow, como segredo; o Render nunca a ve.
 on:
   push:
     branches: [main]
@@ -7,37 +12,94 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
+# Migracao pela metade nao pode ser cancelada por um push seguinte: os runs
+# entram em fila.
 concurrency:
-  group: pages
-  cancel-in-progress: true
+  group: publicar
+  cancel-in-progress: false
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  verificar:
+    runs-on: ubuntu-24.04
+
+    # O mesmo PostgreSQL 17 do verificar.yml (docs/07, D8).
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: sinctea
+          POSTGRES_PASSWORD: sinctea
+          POSTGRES_DB: sinctea
+          POSTGRES_INITDB_ARGS: --encoding=UTF8 --locale=C
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U sinctea"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+
+    env:
+      DATABASE_URL_TESTE: postgresql://sinctea:sinctea@localhost:5432/sinctea
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
       - run: npm ci
-      # Teste quebrado nao vira site no ar: o build so roda depois deste passo.
       - run: npm test
       - run: npm run build
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: dist
+      - run: npm run build:servidor
 
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      - name: Construir a imagem
+        run: |
+          docker build -t sinctea .
+          bytes=$(docker image inspect sinctea --format '{{.Size}}')
+          echo "::notice title=Imagem Docker::$((bytes / 1000000)) MB"
+
+      # Construir nao basta: a imagem sobe, le um banco migrado e responde nas
+      # tres rotas que o Render vai servir.
+      - name: Pôr a imagem para rodar
+        env:
+          DATABASE_URL: postgresql://sinctea:sinctea@localhost:5432/sinctea
+        run: |
+          (cd servidor && npx prisma migrate deploy)
+          ultima=$(ls -d servidor/prisma/migracoes/*/ | sort | tail -1 | xargs basename)
+          docker run -d --name sinctea --network host -e PORT=8080 -e DATABASE_URL="$DATABASE_URL" sinctea
+          trap 'docker logs sinctea' EXIT
+          for i in $(seq 1 30); do curl -sf -o /dev/null http://localhost:8080/api/saude && break; sleep 1; done
+          curl -sf http://localhost:8080/ | grep -q '<div id="root">'
+          curl -sf http://localhost:8080/api/saude | grep -q "\"migracao\":\"$ultima\""
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/api/inexistente)" = 404
+          curl -s http://localhost:8080/api/inexistente | grep -q '"statusCode":404'
+
+  migrar:
+    needs: verificar
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
     steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      # O npm ci baixa o motor de migracao do Prisma.
+      - run: npm ci
+      - name: Migrar o banco do Neon
+        working-directory: servidor
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_MIGRACAO }}
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::Falta o segredo DATABASE_URL_MIGRACAO (URL direta do dono, no Neon)."
+            exit 1
+          fi
+          # O log e publico: a linha Datasource diria o endereco do banco.
+          set -o pipefail
+          npx prisma migrate deploy 2>&1 | sed '/Datasource/d' | tee migracao.log
+          aplicadas=$(grep -oE '[0-9]{14}_[a-z_]+' migracao.log | sort -u | tr '\n' ' ')
+          echo "::notice title=Migracoes aplicadas neste run::${aplicadas:-nenhuma, o banco ja estava em dia}"
+          npx prisma migrate status 2>&1 | sed '/Datasource/d'

@@ -196,16 +196,18 @@ Atualizado em 14/10/2026, lendo o código — não a memória.
 - **Camada de serviços**: `compartilhado/src/contratos.ts` com 16 serviços; implementação
   simulada que aplica controle de acesso e auditoria; stubs de API que não
   aplicam regra nenhuma; a escolha entre as duas por `VITE_API_URL`
-- **234 testes em 15 arquivos, nos três pacotes**, rodados por um único
+- **246 testes em 17 arquivos, nos três pacotes**, rodados por um único
   `npm test` na raiz, sem passo manual. O principal ainda é
   `src/servicos/mock/regrasInviolaveis.test.ts`, que verifica as regras
-  invioláveis na camada de dados, e não na tela. Os 37 do servidor rodam contra
+  invioláveis na camada de dados, e não na tela. Os 49 do servidor rodam contra
   um PostgreSQL 17 de verdade
 - **As seis regras verificadas** em `docs/06`: para cada teste citado, a regra foi
   quebrada de propósito para confirmar que ele falha, e as quebras que não
   derrubaram teste nenhum estão registradas
 - Termo de consentimento versionado, com resumo verificável (abaixo)
-- Publicação automática no GitHub Pages, com testes antes do build; em pull
+- Em push na main, o workflow Publicar (`deploy.yml`) testa contra o
+  PostgreSQL 17, constrói a imagem Docker, põe a imagem para rodar e só então
+  migra o banco, com o papel dono. Não publica mais no GitHub Pages. Em pull
   request, `verificar.yml` roda testes e build
 - Uma tag por etapa fechada: `entrega-2026-09-14`, `etapa-6`, `etapa-7`, `etapa-8`
 
@@ -244,7 +246,12 @@ O `docs/07` substitui as etapas 9 e 10 do `docs/05`. No código, hoje:
 - Na máquina de desenvolvimento, `npm run banco -w @sinctea/servidor` sobe um
   PostgreSQL 17 embutido em `servidor/.banco/`, porta 54329, sem instalação nem
   Docker. Nos testes, um embutido descartável; no CI, o serviço `postgres:17`
-- Ainda não há Neon nem Render: é o passo 5
+- Passo 5, o deploy, com o código pronto: o `Dockerfile` (Node 22 em Debian
+  slim, só dependências de produção, sem o Prisma CLI); o Nest servindo o build
+  do front na raiz quando `PASTA_DO_FRONT` aponta para ele, com a API em `/api`
+  e 404 em JSON para o resto; e o papel `sinctea_app`, que não é dono de nada
+  (`servidor/prisma/papel-aplicacao.exemplo.sql`). As contas do Neon e do
+  Render ainda não existem
 - Os três pacotes são ESM. O front compila o fonte do compartilhado pela
   condição `fonte` do `package.json`; o servidor importa o JavaScript de
   `compartilhado/dist`, que o build dele gera antes
