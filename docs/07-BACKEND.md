@@ -246,6 +246,13 @@ da escola. Os testes das regras 1, 2, 3, 5 e 6 portados e verdes contra a API.
 Clínica (planos, sessões, evolução, atividades), relatórios, indicadores,
 gestão de usuários, área da família. O restante da suíte portado.
 
+**O cartão de estratégias passa a ser escrito pelo sistema.** Hoje o contrato só
+tem `iniciarCartao`, que cria um cartão em branco, e nenhuma tela o chama: o que
+a escola lê veio da semente. Entram criar e editar o cartão **com conteúdo** —
+título, ao menos um "o que fazer", ao menos um "o que evitar" e o sinal de
+alerta —, e o rascunho fica no formulário até ser salvo, sem cartão em branco no
+banco. A tela vem especificada no `docs/03` antes do início desta etapa.
+
 **Pronto quando:** a suíte inteira passa contra a API.
 
 ### Etapa 12 · A virada — até 15/11

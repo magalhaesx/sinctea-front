@@ -269,7 +269,9 @@ uma migração nova; **migração já aplicada não se edita**.
 | `CriterioDominio` (objeto de valor, sem identidade) | Colunas de `objetivo` |
 | Atributo `[1..*]` (`perfis`, `escopos`, `passos`, `oQueFazer`, `oQueEvitar`) | Array do PostgreSQL, com `CHECK` de pelo menos um elemento |
 | `DateTime` | `timestamptz(3)` — nunca `timestamp` sem fuso |
-| `Date` | `date` |
+| `Date` | `date`. Trafega como `"AAAA-MM-DD"` (`DataCivil`), nunca como instante, e não passa por `new Date()` para ser exibida. `validadeAte` vale **até o fim daquele dia** no fuso da instância, America/Manaus |
+| Composição (`PlanoTerapeutico ◆ Objetivo`, `Sessao ◆ RegistroAtividade`) | Chave estrangeira obrigatória, `ON DELETE RESTRICT`. Prontuário não se apaga — nem em cascata |
+| O mesmo paciente alcançável por dois caminhos | **Os caminhos concordam por construção:** chave estrangeira composta quando o caminho repetido tem um passo; *trigger* quando tem mais de um. A coluna que define o dono (`plano_terapeutico.pacienteId`, `objetivo.planoId`, `sessao.pacienteId`) não muda depois de criada |
 | Enumeração | `enum` do PostgreSQL |
 | Faixa fechada (`NivelSuporte` 1–3, intensidade 1–5, percentuais 0–100) | `CHECK` na migração |
 | Fotografia (`RegistroAuditoria.usuarioNome`, `RelatorioEvolucao.autorNome`) | Coluna própria, **sem** chave estrangeira — a fotografia sobrevive à mudança do original |
@@ -286,7 +288,8 @@ com o dono (Etapa 9, passo 5).
 
 ## 8. Dados de demonstração
 
-Cinco pacientes, três profissionais, duas escolas. Não um.
+Muitos, e não um: a semente tem 14 pacientes, 3 profissionais, 2 professores e
+2 escolas.
 
 Uma lista com um item não exercita paginação, busca, filtro, ordenação nem estado
 vazio — e é exatamente por isso que interfaces construídas sobre um registro
