@@ -113,13 +113,33 @@ endereço uns cinco minutos antes.** As 750 horas mensais cobrem um serviço lig
 o mês inteiro (31 × 24 = 744 h), se preferirem mantê-lo acordado na semana da
 apresentação.
 
-**Região do Neon:** escolham uma região **AWS**. A única regra de exclusão por
-inatividade que o Neon publica vale para três regiões Azure.
+**Regiões, decididas em 15/10:**
+- Render em **Virginia**;
+- Neon em **AWS US East (N. Virginia)**, `aws-us-east-1`.
+
+Servidor e banco ficam na mesma região, porque cada consulta atravessa essa
+distância, e uma tela faz várias consultas. O Neon tem São Paulo, mas o Render
+não tem região na América do Sul. Separar os dois custaria mais em latência do
+que aproximar do usuário ganharia. Nas regiões Azure, o Neon apaga projeto
+inativo, e não se cria mais projeto nelas.
+
+**Com dado real, isso teria de ser revisto:** hospedar dado de saúde nos Estados
+Unidos é transferência internacional (LGPD, art. 33). Com registros fictícios, não
+se aplica. Fica declarado como limitação no artigo.
+
+**Migrações fora do Render.** O comando de pré-deploy do Render é só do plano
+pago. As migrações rodam no GitHub Actions, com o papel dono do banco, depois dos
+testes. O Render publica com o auto-deploy em *After CI Checks Pass*: só sobe
+código cujo commit passou nos testes e já migrou o banco. Assim, a credencial de
+dono nunca entra no servidor.
 
 Fontes, conferidas em 13/10/2026: [Render — Deploy for Free](https://render.com/docs/free)
 · [Neon — limites do plano gratuito](https://neon.com/faqs/free-plan-limits-and-quotas)
 · [histórico de mudanças do plano gratuito do Neon](https://agentdeals.dev/vendor/neon)
 · [fim do suporte ao Node 20](https://customerhub.wpvip.com/lobby/2026/01/29/end-of-life-for-node-js-v20/).
+Conferidas em 15/10/2026: [Render — deploys e pré-deploy](https://render.com/docs/deploys)
+· [Neon — regiões](https://neon.com/docs/introduction/regions)
+· [Neon — acesso ao banco e papéis](https://neon.com/docs/manage/database-access).
 Planos gratuitos mudam: confiram de novo na véspera.
 
 ### D5 · Autenticação de verdade
