@@ -347,10 +347,12 @@ model OcorrenciaComportamental {
   ocorrenciaEscolarId String?   @unique @db.Uuid
 
   paciente          Paciente           @relation(fields: [pacienteId], references: [id])
-  /// Composta: a sessao tem de ser do mesmo paciente.
-  sessao            Sessao?            @relation(fields: [sessaoId, pacienteId], references: [id, pacienteId], onDelete: Restrict)
+  /// Composta: a sessao tem de ser do mesmo paciente. Nas cinco compostas, a
+  /// atualizacao e Restrict: com Cascade, trocar o paciente do alvo levaria
+  /// esta linha junto, em silencio, para outro paciente.
+  sessao            Sessao?            @relation(fields: [sessaoId, pacienteId], references: [id, pacienteId], onDelete: Restrict, onUpdate: Restrict)
   /// Composta: a ocorrencia da escola que a gerou tem de ser do mesmo paciente.
-  ocorrenciaEscolar OcorrenciaEscolar? @relation(fields: [ocorrenciaEscolarId, pacienteId], references: [id, pacienteId], onDelete: Restrict)
+  ocorrenciaEscolar OcorrenciaEscolar? @relation(fields: [ocorrenciaEscolarId, pacienteId], references: [id, pacienteId], onDelete: Restrict, onUpdate: Restrict)
 
   /// Exigido pelo Prisma para a relacao 1-0..1 composta com a ocorrencia da
   /// escola. Ja vale por ocorrenciaEscolarId ser unico sozinho.
@@ -507,9 +509,9 @@ model VinculoEscolar {
   status          StatusVinculo
 
   /// Composta: o consentimento tem de ser deste paciente.
-  consentimento Consentimento       @relation(fields: [consentimentoId, pacienteId], references: [id, pacienteId])
+  consentimento Consentimento       @relation(fields: [consentimentoId, pacienteId], references: [id, pacienteId], onUpdate: Restrict)
   /// Composta: o convite tem de ser deste consentimento.
-  convite       ConviteEscolar      @relation(fields: [conviteId, consentimentoId], references: [id, consentimentoId])
+  convite       ConviteEscolar      @relation(fields: [conviteId, consentimentoId], references: [id, consentimentoId], onUpdate: Restrict)
   paciente      Paciente            @relation(fields: [pacienteId], references: [id])
   professor     ProfessorAEE        @relation(fields: [professorId], references: [usuarioId])
   ocorrencias   OcorrenciaEscolar[]
@@ -537,7 +539,7 @@ model OcorrenciaEscolar {
   contexto     String
 
   /// Composta: o vinculo tem de ser deste paciente e deste professor.
-  vinculo          VinculoEscolar            @relation(fields: [vinculoId, pacienteId, professorId], references: [id, pacienteId, professorId])
+  vinculo          VinculoEscolar            @relation(fields: [vinculoId, pacienteId, professorId], references: [id, pacienteId, professorId], onUpdate: Restrict)
   paciente         Paciente                  @relation(fields: [pacienteId], references: [id])
   professor        ProfessorAEE              @relation(fields: [professorId], references: [usuarioId])
   ocorrenciaGerada OcorrenciaComportamental?

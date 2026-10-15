@@ -56,6 +56,14 @@ async function novaOcorrenciaEscolar(pacienteId = m.pacienteA, professorId = m.p
   return id
 }
 
+function comportamental(pacienteId: string, extra: { sessaoId?: string; ocorrenciaEscolarId?: string }) {
+  return prisma.ocorrenciaComportamental.create({ data: {
+    pacienteId, origem: extra.ocorrenciaEscolarId ? 'ESCOLA' : 'CLINICA', ocorridaEm: agora,
+    antecedente: 'Antecedente.', comportamento: 'Comportamento.', consequencia: 'Consequencia.',
+    intensidade: 2, ...extra,
+  } })
+}
+
 beforeAll(async () => {
   const banco = await criarBancoMigrado(inject('urlAdministrativa'), 'sinctea_caminhos')
   apagar = banco.apagar
@@ -138,13 +146,6 @@ describe('chaves estrangeiras compostas', () => {
     await expect(novaOcorrenciaEscolar(m.pacienteA, m.professor)).resolves.toBeTruthy()
   })
 
-  const comportamental = (pacienteId: string, extra: { sessaoId?: string; ocorrenciaEscolarId?: string }) =>
-    prisma.ocorrenciaComportamental.create({ data: {
-      pacienteId, origem: extra.ocorrenciaEscolarId ? 'ESCOLA' : 'CLINICA', ocorridaEm: agora,
-      antecedente: 'Antecedente.', comportamento: 'Comportamento.', consequencia: 'Consequencia.',
-      intensidade: 2, ...extra,
-    } })
-
   it('ocorrencia_comportamental: a ocorrencia da escola que a gerou e do mesmo paciente', async () => {
     await expect(comportamental(m.pacienteB, { ocorrenciaEscolarId: await novaOcorrenciaEscolar() }))
       .rejects.toThrow(RECUSA_FK('ocorrencia_comportamental_ocorrenciaEscolarId_pacienteId_fkey'))
@@ -219,5 +220,48 @@ describe('o dono nao muda, e prontuario nao se apaga', () => {
     await expect(prisma.planoTerapeutico.delete({ where: { id: m.planoB } }))
       .rejects.toThrow(/objetivo_planoId_fkey/)
     expect(await prisma.objetivo.count({ where: { planoId: m.planoB } })).toBe(1)
+  })
+})
+
+/**
+ * Sem cascata na atualizacao (migracao chaves_compostas_sem_cascata). Com
+ * ON UPDATE CASCADE, trocar o paciente do consentimento levaria junto, em
+ * silencio, o vinculo e as ocorrencias para outro paciente. A recusa e
+ * conferida pelo nome da chave de quem aponta: com Cascade, ou a troca
+ * passaria, ou quem recusaria seria outra chave, mais adiante na cadeia.
+ */
+describe('sem cascata na atualizacao', () => {
+  it('trocar o paciente de um consentimento com vinculo e recusado', async () => {
+    await expect(prisma.consentimento.update({ where: { id: m.consentimentoA }, data: { pacienteId: m.pacienteB } }))
+      .rejects.toThrow(RECUSA_FK('vinculo_escolar_consentimentoId_pacienteId_fkey'))
+    const vinculo = await prisma.vinculoEscolar.findUniqueOrThrow({ where: { id: m.vinculoA } })
+    expect(vinculo.pacienteId).toBe(m.pacienteA)
+    expect(await prisma.ocorrenciaEscolar.count({ where: { vinculoId: m.vinculoA, pacienteId: m.pacienteB } })).toBe(0)
+  })
+
+  it('trocar o paciente ou o professor de um vinculo com ocorrencia e recusado', async () => {
+    const nome = RECUSA_FK('ocorrencia_escolar_vinculoId_pacienteId_professorId_fkey')
+    await expect(prisma.vinculoEscolar.update({ where: { id: m.vinculoA }, data: { pacienteId: m.pacienteB } }))
+      .rejects.toThrow(nome)
+    await expect(prisma.vinculoEscolar.update({ where: { id: m.vinculoA }, data: { professorId: m.outroProfessor } }))
+      .rejects.toThrow(nome)
+  })
+
+  it('trocar o consentimento de um convite ja aceito e recusado', async () => {
+    await expect(prisma.conviteEscolar.update({ where: { id: m.conviteA }, data: { consentimentoId: m.consentimentoB } }))
+      .rejects.toThrow(RECUSA_FK('vinculo_escolar_conviteId_consentimentoId_fkey'))
+  })
+
+  it('trocar o paciente de uma ocorrencia da escola que ja gerou evento comportamental e recusado', async () => {
+    const ocorrenciaEscolarId = await novaOcorrenciaEscolar()
+    await comportamental(m.pacienteA, { ocorrenciaEscolarId })
+    await expect(prisma.ocorrenciaEscolar.update({ where: { id: ocorrenciaEscolarId }, data: { pacienteId: m.pacienteB } }))
+      .rejects.toThrow(RECUSA_FK('ocorrencia_comportamental_ocorrenciaEscolarId_pacienteId_fkey'))
+  })
+
+  it('alterar outra coluna do consentimento e do vinculo continua permitido', async () => {
+    await expect(prisma.consentimento.update({ where: { id: m.consentimentoA }, data: { hashTermo: 'sha256:2026-10:1' } }))
+      .resolves.toBeTruthy()
+    await expect(prisma.vinculoEscolar.update({ where: { id: m.vinculoA }, data: { turma: '2 B' } })).resolves.toBeTruthy()
   })
 })

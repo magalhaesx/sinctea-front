@@ -196,10 +196,10 @@ Atualizado em 14/10/2026, lendo o código — não a memória.
 - **Camada de serviços**: `compartilhado/src/contratos.ts` com 16 serviços; implementação
   simulada que aplica controle de acesso e auditoria; stubs de API que não
   aplicam regra nenhuma; a escolha entre as duas por `VITE_API_URL`
-- **229 testes em 15 arquivos, nos três pacotes**, rodados por um único
+- **234 testes em 15 arquivos, nos três pacotes**, rodados por um único
   `npm test` na raiz, sem passo manual. O principal ainda é
   `src/servicos/mock/regrasInviolaveis.test.ts`, que verifica as regras
-  invioláveis na camada de dados, e não na tela. Os 32 do servidor rodam contra
+  invioláveis na camada de dados, e não na tela. Os 37 do servidor rodam contra
   um PostgreSQL 17 de verdade
 - **As seis regras verificadas** em `docs/06`: para cada teste citado, a regra foi
   quebrada de propósito para confirmar que ele falha, e as quebras que não
@@ -230,6 +230,9 @@ O `docs/07` substitui as etapas 9 e 10 do `docs/05`. No código, hoje:
   de sessão, os objetivos do relatório e o dono fixo de plano, objetivo e
   sessão. Composição sem cascata: apagar plano com objetivo é recusado. Entraram
   também os índices das chaves estrangeiras e dos filtros (`docs/06`, seção 7)
+- A terceira, `chaves_compostas_sem_cascata`, tira a cascata da atualização das
+  cinco chaves compostas: trocar o paciente de um consentimento com vínculo é
+  recusado, em vez de levar o vínculo e as ocorrências junto
 - **Datas civis** — nascimento, validade do consentimento, período do relatório,
   início e revisão do plano, dia da atividade de casa — são `DataCivil`,
   "AAAA-MM-DD", sem hora nem fuso, do banco à tela. A validade vale o dia
