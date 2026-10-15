@@ -155,9 +155,10 @@ operações de leitura e escrita sobre dado sensível registradas*. A redação
 revogada. No servidor isso é barato: um **interceptador** registra toda leitura e
 escrita de dado do paciente, sem depender de cada função lembrar de auditar.
 
-**Auditoria só cresce, de verdade.** Um *trigger* no PostgreSQL recusa `UPDATE` e
-`DELETE` na tabela de auditoria. Um teste de integração tenta apagar um registro e
-espera a recusa. É o que sobe a regra 6 de "garantida por construção" para
+**Auditoria só cresce, de verdade.** Um *trigger* no PostgreSQL recusa `UPDATE`,
+`DELETE` e `TRUNCATE` na tabela de auditoria — e na de relatórios emitidos, que
+também não podem mudar depois de saírem. Um teste de integração tenta cada
+operação e espera a recusa. É o que sobe a regra 6 de "garantida por construção" para
 "provada por teste" — e resolve o limite que a seção 6.1.3 do artigo declara hoje.
 
 ### D8 · Os testes atravessam
@@ -166,7 +167,10 @@ espera a recusa. É o que sobe a regra 6 de "garantida por construção" para
 - O `regrasInviolaveis.test.ts` é **portado como teste de integração da API**,
   contra um banco de teste. É ele que diz quando a API está pronta: quando passa a
   mesma suíte que o mock passava.
-- No CI, o PostgreSQL de teste sobe como serviço do próprio GitHub Actions.
+- No CI, o PostgreSQL de teste sobe como serviço do próprio GitHub Actions. Na
+  máquina de desenvolvimento, é um PostgreSQL 17 embutido (pacote
+  `embedded-postgres`), sem instalação nem Docker. Os dois na versão 17, a mesma
+  do Neon.
 - Na virada, as **22 quebras** do `docs/06` são refeitas contra o servidor.
 
 ### D9 · Uma linha de transparência
@@ -216,17 +220,22 @@ slides e o ensaio.
    não é feita** — o mock vai embora, e no servidor a proteção é o *trigger*.
 3. `npm workspaces` e a pasta `compartilhado/`, com tipos, contratos e domínio. Os
    177 testes continuam verdes.
-4. `servidor/` com NestJS, o esquema Prisma das 22 classes, a primeira migração e a
-   semente portada do `dados.ts`.
+4. O esquema Prisma das 22 classes, a primeira migração, a semente portada do
+   `dados.ts` e `/api/saude` lendo o banco, tudo contra o PostgreSQL embutido. A
+   primeira migração já traz o *trigger* que torna imutáveis a auditoria e o
+   relatório emitido, antecipado da Etapa 10.
 5. **Deploy de ponta a ponta antes de qualquer serviço:** o endereço público abre
-   o front, e `/api/saude` responde lendo o banco.
+   o front, e `/api/saude` responde lendo o banco. No Neon, a aplicação conecta
+   com um papel que **não é dono** das tabelas, porque o dono poderia desligar o
+   *trigger*; as migrações rodam com o dono.
 
 **Pronto quando:** o endereço público existe e lê o Neon. Fazer o deploy no
 começo, e não no fim, é o que tira o maior risco do cronograma da frente.
 
 ### Etapa 10 · Autenticação e fronteira — até 26/10
 
-Autenticação (D5), os *guards* (D7), o serviço de auditoria com o *trigger*, e os
+Autenticação (D5), os *guards* (D7), o serviço de auditoria com o interceptador
+(o *trigger* já entrou na Etapa 9), e os
 módulos do caminho crítico das regras: pacientes, consentimentos, convites e área
 da escola. Os testes das regras 1, 2, 3, 5 e 6 portados e verdes contra a API.
 
