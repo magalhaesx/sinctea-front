@@ -16,8 +16,9 @@ import { calcularExpiracaoConvite } from '@sinctea/compartilhado/dominio/regras'
  * registros de conselho levam o sufixo FICT. Nao substitua por dados reais,
  * nem em desenvolvimento.
  *
- * Cinco pacientes, tres profissionais e duas escolas (docs/01, secao 6): o
- * suficiente para exercitar paginacao, busca, filtro e estado vazio.
+ * Quatorze pacientes, tres profissionais, dois professores e duas escolas
+ * (docs/01, secao 8): o suficiente para exercitar paginacao, busca, filtro e
+ * estado vazio.
  *
  * As datas sao relativas ao momento em que a aplicacao abre, para que os
  * alertas (plano sem revisao, paciente sem sessao, consentimento vencendo)
