@@ -14,5 +14,8 @@ export default defineConfig({
     // Sem env(): ele lanca erro sem a variavel, e o `prisma generate` do
     // postinstall roda num `npm ci` que nao tem banco nenhum.
     url: process.env.DATABASE_URL ?? '',
+    // Banco-sombra do `prisma migrate diff --from-migrations`, que e como se
+    // gera migracao nova fora de um terminal interativo. Ver .env.exemplo.
+    shadowDatabaseUrl: process.env.SHADOW_DATABASE_URL,
   },
 })

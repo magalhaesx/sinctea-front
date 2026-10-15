@@ -240,7 +240,8 @@ muda o outro.
 
 ## 7. Servidor
 
-Desde o passo 4 da Etapa 9 (14/10/2026), o servidor tem banco: PostgreSQL 17,
+Desde o passo 4 da Etapa 9 (14/10/2026), e com a migração `caminhos_coerentes`
+do passo 4b, o servidor tem banco: PostgreSQL 17,
 com o esquema em `servidor/prisma/schema.prisma` e a primeira migração em
 `servidor/prisma/migracoes/`. Os testes do servidor rodam contra um banco de
 verdade: um PostgreSQL 17 embutido e descartável na máquina de desenvolvimento,
@@ -251,6 +252,7 @@ servidor, a primeira garantia que muda de categoria é a imutabilidade.
 |---|---|---|---|
 | **A trilha de auditoria e o relatório emitido só crescem** (regra 6; documento clínico emitido) | Migração inicial: a função `recusar_alteracao()` e quatro *triggers* — `BEFORE UPDATE OR DELETE`, por linha, e `BEFORE TRUNCATE`, por comando, em `registro_auditoria` e em `relatorio_evolucao`. | `test/imutabilidade.test.ts`, nas duas tabelas: o INSERT passa; UPDATE e DELETE pelo cliente do Prisma são recusados; UPDATE, DELETE e TRUNCATE por SQL cru são recusados; a linha continua como foi gravada. | **O dono da tabela pode desligar o *trigger*** (`ALTER TABLE … DISABLE TRIGGER`) ou apagar a função. A proteção é a aplicação conectar com um papel que não é dono, e isso é do passo 5 — ainda não existe nem tem teste. |
 | **Faixas fechadas e atributos [1..*]** (`docs/01`, seção 7) | Onze CHECKs na migração inicial. | `test/checks.test.ts`: `nivelSuporte` 4, intensidade 6 e escopos vazio são recusados, cada um conferido pelo nome da restrição, com o valor de dentro da faixa passando ao lado. | **Só três dos onze CHECKs têm teste.** Os de intensidade da ocorrência escolar, dos dois percentuais e de `perfis`, `passos`, `oQueFazer`, `oQueEvitar` e `objetivoIds` existem por construção. |
+| **Caminhos coerentes:** quando uma linha chega a outra por dois caminhos, os dois levam ao mesmo lugar | Migração `caminhos_coerentes`: cinco chaves estrangeiras compostas — `vinculo_escolar` → consentimento e → convite, `ocorrencia_escolar` → vínculo, `ocorrencia_comportamental` → ocorrência da escola e → sessão — e três funções de *trigger*: o objetivo de atividade de casa e de registro de sessão é do mesmo paciente; os objetivos do relatório existem e são do paciente; o dono de plano, objetivo e sessão não muda. Composição sem cascata: apagar plano com objetivo ou sessão com registro é recusado. | `test/caminhos.test.ts`: para cada chave e cada *trigger*, o caso incoerente é recusado pelo nome da restrição ou pela mensagem, e o coerente passa; trocar o dono de plano, objetivo ou sessão é recusado; apagar um plano com objetivos é recusado. | As chaves compostas têm `ON UPDATE CASCADE`, o padrão do Prisma: se o paciente de um consentimento mudasse, a mudança desceria, coerente, até o vínculo e as ocorrências. Só plano, objetivo e sessão têm dono fixo por *trigger*. Nenhuma operação do contrato muda o paciente de um consentimento. |
 | **A semente é a do mock, e só fictícia** | `servidor/prisma/semente.ts`, sobre `semente/dados.ts`, portado do mock. | `test/semente.test.ts`: a contagem de cada uma das 22 tabelas é a dos dados, e nenhuma está vazia; toda senha está em argon2id; o hash de cada relatório é o do conteúdo gravado; o resumo de cada termo confere com o consentimento gravado; todo e-mail é `.example`; nenhum token de convite é fixo; a semente se recusa sem senha e com usuário no banco. | A contagem vem dos mesmos dados que a semente grava: prova que nada se perdeu na gravação, e não que os dados estão certos. |
 | **A dependência entre pacotes só vai num sentido** (`docs/01`, seção 1) | — | `src/arquitetura.test.ts`: `compartilhado/` não importa de `src/` nem de `servidor/`; `servidor/` não importa de `src/`; `src/` não importa de `servidor/` nem de `@prisma`. | Confere só o texto dos imports. Um import montado em tempo de execução (`import(variavel)`) passaria. |
 
@@ -263,6 +265,10 @@ servidor, a primeira garantia que muda de categoria é a imutabilidade.
 | Migração sem o CHECK de `nivelSuporte` | 1: *nivelSuporte 4 e recusado; 3 passa* |
 | `servidor/` importando de `src/` por caminho relativo | 1 |
 | `src/` importando de `servidor/` por caminho relativo | 1 |
+| Chave composta `vinculo_escolar(consentimentoId, pacienteId)` rebaixada a simples | 1: *vinculo_escolar: o consentimento e do mesmo paciente* |
+| Chave composta `ocorrencia_escolar(vinculoId, pacienteId, professorId)` rebaixada a simples | 1: *ocorrencia_escolar: o vinculo e do mesmo paciente e do mesmo professor* |
+| Sem o *trigger* `registro_atividade_mesmo_paciente` | 1: *registro_atividade: o objetivo e do paciente da sessao* |
+| Sem o *trigger* `plano_dono_fixo` | 1: *trocar o paciente do plano, o plano do objetivo ou o paciente da sessao e recusado* |
 | `src/` importando `@prisma/client`, `@prisma/adapter-pg`, `prisma/config` ou `@sinctea/servidor` | 1 em cada caso. **A de `@prisma/client` passou na primeira vez**: a expressão regular exigia uma barra depois de `@prisma/`. Corrigida, as quatro falham |
 
 Cada quebra foi desfeita depois de rodar, e a migração voltou idêntica, byte a

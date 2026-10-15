@@ -16,6 +16,8 @@ import { fileURLToPath } from 'node:url'
 const PASTA = fileURLToPath(new URL('../.banco/', import.meta.url))
 const PORTA = 54329
 const NOME = 'sinctea'
+/** Banco-sombra do `prisma migrate diff`: o Prisma o apaga e recria. */
+const SOMBRA = 'sinctea_sombra'
 
 const postgres = new EmbeddedPostgres({
   databaseDir: PASTA,
@@ -32,8 +34,10 @@ await postgres.start()
 
 const cliente = postgres.getPgClient('postgres', 'localhost')
 await cliente.connect()
-const existe = await cliente.query('SELECT 1 FROM pg_database WHERE datname = $1', [NOME])
-if (existe.rowCount === 0) await cliente.query(`CREATE DATABASE ${NOME}`)
+for (const banco of [NOME, SOMBRA]) {
+  const existe = await cliente.query('SELECT 1 FROM pg_database WHERE datname = $1', [banco])
+  if (existe.rowCount === 0) await cliente.query(`CREATE DATABASE ${banco}`)
+}
 await cliente.end()
 
 console.log(`PostgreSQL no ar: postgresql://sinctea:sinctea@localhost:${PORTA}/${NOME}`)

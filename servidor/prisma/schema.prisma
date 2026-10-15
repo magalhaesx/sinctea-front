@@ -159,11 +159,11 @@ model Profissional {
   especialidade    String
   registroConselho String
 
-  usuario              Usuario            @relation(fields: [usuarioId], references: [id])
-  pacientesDoCaso      Paciente[]         @relation("ResponsavelPeloCaso")
-  equipes              EquipePaciente[]
-  sessoesConduzidas    Sessao[]
-  planosDeQueEAutor    PlanoTerapeutico[]
+  usuario           Usuario            @relation(fields: [usuarioId], references: [id])
+  pacientesDoCaso   Paciente[]         @relation("ResponsavelPeloCaso")
+  equipes           EquipePaciente[]
+  sessoesConduzidas Sessao[]
+  planosDeQueEAutor PlanoTerapeutico[]
 
   @@map("profissional")
 }
@@ -225,6 +225,7 @@ model EquipePaciente {
   profissional Profissional @relation(fields: [profissionalId], references: [usuarioId])
 
   @@id([pacienteId, profissionalId])
+  @@index([profissionalId])
   @@map("paciente_equipe")
 }
 
@@ -238,6 +239,8 @@ model VinculoFamiliar {
   responsavel Responsavel @relation(fields: [responsavelId], references: [usuarioId])
   paciente    Paciente    @relation(fields: [pacienteId], references: [id])
 
+  @@index([responsavelId])
+  @@index([pacienteId])
   @@map("vinculo_familiar")
 }
 
@@ -258,6 +261,10 @@ model Sessao {
   registros    RegistroAtividade[]
   ocorrencias  OcorrenciaComportamental[]
 
+  /// Alvo da chave composta de ocorrencia_comportamental.
+  @@unique([id, pacienteId])
+  @@index([pacienteId])
+  @@index([profissionalId, inicioPrevistoEm])
   @@map("sessao")
 }
 
@@ -270,9 +277,12 @@ model RegistroAtividade {
   resultado  Resultado
   ocorridoEm DateTime  @db.Timestamptz(3)
 
-  sessao   Sessao   @relation(fields: [sessaoId], references: [id], onDelete: Cascade)
+  /// Restrict, e nao Cascade: prontuario nao se apaga, nem em cascata.
+  sessao   Sessao   @relation(fields: [sessaoId], references: [id], onDelete: Restrict)
   objetivo Objetivo @relation(fields: [objetivoId], references: [id])
 
+  @@index([sessaoId])
+  @@index([objetivoId])
   @@map("registro_atividade")
 }
 
@@ -290,6 +300,7 @@ model PlanoTerapeutico {
   autor     Profissional @relation(fields: [autorId], references: [usuarioId])
   objetivos Objetivo[]
 
+  @@index([pacienteId])
   @@map("plano_terapeutico")
 }
 
@@ -310,11 +321,13 @@ model Objetivo {
   /// CriterioDominio.
   sessoesConsecutivas Int
 
-  plano      PlanoTerapeutico    @relation(fields: [planoId], references: [id], onDelete: Cascade)
+  /// Restrict, e nao Cascade: apagar o plano nao leva os objetivos junto.
+  plano      PlanoTerapeutico    @relation(fields: [planoId], references: [id], onDelete: Restrict)
   registros  RegistroAtividade[]
   atividades AtividadeCasa[]
   cartoes    CartaoEstrategia[]
 
+  @@index([planoId])
   @@map("objetivo")
 }
 
@@ -334,9 +347,15 @@ model OcorrenciaComportamental {
   ocorrenciaEscolarId String?   @unique @db.Uuid
 
   paciente          Paciente           @relation(fields: [pacienteId], references: [id])
-  sessao            Sessao?            @relation(fields: [sessaoId], references: [id])
-  ocorrenciaEscolar OcorrenciaEscolar? @relation(fields: [ocorrenciaEscolarId], references: [id])
+  /// Composta: a sessao tem de ser do mesmo paciente.
+  sessao            Sessao?            @relation(fields: [sessaoId, pacienteId], references: [id, pacienteId], onDelete: Restrict)
+  /// Composta: a ocorrencia da escola que a gerou tem de ser do mesmo paciente.
+  ocorrenciaEscolar OcorrenciaEscolar? @relation(fields: [ocorrenciaEscolarId, pacienteId], references: [id, pacienteId], onDelete: Restrict)
 
+  /// Exigido pelo Prisma para a relacao 1-0..1 composta com a ocorrencia da
+  /// escola. Ja vale por ocorrenciaEscolarId ser unico sozinho.
+  @@unique([ocorrenciaEscolarId, pacienteId])
+  @@index([pacienteId, ocorridaEm])
   @@map("ocorrencia_comportamental")
 }
 
@@ -363,6 +382,7 @@ model RelatorioEvolucao {
 
   paciente Paciente @relation(fields: [pacienteId], references: [id])
 
+  @@index([pacienteId, emitidoEm])
   @@map("relatorio_evolucao")
 }
 
@@ -385,6 +405,7 @@ model AtividadeCasa {
   objetivo  Objetivo                @relation(fields: [objetivoId], references: [id])
   execucoes ExecucaoAtividadeCasa[]
 
+  @@index([pacienteId])
   @@map("atividade_casa")
 }
 
@@ -399,6 +420,7 @@ model ExecucaoAtividadeCasa {
   atividade   AtividadeCasa @relation(fields: [atividadeId], references: [id])
   responsavel Responsavel   @relation(fields: [responsavelId], references: [usuarioId])
 
+  @@index([atividadeId])
   @@map("execucao_atividade_casa")
 }
 
@@ -415,6 +437,7 @@ model CartaoEstrategia {
 
   objetivo Objetivo @relation(fields: [objetivoId], references: [id])
 
+  @@index([objetivoId])
   @@map("cartao_estrategia")
 }
 
@@ -448,6 +471,9 @@ model Consentimento {
   convites    ConviteEscolar[]
   vinculos    VinculoEscolar[]
 
+  /// Alvo da chave composta de vinculo_escolar.
+  @@unique([id, pacienteId])
+  @@index([pacienteId])
   @@map("consentimento")
 }
 
@@ -462,6 +488,9 @@ model ConviteEscolar {
   consentimento Consentimento   @relation(fields: [consentimentoId], references: [id])
   vinculo       VinculoEscolar?
 
+  /// Alvo da chave composta de vinculo_escolar.
+  @@unique([id, consentimentoId])
+  @@index([consentimentoId])
   @@map("convite_escolar")
 }
 
@@ -477,12 +506,20 @@ model VinculoEscolar {
   atuacao         String
   status          StatusVinculo
 
-  consentimento Consentimento       @relation(fields: [consentimentoId], references: [id])
-  convite       ConviteEscolar      @relation(fields: [conviteId], references: [id])
+  /// Composta: o consentimento tem de ser deste paciente.
+  consentimento Consentimento       @relation(fields: [consentimentoId, pacienteId], references: [id, pacienteId])
+  /// Composta: o convite tem de ser deste consentimento.
+  convite       ConviteEscolar      @relation(fields: [conviteId, consentimentoId], references: [id, consentimentoId])
   paciente      Paciente            @relation(fields: [pacienteId], references: [id])
   professor     ProfessorAEE        @relation(fields: [professorId], references: [usuarioId])
   ocorrencias   OcorrenciaEscolar[]
 
+  /// Alvo da chave composta de ocorrencia_escolar.
+  @@unique([id, pacienteId, professorId])
+  /// Exigido pelo Prisma para a relacao 1-0..1 composta com o convite. Ja vale
+  /// por conviteId ser unico sozinho: nao restringe nada a mais.
+  @@unique([conviteId, consentimentoId])
+  @@index([professorId, pacienteId])
   @@map("vinculo_escolar")
 }
 
@@ -499,11 +536,14 @@ model OcorrenciaEscolar {
   intensidade  Int
   contexto     String
 
-  vinculo            VinculoEscolar            @relation(fields: [vinculoId], references: [id])
-  paciente           Paciente                  @relation(fields: [pacienteId], references: [id])
-  professor          ProfessorAEE              @relation(fields: [professorId], references: [usuarioId])
-  ocorrenciaGerada   OcorrenciaComportamental?
+  /// Composta: o vinculo tem de ser deste paciente e deste professor.
+  vinculo          VinculoEscolar            @relation(fields: [vinculoId, pacienteId, professorId], references: [id, pacienteId, professorId])
+  paciente         Paciente                  @relation(fields: [pacienteId], references: [id])
+  professor        ProfessorAEE              @relation(fields: [professorId], references: [usuarioId])
+  ocorrenciaGerada OcorrenciaComportamental?
 
+  /// Alvo da chave composta de ocorrencia_comportamental.
+  @@unique([id, pacienteId])
   @@map("ocorrencia_escolar")
 }
 
@@ -529,5 +569,7 @@ model RegistroAuditoria {
 
   usuario Usuario? @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
 
+  @@index([pacienteId, ocorridoEm])
+  @@index([usuarioId])
   @@map("registro_auditoria")
 }

@@ -18,6 +18,8 @@ const RECUSA = /registro imutavel/
 let prisma: PrismaClient
 let apagar: () => Promise<void>
 let pacienteId: string
+/** Um objetivo real do paciente: o relatorio so abrange objetivo do proprio paciente. */
+let objetivoId: string
 
 beforeAll(async () => {
   const banco = await criarBancoMigrado(inject('urlAdministrativa'), 'sinctea_imutavel')
@@ -38,6 +40,14 @@ beforeAll(async () => {
     id: pacienteId, nome: 'Paciente Ficticio', dataNascimento: new Date('2019-01-01T00:00:00Z'),
     nivelSuporte: 2, profissionalResponsavelId: profissional, ativo: true,
   } })
+  const plano = await prisma.planoTerapeutico.create({ data: {
+    pacienteId, autorId: profissional, status: 'VIGENTE',
+    dataInicio: new Date('2026-01-01T00:00:00Z'), dataRevisao: new Date('2026-07-01T00:00:00Z'),
+  } })
+  objetivoId = (await prisma.objetivo.create({ data: {
+    planoId: plano.id, dominio: 'Comunicacao', descricaoTecnica: 'Tecnica.', descricaoAcessivel: 'Acessivel.',
+    status: 'EM_AQUISICAO', percentualAtual: 50, percentualMinimo: 80, sessoesConsecutivas: 3,
+  } })).id
 })
 
 afterAll(async () => {
@@ -74,7 +84,7 @@ const tabelas: Tabela[] = [
     nome: 'relatorio_evolucao',
     coluna: 'consideracoes',
     inserir: async () => (await prisma.relatorioEvolucao.create({ data: {
-      pacienteId, objetivoIds: [uuidV7()], periodoInicio: new Date('2026-09-01T00:00:00Z'),
+      pacienteId, objetivoIds: [objetivoId], periodoInicio: new Date('2026-09-01T00:00:00Z'),
       periodoFim: new Date('2026-09-30T00:00:00Z'), destinatario: 'PROFISSIONAIS',
       consideracoes: 'Leitura de teste.', autorNome: 'Profissional Ficticia',
       autorRegistro: 'CRFa 0000-FICT', emitidoEm: new Date(), conteudoEmitido: '{}',
