@@ -5,6 +5,7 @@ import type {
   Resultado,
   Sessao, VinculoEscolar, VinculoFamiliar, ConviteEscolar,
 } from '@sinctea/compartilhado'
+import { diaCivilEm } from '@sinctea/compartilhado/dominio/datas'
 import { calcularExpiracaoConvite } from '@sinctea/compartilhado/dominio/regras'
 import { randomBytes } from 'node:crypto'
 
@@ -20,6 +21,7 @@ import { randomBytes } from 'node:crypto'
  *
  * O que mudou em relacao ao mock:
  * - as horas sao de Manaus, e nao da maquina: o Render roda em UTC;
+ * - as datas civis ja nascem "AAAA-MM-DD", no calendario de Manaus;
  * - os tokens de convite sao aleatorios, e nao os fixos do mock: o endereco e
  *   publico, e token conhecido e porta de entrada;
  * - nao ha senha aqui. Ela vem de SENHA_SEMENTE, e vira hash argon2id;
@@ -45,11 +47,6 @@ export function emManaus(agora: Date, dias: number, hora = 14, minuto = 0): stri
   const ms = Date.UTC(relogioDeManaus.getUTCFullYear(), relogioDeManaus.getUTCMonth(),
     relogioDeManaus.getUTCDate(), hora, minuto)
   return new Date(ms - DESLOCAMENTO_MANAUS_MS).toISOString()
-}
-
-/** O dia, no calendario de Manaus, em que cai um instante: "AAAA-MM-DD". */
-export function diaEmManaus(iso: string): string {
-  return new Date(Date.parse(iso) + DESLOCAMENTO_MANAUS_MS).toISOString().slice(0, 10)
 }
 
 /** Token de convite: 32 caracteres hexadecimais, como o mock gera para os novos. */
@@ -82,6 +79,8 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
   /** Data `dias` atras (negativo: no futuro), na hora indicada, em Manaus. */
   const em = (dias: number, hora = 14, minuto = 0) => emManaus(agora, dias, hora, minuto)
   const horasAtras = (h: number) => new Date(agora.getTime() - h * 3_600_000).toISOString()
+  /** Dia civil `dias` atras (negativo: no futuro), no calendario de Manaus: "AAAA-MM-DD". */
+  const dia = (dias: number) => diaCivilEm(new Date(agora.getTime() - dias * 86_400_000))
 
   // ------------------------------------------------------------ Profissionais
 
@@ -221,7 +220,7 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
   const planos: PlanoTerapeutico[] = [
     {
       id: 'pl-001', pacienteId: 'p-001', autorId: 'u-prof-1', status: 'VIGENTE',
-      dataInicio: em(120, 9), dataRevisao: em(-60, 9), ultimaRevisaoEm: em(30, 9), observacaoValidacao: null,
+      dataInicio: dia(120), dataRevisao: dia(-60), ultimaRevisaoEm: em(30, 9), observacaoValidacao: null,
       objetivos: [
         objetivo('o-001', 'pl-001', 'Comunicação funcional',
           'Emitir mando por item preferido em 8 de 10 tentativas, com ajuda gestual desvanecida.',
@@ -238,7 +237,7 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
     },
     {
       id: 'pl-002', pacienteId: 'p-002', autorId: 'u-prof-2', status: 'AGUARDANDO_VALIDACAO',
-      dataInicio: em(5, 9), dataRevisao: em(-85, 9), ultimaRevisaoEm: null, observacaoValidacao: null,
+      dataInicio: dia(5), dataRevisao: dia(-85), ultimaRevisaoEm: null, observacaoValidacao: null,
       objetivos: [
         objetivo('o-004', 'pl-002', 'Atenção compartilhada',
           'Responder ao chamado pelo nome com orientação do olhar em 4 de 5 oportunidades.',
@@ -250,7 +249,7 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
     },
     {
       id: 'pl-003', pacienteId: 'p-003', autorId: 'u-prof-1', status: 'VIGENTE',
-      dataInicio: em(200, 9), dataRevisao: em(10, 9), ultimaRevisaoEm: em(100, 9), observacaoValidacao: null,
+      dataInicio: dia(200), dataRevisao: dia(10), ultimaRevisaoEm: em(100, 9), observacaoValidacao: null,
       objetivos: [
         objetivo('o-006', 'pl-003', 'Comunicação alternativa',
           'Selecionar pictograma correspondente ao item desejado em prancha de 4 opções, com ajuda física parcial.',
@@ -264,7 +263,7 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
     },
     {
       id: 'pl-004', pacienteId: 'p-004', autorId: 'u-prof-3', status: 'VIGENTE',
-      dataInicio: em(60, 9), dataRevisao: em(-30, 9), ultimaRevisaoEm: null, observacaoValidacao: null,
+      dataInicio: dia(60), dataRevisao: dia(-30), ultimaRevisaoEm: null, observacaoValidacao: null,
       objetivos: [
         objetivo('o-008', 'pl-004', 'Tolerância à espera',
           'Aguardar a vez em atividade de mesa por até 2 minutos com temporizador visual.',
@@ -273,7 +272,7 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
     },
     {
       id: 'pl-005', pacienteId: 'p-005', autorId: 'u-prof-2', status: 'DEVOLVIDO',
-      dataInicio: em(12, 9), dataRevisao: em(-78, 9), ultimaRevisaoEm: null,
+      dataInicio: dia(12), dataRevisao: dia(-78), ultimaRevisaoEm: null,
       observacaoValidacao: 'O critério do objetivo de interação está sem número de sessões. Rever antes de reenviar.',
       objetivos: [
         objetivo('o-009', 'pl-005', 'Interação com pares',
@@ -298,7 +297,7 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
     const id = `pl-${numero}`
     return {
       id, pacienteId: `p-${numero}`, autorId, status,
-      dataInicio: em(diasInicio, 9), dataRevisao: em(diasInicio - 180, 9),
+      dataInicio: dia(diasInicio), dataRevisao: dia(diasInicio - 180),
       ultimaRevisaoEm, observacaoValidacao,
       objetivos: [objetivo(`o-0${10 + Number(numero) - 6}`, id, dominio, tecnica, acessivel, statusObjetivo, percentual)],
     }
@@ -428,19 +427,19 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
   const ambos: Consentimento['escopos'] = ['CARTAO_ESTRATEGIA', 'REGISTRO_OCORRENCIA']
   const consentimentos: Consentimento[] = [
     // Vigente, com os dois escopos: a demonstracao principal da area da escola.
-    consentimento('c-001', 'u-resp-1', 'p-001', 'esc-1', ambos, em(45, 19), em(-120, 23, 59)),
+    consentimento('c-001', 'u-resp-1', 'p-001', 'esc-1', ambos, em(45, 19), dia(-120)),
     // Vigente so para o cartao, vencendo em menos de 30 dias.
-    consentimento('c-002', 'u-resp-2', 'p-003', 'esc-2', ['CARTAO_ESTRATEGIA'], em(40, 20), em(-20, 23, 59)),
+    consentimento('c-002', 'u-resp-2', 'p-003', 'esc-2', ['CARTAO_ESTRATEGIA'], em(40, 20), dia(-20)),
     // Revogado ha 3 dias: a professora continua tentando e e negada.
-    consentimento('c-003', 'u-resp-3', 'p-004', 'esc-1', ambos, em(50, 18), em(-100, 23, 59), em(3, 21)),
+    consentimento('c-003', 'u-resp-3', 'p-004', 'esc-1', ambos, em(50, 18), dia(-100), em(3, 21)),
     // Expirado.
-    consentimento('c-004', 'u-resp-4', 'p-005', 'esc-2', ['CARTAO_ESTRATEGIA'], em(200, 18), em(5, 23, 59)),
+    consentimento('c-004', 'u-resp-4', 'p-005', 'esc-2', ['CARTAO_ESTRATEGIA'], em(200, 18), dia(5)),
     // Os tres a seguir servem aos estados do convite (tela 2).
-    consentimento('c-005', 'u-resp-1', 'p-002', 'esc-1', ambos, horasAtras(1), em(-90, 23, 59)),
-    consentimento('c-006', 'u-resp-1', 'p-002', 'esc-2', ['CARTAO_ESTRATEGIA'], em(5, 10), em(-90, 23, 59)),
-    consentimento('c-007', 'u-resp-4', 'p-005', 'esc-1', ambos, em(1, 10), em(-90, 23, 59), horasAtras(2)),
+    consentimento('c-005', 'u-resp-1', 'p-002', 'esc-1', ambos, horasAtras(1), dia(-90)),
+    consentimento('c-006', 'u-resp-1', 'p-002', 'esc-2', ['CARTAO_ESTRATEGIA'], em(5, 10), dia(-90)),
+    consentimento('c-007', 'u-resp-4', 'p-005', 'esc-1', ambos, em(1, 10), dia(-90), horasAtras(2)),
     // Noah tem dois responsaveis: a mae, legal, autorizou; o pai so pode encerrar.
-    consentimento('c-008', 'u-resp-13', 'p-014', 'esc-2', ['CARTAO_ESTRATEGIA'], em(25, 9), em(-150, 23, 59)),
+    consentimento('c-008', 'u-resp-13', 'p-014', 'esc-2', ['CARTAO_ESTRATEGIA'], em(25, 9), dia(-150)),
   ]
 
   const [c1, c2, c3, c4, c5, c6, c7, c8] = consentimentos
@@ -607,13 +606,13 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
     [null, null, null, null, null, null, null, 'Hoje ele não quis. Estava um dia agitado na escola.']
   ;[31, 27, 24, 20, 13, 6, 3, 1].forEach((d, i) =>
     execucoes.push({ id: `ex-${i + 1}`, atividadeId: 'a-001', responsavelId: 'u-resp-1',
-      dataRealizacao: em(d, 12), desempenho: desempenhos[i], observacao: observacoes[i] }))
+      dataRealizacao: dia(d), desempenho: desempenhos[i], observacao: observacoes[i] }))
   ;[22, 15, 8].forEach((d, i) =>
     execucoes.push({ id: `ex-${i + 21}`, atividadeId: 'a-003', responsavelId: 'u-resp-1',
-      dataRealizacao: em(d, 18), desempenho: i === 2 ? 'SOZINHO' : 'COM_AJUDA', observacao: null }))
+      dataRealizacao: dia(d), desempenho: i === 2 ? 'SOZINHO' : 'COM_AJUDA', observacao: null }))
   ;[20, 12, 5].forEach((d, i) =>
     execucoes.push({ id: `ex-${i + 31}`, atividadeId: 'a-004', responsavelId: 'u-resp-2',
-      dataRealizacao: em(d, 19), desempenho: 'COM_AJUDA', observacao: null }))
+      dataRealizacao: dia(d), desempenho: 'COM_AJUDA', observacao: null }))
 
   // ------------------------------------------------------------ Auditoria inicial
 

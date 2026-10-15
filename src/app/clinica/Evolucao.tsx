@@ -14,7 +14,7 @@ import { LinhaEvolucao, type PontoSessao } from '../../graficos/LinhaEvolucao'
 import {
   objetivoAtingiuCriterio, percentualIndependente, suficienciaComparacao, SUFICIENCIA_MINIMA,
 } from '@sinctea/compartilhado/dominio/regras'
-import { emData } from '@sinctea/compartilhado/dominio/datas'
+import { dataIsoParaLocal, emData } from '@sinctea/compartilhado/dominio/datas'
 import {
   ErroServico, servicos, type AtividadeCasa, type Desempenho, type ExecucaoAtividadeCasa,
   type Objetivo, type OcorrenciaComportamental, type Origem, type Sessao,
@@ -204,7 +204,9 @@ export function Evolucao() {
     const doObjetivo = new Set(atividades.filter((a) => a.objetivoId === objetivoId).map((a) => a.id))
     const casa = execucoes
       .filter((e) => doObjetivo.has(e.atividadeId))
-      .map((e) => ({ data: e.dataRealizacao, desempenho: e.desempenho as Desempenho }))
+      // A execucao guarda o dia, sem hora; na linha do tempo, o ponto vai ao
+      // meio-dia daquele dia, longe das duas bordas.
+      .map((e) => ({ data: dataIsoParaLocal(e.dataRealizacao).toISOString(), desempenho: e.desempenho as Desempenho }))
       .sort((a, b) => a.data.localeCompare(b.data))
 
     // Escola: ocorrencias do ALUNO. Nao ha objetivo em OcorrenciaEscolar.

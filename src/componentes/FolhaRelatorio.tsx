@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { emData } from '@sinctea/compartilhado/dominio/datas'
+import { emData, emDataCivil } from '@sinctea/compartilhado/dominio/datas'
 import type { ConteudoRelatorio, Destinatario, ObjetivoNoRelatorio } from '../servicos'
 
 /**
@@ -39,9 +39,9 @@ export function FolhaRelatorio({ conteudo, rodape }: {
         <h2 className="text-xl font-bold leading-tight">Relatório de evolução</h2>
         <dl className="mt-3 grid gap-x-4 gap-y-1.5 text-[15px] sm:grid-cols-[auto_1fr]">
           <dt className="font-bold">Paciente</dt>
-          <dd>{paciente.nome} · nascimento em {emData(paciente.dataNascimento)}</dd>
+          <dd>{paciente.nome} · nascimento em {emDataCivil(paciente.dataNascimento)}</dd>
           <dt className="font-bold">Período</dt>
-          <dd>{emData(conteudo.periodoInicio)} a {emData(conteudo.periodoFim)}</dd>
+          <dd>{emDataCivil(conteudo.periodoInicio)} a {emDataCivil(conteudo.periodoFim)}</dd>
           <dt className="font-bold">Destinatário</dt>
           <dd>{NOME_DO_DESTINATARIO[conteudo.destinatario]}</dd>
           <dt className="font-bold">Sessões no período</dt>

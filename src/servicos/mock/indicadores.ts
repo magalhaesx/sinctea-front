@@ -7,6 +7,7 @@ import {
   consentimentoVencendo, consentimentoVigente, objetivoSemAvanco, pacienteSemSessaoRecente,
   percentualIndependente, planoPrecisaRevisao,
 } from '@sinctea/compartilhado/dominio/regras'
+import { diaCivilEm, fimDaValidade, inicioDoDia } from '@sinctea/compartilhado/dominio/datas'
 import { auditar, banco, exigirPerfil, paginar, relogio, responder } from './infra'
 import { ultimaSessaoDe } from './pacientes'
 
@@ -112,7 +113,8 @@ function alertasPlanoSemRevisao(agora: Date): AlertaAtencao[] {
       motivo: 'PLANO_SEM_REVISAO' as const,
       paciente: pacienteDoAlerta(plano.pacienteId),
       referenciaId: plano.id,
-      quantidade: emDias(ms(plano.ultimaRevisaoEm ?? plano.dataInicio), agora.getTime()),
+      quantidade: emDias(plano.ultimaRevisaoEm ? ms(plano.ultimaRevisaoEm) : inicioDoDia(plano.dataInicio).getTime(),
+        agora.getTime()),
       unidade: 'dias' as const,
     }))
 }
@@ -139,7 +141,7 @@ function alertasConsentimentoVencendo(agora: Date): AlertaAtencao[] {
       motivo: 'CONSENTIMENTO_VENCENDO' as const,
       paciente: pacienteDoAlerta(c.pacienteId),
       referenciaId: c.id,
-      quantidade: emDias(agora.getTime(), ms(c.validadeAte)),
+      quantidade: emDias(agora.getTime(), fimDaValidade(c.validadeAte).getTime()),
       unidade: 'dias' as const,
     }))
 }
@@ -192,7 +194,8 @@ export const indicadoresMock: ServicoIndicadores = {
       .filter((o) => o.dominadoEm !== null && ms(o.dominadoEm) >= desde30)
 
     const revisoes = planosDeAtivos()
-      .filter((p) => ms(p.dataRevisao) >= agora.getTime() && ms(p.dataRevisao) <= ate30)
+      // Data civil contra data civil: a revisao marcada para hoje ainda esta por vir.
+      .filter((p) => p.dataRevisao >= diaCivilEm(agora) && p.dataRevisao <= diaCivilEm(new Date(ate30)))
 
     return {
       // Clinica sem nenhuma sessao registrada nao tem indicador para mostrar.

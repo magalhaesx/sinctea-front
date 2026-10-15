@@ -1,6 +1,6 @@
 import { resumoSha256 } from './hash.js'
-import { emData } from './datas.js'
-import type { DataIso, EscopoAcesso } from '../tipos.js'
+import { emDataCivil } from './datas.js'
+import type { DataCivil, DataIso, EscopoAcesso } from '../tipos.js'
 
 /**
  * O termo de autorizacao de acesso da escola, versionado.
@@ -27,7 +27,7 @@ export interface DadosDoTermo {
   escola: string
   aluno: string
   escopos: EscopoAcesso[]
-  validadeAte: DataIso
+  validadeAte: DataCivil
 }
 
 /**
@@ -48,7 +48,7 @@ export interface DadosDoResumo {
   pacienteId: string
   escolaId: string
   escopos: EscopoAcesso[]
-  validadeAte: DataIso
+  validadeAte: DataCivil
   concedidoEm: DataIso
 }
 
@@ -82,7 +82,7 @@ O diagnóstico, o laudo, o nível de suporte, o plano terapêutico, a evolução
 sessões e o histórico de atendimentos.
 
 5. Por quanto tempo
-Até ${emData(d.validadeAte)}. Depois dessa data o acesso termina sozinho, sem você precisar
+Até ${emDataCivil(d.validadeAte)}. Depois dessa data o acesso termina sozinho, sem você precisar
 fazer nada.
 
 6. Como encerrar antes

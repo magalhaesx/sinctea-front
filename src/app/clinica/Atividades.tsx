@@ -12,7 +12,7 @@ import { EstadoErro } from '../../ui/EstadoErro'
 import { Paginacao } from '../../ui/Paginacao'
 import { CartaoAtividadeFamilia } from '../../componentes/CartaoAtividadeFamilia'
 import { frequenciaSemanalEmPalavras } from '@sinctea/compartilhado/dominio/regras'
-import { emData } from '@sinctea/compartilhado/dominio/datas'
+import { diaIso, emData, emDataCivil } from '@sinctea/compartilhado/dominio/datas'
 import {
   ErroServico, servicos, type AtividadeCasa, type Desempenho, type ExecucaoAtividadeCasa,
   type NovaAtividadeCasa, type Objetivo, type Pagina, type PlanoTerapeutico,
@@ -97,7 +97,8 @@ function Adesao({ atividade }: { atividade: AtividadeCasa }) {
   }
 
   const desde = inicioDaJanela(new Date())
-  const daJanela = estado.dados.filter((e) => Date.parse(e.dataRealizacao) >= desde)
+  // A execucao guarda o dia, sem hora: compara-se dia com dia.
+  const daJanela = estado.dados.filter((e) => e.dataRealizacao >= diaIso(new Date(desde)))
   const conta = (d: Desempenho) => daJanela.filter((e) => e.desempenho === d).length
 
   return (
@@ -157,7 +158,7 @@ function Historico({ atividadeId }: { atividadeId: string }) {
               {estado.dados.itens.map((e) => (
                 <li key={e.id} className="rounded-lg border border-linha bg-sup px-3 py-2.5 text-[15px]">
                   <span className="flex flex-wrap items-center gap-2">
-                    <b>{emData(e.dataRealizacao)}</b>
+                    <b>{emDataCivil(e.dataRealizacao)}</b>
                     <Etiqueta simbolo="○">{NOME_DO_DESEMPENHO[e.desempenho]}</Etiqueta>
                   </span>
                   {e.observacao && <p className="mt-1 text-tinta2">“{e.observacao}”</p>}

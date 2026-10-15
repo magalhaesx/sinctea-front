@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Tela } from '../LayoutApp'
 import { usarSessao } from '../../contexto/Sessao'
-import { dataIsoParaLocal, emData } from '@sinctea/compartilhado/dominio/datas'
+import { dataIsoParaLocal, emData, emDataCivil } from '@sinctea/compartilhado/dominio/datas'
 import { validarNovoConsentimento } from '@sinctea/compartilhado/dominio/regras'
 import {
   conferirResumoDoTermo, textoDoTermo, VERSAO_CORRENTE_DO_TERMO, versaoConhecida, versaoDoResumo,
@@ -143,9 +143,6 @@ export function Consentimento() {
   const alternarEscopo = (valor: EscopoAcesso) =>
     setEscopos((atual) => atual.includes(valor) ? atual.filter((e) => e !== valor) : [...atual, valor])
 
-  /** Fim do dia escolhido: o acesso vale ate o ultimo instante daquela data. */
-  const validadeIso = () => validadeAte ? new Date(`${validadeAte}T23:59:59`).toISOString() : ''
-
   /**
    * Primeira etapa: so confere o que a propria regra de dominio confere, para
    * ninguem ler o termo inteiro e so depois descobrir que faltou a escola.
@@ -154,7 +151,7 @@ export function Consentimento() {
     evento.preventDefault()
     if (!pacienteId) return
     const encontrados = validarNovoConsentimento(
-      { pacienteId, escolaId, escopos, validadeAte: validadeIso() },
+      { pacienteId, escolaId, escopos, validadeAte },
       new Date(),
     )
     setErros(encontrados)
@@ -170,7 +167,7 @@ export function Consentimento() {
     setSalvando(true)
     try {
       const concedido = await servicos.consentimentos.conceder({
-        pacienteId, escolaId, escopos, validadeAte: validadeIso(),
+        pacienteId, escolaId, escopos, validadeAte,
       })
       setEtapa('formulario')
       setConvite(concedido)
@@ -426,7 +423,7 @@ export function Consentimento() {
                   escola: estado.escolas.find((e) => e.id === escolaId)?.nome ?? '',
                   aluno: nomeDoFilho(pacienteId),
                   escopos,
-                  validadeAte: validadeIso(),
+                  validadeAte,
                 })}
               </div>
 
@@ -496,7 +493,7 @@ export function Consentimento() {
 
                 <p className="mt-1 text-sm text-tinta2">
                   {c.professor ?? 'Ainda sem professor cadastrado'}
-                  {c.turma ? ` · ${c.turma}` : ''} · autorizado em {emData(c.concedidoEm)} · vale até {emData(c.validadeAte)}
+                  {c.turma ? ` · ${c.turma}` : ''} · autorizado em {emData(c.concedidoEm)} · vale até {emDataCivil(c.validadeAte)}
                 </p>
                 <ul className="mt-2 flex flex-wrap gap-2">
                   {c.escopos.map((e) => (

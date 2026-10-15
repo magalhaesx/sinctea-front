@@ -1,5 +1,6 @@
+import { diaCivilEm, fimDaValidade, inicioDoDia, partesDaDataCivil } from './datas.js'
 import type {
-  Consentimento, ConviteEscolar, CriterioDominio, DataIso, Destinatario, EscopoAcesso, NivelSuporte,
+  Consentimento, ConviteEscolar, CriterioDominio, DataCivil, DataIso, Destinatario, EscopoAcesso, NivelSuporte,
   NovoConsentimento, NovoObjetivo, OcorrenciaComportamental, Origem, PlanoTerapeutico,
   RegistroAtividade, Sessao, SituacaoConsentimento, SituacaoConvite, StatusObjetivo,
 } from '../tipos.js'
@@ -36,12 +37,17 @@ const ms = (d: DataIso | Date) => (d instanceof Date ? d.getTime() : Date.parse(
 
 // ---------------------------------------------------------------- Paciente
 
-export function idadeEmAnos(dataNascimento: DataIso, agora: Date): number {
-  const nasc = new Date(dataNascimento)
-  let idade = agora.getUTCFullYear() - nasc.getUTCFullYear()
-  const aindaNaoFezAniversario =
-    agora.getUTCMonth() < nasc.getUTCMonth() ||
-    (agora.getUTCMonth() === nasc.getUTCMonth() && agora.getUTCDate() < nasc.getUTCDate())
+/**
+ * Idade em anos completos, por aritmetica de data civil: o "hoje" e o dia em
+ * Manaus, e nenhum dos dois dias vira objeto Date. Faz aniversario no proprio
+ * dia, em qualquer fuso de maquina.
+ */
+export function idadeEmAnos(dataNascimento: DataCivil, agora: Date): number {
+  const nasc = partesDaDataCivil(dataNascimento)
+  const hoje = partesDaDataCivil(diaCivilEm(agora))
+  if (!nasc || !hoje) return 0
+  let idade = hoje.ano - nasc.ano
+  const aindaNaoFezAniversario = hoje.mes < nasc.mes || (hoje.mes === nasc.mes && hoje.dia < nasc.dia)
   if (aindaNaoFezAniversario) idade -= 1
   return Math.max(0, idade)
 }
@@ -219,7 +225,8 @@ export function situacaoConsentimento(c: Consentimento, agora: Date): SituacaoCo
   // Revogacao vem primeiro e nao tem carencia (regra 5).
   if (c.revogadoEm !== null && ms(c.revogadoEm) <= agora.getTime()) return 'REVOGADO'
   if (agora.getTime() < ms(c.concedidoEm)) return 'AGUARDANDO_INICIO'
-  if (agora.getTime() >= ms(c.validadeAte)) return 'EXPIRADO'
+  // A validade e um dia civil, e vale o dia inteiro em Manaus.
+  if (agora.getTime() >= fimDaValidade(c.validadeAte).getTime()) return 'EXPIRADO'
   return 'VIGENTE'
 }
 
@@ -256,9 +263,12 @@ export function verificarAcessoEscola(
 export function validarNovoConsentimento(dados: NovoConsentimento, agora: Date): Record<string, string> {
   const erros: Record<string, string> = {}
   if (dados.escopos.length === 0) erros.escopos = 'Escolha ao menos o que a escola poderá ver ou registrar.'
-  const validade = ms(dados.validadeAte)
-  if (Number.isNaN(validade)) erros.validadeAte = 'Informe até quando o acesso vale.'
-  else if (validade <= agora.getTime()) erros.validadeAte = 'A validade precisa ser uma data futura.'
+  // Dia civil "AAAA-MM-DD", como o campo de data entrega. Hoje vale: o acesso
+  // termina no fim do dia escolhido.
+  if (!partesDaDataCivil(dados.validadeAte)) erros.validadeAte = 'Informe até quando o acesso vale.'
+  else if (fimDaValidade(dados.validadeAte).getTime() <= agora.getTime()) {
+    erros.validadeAte = 'A validade precisa ser uma data futura.'
+  }
   // A familia nomeia a instituicao: consentimento tem de ser especifico.
   if (!dados.escolaId) erros.escolaId = 'Escolha a escola.'
   return erros
@@ -267,7 +277,7 @@ export function validarNovoConsentimento(dados: NovoConsentimento, agora: Date):
 export function consentimentoVencendo(c: Consentimento, agora: Date): boolean {
   if (!consentimentoVigente(c, agora)) return false
   const limite = agora.getTime() + LIMIARES_ATENCAO.diasConsentimentoVencendo * MS_DIA
-  return ms(c.validadeAte) <= limite
+  return fimDaValidade(c.validadeAte).getTime() <= limite
 }
 
 // ---------------------------------------------------------------- Convite (regra 1)
@@ -351,7 +361,10 @@ export function planoPrecisaRevisao(
   plano: Pick<PlanoTerapeutico, 'dataInicio' | 'ultimaRevisaoEm'>,
   agora: Date,
 ): boolean {
-  const referencia = ms(plano.ultimaRevisaoEm ?? plano.dataInicio)
+  // ultimaRevisaoEm e instante; dataInicio e dia civil, contado do inicio do dia.
+  const referencia = plano.ultimaRevisaoEm !== null
+    ? ms(plano.ultimaRevisaoEm)
+    : inicioDoDia(plano.dataInicio).getTime()
   return agora.getTime() - referencia > LIMIARES_ATENCAO.diasSemRevisaoPlano * MS_DIA
 }
 

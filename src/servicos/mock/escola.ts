@@ -7,6 +7,7 @@ import {
   consentimentoVigente, podeCorrigirOcorrencia, situacaoConsentimento, verificarAcessoEscola,
   type MotivoNegacao,
 } from '@sinctea/compartilhado/dominio/regras'
+import { inicioDoDia } from '@sinctea/compartilhado/dominio/datas'
 import { jsonCanonico } from '@sinctea/compartilhado/dominio/hash'
 import {
   auditar, banco, exigirPerfil, exigirValido, gerarId, naoEncontrado, paginar, relogio, responder,
@@ -145,7 +146,7 @@ export const areaEscolaMock: ServicoAreaEscola = {
         oQueEvitar: [...c.oQueEvitar],
         sinalAlerta: c.sinalAlerta,
       })),
-      atualizadoEm: cartoes.map((c) => c.atualizadoEm).sort().pop() ?? plano?.dataInicio ?? relogio.agora().toISOString(),
+      atualizadoEm: cartoes.map((c) => c.atualizadoEm).sort().pop() ?? (plano ? inicioDoDia(plano.dataInicio).toISOString() : relogio.agora().toISOString()),
     }
     auditar(sessao, { acao: 'LEITURA_AUTORIZADA', entidade: 'CartaoEstrategia', pacienteId, detalhe: 'Consulta do cartão de estratégias.' })
     return cartao

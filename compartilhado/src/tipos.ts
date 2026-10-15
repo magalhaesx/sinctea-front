@@ -11,7 +11,16 @@
 
 // ---------------------------------------------------------------- Comuns
 
+/** Instante, em ISO 8601 com fuso: "2026-10-14T13:00:00.000Z". */
 export type DataIso = string
+
+/**
+ * Dia do calendario, sem hora nem fuso: "AAAA-MM-DD". E o que o banco guarda
+ * como date. Nunca vira objeto Date no dominio — "2026-12-31" lido como Date e
+ * meia-noite UTC, que a oeste de Greenwich ja e o dia anterior. Ver
+ * compartilhado/src/dominio/datas.ts.
+ */
+export type DataCivil = string
 
 /** Toda listagem e paginada, mesmo com cinco registros (docs/01, secao 4). */
 export interface Pagina<T> {
@@ -144,7 +153,7 @@ export interface VinculoFamiliar {
 export interface Paciente {
   id: string
   nome: string
-  dataNascimento: DataIso
+  dataNascimento: DataCivil
   nivelSuporte: NivelSuporte
   profissionalResponsavelId: string
   /** Equipe multiprofissional, incluindo o responsavel pelo caso. */
@@ -193,7 +202,7 @@ export interface FiltroPaciente extends FiltroPaginacao {
 
 export interface NovoPaciente {
   nome: string
-  dataNascimento: DataIso
+  dataNascimento: DataCivil
   nivelSuporte: NivelSuporte
   profissionalResponsavelId: string
 }
@@ -241,8 +250,8 @@ export interface PlanoTerapeutico {
   pacienteId: string
   autorId: string
   status: Exclude<SituacaoPlano, 'SEM_PLANO'>
-  dataInicio: DataIso
-  dataRevisao: DataIso
+  dataInicio: DataCivil
+  dataRevisao: DataCivil
   ultimaRevisaoEm: DataIso | null
   observacaoValidacao: string | null
   /** Composicao: objetivo nao existe sem plano. */
@@ -392,8 +401,8 @@ export type Destinatario = 'PROFISSIONAIS' | 'FAMILIA'
 /** O que se pede ao pre-visualizar ou emitir. */
 export interface PedidoRelatorio {
   /** Datas em AAAA-MM-DD: o periodo e de dias inteiros, sem hora. */
-  periodoInicio: DataIso
-  periodoFim: DataIso
+  periodoInicio: DataCivil
+  periodoFim: DataCivil
   objetivoIds: string[]
   destinatario: Destinatario
   /** Leitura do profissional. Obrigatoria, nunca gerada. */
@@ -426,9 +435,9 @@ export interface ObjetivoNoRelatorio {
  * hash protege, por isso as consideracoes vivem aqui dentro tambem.
  */
 export interface ConteudoRelatorio {
-  paciente: { id: string; nome: string; dataNascimento: DataIso }
-  periodoInicio: DataIso
-  periodoFim: DataIso
+  paciente: { id: string; nome: string; dataNascimento: DataCivil }
+  periodoInicio: DataCivil
+  periodoFim: DataCivil
   destinatario: Destinatario
   consideracoes: string
   objetivos: ObjetivoNoRelatorio[]
@@ -446,8 +455,8 @@ export interface RelatorioEvolucao {
   /** Desnormalizado: deriva dos objetivos, mas a busca precisa dele direto. */
   pacienteId: string
   objetivoIds: string[]
-  periodoInicio: DataIso
-  periodoFim: DataIso
+  periodoInicio: DataCivil
+  periodoFim: DataCivil
   destinatario: Destinatario
   /** Leitura do profissional. Obrigatoria, nunca gerada. */
   consideracoes: string
@@ -554,7 +563,7 @@ export interface ExecucaoAtividadeCasa {
   id: string
   atividadeId: string
   responsavelId: string
-  dataRealizacao: DataIso
+  dataRealizacao: DataCivil
   desempenho: Desempenho
   observacao: string | null
 }
@@ -608,7 +617,7 @@ export interface Consentimento {
   escolaId: string
   escopos: EscopoAcesso[]
   concedidoEm: DataIso
-  validadeAte: DataIso
+  validadeAte: DataCivil
   revogadoEm: DataIso | null
   /** Impressao digital do termo aceito, para prova de consentimento (LGPD). */
   hashTermo: string
@@ -672,7 +681,7 @@ export interface NovoConsentimento {
   pacienteId: string
   escolaId: string
   escopos: EscopoAcesso[]
-  validadeAte: DataIso
+  validadeAte: DataCivil
 }
 
 export interface ConsentimentoConcedido {
@@ -691,7 +700,7 @@ export interface ConvitePublico {
   aluno: string | null
   escola: string | null
   escopos: EscopoAcesso[]
-  validadeAte: DataIso | null
+  validadeAte: DataCivil | null
   expiraEm: DataIso | null
 }
 
@@ -720,7 +729,7 @@ export interface AlunoEscola {
   situacao: SituacaoConsentimento
   /** Vazio quando o acesso nao esta vigente. */
   escopos: EscopoAcesso[]
-  validadeAte: DataIso
+  validadeAte: DataCivil
 }
 
 /**
@@ -732,7 +741,7 @@ export interface CartaoEscola {
   nome: string
   turma: string
   turno: string
-  validadeAte: DataIso
+  validadeAte: DataCivil
   estrategias: Array<{
     titulo: string
     /** Redacao acessivel do objetivo, escrita pelo terapeuta. */

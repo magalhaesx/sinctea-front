@@ -9,6 +9,7 @@ import {
   calcularExpiracaoConvite, consentimentoVigente, idadeEmAnos, situacaoConsentimento,
   situacaoConvite, validarNovoConsentimento,
 } from '@sinctea/compartilhado/dominio/regras'
+import { diaCivilEm } from '@sinctea/compartilhado/dominio/datas'
 import { resumoDoTermo, VERSAO_CORRENTE_DO_TERMO } from '@sinctea/compartilhado/dominio/termo'
 import {
   ehResponsavelDe, exigirPacienteClinico, exigirPacienteClinicoOuFamilia, exigirPacienteDaFamilia,
@@ -95,7 +96,8 @@ export const atividadesMock: ServicoAtividadeCasa = {
       id: gerarId('ex'),
       atividadeId,
       responsavelId: sessao.usuario.id,
-      dataRealizacao: relogio.agora().toISOString(),
+      // O dia em que a familia fez, no calendario da instancia: e data civil.
+      dataRealizacao: diaCivilEm(relogio.agora()),
       desempenho,
       observacao: observacao?.trim() || null,
     }

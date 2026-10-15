@@ -10,10 +10,13 @@ import {
   textoDoCriterio, textoDoPeriodo,
   validarDevolucaoPlano, validarNovoConsentimento, validarNovoObjetivo, verificarAcessoEscola,
 } from './regras.js'
+import { diaCivilEm } from './datas.js'
 
 const AGORA = new Date('2026-09-19T12:00:00Z')
 const horas = (h: number) => new Date(AGORA.getTime() + h * 3_600_000).toISOString()
 const dias = (d: number) => horas(d * 24)
+/** O dia civil, em Manaus, `d` dias depois de AGORA: o formato de validadeAte e dataInicio. */
+const diaCivil = (d: number) => diaCivilEm(new Date(AGORA.getTime() + d * 86_400_000))
 
 function consentimento(parcial: Partial<Consentimento> = {}): Consentimento {
   return {
@@ -22,7 +25,7 @@ function consentimento(parcial: Partial<Consentimento> = {}): Consentimento {
     pacienteId: 'p1',
     escopos: ['CARTAO_ESTRATEGIA'],
     concedidoEm: dias(-10),
-    validadeAte: dias(60),
+    validadeAte: diaCivil(60),
     revogadoEm: null,
     escolaId: 'e1',
     hashTermo: 'sha256:ficticio',
@@ -236,11 +239,15 @@ describe('consentimento', () => {
   })
 
   it('revogacao prevalece sobre a validade', () => {
-    expect(situacaoConsentimento(consentimento({ revogadoEm: dias(-1), validadeAte: dias(-2) }), AGORA)).toBe('REVOGADO')
+    expect(situacaoConsentimento(consentimento({ revogadoEm: dias(-1), validadeAte: diaCivil(-2) }), AGORA)).toBe('REVOGADO')
   })
 
-  it('expira no instante da validade', () => {
-    expect(situacaoConsentimento(consentimento({ validadeAte: AGORA.toISOString() }), AGORA)).toBe('EXPIRADO')
+  it('a validade vale o dia inteiro, e expira a 00:00 do dia seguinte em Manaus', () => {
+    // Antes: "expira no instante da validade", com validadeAte instante. Agora e
+    // dia civil — AGORA (08h em Manaus) cai dentro do dia da validade.
+    const hoje = diaCivil(0)
+    expect(situacaoConsentimento(consentimento({ validadeAte: hoje }), AGORA)).toBe('VIGENTE')
+    expect(situacaoConsentimento(consentimento({ validadeAte: diaCivil(-1) }), AGORA)).toBe('EXPIRADO')
   })
 
   it('ainda nao vale antes da concessao', () => {
@@ -253,9 +260,9 @@ describe('consentimento', () => {
   })
 
   it('vencendo apenas quando vigente e a menos de 30 dias do fim', () => {
-    expect(consentimentoVencendo(consentimento({ validadeAte: dias(29) }), AGORA)).toBe(true)
-    expect(consentimentoVencendo(consentimento({ validadeAte: dias(31) }), AGORA)).toBe(false)
-    expect(consentimentoVencendo(consentimento({ validadeAte: dias(10), revogadoEm: dias(-1) }), AGORA)).toBe(false)
+    expect(consentimentoVencendo(consentimento({ validadeAte: diaCivil(29) }), AGORA)).toBe(true)
+    expect(consentimentoVencendo(consentimento({ validadeAte: diaCivil(31) }), AGORA)).toBe(false)
+    expect(consentimentoVencendo(consentimento({ validadeAte: diaCivil(10), revogadoEm: dias(-1) }), AGORA)).toBe(false)
   })
 })
 
@@ -267,7 +274,7 @@ describe('verificarAcessoEscola (UC21)', () => {
   it.each([
     [null, 'CARTAO_ESTRATEGIA', 'SEM_CONSENTIMENTO'],
     [consentimento({ revogadoEm: dias(-1) }), 'CARTAO_ESTRATEGIA', 'REVOGADO'],
-    [consentimento({ validadeAte: dias(-1) }), 'CARTAO_ESTRATEGIA', 'EXPIRADO'],
+    [consentimento({ validadeAte: diaCivil(-1) }), 'CARTAO_ESTRATEGIA', 'EXPIRADO'],
     [consentimento(), 'REGISTRO_OCORRENCIA', 'FORA_DO_ESCOPO'],
   ] as const)('nega e informa o motivo (%#)', (c, escopo, motivo) => {
     expect(verificarAcessoEscola(c, escopo, AGORA)).toEqual({ permitido: false, motivo })
@@ -276,12 +283,12 @@ describe('verificarAcessoEscola (UC21)', () => {
 
 describe('validarNovoConsentimento', () => {
   it('exige escopo, escola e validade futura', () => {
-    const erros = validarNovoConsentimento({ pacienteId: 'p1', escolaId: '', escopos: [], validadeAte: dias(-1) }, AGORA)
+    const erros = validarNovoConsentimento({ pacienteId: 'p1', escolaId: '', escopos: [], validadeAte: diaCivil(-1) }, AGORA)
     expect(Object.keys(erros).sort()).toEqual(['escolaId', 'escopos', 'validadeAte'])
   })
 
   it('aceita pedido completo', () => {
-    expect(validarNovoConsentimento({ pacienteId: 'p1', escolaId: 'e1', escopos: ['CARTAO_ESTRATEGIA'], validadeAte: dias(90) }, AGORA)).toEqual({})
+    expect(validarNovoConsentimento({ pacienteId: 'p1', escolaId: 'e1', escopos: ['CARTAO_ESTRATEGIA'], validadeAte: diaCivil(90) }, AGORA)).toEqual({})
   })
 })
 
@@ -348,9 +355,9 @@ describe('coordenacao', () => {
   })
 
   it('plano precisa de revisao depois de 90 dias', () => {
-    expect(planoPrecisaRevisao({ dataInicio: dias(-200), ultimaRevisaoEm: dias(-91) }, AGORA)).toBe(true)
-    expect(planoPrecisaRevisao({ dataInicio: dias(-200), ultimaRevisaoEm: dias(-89) }, AGORA)).toBe(false)
-    expect(planoPrecisaRevisao({ dataInicio: dias(-100), ultimaRevisaoEm: null }, AGORA)).toBe(true)
+    expect(planoPrecisaRevisao({ dataInicio: diaCivil(-200), ultimaRevisaoEm: dias(-91) }, AGORA)).toBe(true)
+    expect(planoPrecisaRevisao({ dataInicio: diaCivil(-200), ultimaRevisaoEm: dias(-89) }, AGORA)).toBe(false)
+    expect(planoPrecisaRevisao({ dataInicio: diaCivil(-100), ultimaRevisaoEm: null }, AGORA)).toBe(true)
   })
 
   it('paciente sem sessao ha mais de 15 dias, ou nunca atendido, pede atencao', () => {

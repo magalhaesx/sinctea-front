@@ -2,6 +2,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import { ErroServico, type OcorrenciaComportamental, type Sessao } from '@sinctea/compartilhado'
 import { servicosMock as s } from '.'
 import { banco, relogio } from './infra'
+import { diaCivilEm } from '@sinctea/compartilhado/dominio/datas'
 import { jsonCanonico, resumoSha256 } from '@sinctea/compartilhado/dominio/hash'
 import {
   conferirResumoDoTermo, textoDoTermo, VERSAO_CORRENTE_DO_TERMO, versaoDoResumo,
@@ -285,7 +286,7 @@ describe('regra 1 — quem autoriza a escola e o responsavel', () => {
   it('professor nao concede consentimento', async () => {
     await entrarComo('PROFESSOR')
     const erro = await erroDe(s.consentimentos.conceder({
-      pacienteId: 'p-001', escolaId: 'esc-1', escopos: ['CARTAO_ESTRATEGIA'], validadeAte: '2099-01-01T00:00:00Z',
+      pacienteId: 'p-001', escolaId: 'esc-1', escopos: ['CARTAO_ESTRATEGIA'], validadeAte: '2099-01-01',
     }))
     expect(erro.codigo).toBe('ACESSO_NEGADO')
   })
@@ -293,7 +294,7 @@ describe('regra 1 — quem autoriza a escola e o responsavel', () => {
   it('terapeuta tambem nao concede', async () => {
     await entrarComo('TERAPEUTA')
     const erro = await erroDe(s.consentimentos.conceder({
-      pacienteId: 'p-001', escolaId: 'esc-1', escopos: ['CARTAO_ESTRATEGIA'], validadeAte: '2099-01-01T00:00:00Z',
+      pacienteId: 'p-001', escolaId: 'esc-1', escopos: ['CARTAO_ESTRATEGIA'], validadeAte: '2099-01-01',
     }))
     expect(erro.codigo).toBe('ACESSO_NEGADO')
   })
@@ -301,7 +302,7 @@ describe('regra 1 — quem autoriza a escola e o responsavel', () => {
   it('responsavel concede e recebe convite de uso unico com 72 horas', async () => {
     await entrarComo('RESPONSAVEL')
     const concedido = await chamar(s.consentimentos.conceder({
-      pacienteId: 'p-002', escolaId: 'esc-2', escopos: ['CARTAO_ESTRATEGIA'], validadeAte: '2099-01-01T00:00:00Z',
+      pacienteId: 'p-002', escolaId: 'esc-2', escopos: ['CARTAO_ESTRATEGIA'], validadeAte: '2099-01-01',
     }))
     const horas = (Date.parse(concedido.conviteExpiraEm) - Date.parse(concedido.consentimento.concedidoEm)) / 3_600_000
     expect(horas).toBe(72)
@@ -313,7 +314,7 @@ describe('regra 1 — quem autoriza a escola e o responsavel', () => {
     const filhos = await chamar(s.familia.listarFilhos())
     const sessao = await chamar(s.autenticacao.sessaoAtual())
     const escolas = await chamar(s.escolas.listar({ porPagina: 10 }))
-    const validadeAte = new Date(Date.now() + 120 * 86_400_000).toISOString()
+    const validadeAte = diaCivilEm(new Date(Date.now() + 120 * 86_400_000))
 
     const { consentimento: c } = await chamar(s.consentimentos.conceder({
       pacienteId: filhos.itens[0].id, escolaId: escolas.itens[0].id,
@@ -358,7 +359,7 @@ describe('regra 1 — quem autoriza a escola e o responsavel', () => {
 
     // 3. Qualquer campo que mude a autorizacao faz a conferencia falhar.
     expect(await conferirResumoDoTermo(c.hashTermo, { ...dados, escopos: ['REGISTRO_OCORRENCIA'] })).toBe(false)
-    expect(await conferirResumoDoTermo(c.hashTermo, { ...dados, validadeAte: c.concedidoEm })).toBe(false)
+    expect(await conferirResumoDoTermo(c.hashTermo, { ...dados, validadeAte: diaCivilEm(new Date(Date.now() + 121 * 86_400_000)) })).toBe(false)
     expect(await conferirResumoDoTermo(c.hashTermo, { ...dados, escolaId: escolas.itens[1].id })).toBe(false)
     expect(await conferirResumoDoTermo(c.hashTermo, { ...dados, pacienteId: filhos.itens[1].id })).toBe(false)
     expect(await conferirResumoDoTermo(c.hashTermo, { ...dados, versaoTermo: '2026-09' })).toBe(false)
@@ -375,7 +376,7 @@ describe('regra 1 — quem autoriza a escola e o responsavel', () => {
   it('consentimento gera convite, e so o convite aceito gera vinculo', async () => {
     await entrarComo('RESPONSAVEL')
     const concedido = await chamar(s.consentimentos.conceder({
-      pacienteId: 'p-001', escolaId: 'esc-1', escopos: ['CARTAO_ESTRATEGIA'], validadeAte: '2099-01-01T00:00:00Z',
+      pacienteId: 'p-001', escolaId: 'esc-1', escopos: ['CARTAO_ESTRATEGIA'], validadeAte: '2099-01-01',
     }))
     // A escola e conhecida desde a concessao; vinculo e turma so depois do aceite.
     expect(concedido.consentimento).toMatchObject({
@@ -396,7 +397,7 @@ describe('regra 1 — quem autoriza a escola e o responsavel', () => {
   it('conceder sem escola e recusado: consentimento tem de ser especifico', async () => {
     await entrarComo('RESPONSAVEL')
     const erro = await erroDe(s.consentimentos.conceder({
-      pacienteId: 'p-001', escolaId: '', escopos: ['CARTAO_ESTRATEGIA'], validadeAte: '2099-01-01T00:00:00Z',
+      pacienteId: 'p-001', escolaId: '', escopos: ['CARTAO_ESTRATEGIA'], validadeAte: '2099-01-01',
     }))
     expect(erro.codigo).toBe('VALIDACAO')
     expect(erro.campos.escolaId).toBeTruthy()
@@ -410,7 +411,7 @@ describe('regra 1 — quem autoriza a escola e o responsavel', () => {
   it('reemitir convite derruba o token anterior', async () => {
     await entrarComo('RESPONSAVEL')
     const primeiro = await chamar(s.consentimentos.conceder({
-      pacienteId: 'p-002', escolaId: 'esc-2', escopos: ['CARTAO_ESTRATEGIA'], validadeAte: '2099-01-01T00:00:00Z',
+      pacienteId: 'p-002', escolaId: 'esc-2', escopos: ['CARTAO_ESTRATEGIA'], validadeAte: '2099-01-01',
     }))
     expect((await chamar(s.convites.obter(primeiro.tokenConvite))).situacao).toBe('VALIDO')
 
@@ -425,7 +426,7 @@ describe('regra 1 — quem autoriza a escola e o responsavel', () => {
   it('reemitir convite de consentimento revogado e recusado', async () => {
     await entrarComo('RESPONSAVEL')
     const concedido = await chamar(s.consentimentos.conceder({
-      pacienteId: 'p-002', escolaId: 'esc-1', escopos: ['CARTAO_ESTRATEGIA'], validadeAte: '2099-01-01T00:00:00Z',
+      pacienteId: 'p-002', escolaId: 'esc-1', escopos: ['CARTAO_ESTRATEGIA'], validadeAte: '2099-01-01',
     }))
     await chamar(s.consentimentos.revogar(concedido.consentimento.id))
     expect((await erroDe(s.consentimentos.reemitirConvite(concedido.consentimento.id))).codigo).toBe('CONFLITO')
@@ -438,7 +439,7 @@ describe('regra 1 — quem autoriza a escola e o responsavel', () => {
 
     await entrarComo('RESPONSAVEL')
     const concedido = await chamar(s.consentimentos.conceder({
-      pacienteId: 'p-002', escolaId: 'esc-1', escopos: ['CARTAO_ESTRATEGIA'], validadeAte: '2099-01-01T00:00:00Z',
+      pacienteId: 'p-002', escolaId: 'esc-1', escopos: ['CARTAO_ESTRATEGIA'], validadeAte: '2099-01-01',
     }))
     await chamar(s.convites.aceitar(concedido.tokenConvite, {
       nome: 'Outra Professora', email: 'outra.professora@escola.example', senha: '12345678',
@@ -450,7 +451,7 @@ describe('regra 1 — quem autoriza a escola e o responsavel', () => {
   it('a concessao fica auditada com o nome da escola', async () => {
     await entrarComo('RESPONSAVEL')
     await chamar(s.consentimentos.conceder({
-      pacienteId: 'p-001', escolaId: 'esc-2', escopos: ['CARTAO_ESTRATEGIA'], validadeAte: '2099-01-01T00:00:00Z',
+      pacienteId: 'p-001', escolaId: 'esc-2', escopos: ['CARTAO_ESTRATEGIA'], validadeAte: '2099-01-01',
     }))
     const registro = await ultimaAuditoria()
     expect(registro).toMatchObject({ acao: 'CONCESSAO_ACESSO', entidade: 'Consentimento' })
@@ -500,7 +501,7 @@ describe('regra 1 — quem autoriza a escola e o responsavel', () => {
       const antes = doNoah().length
 
       const erro = await erroDe(s.consentimentos.conceder({
-        pacienteId: 'p-014', escolaId: 'esc-1', escopos: ['CARTAO_ESTRATEGIA'], validadeAte: '2099-01-01T00:00:00Z',
+        pacienteId: 'p-014', escolaId: 'esc-1', escopos: ['CARTAO_ESTRATEGIA'], validadeAte: '2099-01-01',
       }))
       expect(erro.codigo).toBe('ACESSO_NEGADO')
       expect(erro.message).toBe('Somente o responsável legal pode autorizar o acesso da escola.')
@@ -514,7 +515,7 @@ describe('regra 1 — quem autoriza a escola e o responsavel', () => {
     it('responsavel legal do mesmo paciente concede normalmente', async () => {
       await entrarPorEmail(ROSA)
       const { consentimento, tokenConvite } = await chamar(s.consentimentos.conceder({
-        pacienteId: 'p-014', escolaId: 'esc-1', escopos: ['CARTAO_ESTRATEGIA'], validadeAte: '2099-01-01T00:00:00Z',
+        pacienteId: 'p-014', escolaId: 'esc-1', escopos: ['CARTAO_ESTRATEGIA'], validadeAte: '2099-01-01',
       }))
       expect(consentimento).toMatchObject({ pacienteId: 'p-014', situacao: 'VIGENTE', responsavel: 'Rosa Ferrer' })
       expect((await chamar(s.convites.obter(tokenConvite))).situacao).toBe('VALIDO')

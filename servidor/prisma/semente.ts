@@ -19,13 +19,14 @@ import { PrismaPg } from '@prisma/adapter-pg'
 import type {
   ConteudoRelatorio, Destinatario, ObjetivoNoRelatorio, RegistroAuditoria,
 } from '@sinctea/compartilhado'
+import { diaCivilEm } from '@sinctea/compartilhado/dominio/datas'
 import { jsonCanonico, resumoSha256 } from '@sinctea/compartilhado/dominio/hash'
 import {
   percentualIndependente, situacaoConvite, textoDoCriterio, textoDoPeriodo,
 } from '@sinctea/compartilhado/dominio/regras'
 import { resumoDoTermo } from '@sinctea/compartilhado/dominio/termo'
 import { PrismaClient } from '../src/gerado/client.js'
-import { criarDadosDemonstracao, diaEmManaus, emManaus, type BancoDemonstracao } from './semente/dados.js'
+import { criarDadosDemonstracao, emManaus, type BancoDemonstracao } from './semente/dados.js'
 import { uuidV7 } from './semente/uuid7.js'
 
 /**
@@ -84,7 +85,7 @@ function montarConteudo(
   const plano = dados.planos.find((p) => p.pacienteId === pedido.pacienteId)!
   const sessoes = dados.sessoes
     .filter((s) => s.pacienteId === pedido.pacienteId && s.situacao === 'ENCERRADA' && s.inicio)
-    .filter((s) => diaEmManaus(s.inicio!) >= periodoInicio && diaEmManaus(s.inicio!) <= periodoFim)
+    .filter((s) => diaCivilEm(new Date(s.inicio!)) >= periodoInicio && diaCivilEm(new Date(s.inicio!)) <= periodoFim)
     .sort((a, b) => a.numero - b.numero)
 
   const objetivos: ObjetivoNoRelatorio[] = pedido.objetivoIds.map((objetivoId) => {
@@ -188,8 +189,8 @@ export async function semear(
   const relatorios = await Promise.all(relatoriosDoMock.map(async ({ id, pedido: doPedido }) => {
     const pedido = { ...doPedido, pacienteId: ids.get(doPedido.pacienteId)!,
       autorId: ids.get(doPedido.autorId)!, objetivoIds: doPedido.objetivoIds.map((o) => ids.get(o)!) }
-    const periodoInicio = diaEmManaus(emManaus(agora, pedido.diasInicio))
-    const periodoFim = diaEmManaus(emManaus(agora, pedido.diasFim))
+    const periodoInicio = diaCivilEm(new Date(emManaus(agora, pedido.diasInicio)))
+    const periodoFim = diaCivilEm(new Date(emManaus(agora, pedido.diasFim)))
     const conteudo = montarConteudo(dados, pedido, periodoInicio, periodoFim)
     return {
       id: ids.get(id)!, pedido, periodoInicio, periodoFim,
@@ -211,19 +212,15 @@ export async function semear(
     }
   })
 
-  // Datas so-dia: o diagrama diz Date, e o docs/01 manda Date para date.
-  const consentimentos = await Promise.all(dados.consentimentos.map(async (c) => {
-    const validadeAte = diaEmManaus(c.validadeAte)
-    return {
-      ...c, validadeAte,
-      // O resumo cobre o que fica gravado: ids definitivos e a data so-dia.
-      hashTermo: await resumoDoTermo({
-        versaoTermo: VERSAO_DO_TERMO_SEMEADO, responsavelId: c.responsavelId,
-        pacienteId: c.pacienteId, escolaId: c.escolaId, escopos: c.escopos,
-        validadeAte, concedidoEm: c.concedidoEm,
-      }),
-    }
-  }))
+  // O resumo cobre o que fica gravado: ids definitivos e a validade so-dia.
+  const consentimentos = await Promise.all(dados.consentimentos.map(async (c) => ({
+    ...c,
+    hashTermo: await resumoDoTermo({
+      versaoTermo: VERSAO_DO_TERMO_SEMEADO, responsavelId: c.responsavelId,
+      pacienteId: c.pacienteId, escolaId: c.escolaId, escopos: c.escopos,
+      validadeAte: c.validadeAte, concedidoEm: c.concedidoEm,
+    }),
+  })))
 
   const todosUsuarios = [...dados.profissionais, ...dados.responsaveis, ...dados.professores]
   const senhas = await Promise.all(
@@ -262,7 +259,7 @@ export async function semear(
     await tx.planoTerapeutico.createMany({
       data: dados.planos.map((p) => ({
         id: p.id, pacienteId: p.pacienteId, autorId: p.autorId, status: p.status,
-        dataInicio: soDia(diaEmManaus(p.dataInicio)), dataRevisao: soDia(diaEmManaus(p.dataRevisao)),
+        dataInicio: soDia(p.dataInicio), dataRevisao: soDia(p.dataRevisao),
         ultimaRevisaoEm: talvez(p.ultimaRevisaoEm), observacaoValidacao: p.observacaoValidacao,
       })),
     })
@@ -297,7 +294,7 @@ export async function semear(
     })
     await tx.execucaoAtividadeCasa.createMany({
       data: dados.execucoes.map((e) => ({
-        ...e, dataRealizacao: soDia(diaEmManaus(e.dataRealizacao)),
+        ...e, dataRealizacao: soDia(e.dataRealizacao),
       })),
     })
 

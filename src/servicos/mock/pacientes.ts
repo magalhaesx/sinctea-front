@@ -1,5 +1,6 @@
 import type { ServicoEscola, ServicoPaciente, ServicoProfissional } from '@sinctea/compartilhado'
 import type { Paciente, PacienteDetalhe, PacienteResumo, SituacaoPlano } from '@sinctea/compartilhado'
+import { partesDaDataCivil } from '@sinctea/compartilhado/dominio/datas'
 import { idadeEmAnos, situacaoConsentimento } from '@sinctea/compartilhado/dominio/regras'
 import { alcancaClinicamente, exigirPacienteClinico } from './acesso'
 import {
@@ -94,7 +95,7 @@ export const pacientesMock: ServicoPaciente = {
     const sessao = exigirPerfil(['TERAPEUTA', 'COORDENADOR'], 'Paciente')
     const erros: Record<string, string> = {}
     if (!dados.nome.trim()) erros.nome = 'Informe o nome do paciente.'
-    if (Number.isNaN(Date.parse(dados.dataNascimento))) erros.dataNascimento = 'Informe a data de nascimento.'
+    if (!partesDaDataCivil(dados.dataNascimento)) erros.dataNascimento = 'Informe a data de nascimento.'
     if (![1, 2, 3].includes(dados.nivelSuporte)) erros.nivelSuporte = 'Escolha o nível de suporte.'
     if (!banco.profissionais.some((p) => p.id === dados.profissionalResponsavelId)) {
       erros.profissionalResponsavelId = 'Escolha o profissional responsável.'

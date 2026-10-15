@@ -11,7 +11,7 @@ import { Titulo } from '../../ui/Titulo'
 import { EstadoCarregando } from '../../ui/EstadoCarregando'
 import { EstadoErro } from '../../ui/EstadoErro'
 import { usarSessao } from '../../contexto/Sessao'
-import { emData } from '@sinctea/compartilhado/dominio/datas'
+import { emDataCivil } from '@sinctea/compartilhado/dominio/datas'
 import { frequenciaEmLinguagemCotidiana, frequenciaSemanalEmPalavras } from '@sinctea/compartilhado/dominio/regras'
 import {
   servicos, type AtividadeCasa, type ConsentimentoDetalhe, type FilhoResumo,
@@ -59,7 +59,7 @@ function situacaoDaEscola(c: ConsentimentoDetalhe, podeAutorizar: boolean): { to
   if (c.situacao === 'VIGENTE') {
     return {
       tom: 'ok',
-      titulo: `${c.escola} tem acesso até ${emData(c.validadeAte)}`,
+      titulo: `${c.escola} tem acesso até ${emDataCivil(c.validadeAte)}`,
       texto: `${c.professor} é quem acessa. Você pode encerrar quando quiser, e o encerramento vale na hora.`,
     }
   }
@@ -67,7 +67,7 @@ function situacaoDaEscola(c: ConsentimentoDetalhe, podeAutorizar: boolean): { to
     return {
       tom: 'neutro',
       titulo: `${c.escola} ainda não começou a acessar`,
-      texto: `O acesso autorizado começa a valer e vai até ${emData(c.validadeAte)}.`,
+      texto: `O acesso autorizado começa a valer e vai até ${emDataCivil(c.validadeAte)}.`,
     }
   }
   if (c.situacao === 'REVOGADO') {
@@ -80,7 +80,7 @@ function situacaoDaEscola(c: ConsentimentoDetalhe, podeAutorizar: boolean): { to
   return {
     tom: 'neutro',
     titulo: `O prazo de ${c.escola} terminou`,
-    texto: `O acesso valia até ${emData(c.validadeAte)} e se encerrou sozinho.${podeAutorizar ? ' Para voltar, faça uma autorização nova.' : ''}`,
+    texto: `O acesso valia até ${emDataCivil(c.validadeAte)} e se encerrou sozinho.${podeAutorizar ? ' Para voltar, faça uma autorização nova.' : ''}`,
   }
 }
 

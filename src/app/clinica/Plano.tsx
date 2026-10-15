@@ -11,7 +11,7 @@ import { Titulo } from '../../ui/Titulo'
 import { EstadoCarregando } from '../../ui/EstadoCarregando'
 import { EstadoErro } from '../../ui/EstadoErro'
 import { validarNovoObjetivo } from '@sinctea/compartilhado/dominio/regras'
-import { emData } from '@sinctea/compartilhado/dominio/datas'
+import { emDataCivil } from '@sinctea/compartilhado/dominio/datas'
 import {
   ErroServico, servicos, type NovoObjetivo, type Objetivo, type PlanoTerapeutico,
   type SituacaoPlano, type StatusObjetivo,
@@ -189,7 +189,7 @@ export function Plano() {
         return (
           <>
             <div className="flex flex-wrap items-start justify-between gap-3">
-              <Titulo sub={`Início em ${emData(plano.dataInicio)} · próxima revisão em ${emData(plano.dataRevisao)} · ${plano.objetivos.length} ${plano.objetivos.length === 1 ? 'objetivo' : 'objetivos'}`}>
+              <Titulo sub={`Início em ${emDataCivil(plano.dataInicio)} · próxima revisão em ${emDataCivil(plano.dataRevisao)} · ${plano.objetivos.length} ${plano.objetivos.length === 1 ? 'objetivo' : 'objetivos'}`}>
                 Plano Terapêutico Individual
               </Titulo>
               <div className="flex flex-wrap items-center gap-2">

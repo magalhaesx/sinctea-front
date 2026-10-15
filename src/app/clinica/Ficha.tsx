@@ -10,7 +10,7 @@ import { EstadoCarregando } from '../../ui/EstadoCarregando'
 import { EstadoErro } from '../../ui/EstadoErro'
 import { Paginacao } from '../../ui/Paginacao'
 import { descricaoNivelSuporte, ehPreliminar } from '@sinctea/compartilhado/dominio/regras'
-import { emData } from '@sinctea/compartilhado/dominio/datas'
+import { emData, emDataCivil } from '@sinctea/compartilhado/dominio/datas'
 import {
   ErroServico, servicos, type OcorrenciaComportamental, type Origem, type Pagina,
   type PacienteDetalhe, type SituacaoConsentimento, type SituacaoPlano,
@@ -248,7 +248,7 @@ export function Ficha() {
               <h2 className="text-lg font-bold">Identificação</h2>
               <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-[15px]">
                 <dt className="font-bold">Idade</dt>
-                <dd>{p.idade} anos · nascimento em {emData(p.dataNascimento)}</dd>
+                <dd>{p.idade} anos · nascimento em {emDataCivil(p.dataNascimento)}</dd>
                 <dt className="font-bold">Nível de suporte</dt>
                 <dd>{descricaoNivelSuporte(p.nivelSuporte)}</dd>
                 <dt className="font-bold">Plano terapêutico</dt>

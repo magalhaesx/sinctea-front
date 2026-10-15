@@ -6,6 +6,7 @@ import {
 import {
   ehPreliminar, objetivoAtingiuCriterio, validarDevolucaoPlano, validarNovoObjetivo,
 } from '@sinctea/compartilhado/dominio/regras'
+import { inicioDoDia } from '@sinctea/compartilhado/dominio/datas'
 import { alcancaClinicamente, exigirPacienteClinico } from './acesso'
 import {
   auditar, banco, exigirPerfil, exigirSessao, exigirValido, gerarId, naoEncontrado, paginar,
@@ -93,7 +94,7 @@ export const planosMock: ServicoPlano = {
         paciente: { id: p.pacienteId, nome: banco.pacientes.find((x) => x.id === p.pacienteId)?.nome ?? '—' },
         autor: { id: p.autorId, nome: banco.profissionais.find((x) => x.id === p.autorId)?.nome ?? '—' },
         // O mock nao guarda a data do envio; usa o inicio do plano como aproximacao.
-        enviadoEm: p.dataInicio,
+        enviadoEm: inicioDoDia(p.dataInicio).toISOString(),
         totalObjetivos: p.objetivos.length,
       }))
       .sort((a, b) => a.enviadoEm.localeCompare(b.enviadoEm))

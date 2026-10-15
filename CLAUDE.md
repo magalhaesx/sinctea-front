@@ -196,10 +196,10 @@ Atualizado em 14/10/2026, lendo o código — não a memória.
 - **Camada de serviços**: `compartilhado/src/contratos.ts` com 16 serviços; implementação
   simulada que aplica controle de acesso e auditoria; stubs de API que não
   aplicam regra nenhuma; a escolha entre as duas por `VITE_API_URL`
-- **204 testes em 14 arquivos, nos três pacotes**, rodados por um único
+- **229 testes em 15 arquivos, nos três pacotes**, rodados por um único
   `npm test` na raiz, sem passo manual. O principal ainda é
   `src/servicos/mock/regrasInviolaveis.test.ts`, que verifica as regras
-  invioláveis na camada de dados, e não na tela. Os 21 do servidor rodam contra
+  invioláveis na camada de dados, e não na tela. Os 32 do servidor rodam contra
   um PostgreSQL 17 de verdade
 - **As seis regras verificadas** em `docs/06`: para cada teste citado, a regra foi
   quebrada de propósito para confirmar que ele falha, e as quebras que não
@@ -212,15 +212,30 @@ Atualizado em 14/10/2026, lendo o código — não a memória.
 **Em construção — Etapa 9, a fundação do servidor (`docs/07`, até 19/10)**
 
 O `docs/07` substitui as etapas 9 e 10 do `docs/05`. No código, hoje:
-- Passos 1 a 4 feitos: `docs/07` e `CLAUDE.md`; os restos da Etapa 8; *npm
-  workspaces* com três pacotes — o front na raiz, `compartilhado/` com tipos,
-  contratos e domínio, e `servidor/` com NestJS; e o banco
+- Passos 1 a 4 e o 4b feitos: `docs/07` e `CLAUDE.md`; os restos da Etapa 8;
+  *npm workspaces* com três pacotes — o front na raiz, `compartilhado/` com
+  tipos, contratos e domínio, e `servidor/` com NestJS; o banco; e, no 4b, os
+  caminhos coerentes e as datas civis
 - O banco: `servidor/prisma/schema.prisma`, com Prisma 7.10.0 e o adaptador
   pg. São 22 tabelas: 21 das classes (`CriterioDominio`, objeto de valor, vira
   colunas de `objetivo`) e a de junção da equipe do paciente. A migração inicial traz
   os CHECKs da seção 7 do `docs/01` e os *triggers* que tornam imutáveis a
   auditoria e o relatório emitido. A semente porta os dados do mock, com senha
   em argon2id, tokens de convite aleatórios e dois relatórios emitidos
+- A segunda migração, `caminhos_coerentes`, garante que dois caminhos entre
+  as mesmas linhas levam ao mesmo paciente: cinco chaves estrangeiras compostas
+  (vínculo escolar → consentimento e → convite, ocorrência escolar → vínculo,
+  ocorrência comportamental → ocorrência escolar e → sessão) e *triggers* para o
+  que chave composta não alcança — o objetivo da atividade de casa e do registro
+  de sessão, os objetivos do relatório e o dono fixo de plano, objetivo e
+  sessão. Composição sem cascata: apagar plano com objetivo é recusado. Entraram
+  também os índices das chaves estrangeiras e dos filtros (`docs/06`, seção 7)
+- **Datas civis** — nascimento, validade do consentimento, período do relatório,
+  início e revisão do plano, dia da atividade de casa — são `DataCivil`,
+  "AAAA-MM-DD", sem hora nem fuso, do banco à tela. A validade vale o dia
+  inteiro e termina à 00:00 do dia seguinte em Manaus (`fimDaValidade`, em
+  `compartilhado/src/dominio/datas.ts`), qualquer que seja o fuso da máquina:
+  o teste roda com ela em UTC, em Tóquio e em Manaus
 - `GET /api/saude` lê o banco: responde 200 com o nome da última migração
   aplicada, ou 503 com o banco fora do ar
 - Na máquina de desenvolvimento, `npm run banco -w @sinctea/servidor` sobe um
@@ -266,6 +281,11 @@ Enquanto não se resolverem, não devem ser afirmadas na defesa:
    ser construído, não há manifesto nem *service worker*. O registro de sessão
    (tela 7) mostra o estado da conexão e marca como pendente o que ainda não
    subiu, mas a fila de sincronização não existe.
+3. **O terapeuta ainda não escreve o cartão de estratégias pelo sistema; o que a
+   escola lê veio da semente.** O contrato só tem `iniciarCartao`, que cria um
+   rascunho em branco, nenhuma tela o chama, e não há operação que preencha o
+   cartão. No banco, os CHECKs de `oQueFazer` e `oQueEvitar` recusam esse
+   rascunho, e ficam.
 
 O hash do termo de consentimento saiu desta lista em 04/10/2026: `hashTermo`
 passou a ser `sha256:<versão>:<hex>` calculado sobre os campos que compõem o

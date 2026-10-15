@@ -10,7 +10,7 @@ import { EstadoCarregando } from '../../ui/EstadoCarregando'
 import { EstadoErro } from '../../ui/EstadoErro'
 import { Paginacao } from '../../ui/Paginacao'
 import { FolhaRelatorio, NOME_DO_DESTINATARIO } from '../../componentes/FolhaRelatorio'
-import { diaIso, emData } from '@sinctea/compartilhado/dominio/datas'
+import { diaCivilEm, emData, emDataCivil } from '@sinctea/compartilhado/dominio/datas'
 import {
   ErroServico, servicos, type ConteudoRelatorio, type Destinatario, type Pagina,
   type PedidoRelatorio, type PlanoTerapeutico, type RelatorioEvolucao,
@@ -50,9 +50,9 @@ export function Relatorio() {
 
   const hoje = new Date()
   const [periodoInicio, setPeriodoInicio] = useState(
-    diaIso(new Date(hoje.getTime() - DIAS_PADRAO * 86_400_000)),
+    diaCivilEm(new Date(hoje.getTime() - DIAS_PADRAO * 86_400_000)),
   )
-  const [periodoFim, setPeriodoFim] = useState(diaIso(hoje))
+  const [periodoFim, setPeriodoFim] = useState(diaCivilEm(hoje))
   const [objetivoIds, setObjetivoIds] = useState<string[]>([])
   const [destinatario, setDestinatario] = useState<Destinatario>('PROFISSIONAIS')
   const [consideracoes, setConsideracoes] = useState('')
@@ -320,7 +320,7 @@ export function Relatorio() {
                           >
                             <span>
                               <b className="text-cli-ink underline">
-                                {emData(r.periodoInicio)} a {emData(r.periodoFim)}
+                                {emDataCivil(r.periodoInicio)} a {emDataCivil(r.periodoFim)}
                               </b>
                               <span className="block text-sm text-tinta2">
                                 {NOME_DO_DESTINATARIO[r.destinatario]} · emitido em{' '}

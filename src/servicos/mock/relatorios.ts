@@ -4,6 +4,7 @@ import {
   type RelatorioEvolucao, type Sessao,
 } from '@sinctea/compartilhado'
 import { percentualIndependente, textoDoCriterio, textoDoPeriodo } from '@sinctea/compartilhado/dominio/regras'
+import { diaCivilEm } from '@sinctea/compartilhado/dominio/datas'
 import { resumoSha256 } from '@sinctea/compartilhado/dominio/hash'
 import { exigirPacienteClinico } from './acesso'
 import { auditar, banco, exigirValido, gerarId, naoEncontrado, paginar, relogio, responder } from './infra'
@@ -21,7 +22,9 @@ import { auditar, banco, exigirValido, gerarId, naoEncontrado, paginar, relogio,
  * saiu — se o profissional mudar de nome depois, o documento nao muda.
  */
 
-const soODia = (iso: string) => iso.slice(0, 10)
+/* O dia da sessao em Manaus, e nao em UTC: a sessao das 21h ja e o dia
+   seguinte em UTC, e cairia fora de um periodo que termina naquele dia. */
+const soODia = (iso: string) => diaCivilEm(new Date(iso))
 
 /** Sessoes encerradas do paciente dentro do periodo, em ordem de numero. */
 function sessoesDoPeriodo(pacienteId: string, inicio: string, fim: string): Sessao[] {

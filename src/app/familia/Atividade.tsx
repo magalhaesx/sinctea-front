@@ -10,7 +10,7 @@ import { Titulo } from '../../ui/Titulo'
 import { EstadoCarregando } from '../../ui/EstadoCarregando'
 import { EstadoErro } from '../../ui/EstadoErro'
 import { CartaoAtividadeFamilia } from '../../componentes/CartaoAtividadeFamilia'
-import { emData } from '@sinctea/compartilhado/dominio/datas'
+import { emDataCivil } from '@sinctea/compartilhado/dominio/datas'
 import {
   ErroServico, servicos, type AtividadeCasa, type Desempenho, type ExecucaoAtividadeCasa,
 } from '../../servicos'
@@ -219,7 +219,7 @@ export function Atividade() {
                 {estado.execucoes.map((e) => (
                   <li key={e.id} className="rounded-lg border border-linha bg-sup px-3 py-2.5">
                     <span className="flex flex-wrap items-center gap-2">
-                      <b>{emData(e.dataRealizacao)}</b>
+                      <b>{emDataCivil(e.dataRealizacao)}</b>
                       {/* "Nao quis" tem o mesmo peso das outras: e informacao. */}
                       <Etiqueta simbolo="○">{NOME_DO_DESEMPENHO[e.desempenho]}</Etiqueta>
                     </span>

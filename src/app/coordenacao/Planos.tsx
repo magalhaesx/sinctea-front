@@ -12,7 +12,7 @@ import { EstadoErro } from '../../ui/EstadoErro'
 import { EstadoVazio } from '../../ui/EstadoVazio'
 import { Paginacao } from '../../ui/Paginacao'
 import { usarSessao } from '../../contexto/Sessao'
-import { emData } from '@sinctea/compartilhado/dominio/datas'
+import { emData, emDataCivil } from '@sinctea/compartilhado/dominio/datas'
 import { validarDevolucaoPlano } from '@sinctea/compartilhado/dominio/regras'
 import {
   ErroServico, servicos, type Pagina, type PlanoParaValidacao, type PlanoTerapeutico,
@@ -270,9 +270,9 @@ export function Planos() {
                   <dt className="font-bold">Autor</dt>
                   <dd>{item?.autor.nome ?? '—'}</dd>
                   <dt className="font-bold">Início previsto</dt>
-                  <dd>{emData(plano.dados.dataInicio)}</dd>
+                  <dd>{emDataCivil(plano.dados.dataInicio)}</dd>
                   <dt className="font-bold">Próxima revisão</dt>
-                  <dd>{emData(plano.dados.dataRevisao)}</dd>
+                  <dd>{emDataCivil(plano.dados.dataRevisao)}</dd>
                   <dt className="font-bold">Objetivos</dt>
                   <dd className="tabular-nums">{plano.dados.objetivos.length}</dd>
                 </dl>
