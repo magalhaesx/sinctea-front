@@ -337,6 +337,15 @@ viaja dentro do próprio `hashTermo`.
 - Não existe entidade de registro funcional (ver a afirmação 1 acima)
 - Trilha de Autonomia: movida para trabalhos futuros em setembro; a decisão
   voltou à orientadora (`docs/08`)
+- `usuario.email` é único com diferença de maiúsculas: `Ana@x` e `ana@x` seriam
+  duas contas. Na Etapa 10, o login normaliza para minúsculas, e a unicidade
+  passa a valer sobre `lower(email)`
+- `percentualMinimo`: o domínio aceita de 1 a 100 (`validarNovoObjetivo`), mas o
+  CHECK do banco aceita de 0 a 100. Alinhar numa migração
+- `frequenciaSemanal`, `sessoesConsecutivas`, `numero` e `ordem` não têm CHECK
+  de no mínimo 1
+- O `sinctea_app` só precisa ler `_prisma_migrations`: revogar o INSERT, o
+  UPDATE e o DELETE dele nessa tabela
 
 ## 8. Divisão de trabalho entre as duas sessões de IA
 
