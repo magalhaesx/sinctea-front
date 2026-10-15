@@ -1,0 +1,4 @@
+# Migracoes do Prisma sempre com LF, em qualquer sistema: o Prisma assina o
+# conteudo do arquivo, e um CRLF de checkout no Windows faria a migracao ja
+# aplicada parecer modificada.
+servidor/prisma/migracoes/** text eol=lf

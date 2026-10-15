@@ -182,7 +182,7 @@ Qualidade: ISO/IEC 25010:2023. Método: Kanban com limites de trabalho em progre
 
 ## 7. Estado atual
 
-Atualizado em 13/10/2026, lendo o código — não a memória.
+Atualizado em 14/10/2026, lendo o código — não a memória.
 
 **Concluído**
 - Pré-projeto entregue em 17/08 — não pode mais ser alterado
@@ -196,9 +196,11 @@ Atualizado em 13/10/2026, lendo o código — não a memória.
 - **Camada de serviços**: `compartilhado/src/contratos.ts` com 16 serviços; implementação
   simulada que aplica controle de acesso e auditoria; stubs de API que não
   aplicam regra nenhuma; a escolha entre as duas por `VITE_API_URL`
-- **182 testes em 11 arquivos, nos três pacotes**, rodados por um único
-  `npm test` na raiz. O principal é `src/servicos/mock/regrasInviolaveis.test.ts`,
-  que verifica as regras invioláveis na camada de dados, e não na tela
+- **204 testes em 14 arquivos, nos três pacotes**, rodados por um único
+  `npm test` na raiz, sem passo manual. O principal ainda é
+  `src/servicos/mock/regrasInviolaveis.test.ts`, que verifica as regras
+  invioláveis na camada de dados, e não na tela. Os 21 do servidor rodam contra
+  um PostgreSQL 17 de verdade
 - **As seis regras verificadas** em `docs/06`: para cada teste citado, a regra foi
   quebrada de propósito para confirmar que ele falha, e as quebras que não
   derrubaram teste nenhum estão registradas
@@ -210,11 +212,21 @@ Atualizado em 13/10/2026, lendo o código — não a memória.
 **Em construção — Etapa 9, a fundação do servidor (`docs/07`, até 19/10)**
 
 O `docs/07` substitui as etapas 9 e 10 do `docs/05`. No código, hoje:
-- Passos 1 a 3 feitos: `docs/07` e `CLAUDE.md`, os restos da Etapa 8 e
-  *npm workspaces* com três pacotes — o front na raiz, `compartilhado/` com
-  tipos, contratos e domínio, e `servidor/` com um NestJS mínimo. A única rota,
-  `GET /api/saude`, responde com uma função do domínio importada de
-  `@sinctea/compartilhado`. Ainda sem banco
+- Passos 1 a 4 feitos: `docs/07` e `CLAUDE.md`; os restos da Etapa 8; *npm
+  workspaces* com três pacotes — o front na raiz, `compartilhado/` com tipos,
+  contratos e domínio, e `servidor/` com NestJS; e o banco
+- O banco: `servidor/prisma/schema.prisma`, com Prisma 7.10.0 e o adaptador
+  pg. São 22 tabelas: 21 das classes (`CriterioDominio`, objeto de valor, vira
+  colunas de `objetivo`) e a de junção da equipe do paciente. A migração inicial traz
+  os CHECKs da seção 7 do `docs/01` e os *triggers* que tornam imutáveis a
+  auditoria e o relatório emitido. A semente porta os dados do mock, com senha
+  em argon2id, tokens de convite aleatórios e dois relatórios emitidos
+- `GET /api/saude` lê o banco: responde 200 com o nome da última migração
+  aplicada, ou 503 com o banco fora do ar
+- Na máquina de desenvolvimento, `npm run banco -w @sinctea/servidor` sobe um
+  PostgreSQL 17 embutido em `servidor/.banco/`, porta 54329, sem instalação nem
+  Docker. Nos testes, um embutido descartável; no CI, o serviço `postgres:17`
+- Ainda não há Neon nem Render: é o passo 5
 - Os três pacotes são ESM. O front compila o fonte do compartilhado pela
   condição `fonte` do `package.json`; o servidor importa o JavaScript de
   `compartilhado/dist`, que o build dele gera antes
@@ -224,8 +236,8 @@ O `docs/07` substitui as etapas 9 e 10 do `docs/05`. No código, hoje:
   no achado 2 do `docs/06`
 
 **Próximo, pelo `docs/07`**
-- Etapa 10, até 26/10 — autenticação, *guards*, auditoria com *trigger* e os
-  módulos do caminho crítico das regras
+- Etapa 10, até 26/10 — autenticação, *guards*, a auditoria com o interceptador
+  (o *trigger* já entrou na Etapa 9) e os módulos do caminho crítico das regras
 - Etapa 11, até 09/11 — os demais serviços
 - Etapa 12, até 15/11 — a virada: o front só com a API, e `servicos/mock` removido
 - Etapa 13, de 16/11 a 23/11 — artigo, slides, vídeo e ensaio
@@ -237,8 +249,8 @@ responder: a data final (23/11 ou 30/11) e a Trilha de Autonomia (`docs/08`).
 
 As entregas de documentação do pré-projeto — matriz de rastreabilidade, BPMN, C4
 e estados do Objetivo — não vivem neste repositório; o estado de cada uma está no
-`docs/08`. DER e dicionário de dados saem do esquema Prisma, pelo Cowork, depois
-do commit 4 da Etapa 9.
+`docs/08`. DER e dicionário de dados saem do esquema Prisma, pelo Cowork: o
+esquema já existe.
 
 **Afirmações que o código ainda não sustenta**
 

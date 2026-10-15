@@ -15,15 +15,39 @@ jobs:
     # Versao fixa, e nao ubuntu-latest: o latest muda de sistema no meio do
     # semestre, e a entrega nao pode depender disso.
     runs-on: ubuntu-24.04
+
+    # O PostgreSQL de teste (docs/07, D8): a mesma versao 17 do Neon, com
+    # UTF8 e locale C, como o Neon. Os testes do servidor criam bancos
+    # descartaveis dentro dele.
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: sinctea
+          POSTGRES_PASSWORD: sinctea
+          POSTGRES_DB: sinctea
+          POSTGRES_INITDB_ARGS: --encoding=UTF8 --locale=C
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U sinctea"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+
+    env:
+      DATABASE_URL_TESTE: postgresql://sinctea:sinctea@localhost:5432/sinctea
+
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
+      # O postinstall do servidor gera o cliente do Prisma.
       - run: npm ci
       # Os tres pacotes: front, compartilhado e servidor (vite.config.ts, test.projects).
       - run: npm test
       - run: npm run build
-      # Compila o compartilhado para dist/ e, sobre ele, o servidor.
+      # Compila o compartilhado para dist/ e, sobre ele, o servidor e a semente.
       - run: npm run build:servidor

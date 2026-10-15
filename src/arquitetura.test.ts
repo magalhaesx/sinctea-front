@@ -43,15 +43,47 @@ function resolver(arquivo: string, especificador: string): string {
   return partes.join('/')
 }
 
-/** Os imports de um arquivo que saem de compartilhado/. */
-function saidasDoCompartilhado(arquivo: string, codigo: string): string[] {
+/**
+ * Os imports proibidos de um arquivo. `proibido` recebe o destino ja resolvido
+ * (caminho a partir da raiz, para imports relativos) ou o nome do pacote.
+ */
+function importsProibidos(
+  arquivo: string, codigo: string, proibido: (destino: string, relativo: boolean) => boolean,
+): string[] {
   return [...codigo.matchAll(ESPECIFICADOR)]
     .map(([, especificador]) => especificador)
-    .filter((especificador) => /^[./]/.test(especificador)
-      ? !resolver(arquivo, especificador).startsWith('/compartilhado/')
-      : PACOTE_DE_FORA.test(especificador))
+    .filter((especificador) => {
+      const relativo = /^[./]/.test(especificador)
+      return proibido(relativo ? resolver(arquivo, especificador) : especificador, relativo)
+    })
     .map((especificador) => `${arquivo} -> ${especificador}`)
 }
+
+/** Os imports de um arquivo que saem de compartilhado/. */
+function saidasDoCompartilhado(arquivo: string, codigo: string): string[] {
+  return importsProibidos(arquivo, codigo, (destino, relativo) => relativo
+    ? !destino.startsWith('/compartilhado/')
+    : PACOTE_DE_FORA.test(destino))
+}
+
+/**
+ * docs/01, secao 1: o servidor nao importa de src/ — a semente e portada do
+ * mock, e nao importada dele, porque o mock sai na Etapa 12 e a semente fica —,
+ * e o front nao importa do servidor nem do Prisma. O cliente gerado
+ * (servidor/src/gerado) fica de fora: e codigo do proprio Prisma.
+ */
+const doServidor = import.meta.glob<string>(
+  ['/servidor/{src,test,prisma,scripts}/**/*.{ts,mjs}', '!/servidor/src/gerado/**'],
+  { query: '?raw', import: 'default', eager: true },
+)
+/** O front inteiro, testes inclusive. */
+const doFront = import.meta.glob<string>('/src/**/*.{ts,tsx}', {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+})
+const PACOTE_DO_FRONT = /^sinctea-front(\/|$)/
+const PACOTE_DO_SERVIDOR_OU_DO_PRISMA = /^(@sinctea\/servidor(\/|$)|@prisma\/|prisma(\/|$))/
 
 const IMPORTA_MOCK = /from\s+['"][^'"]*servicos\/mock[^'"]*['"]|import\(\s*['"][^'"]*servicos\/mock/
 const IMPORTA_DADOS = /from\s+['"][^'"]*\/dados\/[^'"]*['"]/
@@ -84,6 +116,26 @@ describe('arquitetura', () => {
   it('nada em compartilhado/ importa de src/ nem de servidor/', () => {
     const violacoes = Object.entries(doCompartilhado)
       .flatMap(([caminho, codigo]) => saidasDoCompartilhado(caminho, codigo))
+    expect(violacoes).toEqual([])
+  })
+
+  it('encontra os arquivos do servidor', () => {
+    expect(Object.keys(doServidor).length).toBeGreaterThan(5)
+  })
+
+  it('servidor/ nao importa de src/', () => {
+    const violacoes = Object.entries(doServidor).flatMap(([caminho, codigo]) =>
+      importsProibidos(caminho, codigo, (destino, relativo) => relativo
+        ? destino.startsWith('/src/')
+        : PACOTE_DO_FRONT.test(destino)))
+    expect(violacoes).toEqual([])
+  })
+
+  it('src/ nao importa de servidor/ nem de @prisma', () => {
+    const violacoes = Object.entries(doFront).flatMap(([caminho, codigo]) =>
+      importsProibidos(caminho, codigo, (destino, relativo) => relativo
+        ? destino.startsWith('/servidor/')
+        : PACOTE_DO_SERVIDOR_OU_DO_PRISMA.test(destino)))
     expect(violacoes).toEqual([])
   })
 

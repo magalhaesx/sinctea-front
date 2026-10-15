@@ -5,3 +5,8 @@ dist
 *.tsbuildinfo
 publicar
 .claude/
+
+# Servidor: banco embutido, cliente gerado do Prisma e segredos locais
+servidor/.banco/
+servidor/src/gerado/
+.env

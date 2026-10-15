@@ -1,19 +1,30 @@
-import { Controller, Get } from '@nestjs/common'
+import { Controller, Get, ServiceUnavailableException } from '@nestjs/common'
 import { frequenciaEmLinguagemCotidiana } from '@sinctea/compartilhado/dominio/regras'
+import { ServicoBanco } from '../banco/servico-banco.js'
 
 /**
  * GET /api/saude
  *
- * Por enquanto, so a prova de que o servidor roda o MESMO dominio do front: a
- * frase vem de compartilhado/, e nao de uma copia. Quando o banco entrar
- * (Etapa 9, passo 4), esta rota passa a responder lendo o banco.
+ * Diz se o servidor esta de pe, se le o banco — o nome da ultima migracao
+ * aplicada — e se roda o mesmo dominio do front. Nunca devolve contagem nem
+ * registro: a rota e publica.
  */
 @Controller('saude')
 export class ControladorSaude {
+  constructor(private readonly banco: ServicoBanco) {}
+
   @Get()
-  verificar() {
+  async verificar() {
+    let migracao: string | null
+    try {
+      migracao = await this.banco.ultimaMigracaoAplicada()
+    } catch {
+      // O motivo fica no servidor: a resposta nao descreve a infraestrutura.
+      throw new ServiceUnavailableException('O banco de dados não respondeu.')
+    }
     return {
       situacao: 'no ar',
+      banco: { migracao },
       dominio: {
         funcao: 'frequenciaEmLinguagemCotidiana',
         entrada: 70,

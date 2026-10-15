@@ -1,0 +1,533 @@
+// Fonte unica do modelo fisico (docs/01, secao 7). O DER e o dicionario de
+// dados sao gerados daqui, e nao desenhados a parte.
+//
+// Regra de mapeamento: tabela em snake_case; colunas com os nomes de
+// compartilhado/src/tipos.ts; DateTime -> timestamptz(3); Date -> date;
+// enumeracao -> enum do PostgreSQL; atributo [1..*] -> array com CHECK de pelo
+// menos um elemento. As faixas fechadas e a imutabilidade estao na migracao,
+// porque o Prisma nao as expressa aqui.
+
+generator client {
+  provider            = "prisma-client"
+  output              = "../src/gerado"
+  moduleFormat        = "esm"
+  importFileExtension = "js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------- Enumeracoes
+
+enum Perfil {
+  TERAPEUTA
+  COORDENADOR
+  ADMINISTRADOR
+  RESPONSAVEL
+  PROFESSOR
+
+  @@map("perfil")
+}
+
+/// Sem SEM_PLANO: e estado da tela para quem ainda nao tem plano, e nao a
+/// situacao de um plano que existe (tipos.ts usa Exclude<SituacaoPlano, 'SEM_PLANO'>).
+enum SituacaoPlano {
+  RASCUNHO
+  AGUARDANDO_VALIDACAO
+  DEVOLVIDO
+  VIGENTE
+
+  @@map("situacao_plano")
+}
+
+enum StatusObjetivo {
+  NAO_INICIADO
+  EM_AQUISICAO
+  DOMINADO
+
+  @@map("status_objetivo")
+}
+
+enum Resultado {
+  INDEPENDENTE
+  AJUDA_GESTUAL
+  AJUDA_FISICA
+  SEM_RESPOSTA
+
+  @@map("resultado")
+}
+
+enum SituacaoSessao {
+  AGENDADA
+  EM_ANDAMENTO
+  PAUSADA
+  ENCERRADA
+  CANCELADA
+
+  @@map("situacao_sessao")
+}
+
+enum StatusSync {
+  PENDENTE
+  SINCRONIZADO
+
+  @@map("status_sync")
+}
+
+enum Origem {
+  CLINICA
+  CASA
+  ESCOLA
+
+  @@map("origem")
+}
+
+enum Destinatario {
+  PROFISSIONAIS
+  FAMILIA
+
+  @@map("destinatario")
+}
+
+enum Desempenho {
+  SOZINHO
+  COM_AJUDA
+  NAO_QUIS
+
+  @@map("desempenho")
+}
+
+enum EscopoAcesso {
+  CARTAO_ESTRATEGIA
+  REGISTRO_OCORRENCIA
+
+  @@map("escopo_acesso")
+}
+
+enum StatusVinculo {
+  ATIVO
+  ENCERRADO
+
+  @@map("status_vinculo")
+}
+
+enum AcaoAuditoria {
+  CONCESSAO_ACESSO
+  REVOGACAO_ACESSO
+  LEITURA_AUTORIZADA
+  ACESSO_NEGADO
+  CRIACAO
+  ALTERACAO
+
+  @@map("acao_auditoria")
+}
+
+enum OrigemAuditoria {
+  CLINICA
+  FAMILIA
+  ESCOLA
+  SISTEMA
+
+  @@map("origem_auditoria")
+}
+
+// ---------------------------------------------------------------- Usuarios
+// Tabela por subclasse: a chave de profissional, responsavel e professor_aee
+// e o proprio usuarioId, que e tambem chave estrangeira para usuario.
+
+model Usuario {
+  id             String    @id @default(uuid(7)) @db.Uuid
+  nome           String
+  email          String    @unique
+  /// Nunca trafega: nenhum tipo de compartilhado/ o carrega.
+  senhaHash      String
+  perfis         Perfil[]
+  ativo          Boolean
+  ultimoAcessoEm DateTime? @db.Timestamptz(3)
+
+  profissional       Profissional?
+  responsavel        Responsavel?
+  professorAee       ProfessorAEE?
+  registrosAuditoria RegistroAuditoria[]
+
+  @@map("usuario")
+}
+
+model Profissional {
+  usuarioId        String @id @db.Uuid
+  especialidade    String
+  registroConselho String
+
+  usuario              Usuario            @relation(fields: [usuarioId], references: [id])
+  pacientesDoCaso      Paciente[]         @relation("ResponsavelPeloCaso")
+  equipes              EquipePaciente[]
+  sessoesConduzidas    Sessao[]
+  planosDeQueEAutor    PlanoTerapeutico[]
+
+  @@map("profissional")
+}
+
+model Responsavel {
+  usuarioId String @id @db.Uuid
+  telefone  String
+
+  usuario        Usuario                 @relation(fields: [usuarioId], references: [id])
+  vinculos       VinculoFamiliar[]
+  consentimentos Consentimento[]
+  execucoes      ExecucaoAtividadeCasa[]
+
+  @@map("responsavel")
+}
+
+model ProfessorAEE {
+  usuarioId String @id @db.Uuid
+
+  usuario     Usuario             @relation(fields: [usuarioId], references: [id])
+  vinculos    VinculoEscolar[]
+  ocorrencias OcorrenciaEscolar[]
+
+  @@map("professor_aee")
+}
+
+// ---------------------------------------------------------------- Clinica
+
+model Paciente {
+  id                        String   @id @default(uuid(7)) @db.Uuid
+  nome                      String
+  dataNascimento            DateTime @db.Date
+  /// CHECK 1..3 na migracao.
+  nivelSuporte              Int
+  profissionalResponsavelId String   @db.Uuid
+  ativo                     Boolean
+
+  profissionalResponsavel Profissional               @relation("ResponsavelPeloCaso", fields: [profissionalResponsavelId], references: [usuarioId])
+  equipe                  EquipePaciente[]
+  vinculosFamiliares      VinculoFamiliar[]
+  sessoes                 Sessao[]
+  planos                  PlanoTerapeutico[]
+  ocorrencias             OcorrenciaComportamental[]
+  atividades              AtividadeCasa[]
+  relatorios              RelatorioEvolucao[]
+  consentimentos          Consentimento[]
+  vinculosEscolares       VinculoEscolar[]
+  ocorrenciasEscolares    OcorrenciaEscolar[]
+
+  @@map("paciente")
+}
+
+/// Associacao "equipe" (Paciente *-1..* Profissional): o equipeIds de tipos.ts.
+model EquipePaciente {
+  pacienteId     String @db.Uuid
+  profissionalId String @db.Uuid
+
+  paciente     Paciente     @relation(fields: [pacienteId], references: [id])
+  profissional Profissional @relation(fields: [profissionalId], references: [usuarioId])
+
+  @@id([pacienteId, profissionalId])
+  @@map("paciente_equipe")
+}
+
+model VinculoFamiliar {
+  id               String  @id @default(uuid(7)) @db.Uuid
+  responsavelId    String  @db.Uuid
+  pacienteId       String  @db.Uuid
+  parentesco       String
+  responsavelLegal Boolean
+
+  responsavel Responsavel @relation(fields: [responsavelId], references: [usuarioId])
+  paciente    Paciente    @relation(fields: [pacienteId], references: [id])
+
+  @@map("vinculo_familiar")
+}
+
+model Sessao {
+  id               String         @id @default(uuid(7)) @db.Uuid
+  pacienteId       String         @db.Uuid
+  profissionalId   String         @db.Uuid
+  numero           Int
+  inicioPrevistoEm DateTime       @db.Timestamptz(3)
+  inicio           DateTime?      @db.Timestamptz(3)
+  fim              DateTime?      @db.Timestamptz(3)
+  local            String
+  situacao         SituacaoSessao
+  statusSync       StatusSync
+
+  paciente     Paciente                   @relation(fields: [pacienteId], references: [id])
+  profissional Profissional               @relation(fields: [profissionalId], references: [usuarioId])
+  registros    RegistroAtividade[]
+  ocorrencias  OcorrenciaComportamental[]
+
+  @@map("sessao")
+}
+
+/// Composicao: o registro nao existe sem a sessao.
+model RegistroAtividade {
+  id         String    @id @default(uuid(7)) @db.Uuid
+  sessaoId   String    @db.Uuid
+  objetivoId String    @db.Uuid
+  ordem      Int
+  resultado  Resultado
+  ocorridoEm DateTime  @db.Timestamptz(3)
+
+  sessao   Sessao   @relation(fields: [sessaoId], references: [id], onDelete: Cascade)
+  objetivo Objetivo @relation(fields: [objetivoId], references: [id])
+
+  @@map("registro_atividade")
+}
+
+model PlanoTerapeutico {
+  id                  String        @id @default(uuid(7)) @db.Uuid
+  pacienteId          String        @db.Uuid
+  autorId             String        @db.Uuid
+  status              SituacaoPlano
+  dataInicio          DateTime      @db.Date
+  dataRevisao         DateTime      @db.Date
+  ultimaRevisaoEm     DateTime?     @db.Timestamptz(3)
+  observacaoValidacao String?
+
+  paciente  Paciente     @relation(fields: [pacienteId], references: [id])
+  autor     Profissional @relation(fields: [autorId], references: [usuarioId])
+  objetivos Objetivo[]
+
+  @@map("plano_terapeutico")
+}
+
+/// Composicao: o objetivo nao existe sem o plano. CriterioDominio, objeto de
+/// valor sem identidade, vira as duas ultimas colunas.
+model Objetivo {
+  id                  String         @id @default(uuid(7)) @db.Uuid
+  planoId             String         @db.Uuid
+  dominio             String
+  descricaoTecnica    String
+  descricaoAcessivel  String
+  status              StatusObjetivo
+  dominadoEm          DateTime?      @db.Timestamptz(3)
+  /// CHECK 0..100 na migracao.
+  percentualAtual     Decimal        @db.Decimal(5, 2)
+  /// CriterioDominio. CHECK 0..100 na migracao.
+  percentualMinimo    Int
+  /// CriterioDominio.
+  sessoesConsecutivas Int
+
+  plano      PlanoTerapeutico    @relation(fields: [planoId], references: [id], onDelete: Cascade)
+  registros  RegistroAtividade[]
+  atividades AtividadeCasa[]
+  cartoes    CartaoEstrategia[]
+
+  @@map("objetivo")
+}
+
+model OcorrenciaComportamental {
+  id                  String    @id @default(uuid(7)) @db.Uuid
+  pacienteId          String    @db.Uuid
+  origem              Origem
+  ocorridaEm          DateTime  @db.Timestamptz(3)
+  antecedente         String
+  comportamento       String
+  consequencia        String
+  /// CHECK 1..5 na migracao.
+  intensidade         Int
+  leituraClinicaEm    DateTime? @db.Timestamptz(3)
+  sessaoId            String?   @db.Uuid
+  /// A ocorrencia da escola que a gerou («gera»), quando veio de la.
+  ocorrenciaEscolarId String?   @unique @db.Uuid
+
+  paciente          Paciente           @relation(fields: [pacienteId], references: [id])
+  sessao            Sessao?            @relation(fields: [sessaoId], references: [id])
+  ocorrenciaEscolar OcorrenciaEscolar? @relation(fields: [ocorrenciaEscolarId], references: [id])
+
+  @@map("ocorrencia_comportamental")
+}
+
+/// Documento clinico emitido: so cresce (trigger na migracao).
+model RelatorioEvolucao {
+  id              String       @id @default(uuid(7)) @db.Uuid
+  pacienteId      String       @db.Uuid
+  /// Fotografia dos objetivos abrangidos, sem chave estrangeira: o documento
+  /// emitido nao muda quando o plano muda.
+  objetivoIds     String[]     @db.Uuid
+  periodoInicio   DateTime     @db.Date
+  periodoFim      DateTime     @db.Date
+  destinatario    Destinatario
+  consideracoes   String
+  /// Fotografia do autor, sem chave estrangeira.
+  autorNome       String
+  /// Fotografia do autor, sem chave estrangeira.
+  autorRegistro   String
+  emitidoEm       DateTime     @db.Timestamptz(3)
+  /// O JSON canonico exato que foi resumido em hashConteudo. Texto, e nunca
+  /// jsonb: o jsonb reescreve o texto, e o documento precisa sair igual.
+  conteudoEmitido String
+  hashConteudo    String
+
+  paciente Paciente @relation(fields: [pacienteId], references: [id])
+
+  @@map("relatorio_evolucao")
+}
+
+// ---------------------------------------------------------------- Familia
+
+model AtividadeCasa {
+  id                String   @id @default(uuid(7)) @db.Uuid
+  pacienteId        String   @db.Uuid
+  objetivoId        String   @db.Uuid
+  titulo            String
+  descricao         String
+  passos            String[]
+  dicas             String
+  frequenciaSemanal Int
+  urlVideo          String?
+  ativa             Boolean
+  prescritaEm       DateTime @db.Timestamptz(3)
+
+  paciente  Paciente                @relation(fields: [pacienteId], references: [id])
+  objetivo  Objetivo                @relation(fields: [objetivoId], references: [id])
+  execucoes ExecucaoAtividadeCasa[]
+
+  @@map("atividade_casa")
+}
+
+model ExecucaoAtividadeCasa {
+  id             String     @id @default(uuid(7)) @db.Uuid
+  atividadeId    String     @db.Uuid
+  responsavelId  String     @db.Uuid
+  dataRealizacao DateTime   @db.Date
+  desempenho     Desempenho
+  observacao     String?
+
+  atividade   AtividadeCasa @relation(fields: [atividadeId], references: [id])
+  responsavel Responsavel   @relation(fields: [responsavelId], references: [usuarioId])
+
+  @@map("execucao_atividade_casa")
+}
+
+// ---------------------------------------------------------------- Escola
+
+model CartaoEstrategia {
+  id            String   @id @default(uuid(7)) @db.Uuid
+  objetivoId    String   @db.Uuid
+  tituloSimples String
+  oQueFazer     String[]
+  oQueEvitar    String[]
+  sinalAlerta   String
+  atualizadoEm  DateTime @db.Timestamptz(3)
+
+  objetivo Objetivo @relation(fields: [objetivoId], references: [id])
+
+  @@map("cartao_estrategia")
+}
+
+model Escola {
+  id        String @id @default(uuid(7)) @db.Uuid
+  nome      String
+  rede      String
+  municipio String
+
+  consentimentos Consentimento[]
+
+  @@map("escola")
+}
+
+/// A situacao (vigente, revogado, expirado) nao e coluna: deriva das datas, a
+/// cada leitura (regra 5).
+model Consentimento {
+  id            String         @id @default(uuid(7)) @db.Uuid
+  responsavelId String         @db.Uuid
+  pacienteId    String         @db.Uuid
+  escolaId      String         @db.Uuid
+  escopos       EscopoAcesso[]
+  concedidoEm   DateTime       @db.Timestamptz(3)
+  validadeAte   DateTime       @db.Date
+  revogadoEm    DateTime?      @db.Timestamptz(3)
+  hashTermo     String
+
+  responsavel Responsavel      @relation(fields: [responsavelId], references: [usuarioId])
+  paciente    Paciente         @relation(fields: [pacienteId], references: [id])
+  escola      Escola           @relation(fields: [escolaId], references: [id])
+  convites    ConviteEscolar[]
+  vinculos    VinculoEscolar[]
+
+  @@map("consentimento")
+}
+
+model ConviteEscolar {
+  id              String    @id @default(uuid(7)) @db.Uuid
+  consentimentoId String    @db.Uuid
+  token           String    @unique
+  criadoEm        DateTime  @db.Timestamptz(3)
+  expiraEm        DateTime  @db.Timestamptz(3)
+  usadoEm         DateTime? @db.Timestamptz(3)
+
+  consentimento Consentimento   @relation(fields: [consentimentoId], references: [id])
+  vinculo       VinculoEscolar?
+
+  @@map("convite_escolar")
+}
+
+model VinculoEscolar {
+  id              String        @id @default(uuid(7)) @db.Uuid
+  consentimentoId String        @db.Uuid
+  /// ConviteEscolar 1-0..1 VinculoEscolar: um convite gera no maximo um vinculo.
+  conviteId       String        @unique @db.Uuid
+  pacienteId      String        @db.Uuid
+  professorId     String        @db.Uuid
+  turma           String
+  turno           String
+  atuacao         String
+  status          StatusVinculo
+
+  consentimento Consentimento       @relation(fields: [consentimentoId], references: [id])
+  convite       ConviteEscolar      @relation(fields: [conviteId], references: [id])
+  paciente      Paciente            @relation(fields: [pacienteId], references: [id])
+  professor     ProfessorAEE        @relation(fields: [professorId], references: [usuarioId])
+  ocorrencias   OcorrenciaEscolar[]
+
+  @@map("vinculo_escolar")
+}
+
+model OcorrenciaEscolar {
+  id           String    @id @default(uuid(7)) @db.Uuid
+  vinculoId    String    @db.Uuid
+  pacienteId   String    @db.Uuid
+  professorId  String    @db.Uuid
+  ocorridoEm   DateTime  @db.Timestamptz(3)
+  registradaEm DateTime  @db.Timestamptz(3)
+  corrigidaEm  DateTime? @db.Timestamptz(3)
+  tipo         String
+  /// CHECK 1..5 na migracao.
+  intensidade  Int
+  contexto     String
+
+  vinculo            VinculoEscolar            @relation(fields: [vinculoId], references: [id])
+  paciente           Paciente                  @relation(fields: [pacienteId], references: [id])
+  professor          ProfessorAEE              @relation(fields: [professorId], references: [usuarioId])
+  ocorrenciaGerada   OcorrenciaComportamental?
+
+  @@map("ocorrencia_escolar")
+}
+
+// ---------------------------------------------------------------- Auditoria
+
+/// So cresce (trigger na migracao). usuarioNome e perfil sao fotografia do
+/// momento; pacienteId e idEntidade sao referencias, sem chave estrangeira,
+/// porque o registro precisa sobreviver ao que ele registra.
+model RegistroAuditoria {
+  id            String          @id @default(uuid(7)) @db.Uuid
+  ocorridoEm    DateTime        @db.Timestamptz(3)
+  usuarioId     String?         @db.Uuid
+  usuarioNome   String?
+  perfil        Perfil?
+  acao          AcaoAuditoria
+  entidade      String
+  idEntidade    String?         @db.Uuid
+  pacienteId    String?         @db.Uuid
+  origem        OrigemAuditoria
+  ipOrigem      String?
+  detalhe       String
+  valorAnterior String?
+
+  usuario Usuario? @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
+
+  @@map("registro_auditoria")
+}

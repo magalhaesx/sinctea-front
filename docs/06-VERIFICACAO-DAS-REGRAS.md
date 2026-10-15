@@ -5,7 +5,8 @@ Atualizado no mesmo dia, com a correção do achado 1 e as novas redações das
 regras 1 e 2 no CLAUDE.md. Revisto em 13/10/2026: a regra 6 voltou a exigir o
 registro de toda leitura e escrita de dado do paciente (achado 2). Na Etapa 9,
 tipos, contratos e domínio foram para `compartilhado/src/`, e os caminhos e
-números de linha foram refeitos para essa versão.
+números de linha foram refeitos para essa versão. Em 14/10/2026 entrou a seção 7,
+sobre o servidor.
 
 ---
 
@@ -234,3 +235,36 @@ quem decide é o servidor.
 
 Este parágrafo e a seção 6.1.3 do artigo precisam dizer a mesma coisa. Mudou um,
 muda o outro.
+
+---
+
+## 7. Servidor
+
+Desde o passo 4 da Etapa 9 (14/10/2026), o servidor tem banco: PostgreSQL 17,
+com o esquema em `servidor/prisma/schema.prisma` e a primeira migração em
+`servidor/prisma/migracoes/`. Os testes do servidor rodam contra um banco de
+verdade: um PostgreSQL 17 embutido e descartável na máquina de desenvolvimento,
+o serviço `postgres:17` no CI. A seção 6 continua valendo para o mock; no
+servidor, a primeira garantia que muda de categoria é a imutabilidade.
+
+| O que | Onde é aplicado | Teste que falha se for violado | O que esse teste não prova |
+|---|---|---|---|
+| **A trilha de auditoria e o relatório emitido só crescem** (regra 6; documento clínico emitido) | Migração inicial: a função `recusar_alteracao()` e quatro *triggers* — `BEFORE UPDATE OR DELETE`, por linha, e `BEFORE TRUNCATE`, por comando, em `registro_auditoria` e em `relatorio_evolucao`. | `test/imutabilidade.test.ts`, nas duas tabelas: o INSERT passa; UPDATE e DELETE pelo cliente do Prisma são recusados; UPDATE, DELETE e TRUNCATE por SQL cru são recusados; a linha continua como foi gravada. | **O dono da tabela pode desligar o *trigger*** (`ALTER TABLE … DISABLE TRIGGER`) ou apagar a função. A proteção é a aplicação conectar com um papel que não é dono, e isso é do passo 5 — ainda não existe nem tem teste. |
+| **Faixas fechadas e atributos [1..*]** (`docs/01`, seção 7) | Onze CHECKs na migração inicial. | `test/checks.test.ts`: `nivelSuporte` 4, intensidade 6 e escopos vazio são recusados, cada um conferido pelo nome da restrição, com o valor de dentro da faixa passando ao lado. | **Só três dos onze CHECKs têm teste.** Os de intensidade da ocorrência escolar, dos dois percentuais e de `perfis`, `passos`, `oQueFazer`, `oQueEvitar` e `objetivoIds` existem por construção. |
+| **A semente é a do mock, e só fictícia** | `servidor/prisma/semente.ts`, sobre `semente/dados.ts`, portado do mock. | `test/semente.test.ts`: a contagem de cada uma das 22 tabelas é a dos dados, e nenhuma está vazia; toda senha está em argon2id; o hash de cada relatório é o do conteúdo gravado; o resumo de cada termo confere com o consentimento gravado; todo e-mail é `.example`; nenhum token de convite é fixo; a semente se recusa sem senha e com usuário no banco. | A contagem vem dos mesmos dados que a semente grava: prova que nada se perdeu na gravação, e não que os dados estão certos. |
+| **A dependência entre pacotes só vai num sentido** (`docs/01`, seção 1) | — | `src/arquitetura.test.ts`: `compartilhado/` não importa de `src/` nem de `servidor/`; `servidor/` não importa de `src/`; `src/` não importa de `servidor/` nem de `@prisma`. | Confere só o texto dos imports. Um import montado em tempo de execução (`import(variavel)`) passaria. |
+
+### Quebras feitas no servidor
+
+| Quebra | Testes que falharam |
+|---|---|
+| Migração sem o *trigger* de linha de `registro_auditoria` | 3: UPDATE e DELETE pelo cliente, os três por SQL cru, e a linha intacta |
+| Migração sem o *trigger* de TRUNCATE de `relatorio_evolucao` | 2: os três por SQL cru e a linha intacta |
+| Migração sem o CHECK de `nivelSuporte` | 1: *nivelSuporte 4 e recusado; 3 passa* |
+| `servidor/` importando de `src/` por caminho relativo | 1 |
+| `src/` importando de `servidor/` por caminho relativo | 1 |
+| `src/` importando `@prisma/client`, `@prisma/adapter-pg`, `prisma/config` ou `@sinctea/servidor` | 1 em cada caso. **A de `@prisma/client` passou na primeira vez**: a expressão regular exigia uma barra depois de `@prisma/`. Corrigida, as quatro falham |
+
+Cada quebra foi desfeita depois de rodar, e a migração voltou idêntica, byte a
+byte. Como cada execução cria um banco do zero, alterar a migração vale para o
+teste seguinte sem tocar em banco nenhum já existente.

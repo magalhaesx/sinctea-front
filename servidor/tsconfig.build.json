@@ -1,10 +1,13 @@
 {
+  // Emite src/ (o servidor) e prisma/ (a semente) em dist/: dist/src/main.js e
+  // dist/prisma/semente.js. A semente roda em producao sem dependencia de
+  // desenvolvimento nenhuma.
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "noEmit": false,
     "outDir": "dist",
-    "rootDir": "src",
+    "rootDir": ".",
     "sourceMap": true
   },
-  "include": ["src"]
+  "include": ["src", "prisma"]
 }

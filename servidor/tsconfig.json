@@ -3,7 +3,7 @@
   // e o mesmo formato nos tres pacotes dispensa build duplo e require() de
   // modulo ESM. Imports relativos levam ".js", como o Node exige.
   //
-  // Este arquivo confere src/ e test/ sem emitir; tsconfig.build.json emite.
+  // Este arquivo confere src/, test/ e prisma/ sem emitir; tsconfig.build.json emite.
   "compilerOptions": {
     "target": "ES2023",
     "lib": ["ES2023"],
@@ -19,5 +19,5 @@
     "skipLibCheck": true,
     "noEmit": true
   },
-  "include": ["src", "test"]
+  "include": ["src", "test", "prisma"]
 }
