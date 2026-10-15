@@ -22,6 +22,7 @@ Orientadora: Profa. Luana Leal · Entrega final: 23/11/2026
 | `docs/06-VERIFICACAO-DAS-REGRAS.md` | Ao afirmar que uma regra está garantida |
 | `docs/07-BACKEND.md` | Antes de qualquer trabalho no servidor |
 | `docs/08-ADERENCIA-AO-PRE-PROJETO.md` | Ao afirmar que um objetivo do pré-projeto foi atendido |
+| `docs/09-DICIONARIO-DE-DADOS.md` | Ao afirmar algo sobre o banco |
 | `docs/PROMPT.md` | O prompt que originou a interface (entrega acadêmica) |
 | `docs/USO-DA-IA.md` | Como a IA foi empregada, e onde errou |
 
@@ -187,7 +188,10 @@ Atualizado em 14/10/2026, lendo o código — não a memória.
 **Concluído**
 - Pré-projeto entregue em 17/08 — não pode mais ser alterado
 - Alinhamento aos 5 eixos · cronograma de 13 semanas · quadro Kanban
-- Modelagem UML: casos de uso, classes (revisão de 11/10 em `docs/uml/`), sequência
+- Modelagem UML: casos de uso, classes (revisão de 15/10 em `docs/uml/`), sequência
+- DER e dicionário de dados (`docs/uml/` e `docs/09`), gerados em 15/10 do
+  catálogo do PostgreSQL com as três migrações. Não se editam à mão: mudou o
+  esquema, geram-se de novo
 - Documento de IHC e UX/UI com avaliação heurística e conformidade
 - **As 22 telas existem e falam com a camada de serviços**, em 24 rotas do
   produto, mais `/sobre` e a vitrine `/dev/estados`, que só existe no servidor de
@@ -274,8 +278,7 @@ responder: a data final (23/11 ou 30/11) e a Trilha de Autonomia (`docs/08`).
 
 As entregas de documentação do pré-projeto — matriz de rastreabilidade, BPMN, C4
 e estados do Objetivo — não vivem neste repositório; o estado de cada uma está no
-`docs/08`. DER e dicionário de dados saem do esquema Prisma, pelo Cowork: o
-esquema já existe.
+`docs/08`.
 
 **Afirmações que o código ainda não sustenta**
 
@@ -316,6 +319,10 @@ termo, e a família reabre o texto da versão registrada pela própria tela 17.
   canônico **apenas dos campos que mudaram**, na versão anterior — nunca o
   registro inteiro, por minimização. Hoje só a correção de ocorrência escolar o
   preenche; nas demais ações é nulo
+- 15/10/2026 — o diagrama alcançou o banco: `RegistroAuditoria` mostra
+  `pacienteId : UUID [0..1]`, que é fotografia, sem chave estrangeira;
+  `RelatorioEvolucao` ganhou `destinatario : Destinatario`, e `conteudoEmitido`
+  passou de `Blob` a `String`, o JSON canônico que o hash resume
 
 **Termo de consentimento**
 
