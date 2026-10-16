@@ -23,12 +23,12 @@ import {
  * Registro rapido, em tablet, com a crianca na frente: alvos grandes, uma
  * decisao por toque e desfazer que diz o que vai desfazer.
  *
- * ESTADO DE CONEXAO, HONESTO: nao existe back-end ainda. O indicador reflete
- * navigator.onLine e o statusSync que o servico devolve — e o servico marca
- * como PENDENTE o que foi registrado agora, porque nao subiu a lugar nenhum.
- * A fila de sincronizacao de verdade — IndexedDB e chave de idempotencia
- * gerada no aparelho — esta prevista depois da Etapa 11 (docs/07, secao 3A);
- * ate la nada aqui diz "sincronizado".
+ * ESTADO DE CONEXAO, HONESTO. O indicador reflete navigator.onLine e o
+ * statusSync que o servico devolve. Pela API, cada toque e gravado no servidor
+ * na hora, e a sessao volta SINCRONIZADO; o mock, sem servidor, marca PENDENTE.
+ * A fila de sincronizacao — IndexedDB e chave de idempotencia gerada no
+ * aparelho — esta prevista depois da Etapa 11 (docs/07, secao 3A): ate la,
+ * sem conexao o toque nao e gravado, e a tela diz isso.
  */
 
 const RESPOSTAS: { valor: Resultado; rotulo: string }[] = [
@@ -212,15 +212,15 @@ export function RegistroSessao() {
                 Registro de sessão
               </Titulo>
 
-              {/* Estado de conexao sempre visivel, e honesto: nada aqui foi
-                  para um servidor, porque servidor ainda nao existe. */}
+              {/* Estado de conexao sempre visivel, e honesto: sem a fila
+                  offline, sem conexao nada e gravado. */}
               {online
                 ? <Etiqueta simbolo="●">
                     {sessao?.statusSync === 'PENDENTE'
                       ? 'Conectado · registro pendente de sincronização'
-                      : 'Conectado · registros ficam no aparelho'}
+                      : 'Conectado · cada toque é gravado no servidor'}
                   </Etiqueta>
-                : <Etiqueta tom="at" simbolo="▲">Sem conexão · o registro fica pendente de sincronização</Etiqueta>}
+                : <Etiqueta tom="at" simbolo="▲">Sem conexão · o toque não é gravado até a conexão voltar</Etiqueta>}
             </div>
 
             <div aria-live="polite">

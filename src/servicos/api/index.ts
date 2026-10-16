@@ -6,8 +6,9 @@ import { comParametros as q, requisitar as r } from './cliente'
  *
  * Mesmos contratos do mock. Nenhuma regra de acesso e aplicada aqui: quem
  * decide e o servidor. Ja implementados no servidor: autenticacao (item 1 da
- * secao 0 do docs/07), usuarios e profissionais (item 2). Os demais caminhos
- * sao provisorios ate o item de cada um chegar.
+ * secao 0 do docs/07), usuarios e profissionais (item 2), pacientes, plano,
+ * cartao e sessao (item 3). Os demais caminhos sao provisorios ate o item de
+ * cada um chegar.
  */
 
 const id = encodeURIComponent
@@ -30,6 +31,9 @@ export const servicosApi: Servicos = {
     listar: (filtro) => r('GET', q('/pacientes', filtro)),
     obter: (pacienteId) => r('GET', `/pacientes/${id(pacienteId)}`),
     criar: (dados) => r('POST', '/pacientes', dados),
+    cadastrarResponsavel: (pacienteId, dados) => r('POST', `/pacientes/${id(pacienteId)}/responsaveis`, dados),
+    novoLinkDoResponsavel: (pacienteId, responsavelId) =>
+      r('POST', `/pacientes/${id(pacienteId)}/responsaveis/${id(responsavelId)}/acesso-inicial`),
   },
 
   profissionais: {
@@ -42,13 +46,16 @@ export const servicosApi: Servicos = {
 
   planos: {
     obterPorPaciente: (pacienteId) => r('GET', `/pacientes/${id(pacienteId)}/plano`),
+    criar: (pacienteId, dados) => r('POST', `/pacientes/${id(pacienteId)}/plano`, dados),
     adicionarObjetivo: (planoId, dados) => r('POST', `/planos/${id(planoId)}/objetivos`, dados),
     enviarParaValidacao: (planoId) => r('POST', `/planos/${id(planoId)}/envio`),
     listarAguardandoValidacao: (filtro) => r('GET', q('/planos/aguardando-validacao', filtro)),
     aprovar: (planoId) => r('POST', `/planos/${id(planoId)}/aprovacao`),
     devolver: (planoId, observacao) => r('POST', `/planos/${id(planoId)}/devolucao`, { observacao }),
     confirmarDominio: (objetivoId) => r('POST', `/objetivos/${id(objetivoId)}/dominio`),
-    iniciarCartao: (objetivoId) => r('POST', `/objetivos/${id(objetivoId)}/cartao`),
+    listarCartoes: (objetivoId) => r('GET', `/objetivos/${id(objetivoId)}/cartoes`),
+    criarCartao: (objetivoId, dados) => r('POST', `/objetivos/${id(objetivoId)}/cartoes`, dados),
+    editarCartao: (cartaoId, dados) => r('PUT', `/cartoes/${id(cartaoId)}`, dados),
   },
 
   sessoes: {

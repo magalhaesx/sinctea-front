@@ -36,6 +36,11 @@ export interface ContextoSinctea {
   declaracao: DeclaracaoAuditoria
   /** Detalhe da negativa, quando quem nega sabe dizer mais que a mensagem. */
   detalheNegativa?: string
+  /**
+   * O paciente do dado, quando a rota chega por outro caminho (plano, objetivo,
+   * sessao) e o controlador o descobre. O interceptador o prefere ao da rota.
+   */
+  pacienteId?: string
 }
 
 export interface RequisicaoHttp {

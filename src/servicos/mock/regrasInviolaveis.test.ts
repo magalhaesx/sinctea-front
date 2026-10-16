@@ -458,11 +458,15 @@ describe('regra 1 — quem autoriza a escola e o responsavel', () => {
     expect(registro.detalhe).toContain('Escola Municipal Vitória-Régia')
   })
 
-  it('cartao iniciado em branco nao vai para a escola', async () => {
+  it('cartao em branco nao existe, e o que o terapeuta escreve vai como escreveu', async () => {
     await entrarComo('TERAPEUTA')
-    const cartao = await chamar(s.planos.iniciarCartao('o-001'))
-    // iniciarDe() nao deriva texto do objetivo: nasce vazio.
-    expect(cartao).toMatchObject({ tituloSimples: '', oQueFazer: [], oQueEvitar: [], sinalAlerta: '' })
+    // Regra 4 e lacuna 5: nada vem do objetivo, e sem conteudo nao se cria.
+    const vazio = await erroDe(s.planos.criarCartao('o-001', { tituloSimples: '', oQueFazer: [], oQueEvitar: [], sinalAlerta: '' }))
+    expect(vazio.codigo).toBe('VALIDACAO')
+    const cartao = await chamar(s.planos.criarCartao('o-001', {
+      tituloSimples: ' Pedir ajuda ', oQueFazer: ['Mostrar a figura', ' '], oQueEvitar: ['Falar alto'], sinalAlerta: 'Tapa os ouvidos.',
+    }))
+    expect(cartao).toMatchObject({ tituloSimples: 'Pedir ajuda', oQueFazer: ['Mostrar a figura'], oQueEvitar: ['Falar alto'] })
 
     await chamar(s.autenticacao.sair())
     await chamar(s.autenticacao.entrar('novo@escola.example', 'demonstracao'))

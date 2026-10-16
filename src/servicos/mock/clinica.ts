@@ -1,10 +1,11 @@
 import type { ServicoOcorrencia, ServicoPlano, ServicoSessao } from '@sinctea/compartilhado'
 import {
-  ErroServico, type ItemAgenda, type Objetivo, type OcorrenciaComportamental, type PlanoTerapeutico,
-  type Sessao,
+  ErroServico, type DadosCartao, type ItemAgenda, type Objetivo, type OcorrenciaComportamental,
+  type PlanoTerapeutico, type Sessao,
 } from '@sinctea/compartilhado'
 import {
-  ehPreliminar, objetivoAtingiuCriterio, validarDevolucaoPlano, validarNovoObjetivo,
+  ehPreliminar, itensPreenchidos, objetivoAtingiuCriterio, validarCartao, validarDevolucaoPlano,
+  validarNovoObjetivo, validarNovoPlano,
 } from '@sinctea/compartilhado/dominio/regras'
 import { inicioDoDia } from '@sinctea/compartilhado/dominio/datas'
 import { alcancaClinicamente, exigirPacienteClinico } from './acesso'
@@ -152,29 +153,62 @@ export const planosMock: ServicoPlano = {
     return objetivo
   }),
 
-  iniciarCartao: (objetivoId) => responder(() => iniciarCartao(objetivoId)),
+  criar: (pacienteId, dados) => responder(() => {
+    const { sessao } = exigirPacienteClinico(pacienteId, 'PlanoTerapeutico')
+    exigirValido(validarNovoPlano(dados))
+    if (banco.planos.some((p) => p.pacienteId === pacienteId)) {
+      throw new ErroServico('CONFLITO', 'Este paciente já tem plano terapêutico.')
+    }
+    const plano: PlanoTerapeutico = {
+      id: gerarId('pl'), pacienteId, autorId: sessao.usuario.id, status: 'RASCUNHO',
+      dataInicio: dados.dataInicio, dataRevisao: dados.dataRevisao, ultimaRevisaoEm: null,
+      observacaoValidacao: null, objetivos: [],
+    }
+    banco.planos.push(plano)
+    auditar(sessao, { acao: 'CRIACAO', entidade: 'PlanoTerapeutico', idEntidade: plano.id, pacienteId, detalhe: 'Plano criado em rascunho.' })
+    return plano
+  }),
+
+  listarCartoes: (objetivoId) => responder(() => {
+    const { sessao, plano } = objetivoAlcancado(objetivoId)
+    auditar(sessao, { acao: 'LEITURA_AUTORIZADA', entidade: 'CartaoEstrategia', pacienteId: plano.pacienteId, detalhe: 'Cartões de estratégias do objetivo.' })
+    return banco.cartoes.filter((c) => c.objetivoId === objetivoId)
+  }),
+
+  /** Lacuna 5: o cartao nasce com conteudo, escrito pelo terapeuta (regra 4). */
+  criarCartao: (objetivoId, dados) => responder(() => {
+    const { sessao, plano } = objetivoAlcancado(objetivoId)
+    const cartao = { id: gerarId('ce'), objetivoId, ...conteudoDoCartao(dados), atualizadoEm: relogio.agora().toISOString() }
+    banco.cartoes.push(cartao)
+    auditar(sessao, { acao: 'CRIACAO', entidade: 'CartaoEstrategia', idEntidade: cartao.id, pacienteId: plano.pacienteId, detalhe: `Cartão de estratégias criado: ${cartao.tituloSimples}.` })
+    return cartao
+  }),
+
+  editarCartao: (cartaoId, dados) => responder(() => {
+    const cartao = banco.cartoes.find((c) => c.id === cartaoId) ?? naoEncontrado('Cartão')
+    const { sessao, plano } = objetivoAlcancado(cartao.objetivoId)
+    Object.assign(cartao, conteudoDoCartao(dados), { atualizadoEm: relogio.agora().toISOString() })
+    auditar(sessao, { acao: 'ALTERACAO', entidade: 'CartaoEstrategia', idEntidade: cartao.id, pacienteId: plano.pacienteId, detalhe: `Cartão de estratégias editado: ${cartao.tituloSimples}.` })
+    return cartao
+  }),
 }
 
-/** iniciarDe(): rascunho em branco, sem texto derivado do objetivo. */
-function iniciarCartao(objetivoId: string) {
+function objetivoAlcancado(objetivoId: string) {
   const plano = banco.planos.find((p) => p.objetivos.some((o) => o.id === objetivoId))
   if (!plano) naoEncontrado('Objetivo')
   const { sessao } = exigirPacienteClinico(plano.pacienteId, 'CartaoEstrategia')
-  const cartao = {
-    id: gerarId('ce'),
-    objetivoId,
-    tituloSimples: '',
-    oQueFazer: [],
-    oQueEvitar: [],
-    sinalAlerta: '',
-    atualizadoEm: relogio.agora().toISOString(),
+  return { sessao, plano }
+}
+
+function conteudoDoCartao(dados: DadosCartao): DadosCartao {
+  const conteudo = {
+    tituloSimples: dados.tituloSimples.trim(),
+    oQueFazer: itensPreenchidos(dados.oQueFazer),
+    oQueEvitar: itensPreenchidos(dados.oQueEvitar),
+    sinalAlerta: dados.sinalAlerta.trim(),
   }
-  banco.cartoes.push(cartao)
-  auditar(sessao, {
-    acao: 'CRIACAO', entidade: 'CartaoEstrategia', idEntidade: cartao.id,
-    pacienteId: plano.pacienteId, detalhe: 'Rascunho de cartão iniciado.',
-  })
-  return cartao
+  exigirValido(validarCartao(conteudo))
+  return conteudo
 }
 
 // ---------------------------------------------------------------- Sessao

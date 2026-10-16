@@ -208,9 +208,18 @@ export interface PacienteResumo {
 }
 
 /** Ficha do paciente (tela 5): o paciente com a rede de apoio e a equipe resolvidas. */
+/** Uma pessoa da rede de apoio, como a ficha a mostra. */
+export type ResponsavelNaFicha = VinculoFamiliar & {
+  nome: string
+  email: string
+  telefone: string
+  /** A conta ainda nao definiu senha: o link de primeiro acesso nao foi usado. */
+  primeiroAcessoPendente: boolean
+}
+
 export interface PacienteDetalhe extends Paciente {
   idade: number
-  redeApoio: Array<VinculoFamiliar & { nome: string; telefone: string }>
+  redeApoio: ResponsavelNaFicha[]
   equipe: Array<{ id: string; nome: string; especialidade: string }>
   vinculosEscolares: Array<{
     vinculoId: string
@@ -239,6 +248,27 @@ export interface NovoPaciente {
   dataNascimento: DataCivil
   nivelSuporte: NivelSuporte
   profissionalResponsavelId: string
+}
+
+/**
+ * Cadastro do responsavel na ficha (docs/07, secao 0, lacuna 2). O parentesco
+ * e a autoridade legal sao da relacao com este paciente, e nao da conta.
+ */
+export interface NovoResponsavel {
+  nome: string
+  email: string
+  telefone: string
+  parentesco: string
+  responsavelLegal: boolean
+}
+
+/**
+ * O vinculo criado e, se a conta e nova ou ainda nao definiu senha, o link de
+ * primeiro acesso. Conta que ja entra no sistema nao recebe link.
+ */
+export interface ResponsavelCadastrado {
+  responsavel: ResponsavelNaFicha
+  primeiroAcesso: LinkPrimeiroAcesso | null
 }
 
 // ---------------------------------------------------------------- Plano e objetivos
@@ -277,6 +307,12 @@ export interface NovoObjetivo {
   descricaoTecnica: string
   descricaoAcessivel: string
   criterio: CriterioDominio
+}
+
+/** O plano nasce em RASCUNHO, com as duas datas (docs/07, secao 0, lacuna 3). */
+export interface NovoPlano {
+  dataInicio: DataCivil
+  dataRevisao: DataCivil
 }
 
 export interface PlanoTerapeutico {
@@ -788,6 +824,14 @@ export interface CartaoEscola {
 }
 
 /** Uso interno da clinica: Objetivo 1─* CartaoEstrategia. */
+/** O que o terapeuta escreve no cartao (lacuna 5). Nada vem do objetivo. */
+export interface DadosCartao {
+  tituloSimples: string
+  oQueFazer: string[]
+  oQueEvitar: string[]
+  sinalAlerta: string
+}
+
 export interface CartaoEstrategia {
   id: string
   objetivoId: string

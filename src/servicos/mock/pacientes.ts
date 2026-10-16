@@ -1,10 +1,10 @@
 import type { ServicoEscola, ServicoPaciente, ServicoProfissional } from '@sinctea/compartilhado'
-import type { Paciente, PacienteDetalhe, PacienteResumo, SituacaoPlano } from '@sinctea/compartilhado'
+import { ErroServico, type Paciente, type PacienteDetalhe, type PacienteResumo, type Responsavel, type SituacaoPlano } from '@sinctea/compartilhado'
 import { partesDaDataCivil } from '@sinctea/compartilhado/dominio/datas'
-import { idadeEmAnos, situacaoConsentimento } from '@sinctea/compartilhado/dominio/regras'
+import { emailValido, idadeEmAnos, normalizarEmail, situacaoConsentimento } from '@sinctea/compartilhado/dominio/regras'
 import { alcancaClinicamente, exigirPacienteClinico } from './acesso'
 import {
-  auditar, banco, exigirPerfil, exigirValido, gerarId, paginar, relogio, responder, usuarioPorId,
+  auditar, banco, exigirPerfil, exigirValido, gerarId, paginar, relogio, responder, todosUsuarios, usuarioPorId,
 } from './infra'
 
 const normalizar = (texto: string) =>
@@ -44,7 +44,10 @@ function detalhe(p: Paciente): PacienteDetalhe {
       .filter((v) => v.pacienteId === p.id)
       .map((v) => {
         const resp = banco.responsaveis.find((u) => u.id === v.responsavelId)
-        return { ...v, nome: resp?.nome ?? '—', telefone: resp?.telefone ?? '' }
+        return {
+          ...v, nome: resp?.nome ?? '—', email: resp?.email ?? '', telefone: resp?.telefone ?? '',
+          primeiroAcessoPendente: (resp?.ultimoAcessoEm ?? null) === null,
+        }
       }),
     equipe: p.equipeIds.map((id) => {
       const prof = banco.profissionais.find((u) => u.id === id)
@@ -115,6 +118,59 @@ export const pacientesMock: ServicoPaciente = {
     auditar(sessao, { acao: 'CRIACAO', entidade: 'Paciente', idEntidade: paciente.id, pacienteId: paciente.id, detalhe: 'Cadastro de paciente.' })
     return detalhe(paciente)
   }),
+
+  // Lacuna 2, com as mesmas regras do servidor. O link do mock nao abre nada:
+  // o caminho de verdade e o servidor.
+  cadastrarResponsavel: (pacienteId, dados) => responder(() => {
+    const { sessao, paciente } = exigirPacienteClinico(pacienteId, 'VinculoFamiliar')
+    const email = normalizarEmail(dados.email)
+    const erros: Record<string, string> = {}
+    if (!dados.nome.trim()) erros.nome = 'Escreva o nome do responsável.'
+    if (!emailValido(email)) erros.email = 'Escreva um e-mail válido.'
+    if (!dados.telefone.trim()) erros.telefone = 'Escreva um telefone para contato.'
+    if (!dados.parentesco.trim()) erros.parentesco = 'Escreva o parentesco com o paciente.'
+    if (typeof dados.responsavelLegal !== 'boolean') erros.responsavelLegal = 'Diga se é o responsável legal.'
+    exigirValido(erros)
+    const existente = todosUsuarios().find((u) => u.email === email)
+    if (existente && existente.tipo !== 'RESPONSAVEL') {
+      throw new ErroServico('CONFLITO', 'Este e-mail já é de uma conta da equipe ou da escola.', { email: 'Este e-mail já é de uma conta da equipe ou da escola.' })
+    }
+    if (existente && banco.vinculosFamiliares.some((v) => v.responsavelId === existente.id && v.pacienteId === paciente.id)) {
+      throw new ErroServico('CONFLITO', 'Esta pessoa já está na rede de apoio deste paciente.')
+    }
+    const responsavel: Responsavel = existente as Responsavel ?? {
+      tipo: 'RESPONSAVEL', id: gerarId('u'), nome: dados.nome.trim(), email, perfis: ['RESPONSAVEL'],
+      ativo: true, ultimoAcessoEm: null, telefone: dados.telefone.trim(),
+    }
+    if (!existente) banco.responsaveis.push(responsavel)
+    const vinculo = { id: gerarId('vf'), responsavelId: responsavel.id, pacienteId: paciente.id, parentesco: dados.parentesco.trim(), responsavelLegal: dados.responsavelLegal }
+    banco.vinculosFamiliares.push(vinculo)
+    const pendente = responsavel.ultimoAcessoEm === null
+    auditar(sessao, {
+      acao: 'CRIACAO', entidade: 'VinculoFamiliar', idEntidade: vinculo.id, pacienteId: paciente.id,
+      detalhe: `Responsável na rede de apoio: ${responsavel.nome} (${vinculo.parentesco}${vinculo.responsavelLegal ? ', responsável legal' : ''}).${pendente ? ' Link de primeiro acesso gerado.' : ''}`,
+    })
+    return {
+      responsavel: { ...vinculo, nome: responsavel.nome, email, telefone: responsavel.telefone, primeiroAcessoPendente: pendente },
+      primeiroAcesso: pendente ? linkDoMock() : null,
+    }
+  }),
+
+  novoLinkDoResponsavel: (pacienteId, responsavelId) => responder(() => {
+    const { sessao, paciente } = exigirPacienteClinico(pacienteId, 'Usuario')
+    const vinculo = banco.vinculosFamiliares.find((v) => v.pacienteId === paciente.id && v.responsavelId === responsavelId)
+    const responsavel = banco.responsaveis.find((r) => r.id === responsavelId)
+    if (!vinculo || !responsavel) throw new ErroServico('NAO_ENCONTRADO', 'Responsável não encontrado na rede de apoio deste paciente.')
+    if (responsavel.ultimoAcessoEm !== null) {
+      throw new ErroServico('CONFLITO', 'Esta pessoa já definiu a senha. Se esqueceu, quem troca é ela, e não a clínica.')
+    }
+    auditar(sessao, { acao: 'ALTERACAO', entidade: 'Usuario', idEntidade: responsavel.id, pacienteId: paciente.id, detalhe: 'Novo link de primeiro acesso do responsável; o anterior deixou de valer.' })
+    return linkDoMock()
+  }),
+}
+
+function linkDoMock() {
+  return { token: `mock-${gerarId('acesso')}`, expiraEm: new Date(relogio.agora().getTime() + 72 * 3_600_000).toISOString() }
 }
 
 export const profissionaisMock: ServicoProfissional = {

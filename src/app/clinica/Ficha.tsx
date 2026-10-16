@@ -9,6 +9,7 @@ import { Titulo } from '../../ui/Titulo'
 import { EstadoCarregando } from '../../ui/EstadoCarregando'
 import { EstadoErro } from '../../ui/EstadoErro'
 import { Paginacao } from '../../ui/Paginacao'
+import { RedeDeApoio } from './RedeDeApoio'
 import { descricaoNivelSuporte, ehPreliminar } from '@sinctea/compartilhado/dominio/regras'
 import { emData, emDataCivil } from '@sinctea/compartilhado/dominio/datas'
 import {
@@ -202,7 +203,10 @@ export function Ficha() {
 
   useEffect(() => {
     let ativo = true
-    setEstado({ tipo: 'carregando' })
+    // Recarga do mesmo paciente (depois de cadastrar um responsavel) mantem a
+    // ficha na tela: voltar ao "carregando" desmontaria a rede de apoio, e o
+    // link de primeiro acesso que ela acabou de mostrar sumiria antes de ser lido.
+    setEstado((atual) => (atual.tipo === 'pronto' && atual.paciente.id === id ? atual : { tipo: 'carregando' }))
     servicos.pacientes.obter(id)
       .then((paciente) => { if (ativo) setEstado({ tipo: 'pronto', paciente }) })
       .catch((erro) => { if (ativo) setEstado({ tipo: 'erro', erro }) })
@@ -256,27 +260,7 @@ export function Ficha() {
               </dl>
             </Cartao>
 
-            <Cartao>
-              <h2 className="text-lg font-bold">Rede de apoio</h2>
-              {p.redeApoio.length === 0 ? (
-                <p className="mt-1 text-tinta2">Nenhum responsável cadastrado ainda.</p>
-              ) : (
-                <ul className="mt-3 flex flex-col gap-2">
-                  {p.redeApoio.map((r) => (
-                    <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-linha bg-sup px-3 py-2.5">
-                      <span>
-                        <b>{r.nome}</b>
-                        <span className="block text-sm text-tinta2">{r.parentesco} · {r.telefone}</span>
-                      </span>
-                      {/* Só o responsável legal autoriza o acesso da escola. */}
-                      {r.responsavelLegal
-                        ? <Etiqueta tom="ok" simbolo="✓">Responsável legal</Etiqueta>
-                        : <Etiqueta simbolo="○">Não responde legalmente</Etiqueta>}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </Cartao>
+            <RedeDeApoio paciente={p} aoMudar={() => setTentativa((t) => t + 1)} />
 
             <Cartao>
               <h2 className="text-lg font-bold">Equipe multiprofissional</h2>

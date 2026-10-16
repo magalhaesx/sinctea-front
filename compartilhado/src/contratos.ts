@@ -5,7 +5,7 @@ import type {
   ExecucaoAtividadeCasa, FiltroAgenda, FiltroAuditoria, FiltroOcorrencia, FiltroPaciente,
   FiltroPaginacao, FiltroSessao, FiltroUsuario, FilhoResumo, ItemAgenda, LinkPrimeiroAcesso, NovaAtividadeCasa,
   NovaOcorrenciaComportamental, NovaOcorrenciaEscolar, NovoConsentimento, NovoObjetivo,
-  NovoPaciente, Objetivo, ObjetivoAcessivel, OcorrenciaComportamental, OcorrenciaEscolar,
+  NovoPaciente, NovoPlano, NovoResponsavel, ResponsavelCadastrado, DadosCartao, Objetivo, ObjetivoAcessivel, OcorrenciaComportamental, OcorrenciaEscolar,
   ConteudoRelatorio, DadosProfissionais, MotivoAtencao, Pagina, PacienteDetalhe, PacienteResumo, PedidoRelatorio,
   Perfil, PlanoParaValidacao, PlanoTerapeutico, PonteEscola, PrimeiroAcessoPublico, Profissional, RegistroAtividade,
   RegistroAuditoria, RelatorioEvolucao, ResumoClinica, Resultado, Sessao, SessaoUsuario,
@@ -41,6 +41,17 @@ export interface ServicoPaciente {
   listar(filtro?: FiltroPaciente): Promise<Pagina<PacienteResumo>>
   obter(id: string): Promise<PacienteDetalhe>
   criar(dados: NovoPaciente): Promise<PacienteDetalhe>
+  /**
+   * Cadastra o responsavel na ficha: cria a conta, ou reaproveita a que ja tem
+   * aquele e-mail, e o VinculoFamiliar. Conta nova volta com o link de
+   * primeiro acesso (docs/07, secao 0, lacuna 2).
+   */
+  cadastrarResponsavel(pacienteId: string, dados: NovoResponsavel): Promise<ResponsavelCadastrado>
+  /**
+   * Link novo para o responsavel que ainda nao definiu senha. Conta que ja
+   * entra nao recebe: a clinica nao troca a senha de quem autoriza a escola.
+   */
+  novoLinkDoResponsavel(pacienteId: string, responsavelId: string): Promise<LinkPrimeiroAcesso>
 }
 
 export interface ServicoProfissional {
@@ -53,6 +64,8 @@ export interface ServicoEscola {
 
 export interface ServicoPlano {
   obterPorPaciente(pacienteId: string): Promise<PlanoTerapeutico>
+  /** Paciente sem plano: o plano nasce em RASCUNHO (lacuna 3). */
+  criar(pacienteId: string, dados: NovoPlano): Promise<PlanoTerapeutico>
   /** Rejeita objetivo sem descricao acessivel. Nao existe geracao automatica. */
   adicionarObjetivo(planoId: string, dados: NovoObjetivo): Promise<Objetivo>
   enviarParaValidacao(planoId: string): Promise<PlanoTerapeutico>
@@ -65,11 +78,15 @@ export interface ServicoPlano {
    * E o unico caminho para status === 'DOMINADO'.
    */
   confirmarDominio(objetivoId: string): Promise<Objetivo>
+  /** Os cartoes de estrategias de um objetivo, o que a escola le. */
+  listarCartoes(objetivoId: string): Promise<CartaoEstrategia[]>
   /**
-   * Cria um cartao de estrategias em branco, ligado ao objetivo. Nao deriva
-   * nenhum texto do objetivo: quem escreve o conteudo e o terapeuta (regra 4).
+   * Cria o cartao ja com conteudo (lacuna 5): titulo, ao menos um "o que
+   * fazer", ao menos um "o que evitar" e o sinal de alerta. Nada e derivado do
+   * objetivo: quem escreve e o terapeuta (regra 4). Nao existe cartao em branco.
    */
-  iniciarCartao(objetivoId: string): Promise<CartaoEstrategia>
+  criarCartao(objetivoId: string, dados: DadosCartao): Promise<CartaoEstrategia>
+  editarCartao(cartaoId: string, dados: DadosCartao): Promise<CartaoEstrategia>
 }
 
 export interface ServicoSessao {

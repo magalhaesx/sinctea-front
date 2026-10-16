@@ -11,6 +11,8 @@ import { Titulo } from '../../ui/Titulo'
 import { EstadoCarregando } from '../../ui/EstadoCarregando'
 import { EstadoErro } from '../../ui/EstadoErro'
 import { validarNovoObjetivo } from '@sinctea/compartilhado/dominio/regras'
+import { CartoesDoObjetivo } from './CartoesDoObjetivo'
+import { CriarPlano } from './CriarPlano'
 import { emDataCivil } from '@sinctea/compartilhado/dominio/datas'
 import {
   ErroServico, servicos, type NovoObjetivo, type Objetivo, type PlanoTerapeutico,
@@ -157,17 +159,14 @@ export function Plano() {
         <>
           <Titulo>Plano Terapêutico Individual</Titulo>
           {semPlano ? (
-            <Cartao>
-              <p className="text-tinta2">
-                Este paciente ainda não tem plano terapêutico. A criação do plano entra numa etapa
-                seguinte do sistema.
-              </p>
-              <p className="mt-3">
+            <>
+              <CriarPlano pacienteId={id} aoCriar={() => { setAviso('Plano criado em rascunho. Agora, os objetivos.'); recarregar() }} />
+              <p>
                 <Link to={`/app/clinica/pacientes/${id}`} className="font-bold text-cli-ink underline">
                   Voltar para a ficha
                 </Link>
               </p>
-            </Cartao>
+            </>
           ) : (
             <EstadoErro
               erro={estado.erro}
@@ -245,6 +244,7 @@ export function Plano() {
                             Critério: {o.criterio.percentualMinimo}% em {o.criterio.sessoesConsecutivas}{' '}
                             {o.criterio.sessoesConsecutivas === 1 ? 'sessão consecutiva' : 'sessões consecutivas'}
                           </p>
+                          <CartoesDoObjetivo objetivoId={o.id} />
                         </Cartao>
                       </li>
                     )

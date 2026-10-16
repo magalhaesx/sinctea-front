@@ -304,6 +304,38 @@ export function situacaoConvite(
   return 'VALIDO'
 }
 
+// ---------------------------------------------------------------- Plano e cartao
+
+/** As duas datas do plano novo: dias que existem, e a revisao depois do inicio. */
+export function validarNovoPlano(dados: { dataInicio: string; dataRevisao: string }): Record<string, string> {
+  const erros: Record<string, string> = {}
+  if (!partesDaDataCivil(dados.dataInicio)) erros.dataInicio = 'Informe a data de início do plano.'
+  if (!partesDaDataCivil(dados.dataRevisao)) erros.dataRevisao = 'Informe a data prevista para a revisão.'
+  else if (!erros.dataInicio && dados.dataRevisao <= dados.dataInicio) {
+    erros.dataRevisao = 'A revisão precisa ser depois do início do plano.'
+  }
+  return erros
+}
+
+/** Itens de lista sem espacos nas pontas, e sem os vazios. */
+export function itensPreenchidos(itens: string[]): string[] {
+  return itens.map((i) => i.trim()).filter((i) => i.length > 0)
+}
+
+/**
+ * O cartao so existe com conteudo (lacuna 5): e o que a escola le, e cartao
+ * em branco nao diz nada a ela. O banco recusa lista vazia pelo CHECK; aqui a
+ * pessoa recebe o motivo em palavras.
+ */
+export function validarCartao(dados: { tituloSimples: string; oQueFazer: string[]; oQueEvitar: string[]; sinalAlerta: string }): Record<string, string> {
+  const erros: Record<string, string> = {}
+  if (!dados.tituloSimples.trim()) erros.tituloSimples = 'Escreva um título em linguagem simples.'
+  if (itensPreenchidos(dados.oQueFazer).length === 0) erros.oQueFazer = 'Escreva ao menos uma coisa que ajuda.'
+  if (itensPreenchidos(dados.oQueEvitar).length === 0) erros.oQueEvitar = 'Escreva ao menos uma coisa a evitar.'
+  if (!dados.sinalAlerta.trim()) erros.sinalAlerta = 'Escreva o sinal de que a criança precisa de apoio.'
+  return erros
+}
+
 // ---------------------------------------------------------------- Conta e senha
 
 /** Texto para busca: sem acento e sem diferenca de maiusculas. */

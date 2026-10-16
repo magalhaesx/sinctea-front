@@ -153,7 +153,7 @@ e fica fora dos tipos do front-end**.
 **O nome da operação na fachada de serviços pode diferir do nome no diagrama.** O
 diagrama nomeia a operação de domínio; o serviço nomeia a chamada como ela se lê no
 código. `CartaoEstrategia.iniciarDe(objetivo)` no diagrama é
-`servicos.planos.iniciarCartao(objetivoId)` na fachada. Isso não é divergência — é a
+`servicos.planos.criarCartao(objetivoId, dados)` na fachada. Isso não é divergência — é a
 mesma separação que mantém chave estrangeira fora do diagrama.
 
 ## 5. Stack
@@ -204,10 +204,10 @@ Atualizado em 16/10/2026, lendo o código — não a memória.
 - **Camada de serviços**: `compartilhado/src/contratos.ts` com 16 serviços; implementação
   simulada que aplica controle de acesso e auditoria; stubs de API que não
   aplicam regra nenhuma; a escolha entre as duas por `VITE_API_URL`
-- **295 testes em 21 arquivos, nos três pacotes**, rodados por um único
+- **315 testes em 22 arquivos, nos três pacotes**, rodados por um único
   `npm test` na raiz, sem passo manual. O principal ainda é
   `src/servicos/mock/regrasInviolaveis.test.ts`, que verifica as regras
-  invioláveis na camada de dados, e não na tela. Os 95 do servidor rodam contra
+  invioláveis na camada de dados, e não na tela. Os 115 do servidor rodam contra
   um PostgreSQL 17 de verdade
 - **As seis regras verificadas** em `docs/06`: para cada teste citado, a regra foi
   quebrada de propósito para confirmar que ele falha, e as quebras que não
@@ -289,6 +289,14 @@ em produção (o antigo passo B5) foi cancelada. No código, hoje:
   uma senha que ninguém conhece e um link de primeiro acesso, que a tela mostra
   para quem cadastrou entregar; "Gerar novo link de acesso" serve ao link
   vencido e à senha esquecida
+- **Item 3 feito — pacientes, plano com cartão e sessão.** As telas 4 a 7 e a
+  validação da coordenação falam com a API. Entraram o cadastro do responsável
+  na ficha, com o link de primeiro acesso (lacuna 2), o "Criar plano" (lacuna 3)
+  e o cartão de estratégias escrito pelo terapeuta, sempre com conteúdo
+  (lacuna 5); `iniciarCartao` saiu. Encerrar a sessão atualiza o percentual e a
+  situação do objetivo trabalhado — o mock nunca atualizava, e com o sistema
+  vazio o medidor ficaria em zero. Os eventos comportamentais da ficha, a
+  evolução, as atividades e o relatório ainda são do mock
 - `npm run criar-administrador -w @sinctea/servidor -- .env.producao` cria o
   primeiro administrador: pede nome, e-mail e senha, sem mostrar a senha, e
   recusa se já houver administrador
@@ -303,8 +311,8 @@ tipos do compartilhado, auditoria pelo interceptador), o cliente em
    por link; os *guards* (D7), o interceptador de auditoria e o comando do
    primeiro administrador~~ — feito em 16/10
 2. ~~Usuários e profissionais; meus dados profissionais~~ — feito em 16/10
-3. Pacientes, com o cadastro do responsável; plano, do "Criar plano" ao cartão de
-   estratégias; sessão
+3. ~~Pacientes, com o cadastro do responsável; plano, do "Criar plano" ao cartão
+   de estratégias; sessão~~ — feito em 16/10
 4. Família, escolas (com cadastro pelo responsável), consentimento, convite e a
    área da escola
 5. O front publicado só com a API: o mock fora do pacote, as telas fora do
@@ -342,14 +350,12 @@ Enquanto não se resolverem, não devem ser afirmadas na defesa:
    ser construído, não há manifesto nem *service worker*. O registro de sessão
    (tela 7) mostra o estado da conexão e marca como pendente o que ainda não
    subiu, mas a fila de sincronização não existe.
-3. **O terapeuta ainda não escreve o cartão de estratégias pelo sistema; o que a
-   escola lê veio da semente.** O contrato só tem `iniciarCartao`, que cria um
-   rascunho em branco, nenhuma tela o chama, e não há operação que preencha o
-   cartão. No banco, os CHECKs de `oQueFazer` e `oQueEvitar` recusam esse
-   rascunho, e ficam. Resolve-se no item 3 do caminho principal.
-4. **O endereço do Render ainda não é o sistema.** Até o item 5 do caminho
+3. **O endereço do Render ainda não é o sistema.** Até o item 5 do caminho
    principal, ele serve o front com o mock, e a API real só responde
    `/api/saude`. Não se divulga antes da virada.
+
+O cartão de estratégias saiu desta lista em 16/10/2026: o terapeuta o escreve
+na tela 6, com conteúdo, e não existe mais cartão em branco.
 
 O hash do termo de consentimento saiu desta lista em 04/10/2026: `hashTermo`
 passou a ser `sha256:<versão>:<hex>` calculado sobre os campos que compõem o

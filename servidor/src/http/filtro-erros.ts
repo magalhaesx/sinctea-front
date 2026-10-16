@@ -1,6 +1,7 @@
 import { Catch, Logger, type ArgumentsHost, type ExceptionFilter } from '@nestjs/common'
 import { ErroServico, type CodigoErro } from '@sinctea/compartilhado'
 import { resolver } from '../acesso/metadados.js'
+import { Negacao } from '../acesso/negacao.js'
 import { ServicoAuditoria } from '../auditoria/servico-auditoria.js'
 import type { RequisicaoHttp, RespostaHttp } from './tipos-http.js'
 
@@ -36,6 +37,8 @@ export class FiltroErros implements ExceptionFilter {
 
     if (erro.codigo === 'ACESSO_NEGADO') {
       const ctx = requisicao.sinctea
+      // Quem nega no servico sabe o paciente e o motivo; a rota, as vezes, nao.
+      const alvo = erro instanceof Negacao ? erro.alvo : {}
       try {
         await this.auditoria.registrar(ctx?.sessao ?? null, {
           acao: 'ACESSO_NEGADO',
@@ -43,8 +46,9 @@ export class FiltroErros implements ExceptionFilter {
           // Na negativa nao ha resposta: o campo que dependeria dela fica nulo,
           // e o registro sai mesmo assim.
           idEntidade: semResposta(() => resolver(ctx?.declaracao.idEntidade, requisicao, null)),
-          pacienteId: semResposta(() => resolver(ctx?.declaracao.pacienteId, requisicao, null)),
-          detalhe: ctx?.detalheNegativa ?? `Negado: ${erro.message}`,
+          pacienteId: alvo.pacienteId ?? ctx?.pacienteId ??
+            semResposta(() => resolver(ctx?.declaracao.pacienteId, requisicao, null)),
+          detalhe: alvo.detalhe ?? ctx?.detalheNegativa ?? `Negado: ${erro.message}`,
           ipOrigem: requisicao.ip ?? null,
         })
       } catch (falha) {
