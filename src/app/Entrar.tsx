@@ -52,10 +52,13 @@ export function Entrar() {
       await acao()
       navegar(destino, { replace: true })
     } catch (e) {
-      // Mensagem unica: nao diz se o e-mail existe (docs/03, tela 1).
+      // Mensagem unica: nao diz se o e-mail existe (docs/03, tela 1). O limite
+      // de tentativas tem a sua, que diz quanto esperar.
       setErro(e instanceof ErroServico && e.codigo === 'NAO_AUTENTICADO'
         ? 'E-mail ou senha incorretos.'
-        : 'Não foi possível entrar agora. Tente de novo em alguns segundos.')
+        : e instanceof ErroServico && e.codigo === 'LIMITE_TENTATIVAS'
+          ? e.message
+          : 'Não foi possível entrar agora. Tente de novo em alguns segundos.')
       campoEmail.current?.focus()
     } finally {
       setEntrando(false)

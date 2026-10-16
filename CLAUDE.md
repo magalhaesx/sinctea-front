@@ -204,10 +204,10 @@ Atualizado em 16/10/2026, lendo o código — não a memória.
 - **Camada de serviços**: `compartilhado/src/contratos.ts` com 16 serviços; implementação
   simulada que aplica controle de acesso e auditoria; stubs de API que não
   aplicam regra nenhuma; a escolha entre as duas por `VITE_API_URL`
-- **278 testes em 20 arquivos, nos três pacotes**, rodados por um único
+- **283 testes em 20 arquivos, nos três pacotes**, rodados por um único
   `npm test` na raiz, sem passo manual. O principal ainda é
   `src/servicos/mock/regrasInviolaveis.test.ts`, que verifica as regras
-  invioláveis na camada de dados, e não na tela. Os 78 do servidor rodam contra
+  invioláveis na camada de dados, e não na tela. Os 83 do servidor rodam contra
   um PostgreSQL 17 de verdade
 - **As seis regras verificadas** em `docs/06`: para cada teste citado, a regra foi
   quebrada de propósito para confirmar que ele falha, e as quebras que não
@@ -274,7 +274,10 @@ em produção (o antigo passo B5) foi cancelada. No código, hoje:
   (`sessao_login`), 24 horas desde o último uso, cookie `httpOnly`, `Secure` e
   `SameSite=Lax`; link de 72 horas e uso único (`acesso_inicial`); dos dois
   tokens, o banco guarda só o resumo SHA-256. E-mail gravado em minúsculas, com
-  CHECK. As duas tabelas novas são infraestrutura, e não classes: o banco tem
+  CHECK. Limite de tentativas: 5 senhas erradas para o mesmo e-mail em 15
+  minutos, ou 20 do mesmo IP, bloqueiam por 15 minutos; fica em memória, e
+  reiniciar o servidor zera a contagem. As duas tabelas novas são
+  infraestrutura, e não classes: o banco tem
   24 tabelas, e o diagrama continua com 22 classes
 - **A regra 6 no servidor:** toda rota declara a auditoria (`@Auditar` ou
   `@SemDadoDoPaciente`) e a guarda recusa a que não declara; o interceptador

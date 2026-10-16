@@ -1,11 +1,12 @@
 import 'reflect-metadata'
 import { createHash } from 'node:crypto'
-import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, inject, it } from 'vitest'
 import { Controller, Get, Module } from '@nestjs/common'
 import { NestFactory } from '@nestjs/core'
 import type { INestApplication } from '@nestjs/common'
 import { uuidV7 } from '../prisma/semente/uuid7.js'
 import { Auditar, Perfis } from '../src/acesso/metadados.js'
+import { LimiteDeTentativas } from '../src/autenticacao/limite-tentativas.js'
 import { hashDaSenha, hashDeSenhaDesconhecida } from '../src/autenticacao/senhas.js'
 import { ServicoAutenticacao } from '../src/autenticacao/servico-autenticacao.js'
 import type { PrismaClient } from '../src/gerado/client.js'
@@ -342,5 +343,54 @@ describe('a guarda e o interceptador de auditoria (regra 6)', () => {
     const r = await pedir('GET', '/teste/sem-declaracao', { cookie })
     expect(r.status).toBe(500)
     expect(JSON.stringify(r.corpo)).not.toContain('nao deveria sair')
+  })
+})
+
+describe('limite de tentativas de entrada', () => {
+  const limite = () => aplicacao.get(LimiteDeTentativas)
+  const quinzeMinutosDepois = () => { const base = Date.now(); limite().agora = () => base + 15 * 60_000 + 1000 }
+  const errar = (email: string) => pedir('POST', '/auth/entrar', { corpo: { email, senha: 'senha-errada-qualquer' } })
+  const MENSAGEM = /Muitas tentativas de entrada.*15 minutos/
+
+  beforeEach(() => { limite().limpar(); limite().agora = () => Date.now() })
+  afterEach(() => { limite().limpar(); limite().agora = () => Date.now() })
+
+  it('5 senhas erradas para o mesmo e-mail bloqueiam por 15 minutos, mesmo a senha certa; outro e-mail segue entrando', async () => {
+    for (let i = 0; i < 5; i++) expect((await errar('terapeuta@teste.example')).status).toBe(401)
+    const bloqueado = await pedir('POST', '/auth/entrar', { corpo: { email: 'terapeuta@teste.example', senha: SENHA } })
+    expect(bloqueado.status).toBe(429)
+    expect(bloqueado.corpo).toMatchObject({ codigo: 'LIMITE_TENTATIVAS', mensagem: expect.stringMatching(MENSAGEM) })
+    expect(bloqueado.cookies.some((c) => c.startsWith('sinctea_sessao=') && !c.startsWith('sinctea_sessao=;'))).toBe(false)
+
+    const outro = uuidV7()
+    await criarUsuario(outro, `outro-${outro}@teste.example`)
+    await entrarComo(`outro-${outro}@teste.example`)
+
+    quinzeMinutosDepois()
+    await entrarComo('terapeuta@teste.example')
+  })
+
+  it('o e-mail que nao existe bloqueia igual: o bloqueio nao revela quem tem conta', async () => {
+    for (let i = 0; i < 5; i++) await errar('ninguem-aqui@teste.example')
+    expect((await errar('ninguem-aqui@teste.example')).status).toBe(429)
+  })
+
+  it('a caixa do e-mail nao abre outra contagem', async () => {
+    for (let i = 0; i < 5; i++) await errar(i % 2 ? 'TERAPEUTA@teste.example' : ' terapeuta@TESTE.example ')
+    expect((await errar('terapeuta@teste.example')).status).toBe(429)
+  })
+
+  it('entrar com a senha certa zera a contagem daquele e-mail', async () => {
+    for (let i = 0; i < 4; i++) await errar('terapeuta@teste.example')
+    await entrarComo('terapeuta@teste.example')
+    for (let i = 0; i < 4; i++) expect((await errar('terapeuta@teste.example')).status).toBe(401)
+  })
+
+  it('por IP: 20 erradas, em e-mails diferentes, bloqueiam o IP por 15 minutos', async () => {
+    for (let i = 0; i < 20; i++) expect((await errar(`tentativa-${i}@teste.example`)).status).toBe(401)
+    const bloqueado = await pedir('POST', '/auth/entrar', { corpo: { email: 'terapeuta@teste.example', senha: SENHA } })
+    expect(bloqueado.status).toBe(429)
+    quinzeMinutosDepois()
+    await entrarComo('terapeuta@teste.example')
   })
 })

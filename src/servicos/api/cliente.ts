@@ -18,6 +18,7 @@ const CODIGO_POR_STATUS: Record<number, CodigoErro> = {
   404: 'NAO_ENCONTRADO',
   409: 'CONFLITO',
   422: 'VALIDACAO',
+  429: 'LIMITE_TENTATIVAS',
 }
 
 type Parametros = Record<string, string | number | boolean | undefined | null>

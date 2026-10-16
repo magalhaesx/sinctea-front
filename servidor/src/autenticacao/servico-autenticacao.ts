@@ -8,6 +8,7 @@ import {
 import { ServicoAuditoria } from '../auditoria/servico-auditoria.js'
 import { ServicoBanco } from '../banco/servico-banco.js'
 import type { RespostaHttp, SessaoServidor, UsuarioDaSessao } from '../http/tipos-http.js'
+import { LimiteDeTentativas } from './limite-tentativas.js'
 import { conferirSenha, hashDaSenha, hashDeSenhaDesconhecida } from './senhas.js'
 import { ServicoSessoes, novoToken, resumoDoToken } from './servico-sessoes.js'
 
@@ -30,20 +31,26 @@ export class ServicoAutenticacao {
     private readonly banco: ServicoBanco,
     private readonly sessoes: ServicoSessoes,
     private readonly auditoria: ServicoAuditoria,
+    private readonly limite: LimiteDeTentativas,
   ) {}
 
   /** Mensagem unica para e-mail inexistente, senha errada e conta desativada (tela 1). */
-  async entrar(email: unknown, senha: unknown, resposta: RespostaHttp): Promise<SessaoUsuario> {
+  async entrar(email: unknown, senha: unknown, ip: string | null, resposta: RespostaHttp): Promise<SessaoUsuario> {
     if (typeof email !== 'string' || typeof senha !== 'string') {
       throw new ErroServico('NAO_AUTENTICADO', CREDENCIAL_INVALIDA)
     }
-    const usuario = await this.banco.usuario.findUnique({ where: { email: normalizarEmail(email) } })
+    const emailNormal = normalizarEmail(email)
+    // Bloqueado, recusa antes de conferir: nem a senha certa entra.
+    this.limite.exigirLiberado(emailNormal, ip)
+    const usuario = await this.banco.usuario.findUnique({ where: { email: emailNormal } })
     // Confere sempre, mesmo sem usuario: o tempo nao diz se o e-mail existe.
     const hash = usuario?.senhaHash ?? await hashDeSenhaDesconhecida()
     const confere = await conferirSenha(hash, senha)
     if (!usuario || !usuario.ativo || !confere || usuario.perfis.length === 0) {
+      this.limite.falhou(emailNormal, ip)
       throw new ErroServico('NAO_AUTENTICADO', CREDENCIAL_INVALIDA)
     }
+    this.limite.entrou(emailNormal)
     const atualizado = await this.banco.usuario.update({
       where: { id: usuario.id }, data: { ultimoAcessoEm: new Date() },
     })

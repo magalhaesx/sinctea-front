@@ -22,10 +22,11 @@ export class ControladorAutenticacao {
   @Publico()
   @SemDadoDoPaciente('Usuario')
   entrar(
+    @Req() requisicao: RequisicaoHttp,
     @Body() corpo: { email?: unknown; senha?: unknown } | undefined,
     @Res({ passthrough: true }) resposta: RespostaHttp,
   ): Promise<SessaoUsuario> {
-    return this.autenticacao.entrar(corpo?.email, corpo?.senha, resposta)
+    return this.autenticacao.entrar(corpo?.email, corpo?.senha, requisicao.ip ?? null, resposta)
   }
 
   /** Sem sessao, 204: o cliente le como nulo. */

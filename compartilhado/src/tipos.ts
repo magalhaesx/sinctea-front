@@ -43,6 +43,8 @@ export type CodigoErro =
   | 'VALIDACAO'
   | 'CONFLITO'
   | 'INDISPONIVEL'
+  /** Tentativas de entrada demais em pouco tempo: espere e tente de novo. */
+  | 'LIMITE_TENTATIVAS'
 
 /**
  * Por que um ACESSO_NEGADO aconteceu, quando a tela precisa saber para dizer

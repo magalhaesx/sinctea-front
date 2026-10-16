@@ -12,6 +12,7 @@ const STATUS_POR_CODIGO: Record<CodigoErro, number> = {
   NAO_ENCONTRADO: 404,
   CONFLITO: 409,
   INDISPONIVEL: 503,
+  LIMITE_TENTATIVAS: 429,
 }
 
 /**
