@@ -1,8 +1,103 @@
 # 07 · Backend e a virada para o sistema real
 
 Decidido em 13/10/2026. Substitui as etapas 9 e 10 do roteiro original.
+**Revisto em 16/10/2026: a seção 0 vale sobre o resto deste documento onde os dois
+divergirem.**
 
 ---
+
+## 0. Revisão de 16/10 — sistema real, vazio, pronto em 19/10
+
+**O que a orientadora pediu.** O endereço não pode ter dado fictício, e front e
+backend precisam estar prontos em **19/10**. Decidido com o Lucas em 16/10:
+
+- **O sistema nasce vazio e é preenchido pelo uso.** Nenhum registro é
+  pré-carregado. Profissionais, pacientes, planos, consentimentos e o resto são
+  cadastrados pelas telas — pela equipe, pela orientadora ou pela banca.
+- **O caminho principal vem primeiro.** O restante entra depois de 19/10.
+
+**O que cai.** Fica revogado o que contradiz isso:
+
+- a semente em produção (passo B5): não se roda;
+- a linha "Todos os registros são fictícios" (D9);
+- a frase "Os registros continuam fictícios" da seção 1;
+- as datas das Etapas 10 a 12.
+
+Os testes continuam com dados fictícios próprios: dado de teste não é dado do site.
+
+**O aviso que entra no lugar.** Na tela de entrada e no rodapé, uma linha:
+*"Ambiente acadêmico do TCC SINCTEA. Não cadastre dados de pacientes reais."*
+
+Não é aviso de demonstração. É o que impede que dado de saúde de criança de verdade
+entre num sistema acadêmico sem as bases que a lei pede:
+
+- consentimento do responsável (LGPD, arts. 11 e 14);
+- hospedagem nos Estados Unidos (art. 33);
+- nenhum comitê de ética aprovou pesquisa com esses dados.
+
+Tirar essa linha é decisão do Lucas com a orientadora, registrada aqui.
+
+**Como o sistema nasce.** Um comando único, rodado uma vez pela máquina do Lucas
+contra o Neon, cria a conta do primeiro administrador. O nome, o e-mail e a senha
+são digitados na hora, e a senha não aparece na tela. Todo o resto nasce pelas telas.
+
+### Lacunas que o mock escondia
+
+Com o banco vazio, cinco caminhos que a semente cobria precisam existir:
+
+1. **Primeiro acesso por link.** `usuarios.convidar` (equipe) e o cadastro de
+   responsável devolvem um link de uso único, válido por 72 horas. O administrador
+   ou o terapeuta o entrega à pessoa, que define a própria senha. Quem cadastra
+   nunca conhece a senha de ninguém. O token é guardado só como resumo SHA-256.
+   O professor continua nascendo do convite da família, como já é.
+2. **Responsável do paciente.** Na ficha, o terapeuta cadastra o responsável:
+   - nome, e-mail, telefone, parentesco e se é o responsável legal;
+   - a operação cria o usuário, ou reaproveita o que já tem aquele e-mail, e o
+     `VinculoFamiliar`;
+   - ela devolve o link de primeiro acesso.
+3. **Criar o plano.** O paciente sem plano mostra a situação `SEM_PLANO` e o botão
+   "Criar plano", com data de início e de revisão. O plano nasce em `RASCUNHO`.
+4. **Cadastrar escola.** No formulário de consentimento, "Não encontrou a escola?"
+   abre nome, rede e município. Quem cadastra é o próprio responsável, porque a
+   família nomeia a instituição (art. 7 e 8). A operação é auditada.
+5. **Escrever o cartão de estratégias.** Antecipado da Etapa 11, porque sem ele a
+   escola não lê nada. O terapeuta cria e edita o cartão de cada objetivo com:
+   - título;
+   - ao menos um "o que fazer" e um "o que evitar";
+   - o sinal de alerta.
+
+   O rascunho fica no formulário até salvar, e `iniciarCartao` sai.
+
+### O caminho principal, até 19/10
+
+| Ordem | O quê |
+|---|---|
+| 1 | Autenticação de verdade (D5): entrar, sair, sessão atual, primeiro acesso. Os *guards* (D7), o interceptador de auditoria e o comando do primeiro administrador |
+| 2 | Usuários: listar, convidar, perfis, desativar, reativar. Profissionais: listar. Meus dados profissionais |
+| 3 | Pacientes: listar, obter, criar e cadastrar responsável. Plano: criar, obter, objetivos, enviar, aprovar, devolver, confirmar domínio e cartão. Sessão: iniciar, registrar, desfazer, pausar, encerrar e listar por paciente |
+| 4 | Família: filhos e objetivos acessíveis. Escolas: listar e cadastrar. Consentimento: conceder, listar, revogar e reemitir convite. Convite: obter e aceitar. Área da escola: alunos, cartão, registrar e corrigir ocorrência |
+| 5 | O front publicado só com a API, e o deploy |
+
+**O que fica para depois de 19/10:** indicadores, relatórios, atividades de casa,
+ocorrências comportamentais, evolução, avisos da escola, a tela de auditoria e a
+agenda. Até cada serviço chegar, a tela dele **some da navegação e das rotas na
+versão publicada**. Nunca aparece com dado simulado.
+
+**O que não se corta, nem com pressa:**
+- as regras 1, 2, 3, 5 e 6 provadas por teste de integração contra a API, no
+  caminho principal;
+- o *trigger* da auditoria;
+- o papel que não é dono do banco;
+- senha só em argon2id.
+
+**O front publicado.** Em produção, `servicos/index.ts` usa só a API, e o mock
+não entra no pacote. Também saem da versão publicada `entrarDemonstracao`, os
+avisos de demonstração e `/dev/estados`. No desenvolvimento e nos testes, o mock
+continua até a Etapa 12, que só termina de removê-lo.
+
+**Até a virada, o endereço do Render não vai para ninguém.** Antes dela, ele
+ainda serve o front com o mock. O GitHub Pages antigo, que mostra os dados
+fictícios, é despublicado já.
 
 ## 1. O que mudou
 

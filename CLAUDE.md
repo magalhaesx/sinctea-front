@@ -177,13 +177,17 @@ Qualidade: ISO/IEC 25010:2023. Método: Kanban com limites de trabalho em progre
 - Atributos na UML na forma `nome : Tipo`.
 - Commits em português, imperativo, referenciando o caso de uso:
   `feat(UC15): consulta do cartao de estrategias`.
-- **Nunca gravar dado pessoal real**, nem em desenvolvimento. Os dados de
-  demonstração são fictícios e permanecem assim.
+- **Produção começa vazia** e se preenche pelo uso: nenhum registro é
+  pré-carregado, e a semente não roda em produção. **Os testes usam dados
+  fictícios próprios** — dado de teste não é dado do site. Na tela de entrada e
+  no rodapé fica o aviso *"Ambiente acadêmico do TCC SINCTEA. Não cadastre dados
+  de pacientes reais."* (`docs/07`, seção 0). Tirá-lo é decisão do Lucas com a
+  orientadora
 - Nenhum componente importa de `servicos/mock`. Importa sempre de `servicos`.
 
 ## 7. Estado atual
 
-Atualizado em 14/10/2026, lendo o código — não a memória.
+Atualizado em 16/10/2026, lendo o código — não a memória.
 
 **Concluído**
 - Pré-projeto entregue em 17/08 — não pode mais ser alterado
@@ -215,9 +219,12 @@ Atualizado em 14/10/2026, lendo o código — não a memória.
   request, `verificar.yml` roda testes e build
 - Uma tag por etapa fechada: `entrega-2026-09-14`, `etapa-6`, `etapa-7`, `etapa-8`
 
-**Em construção — Etapa 9, a fundação do servidor (`docs/07`, até 19/10)**
+**Em construção — o caminho principal, até 19/10 (`docs/07`, seção 0)**
 
-O `docs/07` substitui as etapas 9 e 10 do `docs/05`. No código, hoje:
+Em 16/10, a orientadora pediu o sistema real, **sem nenhum dado fictício no
+site**, com front e backend prontos em 19/10. A seção 0 do `docs/07` vale sobre o
+resto dele: o sistema nasce vazio, o caminho principal vem primeiro, e a semente
+em produção (o antigo passo B5) foi cancelada. No código, hoje:
 - Passos 1 a 4 e o 4b feitos: `docs/07` e `CLAUDE.md`; os restos da Etapa 8;
   *npm workspaces* com três pacotes — o front na raiz, `compartilhado/` com
   tipos, contratos e domínio, e `servidor/` com NestJS; o banco; e, no 4b, os
@@ -227,7 +234,8 @@ O `docs/07` substitui as etapas 9 e 10 do `docs/05`. No código, hoje:
   colunas de `objetivo`) e a de junção da equipe do paciente. A migração inicial traz
   os CHECKs da seção 7 do `docs/01` e os *triggers* que tornam imutáveis a
   auditoria e o relatório emitido. A semente porta os dados do mock, com senha
-  em argon2id, tokens de convite aleatórios e dois relatórios emitidos
+  em argon2id, tokens de convite aleatórios e dois relatórios emitidos. Ela serve
+  só aos testes: em produção não roda
 - A segunda migração, `caminhos_coerentes`, garante que dois caminhos entre
   as mesmas linhas levam ao mesmo paciente: cinco chaves estrangeiras compostas
   (vínculo escolar → consentimento e → convite, ocorrência escolar → vínculo,
@@ -250,28 +258,48 @@ O `docs/07` substitui as etapas 9 e 10 do `docs/05`. No código, hoje:
 - Na máquina de desenvolvimento, `npm run banco -w @sinctea/servidor` sobe um
   PostgreSQL 17 embutido em `servidor/.banco/`, porta 54329, sem instalação nem
   Docker. Nos testes, um embutido descartável; no CI, o serviço `postgres:17`
-- Passo 5, o deploy, com o código pronto: o `Dockerfile` (Node 22 em Debian
-  slim, só dependências de produção, sem o Prisma CLI); o Nest servindo o build
-  do front na raiz quando `PASTA_DO_FRONT` aponta para ele, com a API em `/api`
-  e 404 em JSON para o resto; e o papel `sinctea_app`, que não é dono de nada
-  (`servidor/prisma/papel-aplicacao.exemplo.sql`). As contas do Neon e do
-  Render ainda não existem
+- O deploy (passo 5 da Etapa 9): o `Dockerfile` (Node 22 em Debian slim, só
+  dependências de produção, sem o Prisma CLI); o Nest servindo o build do front
+  na raiz quando `PASTA_DO_FRONT` aponta para ele, com a API em `/api` e 404 em
+  JSON para o resto; e o papel `sinctea_app`, que não é dono de nada
+  (`servidor/prisma/papel-aplicacao.exemplo.sql`). O Neon tem as três
+  migrações, aplicadas pelo job `migrar`, e nenhum registro; o `sinctea_app`
+  foi conferido nele. O Render está em configuração
 - Os três pacotes são ESM. O front compila o fonte do compartilhado pela
   condição `fonte` do `package.json`; o servidor importa o JavaScript de
   `compartilhado/dist`, que o build dele gera antes
 - A regra 6 exige o registro de toda leitura e escrita de dado do paciente, e o
-  mock registra só parte. Ele não vai ser ajustado: sai na Etapa 12, e no
-  servidor o registro é do interceptador, na Etapa 10. O que falta cobrir está
-  no achado 2 do `docs/06`
+  mock registra só parte. Ele não vai ser ajustado: no servidor, o registro é do
+  interceptador, no item 1 do caminho principal. O que falta cobrir está no
+  achado 2 do `docs/06`
 
-**Próximo, pelo `docs/07`**
-- Etapa 10, até 26/10 — autenticação, *guards*, a auditoria com o interceptador
-  (o *trigger* já entrou na Etapa 9) e os módulos do caminho crítico das regras
-- Etapa 11, até 09/11 — os demais serviços
-- Etapa 12, até 15/11 — a virada: o front só com a API, e `servicos/mock` removido
-- Etapa 13, de 16/11 a 23/11 — artigo, slides, vídeo e ensaio
-- Depois da Etapa 11, o offline reduzido ao registro de sessão (`docs/07`,
-  seção 3A)
+**Próximo, pela seção 0 do `docs/07`**
+
+Até 19/10, nesta ordem, um commit por item, enviado à main — o CI testa, migra e
+o Render publica. Cada item leva o módulo do servidor (*guards*, mapeador para os
+tipos do compartilhado, auditoria pelo interceptador), o cliente em
+`src/servicos/api`, a tela ligada e os testes de integração das regras que toca:
+1. Autenticação de verdade (D5): entrar, sair, sessão atual e primeiro acesso por
+   link; os *guards* (D7), o interceptador de auditoria e o comando do primeiro
+   administrador
+2. Usuários e profissionais; meus dados profissionais
+3. Pacientes, com o cadastro do responsável; plano, do "Criar plano" ao cartão de
+   estratégias; sessão
+4. Família, escolas (com cadastro pelo responsável), consentimento, convite e a
+   área da escola
+5. O front publicado só com a API: o mock fora do pacote, as telas fora do
+   caminho principal fora da navegação e das rotas, e sem `entrarDemonstracao`,
+   avisos de demonstração nem `/dev/estados`
+
+Não se corta, nem com pressa: as regras 1, 2, 3, 5 e 6 provadas por teste contra
+a API no caminho principal, o *trigger* da auditoria, o papel que não é dono e o
+argon2id.
+
+Depois de 19/10, sem data: indicadores, relatórios, atividades de casa,
+ocorrências comportamentais, evolução, avisos da escola, a tela de auditoria e a
+agenda; a remoção completa de `servicos/mock`; o offline reduzido ao registro de
+sessão (`docs/07`, seção 3A); e a Etapa 13, de 16/11 a 23/11 — artigo, slides,
+vídeo e ensaio.
 
 Duas decisões aguardam a orientadora, e as datas acima serão revistas quando ela
 responder: a data final (23/11 ou 30/11) e a Trilha de Autonomia (`docs/08`).
@@ -298,7 +326,10 @@ Enquanto não se resolverem, não devem ser afirmadas na defesa:
    escola lê veio da semente.** O contrato só tem `iniciarCartao`, que cria um
    rascunho em branco, nenhuma tela o chama, e não há operação que preencha o
    cartão. No banco, os CHECKs de `oQueFazer` e `oQueEvitar` recusam esse
-   rascunho, e ficam.
+   rascunho, e ficam. Resolve-se no item 3 do caminho principal.
+4. **O endereço do Render ainda não é o sistema.** Até o item 5 do caminho
+   principal, ele serve o front com o mock, e a API real só responde
+   `/api/saude`. Não se divulga antes da virada.
 
 O hash do termo de consentimento saiu desta lista em 04/10/2026: `hashTermo`
 passou a ser `sha256:<versão>:<hex>` calculado sobre os campos que compõem o
