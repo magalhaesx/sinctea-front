@@ -100,6 +100,8 @@ jobs:
           # O log e publico: a linha Datasource diria o endereco do banco.
           set -o pipefail
           npx prisma migrate deploy 2>&1 | sed '/Datasource/d' | tee migracao.log
-          aplicadas=$(grep -oE '[0-9]{14}_[a-z_]+' migracao.log | sort -u | tr '\n' ' ')
+          # Sem migracao pendente, o grep nao acha nada e sai com 1: com o
+          # pipefail do Actions, isso derrubava o job. O "|| true" e de proposito.
+          aplicadas=$({ grep -oE '[0-9]{14}_[a-z_]+' migracao.log || true; } | sort -u | tr '\n' ' ')
           echo "::notice title=Migracoes aplicadas neste run::${aplicadas:-nenhuma, o banco ja estava em dia}"
           npx prisma migrate status 2>&1 | sed '/Datasource/d'
