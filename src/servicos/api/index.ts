@@ -1,13 +1,13 @@
-import { ErroServico, type Servicos, type SessaoUsuario } from '@sinctea/compartilhado'
+import { ErroServico, type DadosProfissionais, type Servicos, type SessaoUsuario } from '@sinctea/compartilhado'
 import { comParametros as q, requisitar as r } from './cliente'
 
 /**
  * Implementacao contra a API real (servidor/, NestJS).
  *
  * Mesmos contratos do mock. Nenhuma regra de acesso e aplicada aqui: quem
- * decide e o servidor. Ja implementado no servidor: autenticacao (item 1 da
- * secao 0 do docs/07). Os demais caminhos sao provisorios ate o item de cada
- * um chegar.
+ * decide e o servidor. Ja implementados no servidor: autenticacao (item 1 da
+ * secao 0 do docs/07), usuarios e profissionais (item 2). Os demais caminhos
+ * sao provisorios ate o item de cada um chegar.
  */
 
 const id = encodeURIComponent
@@ -127,10 +127,12 @@ export const servicosApi: Servicos = {
   usuarios: {
     listar: (filtro) => r('GET', q('/usuarios', filtro)),
     convidar: (dados) => r('POST', '/usuarios', dados),
-    meusDadosProfissionais: () => r('GET', '/usuarios/eu/dados-profissionais'),
+    // Sem dados profissionais, o servidor responde 204: aqui isso vira nulo.
+    meusDadosProfissionais: async () => (await r<DadosProfissionais | undefined>('GET', '/usuarios/eu/dados-profissionais')) ?? null,
     atualizarMeusDadosProfissionais: (dados) => r('PUT', '/usuarios/eu/dados-profissionais', dados),
     alterarPerfis: (usuarioId, perfis) => r('PUT', `/usuarios/${id(usuarioId)}/perfis`, { perfis }),
     desativar: (usuarioId) => r('POST', `/usuarios/${id(usuarioId)}/desativacao`),
     reativar: (usuarioId) => r('POST', `/usuarios/${id(usuarioId)}/reativacao`),
+    novoLinkDeAcesso: (usuarioId) => r('POST', `/usuarios/${id(usuarioId)}/acesso-inicial`),
   },
 }

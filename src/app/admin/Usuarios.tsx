@@ -13,9 +13,10 @@ import { EstadoVazio } from '../../ui/EstadoVazio'
 import { Paginacao } from '../../ui/Paginacao'
 import { Tabela, type Coluna } from '../../ui/Tabela'
 import { NOME_DO_PERFIL } from '../perfis'
+import { LinkDePrimeiroAcesso } from '../../componentes/LinkDePrimeiroAcesso'
 import { usarSessao } from '../../contexto/Sessao'
 import { emData } from '@sinctea/compartilhado/dominio/datas'
-import { ErroServico, servicos, type Pagina, type Perfil, type Usuario } from '../../servicos'
+import { ErroServico, servicos, type LinkPrimeiroAcesso, type Pagina, type Perfil, type Usuario } from '../../servicos'
 
 /**
  * Tela 14 · Gerenciar usuarios e perfis · /app/admin/usuarios (UC20)
@@ -29,6 +30,11 @@ import { ErroServico, servicos, type Pagina, type Perfil, type Usuario } from '.
  * saem daqui: o responsavel nasce do vinculo com o paciente, e o professor so
  * nasce do convite da familia. Fosse diferente, esta seria a porta dos fundos
  * da regra 1 do CLAUDE.md.
+ *
+ * A conta nasce sem senha conhecida: o administrador recebe um link de primeiro
+ * acesso, de uso unico e 72 horas, e o entrega a pessoa, que define a propria
+ * senha (docs/07, secao 0). O mesmo vale para o link novo, quando o anterior
+ * venceu ou a pessoa esqueceu a senha.
  */
 
 const POR_PAGINA = 10
@@ -69,6 +75,7 @@ export function Usuarios() {
   const [ocupado, setOcupado] = useState(false)
   const [erros, setErros] = useState<Record<string, string>>({})
   const [aviso, setAviso] = useState<string | null>(null)
+  const [link, setLink] = useState<{ nome: string; link: LinkPrimeiroAcesso } | null>(null)
 
   const regiaoViva = useRef<HTMLDivElement>(null)
   const focarAviso = useRef(false)
@@ -115,6 +122,7 @@ export function Usuarios() {
   const abrir = (u: Usuario) => {
     // O recado e da acao anterior: abrir outra pessoa o apaga (docs/02, secao 4).
     setAviso(null)
+    setLink(null)
     setErros({})
     setConfirmandoDesativar(false)
     setAbertoId(u.id)
@@ -131,13 +139,16 @@ export function Usuarios() {
   const convidar = async (evento: FormEvent) => {
     evento.preventDefault()
     setAviso(null)
+    setLink(null)
     setErros({})
     setOcupado(true)
     try {
-      const criado = await servicos.usuarios.convidar(convite)
+      const { usuario, primeiroAcesso } = await servicos.usuarios.convidar(convite)
       setConvite(VAZIO)
-      // Sem servidor de e-mail, nao se finge que o convite saiu.
-      setAviso(`Conta criada para ${criado.email}. Sem servidor de e-mail neste protótipo, nenhum convite foi enviado.`)
+      // Sem servidor de e-mail, nao se finge que algo foi enviado: o link e
+      // entregue por quem cadastrou.
+      setAviso(`Conta criada para ${usuario.email}. Entregue o link abaixo a ${usuario.nome}.`)
+      setLink({ nome: usuario.nome, link: primeiroAcesso })
       focarAviso.current = true
       recarregar()
     } catch (e) {
@@ -147,8 +158,26 @@ export function Usuarios() {
     }
   }
 
+  const gerarLink = async (u: Usuario) => {
+    setAviso(null)
+    setLink(null)
+    setErros({})
+    setOcupado(true)
+    try {
+      const novo = await servicos.usuarios.novoLinkDeAcesso(u.id)
+      setAviso(`Novo link para ${u.nome}. O anterior deixou de valer; a senha atual vale até o novo ser usado.`)
+      setLink({ nome: u.nome, link: novo })
+      focarAviso.current = true
+    } catch (e) {
+      comErro(e)
+    } finally {
+      setOcupado(false)
+    }
+  }
+
   const executar = async (acao: () => Promise<Usuario>, recado: (u: Usuario) => string) => {
     setAviso(null)
+    setLink(null)
     setErros({})
     setOcupado(true)
     try {
@@ -210,6 +239,7 @@ export function Usuarios() {
 
       <div ref={regiaoViva} tabIndex={-1} aria-live="polite">
         {aviso && <Aviso tom="ok" titulo="Pronto">{aviso}</Aviso>}
+        {link && <div className="mt-3"><LinkDePrimeiroAcesso nome={link.nome} link={link.link} /></div>}
         {erros.geral && <Aviso tom="cr" titulo="Não foi possível concluir">{erros.geral}</Aviso>}
       </div>
 
@@ -391,6 +421,14 @@ export function Usuarios() {
                     (u) => `Perfis de ${u.nome} atualizados.`,
                   )}>
                   {ocupado ? 'Salvando…' : 'Salvar perfis'}
+                </Botao>
+              )}
+
+              {/* Link vencido ou senha esquecida: so a equipe, e so conta ativa. */}
+              {ehDaEquipe(aberto) && aberto.ativo && (
+                <Botao area="cli" variante="secundaria" disabled={ocupado}
+                  onClick={() => void gerarLink(aberto)}>
+                  Gerar novo link de acesso
                 </Botao>
               )}
 

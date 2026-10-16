@@ -306,6 +306,11 @@ export function situacaoConvite(
 
 // ---------------------------------------------------------------- Conta e senha
 
+/** Texto para busca: sem acento e sem diferenca de maiusculas. */
+export function paraBusca(texto: string): string {
+  return texto.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase()
+}
+
 /** E-mail como fica gravado: sem espacos nas pontas e em minusculas. */
 export function normalizarEmail(email: string): string {
   return email.trim().toLowerCase()

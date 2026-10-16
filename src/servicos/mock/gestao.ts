@@ -8,7 +8,7 @@ import { montarCsv } from '@sinctea/compartilhado/dominio/csv'
 import { versaoAnteriorEmTexto } from '@sinctea/compartilhado/dominio/auditoria'
 import {
   auditar, banco, exigirPerfil, exigirSessao, exigirValido, gerarId, naoEncontrado, paginar,
-  responder, todosUsuarios, usuarioPorId,
+  relogio, responder, todosUsuarios, usuarioPorId,
 } from './infra'
 
 // ---------------------------------------------------------------- Auditoria
@@ -87,6 +87,10 @@ function buscarUsuario(id: string): UsuarioQualquer {
   return usuarioPorId(id) ?? naoEncontrado('Usuário')
 }
 
+function linkDoMock() {
+  return { token: `mock-${gerarId('acesso')}`, expiraEm: new Date(relogio.agora().getTime() + 72 * 3_600_000).toISOString() }
+}
+
 /** Perfis que esta tela pode conceder. Familia e escola nunca saem daqui. */
 const PERFIS_DE_EQUIPE: Perfil[] = ['TERAPEUTA', 'COORDENADOR', 'ADMINISTRADOR']
 
@@ -144,9 +148,22 @@ export const usuariosMock: ServicoUsuario = {
     banco.profissionais.push(usuario)
     auditar(sessao, {
       acao: 'CRIACAO', entidade: 'Usuario', idEntidade: usuario.id,
-      detalhe: `Conta criada para ${email} (${perfis.join(', ')}).`,
+      detalhe: `Conta criada para ${email} (${perfis.join(', ')}). Link de primeiro acesso gerado.`,
     })
-    return publico(usuario)
+    return { usuario: publico(usuario), primeiroAcesso: linkDoMock() }
+  }),
+
+  // As contas de demonstracao ja tem senha: o link do mock nao abre nada. O
+  // caminho de verdade e o servidor (docs/07, secao 0).
+  novoLinkDeAcesso: (usuarioId) => responder(() => {
+    const sessao = exigirPerfil(['ADMINISTRADOR'], 'Usuario')
+    const usuario = buscarUsuario(usuarioId)
+    if (usuario.tipo !== 'PROFISSIONAL') {
+      throw new ErroServico('CONFLITO', 'O link de responsável é gerado na ficha do paciente, e o professor entra pelo convite da família.')
+    }
+    if (!usuario.ativo) throw new ErroServico('CONFLITO', 'Reative a conta antes de gerar um link para ela.')
+    auditar(sessao, { acao: 'ALTERACAO', entidade: 'Usuario', idEntidade: usuario.id, detalhe: 'Novo link de primeiro acesso gerado; o anterior deixou de valer.' })
+    return linkDoMock()
   }),
 
   meusDadosProfissionais: () => responder(() => {

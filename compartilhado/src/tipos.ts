@@ -136,6 +136,21 @@ export interface PrimeiroAcessoPublico {
 }
 
 /**
+ * O link que quem cadastra entrega a pessoa. O token sai uma vez, nesta
+ * resposta: o banco guarda so o resumo dele, e ninguem o le de volta.
+ */
+export interface LinkPrimeiroAcesso {
+  token: string
+  expiraEm: DataIso
+}
+
+/** Conta criada por quem cadastra: o usuario e o link do primeiro acesso dele. */
+export interface ContaCriada {
+  usuario: Usuario
+  primeiroAcesso: LinkPrimeiroAcesso
+}
+
+/**
  * O que identifica o profissional no documento que ele assina. Fica fora da
  * projecao publica de Usuario: quem le a lista de contas nao precisa disto, e
  * quem responde pelo registro e o proprio dono.

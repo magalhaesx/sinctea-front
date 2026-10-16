@@ -204,10 +204,10 @@ Atualizado em 16/10/2026, lendo o código — não a memória.
 - **Camada de serviços**: `compartilhado/src/contratos.ts` com 16 serviços; implementação
   simulada que aplica controle de acesso e auditoria; stubs de API que não
   aplicam regra nenhuma; a escolha entre as duas por `VITE_API_URL`
-- **283 testes em 20 arquivos, nos três pacotes**, rodados por um único
+- **295 testes em 21 arquivos, nos três pacotes**, rodados por um único
   `npm test` na raiz, sem passo manual. O principal ainda é
   `src/servicos/mock/regrasInviolaveis.test.ts`, que verifica as regras
-  invioláveis na camada de dados, e não na tela. Os 83 do servidor rodam contra
+  invioláveis na camada de dados, e não na tela. Os 95 do servidor rodam contra
   um PostgreSQL 17 de verdade
 - **As seis regras verificadas** em `docs/06`: para cada teste citado, a regra foi
   quebrada de propósito para confirmar que ele falha, e as quebras que não
@@ -284,6 +284,11 @@ em produção (o antigo passo B5) foi cancelada. No código, hoje:
   grava o registro antes de a resposta sair, e o filtro de erros registra toda
   negativa. Hoje nenhuma rota de verdade lê dado do paciente: elas chegam no
   item 3. O mock continua registrando só parte (achado 2 do `docs/06`)
+- **Item 2 feito — usuários e profissionais.** A gestão de usuários (tela 14) e
+  os dados profissionais (tela 21) falam com a API. A conta da equipe nasce com
+  uma senha que ninguém conhece e um link de primeiro acesso, que a tela mostra
+  para quem cadastrou entregar; "Gerar novo link de acesso" serve ao link
+  vencido e à senha esquecida
 - `npm run criar-administrador -w @sinctea/servidor -- .env.producao` cria o
   primeiro administrador: pede nome, e-mail e senha, sem mostrar a senha, e
   recusa se já houver administrador
@@ -297,7 +302,7 @@ tipos do compartilhado, auditoria pelo interceptador), o cliente em
 1. ~~Autenticação de verdade (D5): entrar, sair, sessão atual e primeiro acesso
    por link; os *guards* (D7), o interceptador de auditoria e o comando do
    primeiro administrador~~ — feito em 16/10
-2. Usuários e profissionais; meus dados profissionais
+2. ~~Usuários e profissionais; meus dados profissionais~~ — feito em 16/10
 3. Pacientes, com o cadastro do responsável; plano, do "Criar plano" ao cartão de
    estratégias; sessão
 4. Família, escolas (com cadastro pelo responsável), consentimento, convite e a

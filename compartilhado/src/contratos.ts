@@ -1,9 +1,9 @@
 import type {
   AceiteConvite, AlertaAtencao, AlunoEscola, AtividadeCasa, AvisoOcorrenciaEscolar, CartaoEscola,
   CartaoEstrategia,
-  ConsentimentoConcedido, ConsentimentoDetalhe, ConvitePublico, Desempenho, Escola,
+  ConsentimentoConcedido, ConsentimentoDetalhe, ContaCriada, ConvitePublico, Desempenho, Escola,
   ExecucaoAtividadeCasa, FiltroAgenda, FiltroAuditoria, FiltroOcorrencia, FiltroPaciente,
-  FiltroPaginacao, FiltroSessao, FiltroUsuario, FilhoResumo, ItemAgenda, NovaAtividadeCasa,
+  FiltroPaginacao, FiltroSessao, FiltroUsuario, FilhoResumo, ItemAgenda, LinkPrimeiroAcesso, NovaAtividadeCasa,
   NovaOcorrenciaComportamental, NovaOcorrenciaEscolar, NovoConsentimento, NovoObjetivo,
   NovoPaciente, Objetivo, ObjetivoAcessivel, OcorrenciaComportamental, OcorrenciaEscolar,
   ConteudoRelatorio, DadosProfissionais, MotivoAtencao, Pagina, PacienteDetalhe, PacienteResumo, PedidoRelatorio,
@@ -190,7 +190,11 @@ export interface ServicoIndicadores {
 /** Desativar, nunca excluir: o historico clinico precisa manter a autoria. */
 export interface ServicoUsuario {
   listar(filtro?: FiltroUsuario): Promise<Pagina<Usuario>>
-  /** So cadastra equipe da clinica: terapeuta, coordenacao, administracao. */
+  /**
+   * So cadastra equipe da clinica: terapeuta, coordenacao, administracao.
+   * Devolve o link de primeiro acesso: a pessoa define a propria senha, e quem
+   * cadastra nunca a conhece (docs/07, secao 0, lacuna 1).
+   */
   convidar(dados: {
     nome: string
     email: string
@@ -198,7 +202,12 @@ export interface ServicoUsuario {
     /** Opcionais: quem completa depois e a propria pessoa, na tela 21. */
     especialidade?: string
     registroConselho?: string
-  }): Promise<Usuario>
+  }): Promise<ContaCriada>
+  /**
+   * Link novo para uma conta da equipe: o anterior deixa de valer, e a senha
+   * atual vale ate o novo ser usado. Serve ao link vencido e a senha esquecida.
+   */
+  novoLinkDeAcesso(usuarioId: string): Promise<LinkPrimeiroAcesso>
   /** Dados profissionais de quem esta na sessao. Nulo para quem nao e profissional. */
   meusDadosProfissionais(): Promise<DadosProfissionais | null>
   /**

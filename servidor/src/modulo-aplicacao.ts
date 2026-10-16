@@ -7,13 +7,14 @@ import { ModuloAutenticacao } from './autenticacao/modulo-autenticacao.js'
 import { ModuloBanco } from './banco/modulo-banco.js'
 import { FiltroErros } from './http/filtro-erros.js'
 import { ControladorSaude } from './saude/saude.controlador.js'
+import { ModuloUsuarios } from './usuarios/modulo-usuarios.js'
 
 /**
  * A guarda, o interceptador e o filtro valem para toda rota, sem excecao
  * (docs/07, D7): nenhuma rota escolhe ficar fora deles.
  */
 @Module({
-  imports: [ModuloBanco, ModuloAuditoria, ModuloAutenticacao],
+  imports: [ModuloBanco, ModuloAuditoria, ModuloAutenticacao, ModuloUsuarios],
   controllers: [ControladorSaude],
   providers: [
     { provide: APP_GUARD, useClass: GuardaAcesso },

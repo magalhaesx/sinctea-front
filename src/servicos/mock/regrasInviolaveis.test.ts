@@ -898,7 +898,7 @@ describe('outras regras de tela aplicadas no servico', () => {
   it('e-mail repetido nao vira segunda conta', async () => {
     await entrarComo('COORDENADOR')
     await chamar(s.autenticacao.trocarPerfil('ADMINISTRADOR'))
-    const nova = await chamar(s.usuarios.convidar({
+    const { usuario: nova } = await chamar(s.usuarios.convidar({
       nome: 'Tereza Nogueira Pinho', email: 'tereza.pinho@clinica.example', perfis: ['TERAPEUTA'],
     }))
     expect(nova.ativo).toBe(true)
@@ -913,7 +913,7 @@ describe('outras regras de tela aplicadas no servico', () => {
   it('desativar vale na chamada seguinte, e nao no proximo login', async () => {
     await entrarComo('COORDENADOR')
     await chamar(s.autenticacao.trocarPerfil('ADMINISTRADOR'))
-    const alvo = await chamar(s.usuarios.convidar({
+    const { usuario: alvo } = await chamar(s.usuarios.convidar({
       nome: 'Bruno Sales Ferraz', email: 'bruno.ferraz@clinica.example', perfis: ['TERAPEUTA'],
     }))
     await chamar(s.usuarios.desativar(alvo.id))

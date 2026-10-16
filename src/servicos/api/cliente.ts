@@ -59,6 +59,8 @@ export async function requisitar<T>(metodo: 'GET' | 'POST' | 'PUT' | 'PATCH' | '
       corpoErro.motivo,
     )
   }
-  if (resposta.status === 204) return undefined as T
-  return resposta.json() as Promise<T>
+  // 204, ou corpo vazio: a operacao nao devolve nada (sessao anonima, conta
+  // sem dados profissionais). Quem chama decide se isso e nulo.
+  const texto = resposta.status === 204 ? '' : await resposta.text()
+  return (texto ? JSON.parse(texto) : undefined) as T
 }

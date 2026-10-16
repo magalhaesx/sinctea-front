@@ -40,8 +40,10 @@ export class FiltroErros implements ExceptionFilter {
         await this.auditoria.registrar(ctx?.sessao ?? null, {
           acao: 'ACESSO_NEGADO',
           entidade: ctx?.declaracao.entidade ?? 'Desconhecida',
-          idEntidade: textoOuNulo(resolver(ctx?.declaracao.idEntidade, requisicao, null)),
-          pacienteId: textoOuNulo(resolver(ctx?.declaracao.pacienteId, requisicao, null)),
+          // Na negativa nao ha resposta: o campo que dependeria dela fica nulo,
+          // e o registro sai mesmo assim.
+          idEntidade: semResposta(() => resolver(ctx?.declaracao.idEntidade, requisicao, null)),
+          pacienteId: semResposta(() => resolver(ctx?.declaracao.pacienteId, requisicao, null)),
           detalhe: ctx?.detalheNegativa ?? `Negado: ${erro.message}`,
           ipOrigem: requisicao.ip ?? null,
         })
@@ -62,4 +64,12 @@ export class FiltroErros implements ExceptionFilter {
 
 function textoOuNulo(valor: unknown): string | null {
   return typeof valor === 'string' && valor.length > 0 ? valor : null
+}
+
+function semResposta(ler: () => unknown): string | null {
+  try {
+    return textoOuNulo(ler())
+  } catch {
+    return null
+  }
 }
