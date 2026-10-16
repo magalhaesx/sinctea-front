@@ -204,10 +204,10 @@ Atualizado em 16/10/2026, lendo o código — não a memória.
 - **Camada de serviços**: `compartilhado/src/contratos.ts` com 16 serviços; implementação
   simulada que aplica controle de acesso e auditoria; stubs de API que não
   aplicam regra nenhuma; a escolha entre as duas por `VITE_API_URL`
-- **246 testes em 17 arquivos, nos três pacotes**, rodados por um único
+- **278 testes em 20 arquivos, nos três pacotes**, rodados por um único
   `npm test` na raiz, sem passo manual. O principal ainda é
   `src/servicos/mock/regrasInviolaveis.test.ts`, que verifica as regras
-  invioláveis na camada de dados, e não na tela. Os 49 do servidor rodam contra
+  invioláveis na camada de dados, e não na tela. Os 78 do servidor rodam contra
   um PostgreSQL 17 de verdade
 - **As seis regras verificadas** em `docs/06`: para cada teste citado, a regra foi
   quebrada de propósito para confirmar que ele falha, e as quebras que não
@@ -268,10 +268,22 @@ em produção (o antigo passo B5) foi cancelada. No código, hoje:
 - Os três pacotes são ESM. O front compila o fonte do compartilhado pela
   condição `fonte` do `package.json`; o servidor importa o JavaScript de
   `compartilhado/dist`, que o build dele gera antes
-- A regra 6 exige o registro de toda leitura e escrita de dado do paciente, e o
-  mock registra só parte. Ele não vai ser ajustado: no servidor, o registro é do
-  interceptador, no item 1 do caminho principal. O que falta cobrir está no
-  achado 2 do `docs/06`
+- **Item 1 do caminho principal feito — autenticação de verdade.** Entrar,
+  sair, sessão atual, trocar de perfil e primeiro acesso por link, na API e na
+  tela (`/app/primeiro-acesso/:token`). Senha em argon2id; sessão no banco
+  (`sessao_login`), 24 horas desde o último uso, cookie `httpOnly`, `Secure` e
+  `SameSite=Lax`; link de 72 horas e uso único (`acesso_inicial`); dos dois
+  tokens, o banco guarda só o resumo SHA-256. E-mail gravado em minúsculas, com
+  CHECK. As duas tabelas novas são infraestrutura, e não classes: o banco tem
+  24 tabelas, e o diagrama continua com 22 classes
+- **A regra 6 no servidor:** toda rota declara a auditoria (`@Auditar` ou
+  `@SemDadoDoPaciente`) e a guarda recusa a que não declara; o interceptador
+  grava o registro antes de a resposta sair, e o filtro de erros registra toda
+  negativa. Hoje nenhuma rota de verdade lê dado do paciente: elas chegam no
+  item 3. O mock continua registrando só parte (achado 2 do `docs/06`)
+- `npm run criar-administrador -w @sinctea/servidor -- .env.producao` cria o
+  primeiro administrador: pede nome, e-mail e senha, sem mostrar a senha, e
+  recusa se já houver administrador
 
 **Próximo, pela seção 0 do `docs/07`**
 
@@ -279,9 +291,9 @@ Até 19/10, nesta ordem, um commit por item, enviado à main — o CI testa, mig
 o Render publica. Cada item leva o módulo do servidor (*guards*, mapeador para os
 tipos do compartilhado, auditoria pelo interceptador), o cliente em
 `src/servicos/api`, a tela ligada e os testes de integração das regras que toca:
-1. Autenticação de verdade (D5): entrar, sair, sessão atual e primeiro acesso por
-   link; os *guards* (D7), o interceptador de auditoria e o comando do primeiro
-   administrador
+1. ~~Autenticação de verdade (D5): entrar, sair, sessão atual e primeiro acesso
+   por link; os *guards* (D7), o interceptador de auditoria e o comando do
+   primeiro administrador~~ — feito em 16/10
 2. Usuários e profissionais; meus dados profissionais
 3. Pacientes, com o cadastro do responsável; plano, do "Criar plano" ao cartão de
    estratégias; sessão

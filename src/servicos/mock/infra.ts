@@ -2,6 +2,7 @@ import {
   ErroServico, type FiltroPaginacao, type Pagina, type Perfil, type RegistroAuditoria,
   type SessaoUsuario, type UsuarioQualquer,
 } from '@sinctea/compartilhado'
+import { origemDoPerfil } from '@sinctea/compartilhado/dominio/auditoria'
 import { criarDadosDemonstracao, type BancoDemonstracao } from './dados'
 
 /**
@@ -122,12 +123,8 @@ export function paraSessaoUsuario(s: SessaoServidor): SessaoUsuario {
 
 // ---------------------------------------------------------------- Auditoria
 
-export function origemDoPerfil(perfil: Perfil | null): RegistroAuditoria['origem'] {
-  if (perfil === 'RESPONSAVEL') return 'FAMILIA'
-  if (perfil === 'PROFESSOR') return 'ESCOLA'
-  if (perfil === null) return 'SISTEMA'
-  return 'CLINICA'
-}
+// A mesma regra do servidor, do dominio compartilhado.
+export { origemDoPerfil } from '@sinctea/compartilhado/dominio/auditoria'
 
 interface EventoAuditoria {
   acao: RegistroAuditoria['acao']

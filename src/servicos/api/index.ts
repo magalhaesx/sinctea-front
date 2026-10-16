@@ -1,12 +1,13 @@
-import type { Servicos } from '@sinctea/compartilhado'
+import { ErroServico, type Servicos, type SessaoUsuario } from '@sinctea/compartilhado'
 import { comParametros as q, requisitar as r } from './cliente'
 
 /**
- * Implementacao contra a API real — STUB.
+ * Implementacao contra a API real (servidor/, NestJS).
  *
- * Mesmos contratos do mock; os caminhos sao provisorios ate o back-end
- * (S06) publicar os seus. Nenhuma regra de acesso e aplicada aqui: quem
- * decide e o servidor.
+ * Mesmos contratos do mock. Nenhuma regra de acesso e aplicada aqui: quem
+ * decide e o servidor. Ja implementado no servidor: autenticacao (item 1 da
+ * secao 0 do docs/07). Os demais caminhos sao provisorios ate o item de cada
+ * um chegar.
  */
 
 const id = encodeURIComponent
@@ -14,10 +15,15 @@ const id = encodeURIComponent
 export const servicosApi: Servicos = {
   autenticacao: {
     entrar: (email, senha) => r('POST', '/auth/entrar', { email, senha }),
-    entrarDemonstracao: (perfil) => r('POST', '/auth/demonstracao', { perfil }),
+    // No sistema real nao existe conta sem senha (docs/07, D6).
+    entrarDemonstracao: () => Promise.reject(
+      new ErroServico('NAO_ENCONTRADO', 'A entrada de demonstração não existe no sistema real.')),
     trocarPerfil: (perfil) => r('POST', '/auth/perfil', { perfil }),
-    sessaoAtual: () => r('GET', '/auth/sessao'),
+    // Sem sessao, o servidor responde 204: aqui isso vira nulo.
+    sessaoAtual: async () => (await r<SessaoUsuario | undefined>('GET', '/auth/sessao')) ?? null,
     sair: () => r('POST', '/auth/sair'),
+    obterPrimeiroAcesso: (token) => r('GET', `/auth/primeiro-acesso/${id(token)}`),
+    concluirPrimeiroAcesso: (token, senha) => r('POST', `/auth/primeiro-acesso/${id(token)}`, { senha }),
   },
 
   pacientes: {

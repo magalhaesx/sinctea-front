@@ -117,6 +117,23 @@ export interface SessaoUsuario {
 }
 
 /**
+ * Primeiro acesso por link (docs/07, secao 0, lacuna 1): quem cadastra entrega
+ * o link, e a pessoa define a propria senha. Uso unico, 72 horas.
+ */
+export type SituacaoPrimeiroAcesso = 'VALIDO' | 'USADO' | 'EXPIRADO' | 'INEXISTENTE'
+
+/**
+ * O que a tela do link mostra antes da senha: so o nome e o e-mail da conta,
+ * para a pessoa reconhecer que o link e dela. Fora de VALIDO, os dois sao nulos.
+ */
+export interface PrimeiroAcessoPublico {
+  situacao: SituacaoPrimeiroAcesso
+  nome: string | null
+  email: string | null
+  expiraEm: DataIso | null
+}
+
+/**
  * O que identifica o profissional no documento que ele assina. Fica fora da
  * projecao publica de Usuario: quem le a lista de contas nao precisa disto, e
  * quem responde pelo registro e o proprio dono.

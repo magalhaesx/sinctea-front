@@ -1,0 +1,54 @@
+import type { Perfil } from '@sinctea/compartilhado'
+import type { DeclaracaoAuditoria } from '../acesso/metadados.js'
+
+/**
+ * O pouco do Express que o servidor usa, tipado aqui: sem @types/express como
+ * dependencia, e sem o resto da API do Express a vista.
+ */
+
+export interface OpcoesCookie {
+  httpOnly: boolean
+  secure: boolean
+  sameSite: 'lax'
+  path: string
+  maxAge?: number
+}
+
+export interface UsuarioDaSessao {
+  id: string
+  nome: string
+  email: string
+  perfis: Perfil[]
+  ativo: boolean
+  ultimoAcessoEm: Date | null
+}
+
+/** Quem esta agindo, resolvido pelo cookie a cada requisicao. */
+export interface SessaoServidor {
+  sessaoId: string
+  usuario: UsuarioDaSessao
+  perfilAtivo: Perfil
+}
+
+/** O que a guarda deixa na requisicao para o interceptador e o filtro. */
+export interface ContextoSinctea {
+  sessao: SessaoServidor | null
+  declaracao: DeclaracaoAuditoria
+  /** Detalhe da negativa, quando quem nega sabe dizer mais que a mensagem. */
+  detalheNegativa?: string
+}
+
+export interface RequisicaoHttp {
+  headers: Record<string, string | string[] | undefined>
+  params: Record<string, string>
+  body: unknown
+  ip?: string
+  sinctea?: ContextoSinctea
+}
+
+export interface RespostaHttp {
+  cookie(nome: string, valor: string, opcoes: OpcoesCookie): unknown
+  clearCookie(nome: string, opcoes: OpcoesCookie): unknown
+  status(codigo: number): RespostaHttp
+  json(corpo: unknown): unknown
+}

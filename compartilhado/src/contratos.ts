@@ -7,7 +7,7 @@ import type {
   NovaOcorrenciaComportamental, NovaOcorrenciaEscolar, NovoConsentimento, NovoObjetivo,
   NovoPaciente, Objetivo, ObjetivoAcessivel, OcorrenciaComportamental, OcorrenciaEscolar,
   ConteudoRelatorio, DadosProfissionais, MotivoAtencao, Pagina, PacienteDetalhe, PacienteResumo, PedidoRelatorio,
-  Perfil, PlanoParaValidacao, PlanoTerapeutico, PonteEscola, Profissional, RegistroAtividade,
+  Perfil, PlanoParaValidacao, PlanoTerapeutico, PonteEscola, PrimeiroAcessoPublico, Profissional, RegistroAtividade,
   RegistroAuditoria, RelatorioEvolucao, ResumoClinica, Resultado, Sessao, SessaoUsuario,
   SessoesPorProfissional, Usuario,
 } from './tipos.js'
@@ -30,6 +30,10 @@ export interface ServicoAutenticacao {
   trocarPerfil(perfil: Perfil): Promise<SessaoUsuario>
   sessaoAtual(): Promise<SessaoUsuario | null>
   sair(): Promise<void>
+  /** Primeiro acesso por link: o que a tela mostra antes de pedir a senha. */
+  obterPrimeiroAcesso(token: string): Promise<PrimeiroAcessoPublico>
+  /** Define a senha da conta, gasta o link e ja abre a sessao. */
+  concluirPrimeiroAcesso(token: string, senha: string): Promise<SessaoUsuario>
 }
 
 export interface ServicoPaciente {

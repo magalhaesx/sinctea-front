@@ -3,7 +3,9 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
 import type { PrismaClient } from '../src/gerado/client.js'
-import { PASTA_DO_SERVIDOR, clienteDe, criarBancoMigrado, nomeDescartavel } from './apoio/banco.js'
+import {
+  PASTA_DO_SERVIDOR, apagarBanco, clienteDe, criarBanco, criarBancoMigrado, migrar, nomeDescartavel,
+} from './apoio/banco.js'
 
 /**
  * O papel da aplicacao (docs/07, D4), criado com o SQL versionado de
@@ -97,5 +99,60 @@ describe('o papel da aplicacao', () => {
   it('criar tabela e recusado: sem CREATE no esquema', async () => {
     await expect(comoApp.$executeRawUnsafe('CREATE TABLE intrusa (id int)'))
       .rejects.toThrow(/permission denied for schema public/)
+  })
+})
+
+/**
+ * Tabela que nasce depois do papel — a sessao de login, o link de primeiro
+ * acesso e as que vierem — ganha os privilegios pelo ALTER DEFAULT PRIVILEGES,
+ * sem ninguem rodar o modelo de novo. Aqui o papel nasce num banco vazio, e as
+ * migracoes rodam depois dele, como as proximas vao rodar no Neon.
+ */
+describe('o papel e as tabelas que nascem depois dele', () => {
+  const papelAntes = nomeDescartavel('sinctea_app_antes')
+  const nome = nomeDescartavel('sinctea_papel_antes')
+  let url: string
+
+  beforeAll(async () => {
+    url = await criarBanco(inject('urlAdministrativa'), nome)
+    const dono = clienteDe(url)
+    try {
+      const comandos = MODELO
+        .split('\n').filter((linha) => !linha.startsWith('--')).join('\n')
+        .replaceAll('sinctea_app', papelAntes)
+        .replaceAll('neondb', `"${nome}"`)
+        .replace('<senha>', randomBytes(16).toString('hex'))
+        .split(';').map((c) => c.trim()).filter(Boolean)
+      for (const comando of comandos) await dono.$executeRawUnsafe(comando)
+    } finally {
+      await dono.$disconnect()
+    }
+    migrar(url)
+  })
+
+  afterAll(async () => {
+    await apagarBanco(inject('urlAdministrativa'), nome)
+    const servidor = clienteDe(inject('urlAdministrativa'))
+    try {
+      await servidor.$executeRawUnsafe(`DROP ROLE IF EXISTS "${papelAntes}"`)
+    } finally {
+      await servidor.$disconnect()
+    }
+  })
+
+  it('toda tabela criada pelas migracoes da ao papel SELECT, INSERT, UPDATE e DELETE, e nada alem', async () => {
+    const dono = clienteDe(url)
+    try {
+      const linhas = await dono.$queryRawUnsafe<Array<{ tabela: string; basicos: boolean; truncate: boolean }>>(`
+        SELECT tablename AS tabela,
+          has_table_privilege('${papelAntes}', format('public.%I', tablename), 'SELECT,INSERT,UPDATE,DELETE') AS basicos,
+          has_table_privilege('${papelAntes}', format('public.%I', tablename), 'TRUNCATE') AS truncate
+        FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename`)
+      expect(linhas.map((l) => l.tabela)).toEqual(expect.arrayContaining(['sessao_login', 'acesso_inicial', 'registro_auditoria']))
+      expect(linhas.filter((l) => !l.basicos).map((l) => l.tabela)).toEqual([])
+      expect(linhas.filter((l) => l.truncate).map((l) => l.tabela)).toEqual([])
+    } finally {
+      await dono.$disconnect()
+    }
   })
 })

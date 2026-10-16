@@ -150,8 +150,46 @@ model Usuario {
   responsavel        Responsavel?
   professorAee       ProfessorAEE?
   registrosAuditoria RegistroAuditoria[]
+  sessoesLogin       SessaoLogin[]
+  acessosIniciais    AcessoInicial[]
 
   @@map("usuario")
+}
+
+/// Sessao de login (docs/07, D5): no banco, e nao na memoria do processo — o
+/// Render reinicia o servico quando quer. O cookie leva o token; aqui fica so
+/// o resumo SHA-256 dele, para que uma copia do banco nao abra sessao nenhuma.
+/// Infraestrutura de autenticacao, e nao classe do dominio: fica fora do
+/// diagrama de classes.
+model SessaoLogin {
+  id          String   @id @default(uuid(7)) @db.Uuid
+  tokenResumo String   @unique
+  usuarioId   String   @db.Uuid
+  perfilAtivo Perfil
+  criadaEm    DateTime @db.Timestamptz(3)
+  /// Renovada com o uso; vencida, a sessao nao vale e a linha e apagada.
+  expiraEm    DateTime @db.Timestamptz(3)
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
+
+  @@index([usuarioId])
+  @@map("sessao_login")
+}
+
+/// Link de primeiro acesso (docs/07, secao 0, lacuna 1): uso unico, 72 horas.
+/// So o resumo SHA-256 do token: o link existe uma vez, na mao de quem cadastra.
+model AcessoInicial {
+  id          String    @id @default(uuid(7)) @db.Uuid
+  tokenResumo String    @unique
+  usuarioId   String    @db.Uuid
+  criadoEm    DateTime  @db.Timestamptz(3)
+  expiraEm    DateTime  @db.Timestamptz(3)
+  usadoEm     DateTime? @db.Timestamptz(3)
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
+
+  @@index([usuarioId])
+  @@map("acesso_inicial")
 }
 
 model Profissional {

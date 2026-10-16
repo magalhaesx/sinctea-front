@@ -7,6 +7,19 @@
  * dominio para que as duas digam a mesma coisa.
  */
 
+import type { Perfil, RegistroAuditoria } from '../tipos.js'
+
+/**
+ * De que area veio o registro, pelo perfil com que a pessoa agia. Sem perfil
+ * (o comando do primeiro administrador, uma tarefa do proprio sistema): SISTEMA.
+ */
+export function origemDoPerfil(perfil: Perfil | null): RegistroAuditoria['origem'] {
+  if (perfil === 'RESPONSAVEL') return 'FAMILIA'
+  if (perfil === 'PROFESSOR') return 'ESCOLA'
+  if (perfil === null) return 'SISTEMA'
+  return 'CLINICA'
+}
+
 /** Os campos que a trilha guarda hoje, com nome de gente. */
 export const NOME_DO_CAMPO: Record<string, string> = {
   tipo: 'O que aconteceu',

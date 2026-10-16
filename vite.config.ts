@@ -20,6 +20,10 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: { conditions: [FONTE, ...defaultClientConditions] },
   ssr: { resolve: { conditions: [FONTE, ...defaultServerConditions] } },
+  // No desenvolvimento, com VITE_API_URL=/api, o Vite repassa a API ao Nest
+  // (npm start -w @sinctea/servidor, porta 3000): o mesmo endereco unico que o
+  // Render serve, e o cookie de sessao funciona sem CORS.
+  server: { proxy: { '/api': 'http://localhost:3000' } },
   test: {
     // Um "npm test" na raiz roda os tres pacotes, e e esse o comando do CI.
     projects: [

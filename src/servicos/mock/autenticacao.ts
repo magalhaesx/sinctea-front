@@ -40,4 +40,11 @@ export const autenticacaoMock: ServicoAutenticacao = {
   }),
 
   sair: () => responder(() => { gravarSessao(null) }),
+
+  // O mock nao gera link de primeiro acesso: as contas de demonstracao ja tem
+  // senha. Todo token e desconhecido aqui; o caminho de verdade e o servidor.
+  obterPrimeiroAcesso: () => responder(() => ({ situacao: 'INEXISTENTE' as const, nome: null, email: null, expiraEm: null })),
+  concluirPrimeiroAcesso: () => responder(() => {
+    throw new ErroServico('NAO_ENCONTRADO', 'Este link não existe.')
+  }),
 }

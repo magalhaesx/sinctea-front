@@ -13,6 +13,7 @@
     "build": "npm run build -w @sinctea/compartilhado && prisma generate && tsc -p tsconfig.json && tsc -p tsconfig.build.json",
     "start": "node dist/src/main.js",
     "semente": "node dist/prisma/semente.js",
+    "criar-administrador": "npm run build && node dist/src/comandos/criar-administrador.js",
     "test": "vitest run"
   },
   "dependencies": {

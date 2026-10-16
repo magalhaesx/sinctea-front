@@ -2,7 +2,7 @@ import { diaCivilEm, fimDaValidade, inicioDoDia, partesDaDataCivil } from './dat
 import type {
   Consentimento, ConviteEscolar, CriterioDominio, DataCivil, DataIso, Destinatario, EscopoAcesso, NivelSuporte,
   NovoConsentimento, NovoObjetivo, OcorrenciaComportamental, Origem, PlanoTerapeutico,
-  RegistroAtividade, Sessao, SituacaoConsentimento, SituacaoConvite, StatusObjetivo,
+  RegistroAtividade, Sessao, SituacaoConsentimento, SituacaoConvite, SituacaoPrimeiroAcesso, StatusObjetivo,
 } from '../tipos.js'
 
 /**
@@ -17,6 +17,11 @@ import type {
 
 /** Convite do professor: uso unico, expira em 72 horas (regra 1). */
 export const VALIDADE_CONVITE_HORAS = 72
+/** Link de primeiro acesso: uso unico, 72 horas, como o convite (docs/07, secao 0). */
+export const VALIDADE_PRIMEIRO_ACESSO_HORAS = 72
+/** Senha: ao menos 8 caracteres, como no aceite do convite; no maximo 128, para o hash ter custo limitado. */
+export const SENHA_MINIMO = 8
+export const SENHA_MAXIMO = 128
 /** Janela para o professor corrigir a ocorrencia registrada (tela 19). */
 export const JANELA_CORRECAO_OCORRENCIA_MINUTOS = 30
 /** Suficiencia para comparar contextos na evolucao (tela 8). */
@@ -296,6 +301,39 @@ export function situacaoConvite(
   const situacao = situacaoConsentimento(consentimento, agora)
   if (situacao === 'REVOGADO') return 'CONSENTIMENTO_REVOGADO'
   if (situacao === 'EXPIRADO' || agora.getTime() >= ms(convite.expiraEm)) return 'EXPIRADO'
+  return 'VALIDO'
+}
+
+// ---------------------------------------------------------------- Conta e senha
+
+/** E-mail como fica gravado: sem espacos nas pontas e em minusculas. */
+export function normalizarEmail(email: string): string {
+  return email.trim().toLowerCase()
+}
+
+export function emailValido(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+}
+
+/** Erro da senha nova, ou nulo se ela serve. */
+export function erroDaSenhaNova(senha: string): string | null {
+  if (senha.length < SENHA_MINIMO) return `A senha precisa ter ao menos ${SENHA_MINIMO} caracteres.`
+  if (senha.length > SENHA_MAXIMO) return `A senha pode ter no máximo ${SENHA_MAXIMO} caracteres.`
+  return null
+}
+
+export function calcularExpiracaoPrimeiroAcesso(criadoEm: Date): Date {
+  return new Date(criadoEm.getTime() + VALIDADE_PRIMEIRO_ACESSO_HORAS * MS_HORA)
+}
+
+/** Os estados do link de primeiro acesso. Nulo e o token que nao existe. */
+export function situacaoPrimeiroAcesso(
+  acesso: { expiraEm: DataIso; usadoEm: DataIso | null } | null,
+  agora: Date,
+): SituacaoPrimeiroAcesso {
+  if (!acesso) return 'INEXISTENTE'
+  if (acesso.usadoEm !== null) return 'USADO'
+  if (agora.getTime() >= ms(acesso.expiraEm)) return 'EXPIRADO'
   return 'VALIDO'
 }
 

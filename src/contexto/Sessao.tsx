@@ -29,6 +29,8 @@ interface Ctx {
   entrarDemonstracao(perfil: PerfilDemonstracao): Promise<void>
   /** Aceite de convite: cria a conta do professor e ja abre a sessao. */
   entrarComConvite(token: string, dados: AceiteConvite): Promise<void>
+  /** Primeiro acesso por link: define a senha e ja abre a sessao. */
+  entrarComPrimeiroAcesso(token: string, senha: string): Promise<void>
   trocarPerfil(perfil: Perfil): Promise<void>
   sair(): Promise<void>
 }
@@ -63,6 +65,10 @@ export function ProvedorSessao({ children }: { children: ReactNode }) {
     setEstado(autenticado(await servicos.convites.aceitar(token, dados)))
   }, [])
 
+  const entrarComPrimeiroAcesso = useCallback(async (token: string, senha: string) => {
+    setEstado(autenticado(await servicos.autenticacao.concluirPrimeiroAcesso(token, senha)))
+  }, [])
+
   const trocarPerfil = useCallback(async (perfil: Perfil) => {
     setEstado(autenticado(await servicos.autenticacao.trocarPerfil(perfil)))
   }, [])
@@ -80,8 +86,8 @@ export function ProvedorSessao({ children }: { children: ReactNode }) {
     estado,
     usuario: estado.situacao === 'AUTENTICADO' ? estado.usuario : null,
     perfilAtivo: estado.situacao === 'AUTENTICADO' ? estado.perfilAtivo : null,
-    entrar, entrarDemonstracao, entrarComConvite, trocarPerfil, sair,
-  }), [estado, entrar, entrarDemonstracao, entrarComConvite, trocarPerfil, sair])
+    entrar, entrarDemonstracao, entrarComConvite, entrarComPrimeiroAcesso, trocarPerfil, sair,
+  }), [estado, entrar, entrarDemonstracao, entrarComConvite, entrarComPrimeiroAcesso, trocarPerfil, sair])
 
   return <SessaoCtx.Provider value={valor}>{children}</SessaoCtx.Provider>
 }

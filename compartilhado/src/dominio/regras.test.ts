@@ -9,6 +9,7 @@ import {
   podeDesativarUsuario, situacaoConsentimento, situacaoConvite, suficienciaComparacao,
   textoDoCriterio, textoDoPeriodo,
   validarDevolucaoPlano, validarNovoConsentimento, validarNovoObjetivo, verificarAcessoEscola,
+  calcularExpiracaoPrimeiroAcesso, emailValido, erroDaSenhaNova, normalizarEmail, situacaoPrimeiroAcesso,
 } from './regras.js'
 import { diaCivilEm } from './datas.js'
 
@@ -369,5 +370,31 @@ describe('coordenacao', () => {
   it('administrador nao desativa a si mesmo', () => {
     expect(podeDesativarUsuario('u1', 'u1')).toBe(false)
     expect(podeDesativarUsuario('u1', 'u2')).toBe(true)
+  })
+})
+
+describe('conta e primeiro acesso (docs/07, secao 0)', () => {
+  it('o e-mail fica sem espacos nas pontas e em minusculas', () => {
+    expect(normalizarEmail('  Ana.Correia@Clinica.EXAMPLE ')).toBe('ana.correia@clinica.example')
+    expect(emailValido('ana@clinica.example')).toBe(true)
+    expect(emailValido('ana@clinica')).toBe(false)
+    expect(emailValido('ana clinica@x.example')).toBe(false)
+  })
+
+  it('a senha nova tem de 8 a 128 caracteres', () => {
+    expect(erroDaSenhaNova('1234567')).toMatch(/ao menos 8/)
+    expect(erroDaSenhaNova('12345678')).toBeNull()
+    expect(erroDaSenhaNova('x'.repeat(128))).toBeNull()
+    expect(erroDaSenhaNova('x'.repeat(129))).toMatch(/no máximo 128/)
+  })
+
+  it('o link vale 72 horas, uma vez', () => {
+    const criado = new Date(horas(0))
+    const expiraEm = calcularExpiracaoPrimeiroAcesso(criado).toISOString()
+    expect(expiraEm).toBe(horas(72))
+    expect(situacaoPrimeiroAcesso(null, AGORA)).toBe('INEXISTENTE')
+    expect(situacaoPrimeiroAcesso({ expiraEm, usadoEm: null }, new Date(horas(71.99)))).toBe('VALIDO')
+    expect(situacaoPrimeiroAcesso({ expiraEm, usadoEm: null }, new Date(horas(72)))).toBe('EXPIRADO')
+    expect(situacaoPrimeiroAcesso({ expiraEm, usadoEm: horas(1) }, new Date(horas(2)))).toBe('USADO')
   })
 })

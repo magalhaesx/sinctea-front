@@ -20,6 +20,9 @@ import { ModuloAplicacao } from './modulo-aplicacao.js'
 export async function criarAplicacao(opcoes: NestApplicationOptions = {}): Promise<NestExpressApplication> {
   const aplicacao = await NestFactory.create<NestExpressApplication>(ModuloAplicacao, opcoes)
   aplicacao.setGlobalPrefix('api')
+  // No Render, o pedido chega por um proxy: o IP da auditoria e o do
+  // X-Forwarded-For que ele poe, e so o dele. Fora de producao, nenhum proxy.
+  if (process.env.NODE_ENV === 'production') aplicacao.set('trust proxy', 1)
 
   const pastaDoFront = process.env.PASTA_DO_FRONT
   if (pastaDoFront) {

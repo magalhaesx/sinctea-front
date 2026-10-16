@@ -6,6 +6,7 @@ import type { Perfil } from './servicos'
 import { Ajuda } from './app/Ajuda'
 import { Conta } from './app/Conta'
 import { Convite } from './app/Convite'
+import { PrimeiroAcesso } from './app/PrimeiroAcesso'
 import { Entrar } from './app/Entrar'
 import { LayoutApp } from './app/LayoutApp'
 import { PAINEL_DO_PERFIL } from './app/perfis'
@@ -45,6 +46,7 @@ const titulos: [padrao: string, titulo: string][] = [
   ['/sobre', 'A solução'],
   ['/app/entrar', 'Entrar'],
   ['/app/convite/:token', 'Aceitar convite'],
+  ['/app/primeiro-acesso/:token', 'Definir minha senha'],
   ['/app/clinica', 'Painel do terapeuta'],
   ['/app/clinica/pacientes', 'Lista de pacientes'],
   ['/app/clinica/pacientes/novo', 'Cadastrar paciente'],
@@ -105,6 +107,8 @@ export function App() {
       <Route path="/app/entrar" element={<Entrar />} />
       {/* Publica: o professor ainda nao tem conta quando abre o convite. */}
       <Route path="/app/convite/:token" element={<Convite />} />
+      {/* Publica: a pessoa ainda nao tem senha quando abre o link. */}
+      <Route path="/app/primeiro-acesso/:token" element={<PrimeiroAcesso />} />
 
       <Route path="/app" element={protegida(TODOS, <LayoutApp />)}>
         <Route index element={<RaizDoApp />} />

@@ -1,5 +1,6 @@
 import { Controller, Get, ServiceUnavailableException } from '@nestjs/common'
 import { frequenciaEmLinguagemCotidiana } from '@sinctea/compartilhado/dominio/regras'
+import { Publico, SemDadoDoPaciente } from '../acesso/metadados.js'
 import { ServicoBanco } from '../banco/servico-banco.js'
 
 /**
@@ -14,6 +15,8 @@ export class ControladorSaude {
   constructor(private readonly banco: ServicoBanco) {}
 
   @Get()
+  @Publico()
+  @SemDadoDoPaciente('Saude')
   async verificar() {
     let migracao: string | null
     try {
