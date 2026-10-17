@@ -520,7 +520,9 @@ model Consentimento {
 model ConviteEscolar {
   id              String    @id @default(uuid(7)) @db.Uuid
   consentimentoId String    @db.Uuid
-  token           String    @unique
+  /// So o resumo SHA-256 do token, como no acesso inicial: o link leva o
+  /// token, e o banco nunca o ve (revisao de 16/10).
+  tokenResumo     String    @unique
   criadoEm        DateTime  @db.Timestamptz(3)
   expiraEm        DateTime  @db.Timestamptz(3)
   usadoEm         DateTime? @db.Timestamptz(3)

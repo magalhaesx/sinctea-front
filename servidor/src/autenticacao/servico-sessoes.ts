@@ -1,8 +1,8 @@
-import { createHash, randomBytes } from 'node:crypto'
 import { Injectable } from '@nestjs/common'
 import type { Perfil } from '@sinctea/compartilhado'
 import { ServicoBanco } from '../banco/servico-banco.js'
 import type { OpcoesCookie, RequisicaoHttp, RespostaHttp, SessaoServidor } from '../http/tipos-http.js'
+import { novoToken, resumoDoToken } from './tokens.js'
 
 /**
  * Sessao de login (docs/07, D5): cookie httpOnly, Secure e SameSite=Lax, com
@@ -18,15 +18,8 @@ export const NOME_DO_COOKIE = 'sinctea_sessao'
 export const DURACAO_SESSAO_HORAS = 24
 const DURACAO_MS = DURACAO_SESSAO_HORAS * 3_600_000
 
-/** SHA-256 em hexadecimal: e o que o banco guarda de cada token. */
-export function resumoDoToken(token: string): string {
-  return createHash('sha256').update(token, 'utf8').digest('hex')
-}
-
-/** 32 bytes aleatorios, em base64url: vai no cookie ou no link, nunca no banco. */
-export function novoToken(): string {
-  return randomBytes(32).toString('base64url')
-}
+// Os tokens moram em tokens.ts, sem Nest; reexportados aqui por conveniencia.
+export { novoToken, resumoDoToken } from './tokens.js'
 
 const OPCOES_COOKIE: OpcoesCookie = { httpOnly: true, secure: true, sameSite: 'lax', path: '/' }
 

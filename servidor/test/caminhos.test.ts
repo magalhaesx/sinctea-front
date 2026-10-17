@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
 import { uuidV7 } from '../prisma/semente/uuid7.js'
+import { resumoDoToken } from '../src/autenticacao/tokens.js'
 import type { PrismaClient } from '../src/gerado/client.js'
 import { clienteDe, criarBancoMigrado } from './apoio/banco.js'
 
@@ -42,7 +43,7 @@ async function usuario(id: string, perfil: 'TERAPEUTA' | 'RESPONSAVEL' | 'PROFES
 async function novoConvite(consentimentoId: string): Promise<string> {
   const id = uuidV7()
   await prisma.conviteEscolar.create({ data: {
-    id, consentimentoId, token: uuidV7(), criadoEm: agora, expiraEm: agora,
+    id, consentimentoId, tokenResumo: resumoDoToken(uuidV7()), criadoEm: agora, expiraEm: agora,
   } })
   return id
 }
@@ -105,7 +106,7 @@ beforeAll(async () => {
       validadeAte: dia('2099-01-01'), hashTermo: 'sha256:2026-10:0',
     } })
     await prisma.conviteEscolar.create({ data: {
-      id: convite, consentimentoId: consentimento, token: uuidV7(), criadoEm: agora, expiraEm: agora,
+      id: convite, consentimentoId: consentimento, tokenResumo: resumoDoToken(uuidV7()), criadoEm: agora, expiraEm: agora,
     } })
   }
   await prisma.vinculoEscolar.create({ data: {

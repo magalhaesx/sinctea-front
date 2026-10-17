@@ -3,6 +3,7 @@ import { resumoSha256 } from '@sinctea/compartilhado/dominio/hash'
 import { conferirResumoDoTermo, versaoDoResumo } from '@sinctea/compartilhado/dominio/termo'
 import { criarDadosDemonstracao } from '../prisma/semente/dados.js'
 import { PEDIDOS_DE_RELATORIO, semear } from '../prisma/semente.js'
+import { resumoDoToken } from '../src/autenticacao/tokens.js'
 import { clienteDe } from './apoio/banco.js'
 
 /**
@@ -113,10 +114,13 @@ describe('semente', () => {
     expect(emails.filter((e) => !e.endsWith('.example'))).toEqual([])
   })
 
-  it('os tokens de convite nao sao os fixos do mock', async () => {
-    const tokens = (await prisma.conviteEscolar.findMany({ select: { token: true } })).map((c) => c.token)
-    expect(tokens.length).toBeGreaterThan(0)
-    for (const token of tokens) expect(token).toMatch(/^[0-9a-f]{32}$/)
+  it('o banco guarda so o resumo do token de convite, e nenhum e de token fixo do mock', async () => {
+    const resumos = (await prisma.conviteEscolar.findMany({ select: { tokenResumo: true } })).map((c) => c.tokenResumo)
+    expect(resumos.length).toBeGreaterThan(0)
+    for (const resumo of resumos) expect(resumo).toMatch(/^[0-9a-f]{64}$/)
+    const fixos = ['davi', 'expirado', 'heitor', 'laura', 'noah', 'revogado', 'usado', 'valido']
+      .map((nome) => resumoDoToken(`demo-convite-${nome}`))
+    expect(resumos.filter((r) => fixos.includes(r))).toEqual([])
   })
 
   it('recusa-se a rodar sem senha, e num banco que ja tem usuario', async () => {

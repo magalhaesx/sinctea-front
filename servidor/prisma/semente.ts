@@ -25,6 +25,7 @@ import {
   percentualIndependente, situacaoConvite, textoDoCriterio, textoDoPeriodo,
 } from '@sinctea/compartilhado/dominio/regras'
 import { resumoDoTermo } from '@sinctea/compartilhado/dominio/termo'
+import { resumoDoToken } from '../src/autenticacao/tokens.js'
 import { PrismaClient } from '../src/gerado/client.js'
 import { criarDadosDemonstracao, emManaus, type BancoDemonstracao } from './semente/dados.js'
 import { uuidV7 } from './semente/uuid7.js'
@@ -305,8 +306,10 @@ export async function semear(
       })),
     })
     await tx.conviteEscolar.createMany({
-      data: dados.convites.map((c) => ({
-        ...c, criadoEm: instante(c.criadoEm), expiraEm: instante(c.expiraEm), usadoEm: talvez(c.usadoEm),
+      // O banco guarda so o resumo do token; o token sai uma vez, impresso abaixo.
+      data: dados.convites.map(({ token, ...c }) => ({
+        ...c, tokenResumo: resumoDoToken(token),
+        criadoEm: instante(c.criadoEm), expiraEm: instante(c.expiraEm), usadoEm: talvez(c.usadoEm),
       })),
     })
     await tx.vinculoEscolar.createMany({ data: dados.vinculos })
