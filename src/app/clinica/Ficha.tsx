@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { Tela } from '../LayoutApp'
+import { SO_CAMINHO_PRINCIPAL } from '../caminhoPrincipal'
 import { Aviso } from '../../ui/Aviso'
 import { Botao, BotaoLink } from '../../ui/Botao'
 import { Cartao } from '../../ui/Cartao'
@@ -306,7 +307,11 @@ export function Ficha() {
               )}
             </Cartao>
 
-            <EventosComportamentais pacienteId={p.id} primeiroNome={p.nome.split(' ')[0]} />
+            {/* Ocorrencias comportamentais: fora do caminho principal ate o
+                servico chegar ao servidor (app/caminhoPrincipal.ts). */}
+            {!SO_CAMINHO_PRINCIPAL && (
+              <EventosComportamentais pacienteId={p.id} primeiroNome={p.nome.split(' ')[0]} />
+            )}
 
             <Cartao>
               <h2 className="text-lg font-bold">Histórico resumido</h2>
@@ -327,15 +332,19 @@ export function Ficha() {
                 <BotaoLink para={`/app/clinica/pacientes/${p.id}/sessao`} area="cli" variante="secundaria">
                   Iniciar sessão
                 </BotaoLink>
-                <BotaoLink para={`/app/clinica/pacientes/${p.id}/evolucao`} area="cli" variante="secundaria">
-                  Ver evolução por objetivo
-                </BotaoLink>
-                <BotaoLink para={`/app/clinica/pacientes/${p.id}/atividades`} area="cli" variante="secundaria">
-                  Atividades para casa
-                </BotaoLink>
-                <BotaoLink para={`/app/clinica/pacientes/${p.id}/relatorio`} area="cli" variante="secundaria">
-                  Emitir relatório
-                </BotaoLink>
+                {!SO_CAMINHO_PRINCIPAL && (
+                  <>
+                    <BotaoLink para={`/app/clinica/pacientes/${p.id}/evolucao`} area="cli" variante="secundaria">
+                      Ver evolução por objetivo
+                    </BotaoLink>
+                    <BotaoLink para={`/app/clinica/pacientes/${p.id}/atividades`} area="cli" variante="secundaria">
+                      Atividades para casa
+                    </BotaoLink>
+                    <BotaoLink para={`/app/clinica/pacientes/${p.id}/relatorio`} area="cli" variante="secundaria">
+                      Emitir relatório
+                    </BotaoLink>
+                  </>
+                )}
               </div>
             </section>
           </>

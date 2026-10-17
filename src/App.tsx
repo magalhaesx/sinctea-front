@@ -2,7 +2,8 @@ import { lazy, Suspense, useEffect, type ReactNode } from 'react'
 import { matchPath, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { ExigePerfil } from './contexto/ExigePerfil'
 import { usarSessao } from './contexto/Sessao'
-import type { Perfil } from './servicos'
+import { usandoApi, type Perfil } from './servicos'
+import { SO_CAMINHO_PRINCIPAL } from './app/caminhoPrincipal'
 import { Ajuda } from './app/Ajuda'
 import { Conta } from './app/Conta'
 import { Convite } from './app/Convite'
@@ -32,9 +33,9 @@ import { CartaoEstrategias } from './app/escola/Cartao'
 import { Ocorrencia } from './app/escola/Ocorrencia'
 import { Sobre } from './paginas/Sobre'
 
-/* Vitrine de componentes: so existe em desenvolvimento. No build de producao
-   a condicao vira `false` e o modulo nem entra no pacote. */
-const VitrineEstados = import.meta.env.DEV
+/* Vitrine de componentes: so existe em desenvolvimento com o mock. No build
+   de producao a condicao vira `false` e o modulo nem entra no pacote. */
+const VitrineEstados = import.meta.env.DEV && !usandoApi
   ? lazy(() => import('./paginas/VitrineEstados').then((m) => ({ default: m.VitrineEstados })))
   : null
 
@@ -47,29 +48,32 @@ const titulos: [padrao: string, titulo: string][] = [
   ['/app/entrar', 'Entrar'],
   ['/app/convite/:token', 'Aceitar convite'],
   ['/app/primeiro-acesso/:token', 'Definir minha senha'],
-  ['/app/clinica', 'Painel do terapeuta'],
   ['/app/clinica/pacientes', 'Lista de pacientes'],
   ['/app/clinica/pacientes/novo', 'Cadastrar paciente'],
   ['/app/clinica/pacientes/:id', 'Ficha do paciente'],
   ['/app/clinica/pacientes/:id/plano', 'Plano Terapêutico Individual'],
   ['/app/clinica/pacientes/:id/sessao', 'Registro de sessão'],
-  ['/app/clinica/pacientes/:id/evolucao', 'Evolução por objetivo'],
-  ['/app/clinica/pacientes/:id/atividades', 'Atividades para casa'],
-  ['/app/clinica/pacientes/:id/relatorio', 'Relatório de evolução'],
-  ['/app/clinica/pacientes/:id/relatorio/:relatorioId', 'Relatório emitido'],
-  ['/app/coordenacao', 'Indicadores da clínica'],
   ['/app/coordenacao/planos', 'Validar planos terapêuticos'],
   ['/app/admin/usuarios', 'Usuários e perfis'],
-  ['/app/coordenacao/auditoria', 'Registro de auditoria'],
   ['/app/familia', 'Painel da família'],
-  ['/app/familia/atividades/:id', 'Atividade em casa'],
   ['/app/familia/consentimento', 'Autorizar o acesso da escola'],
   ['/app/escola', 'Meus alunos'],
   ['/app/escola/:pacienteId', 'Cartão de estratégias'],
   ['/app/escola/:pacienteId/ocorrencia', 'Registrar ocorrência'],
   ['/app/conta', 'Perfil e preferências'],
   ['/app/ajuda', 'Acessibilidade e ajuda'],
-  ['/dev/estados', 'Vitrine de estados'],
+  // Fora do caminho principal: so com o mock (app/caminhoPrincipal.ts).
+  ...(SO_CAMINHO_PRINCIPAL ? [] : [
+    ['/app/clinica', 'Painel do terapeuta'],
+    ['/app/clinica/pacientes/:id/evolucao', 'Evolução por objetivo'],
+    ['/app/clinica/pacientes/:id/atividades', 'Atividades para casa'],
+    ['/app/clinica/pacientes/:id/relatorio', 'Relatório de evolução'],
+    ['/app/clinica/pacientes/:id/relatorio/:relatorioId', 'Relatório emitido'],
+    ['/app/coordenacao', 'Indicadores da clínica'],
+    ['/app/coordenacao/auditoria', 'Registro de auditoria'],
+    ['/app/familia/atividades/:id', 'Atividade em casa'],
+    ['/dev/estados', 'Vitrine de estados'],
+  ] as [string, string][]),
 ]
 
 /** /app manda cada perfil para o seu painel (docs/01, secao 2). */
@@ -113,25 +117,17 @@ export function App() {
       <Route path="/app" element={protegida(TODOS, <LayoutApp />)}>
         <Route index element={<RaizDoApp />} />
 
-        <Route path="clinica" element={protegida(CLINICA, <PainelClinica />)} />
         <Route path="clinica/pacientes" element={protegida(CLINICA, <Pacientes />)} />
         <Route path="clinica/pacientes/novo" element={protegida(CLINICA, <NovoPaciente />)} />
         <Route path="clinica/pacientes/:id" element={protegida(CLINICA, <Ficha />)} />
         <Route path="clinica/pacientes/:id/plano" element={protegida(CLINICA, <Plano />)} />
         <Route path="clinica/pacientes/:id/sessao" element={protegida(CLINICA, <RegistroSessao />)} />
-        <Route path="clinica/pacientes/:id/evolucao" element={protegida(CLINICA, <Evolucao />)} />
-        <Route path="clinica/pacientes/:id/atividades" element={protegida(CLINICA, <Atividades />)} />
-        <Route path="clinica/pacientes/:id/relatorio" element={protegida(CLINICA, <Relatorio />)} />
-        <Route path="clinica/pacientes/:id/relatorio/:relatorioId" element={protegida(CLINICA, <RelatorioEmitido />)} />
 
-        <Route path="coordenacao" element={protegida(['COORDENADOR'], <PainelCoordenacao />)} />
         <Route path="coordenacao/planos" element={protegida(['COORDENADOR'], <Planos />)} />
-        <Route path="coordenacao/auditoria" element={protegida(['COORDENADOR'], <Auditoria />)} />
 
         <Route path="admin/usuarios" element={protegida(['ADMINISTRADOR'], <Usuarios />)} />
 
         <Route path="familia" element={protegida(['RESPONSAVEL'], <PainelFamilia />)} />
-        <Route path="familia/atividades/:id" element={protegida(['RESPONSAVEL'], <Atividade />)} />
         <Route path="familia/consentimento" element={protegida(['RESPONSAVEL'], <Consentimento />)} />
 
         <Route path="escola" element={protegida(['PROFESSOR'], <Alunos />)} />
@@ -140,6 +136,22 @@ export function App() {
 
         <Route path="conta" element={protegida(TODOS, <Conta />)} />
         <Route path="ajuda" element={protegida(TODOS, <Ajuda />)} />
+
+        {/* Fora do caminho principal: so com o mock, nunca com dado simulado na
+            versao publicada (app/caminhoPrincipal.ts). Sem a rota, o endereco
+            cai no "*" e volta ao painel do perfil. */}
+        {!SO_CAMINHO_PRINCIPAL && (
+          <>
+            <Route path="clinica" element={protegida(CLINICA, <PainelClinica />)} />
+            <Route path="clinica/pacientes/:id/evolucao" element={protegida(CLINICA, <Evolucao />)} />
+            <Route path="clinica/pacientes/:id/atividades" element={protegida(CLINICA, <Atividades />)} />
+            <Route path="clinica/pacientes/:id/relatorio" element={protegida(CLINICA, <Relatorio />)} />
+            <Route path="clinica/pacientes/:id/relatorio/:relatorioId" element={protegida(CLINICA, <RelatorioEmitido />)} />
+            <Route path="coordenacao" element={protegida(['COORDENADOR'], <PainelCoordenacao />)} />
+            <Route path="coordenacao/auditoria" element={protegida(['COORDENADOR'], <Auditoria />)} />
+            <Route path="familia/atividades/:id" element={protegida(['RESPONSAVEL'], <Atividade />)} />
+          </>
+        )}
       </Route>
 
       {VitrineEstados && (

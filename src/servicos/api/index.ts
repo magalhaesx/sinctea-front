@@ -1,4 +1,4 @@
-import { ErroServico, type DadosProfissionais, type Servicos, type SessaoUsuario } from '@sinctea/compartilhado'
+import type { DadosProfissionais, Servicos, SessaoUsuario } from '@sinctea/compartilhado'
 import { comParametros as q, requisitar as r } from './cliente'
 
 /**
@@ -16,10 +16,8 @@ const id = encodeURIComponent
 
 export const servicosApi: Servicos = {
   autenticacao: {
+    // Sem entrarDemonstracao: no sistema real nao existe conta sem senha (docs/07, D6).
     entrar: (email, senha) => r('POST', '/auth/entrar', { email, senha }),
-    // No sistema real nao existe conta sem senha (docs/07, D6).
-    entrarDemonstracao: () => Promise.reject(
-      new ErroServico('NAO_ENCONTRADO', 'A entrada de demonstração não existe no sistema real.')),
     trocarPerfil: (perfil) => r('POST', '/auth/perfil', { perfil }),
     // Sem sessao, o servidor responde 204: aqui isso vira nulo.
     sessaoAtual: async () => (await r<SessaoUsuario | undefined>('GET', '/auth/sessao')) ?? null,

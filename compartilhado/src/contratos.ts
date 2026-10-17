@@ -25,8 +25,11 @@ import type {
 export interface ServicoAutenticacao {
   /** Credencial invalida sempre produz a mesma mensagem, exista o e-mail ou nao. */
   entrar(email: string, senha: string): Promise<SessaoUsuario>
-  /** Os quatro perfis de demonstracao da tela de entrada. */
-  entrarDemonstracao(perfil: Exclude<Perfil, 'ADMINISTRADOR'>): Promise<SessaoUsuario>
+  /**
+   * Os quatro perfis de demonstracao da tela de entrada. So a implementacao
+   * simulada tem: no sistema real nao existe conta sem senha (docs/07, D6).
+   */
+  entrarDemonstracao?(perfil: Exclude<Perfil, 'ADMINISTRADOR'>): Promise<SessaoUsuario>
   trocarPerfil(perfil: Perfil): Promise<SessaoUsuario>
   sessaoAtual(): Promise<SessaoUsuario | null>
   sair(): Promise<void>

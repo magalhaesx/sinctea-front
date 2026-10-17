@@ -12,7 +12,8 @@ WORKDIR /app
 COPY . .
 # O postinstall do servidor gera o cliente do Prisma (servidor/src/gerado).
 RUN npm ci
-# Sem VITE_API_URL: ate a Etapa 12, o front publicado continua no mock.
+# Sem VITE_API_URL: o build de producao fala so com a API, no /api do mesmo
+# endereco, e o mock nao entra no pacote (docs/07, secao 0, item 5).
 RUN npm run build && npm run build:servidor
 
 # ------------------------------------------------------------------ execucao

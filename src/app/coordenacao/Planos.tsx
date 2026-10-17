@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { Tela } from '../LayoutApp'
+import { SO_CAMINHO_PRINCIPAL } from '../caminhoPrincipal'
 import { Aviso } from '../../ui/Aviso'
 import { Botao } from '../../ui/Botao'
 import { Campo } from '../../ui/Campo'
@@ -175,8 +176,14 @@ export function Planos() {
               <EstadoVazio
                 nivel={3}
                 titulo="Nenhum plano aguardando validação"
-                explicacao="Quando um terapeuta enviar um plano, ele aparece aqui. Enquanto isso, o registro de auditoria mostra as validações já feitas."
-                acao={(
+                explicacao={SO_CAMINHO_PRINCIPAL
+                  ? 'Quando um terapeuta enviar um plano, ele aparece aqui. Enquanto isso, a lista de pacientes mostra a situação do plano de cada um.'
+                  : 'Quando um terapeuta enviar um plano, ele aparece aqui. Enquanto isso, o registro de auditoria mostra as validações já feitas.'}
+                acao={SO_CAMINHO_PRINCIPAL ? (
+                  <Link to="/app/clinica/pacientes" className="min-h-11 items-center font-bold text-cli-ink underline">
+                    Ver a lista de pacientes
+                  </Link>
+                ) : (
                   <Link
                     to="/app/coordenacao/auditoria?entidade=PlanoTerapeutico"
                     className="min-h-11 items-center font-bold text-cli-ink underline"
@@ -227,14 +234,17 @@ export function Planos() {
             )
           )}
 
-          <p className="text-sm">
-            <Link
-              to="/app/coordenacao/auditoria?entidade=PlanoTerapeutico"
-              className="font-bold text-cli-ink underline"
-            >
-              Ver as validações no registro de auditoria
-            </Link>
-          </p>
+          {/* A tela de auditoria: fora do caminho principal (app/caminhoPrincipal.ts). */}
+          {!SO_CAMINHO_PRINCIPAL && (
+            <p className="text-sm">
+              <Link
+                to="/app/coordenacao/auditoria?entidade=PlanoTerapeutico"
+                className="font-bold text-cli-ink underline"
+              >
+                Ver as validações no registro de auditoria
+              </Link>
+            </p>
+          )}
         </section>
 
         <section aria-labelledby="h-plano" className="flex min-w-0 flex-col gap-3">

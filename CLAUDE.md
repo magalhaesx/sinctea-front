@@ -202,12 +202,13 @@ Atualizado em 16/10/2026, lendo o código — não a memória.
   desenvolvimento. Nenhuma tela lê dado fixo: `src/dados` foi removido, e o teste
   de arquitetura impede que volte. A tela 20, ajuda, é texto fixo por natureza
 - **Camada de serviços**: `compartilhado/src/contratos.ts` com 16 serviços; implementação
-  simulada que aplica controle de acesso e auditoria; stubs de API que não
-  aplicam regra nenhuma; a escolha entre as duas por `VITE_API_URL`
-- **339 testes em 23 arquivos, nos três pacotes**, rodados por um único
+  simulada que aplica controle de acesso e auditoria; o cliente da API, que
+  não aplica regra nenhuma. A versão publicada usa só a API, e o mock fica
+  fora do pacote; no desenvolvimento, `VITE_API_URL` escolhe entre as duas
+- **345 testes em 24 arquivos, nos três pacotes**, rodados por um único
   `npm test` na raiz, sem passo manual. O principal ainda é
   `src/servicos/mock/regrasInviolaveis.test.ts`, que verifica as regras
-  invioláveis na camada de dados, e não na tela. Os 135 do servidor rodam contra
+  invioláveis na camada de dados, e não na tela. Os 136 do servidor rodam contra
   um PostgreSQL 17 de verdade
 - **As seis regras verificadas** em `docs/06`: para cada teste citado, a regra foi
   quebrada de propósito para confirmar que ele falha, e as quebras que não
@@ -310,6 +311,19 @@ em produção (o antigo passo B5) foi cancelada. No código, hoje:
   `servidor/test/escola.test.ts`, com as quebras no `docs/06`. A ocorrência da
   escola entra como evento preliminar, mas a clínica só a lê depois de 19/10
   (avisos da escola); a tela 19 diz "guardado", e não "avisada"
+- **Item 5 feito — o front publicado só com a API.** No build de produção,
+  `servicos/index.ts` usa só a API, no `/api` do mesmo endereço, e o plugin
+  `semMockNoPacote` do `vite.config.ts` deixa o mock fora do pacote. As telas
+  fora do caminho principal — agenda, indicadores, auditoria, evolução,
+  atividades de casa, relatório e os eventos comportamentais da ficha e da
+  sessão — saem das rotas e do menu (`src/app/caminhoPrincipal.ts`); o
+  terapeuta entra na lista de pacientes, e a coordenação na fila de planos.
+  Saíram também `entrarDemonstracao` da API, o bloco de demonstração da
+  entrada e `/dev/estados`. O aviso do ambiente está na entrada e no rodapé.
+  O servidor manda `nosniff`, `no-referrer` e `X-Frame-Options: DENY` em toda
+  resposta. `src/publicacao.test.ts` confere o próprio pacote de produção. No
+  desenvolvimento sem `VITE_API_URL` e nos testes, o mock e as telas
+  continuam
 - `npm run criar-administrador -w @sinctea/servidor -- .env.producao` cria o
   primeiro administrador: pede nome, e-mail e senha, sem mostrar a senha, e
   recusa se já houver administrador
@@ -328,9 +342,9 @@ tipos do compartilhado, auditoria pelo interceptador), o cliente em
    de estratégias; sessão~~ — feito em 16/10
 4. ~~Família, escolas (com cadastro pelo responsável), consentimento, convite e
    a área da escola~~ — feito em 16/10
-5. O front publicado só com a API: o mock fora do pacote, as telas fora do
+5. ~~O front publicado só com a API: o mock fora do pacote, as telas fora do
    caminho principal fora da navegação e das rotas, e sem `entrarDemonstracao`,
-   avisos de demonstração nem `/dev/estados`
+   avisos de demonstração nem `/dev/estados`~~ — feito em 16/10
 
 Não se corta, nem com pressa: as regras 1, 2, 3, 5 e 6 provadas por teste contra
 a API no caminho principal, o *trigger* da auditoria, o papel que não é dono e o
@@ -363,9 +377,11 @@ Enquanto não se resolverem, não devem ser afirmadas na defesa:
    ser construído, não há manifesto nem *service worker*. O registro de sessão
    (tela 7) mostra o estado da conexão e marca como pendente o que ainda não
    subiu, mas a fila de sincronização não existe.
-3. **O endereço do Render ainda não é o sistema.** Até o item 5 do caminho
-   principal, ele serve o front com o mock, e a API real só responde
-   `/api/saude`. Não se divulga antes da virada.
+3. **O endereço do Render ainda não foi conferido com o sistema real.** Com
+   o item 5 na main, o CI publica a imagem que fala só com a API. Falta o
+   Lucas terminar o B4 — a `DATABASE_URL` do Render com o `sinctea_app` — e
+   conferir no ar `/`, `/api/saude` com a última migração e o 404 em JSON.
+   Não se divulga antes disso.
 
 O cartão de estratégias saiu desta lista em 16/10/2026: o terapeuta o escreve
 na tela 6, com conteúdo, e não existe mais cartão em branco.

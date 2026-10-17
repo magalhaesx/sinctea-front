@@ -4,7 +4,8 @@ import { Botao } from '../ui/Botao'
 import { Campo } from '../ui/Campo'
 import { Titulo } from '../ui/Titulo'
 import { usarSessao } from '../contexto/Sessao'
-import { ErroServico, type Perfil } from '../servicos'
+import { AVISO_AMBIENTE } from '../componentes/AvisoAmbiente'
+import { ErroServico, usandoApi, type Perfil } from '../servicos'
 import { LayoutAcesso } from './LayoutAcesso'
 import { NOME_DO_PERFIL } from './perfis'
 
@@ -18,6 +19,9 @@ import { NOME_DO_PERFIL } from './perfis'
  * - Erro de credencial nunca revela se o e-mail existe: mensagem unica.
  * - Sem CAPTCHA (e-MAG 6.8; WCAG 3.3.8).
  * - Sem limite de tempo de sessao que expire sem aviso.
+ *
+ * O aviso do ambiente fica aqui e no rodape (docs/07, secao 0). A entrada de
+ * demonstracao so existe com o mock: na versao publicada, nem entra no pacote.
  */
 
 const PERFIS_DEMONSTRACAO: Exclude<Perfil, 'ADMINISTRADOR'>[] =
@@ -73,9 +77,13 @@ export function Entrar() {
   const campo = 'min-h-11 rounded-lg border border-linha bg-sup px-3 text-[15px]'
 
   return (
-    <LayoutAcesso>
+    <LayoutAcesso rodape={false}>
       <div className="flex flex-col gap-4 rounded-2xl border border-cromo-linha bg-fundo p-5 text-tinta sm:p-6">
         <Titulo sub="A informação acompanha a pessoa, não a instituição">Entrar no SINCTEA</Titulo>
+
+        <p className="rounded-xl border border-linha border-l-4 border-l-at bg-at-sup p-3 text-sm font-bold">
+          {AVISO_AMBIENTE}
+        </p>
 
         <form className="flex flex-col gap-4" onSubmit={enviar} noValidate>
           {/* Erro em regiao dinamica, com o foco devolvido ao primeiro campo —
@@ -126,15 +134,17 @@ export function Entrar() {
             </button>
             {mostrarAjudaSenha && (
               <p className="max-w-[65ch] text-sm text-tinta2">
-                Esta versão ainda não redefine senha sozinha. Peça à coordenação da clínica para
-                gerar uma nova — ela chega no seu e-mail cadastrado.
+                Esta versão ainda não redefine senha sozinha, nem manda e-mail. Se você é da
+                equipe da clínica, peça à administração um novo link de acesso: com ele, você
+                define outra senha. Para a família e a escola, a redefinição ainda não existe.
               </p>
             )}
           </div>
         </form>
 
         {/* Bloco de demonstracao: separado por linha e rotulo claro, para
-            mostrar o sistema sem cadastro (docs/03, tela 1). */}
+            mostrar o sistema sem cadastro (docs/03, tela 1). So com o mock. */}
+        {!usandoApi && (
         <section aria-labelledby="demo" className="flex flex-col gap-3 border-t border-linha pt-4">
           <h2 id="demo" className="text-lg font-bold">Entrar para demonstração</h2>
           <p className="max-w-[65ch] text-sm text-tinta2">
@@ -158,6 +168,7 @@ export function Entrar() {
             ))}
           </ul>
         </section>
+        )}
 
         {/* A etapa 9 troca este link pela raiz, quando o site comercial existir. */}
         <p className="border-t border-linha pt-4 text-sm">

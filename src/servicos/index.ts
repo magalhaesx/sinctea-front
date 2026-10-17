@@ -6,11 +6,15 @@ import { servicosMock } from './mock'
  * Ponto unico de acesso a dados. Componentes importam daqui — nunca de
  * servicos/mock nem de servicos/api.
  *
- * Com VITE_API_URL definida, usa a API real; sem ela, a implementacao simulada.
+ * A versao publicada (vite build) usa so a API, e o mock nem entra no pacote:
+ * o plugin semMockNoPacote, do vite.config.ts, troca o './mock' daqui por um
+ * modulo vazio (docs/07, secao 0). No desenvolvimento, VITE_API_URL escolhe a
+ * API (npm run dev -- --mode api); sem ela, e nos testes, a implementacao
+ * simulada, ate a Etapa 12.
  */
-const usarApi = Boolean(import.meta.env.VITE_API_URL)
+export const usandoApi: boolean = import.meta.env.PROD || Boolean(import.meta.env.VITE_API_URL)
 
-export const servicos: Servicos = usarApi ? servicosApi : servicosMock
+export const servicos: Servicos = usandoApi ? servicosApi : servicosMock
 
 // Tipos e contratos moram em compartilhado/, junto com o dominio: o servidor
 // importa os mesmos. Componentes continuam importando daqui.

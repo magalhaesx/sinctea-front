@@ -1,15 +1,15 @@
 import { ErroServico, type CodigoErro, type MotivoNegativa } from '@sinctea/compartilhado'
 
 /**
- * Cliente HTTP da API real (NestJS, prevista para S06).
+ * Cliente HTTP da API real (servidor/, NestJS). A autenticacao usa cookie de
+ * sessao (credentials: 'include'); o controle de acesso e a auditoria
+ * acontecem no servidor, nunca aqui.
  *
- * STUB: os caminhos dos endpoints sao provisorios e serao alinhados ao
- * back-end quando ele existir. A autenticacao usa cookie de sessao
- * (credentials: 'include'); o controle de acesso e a auditoria acontecem
- * no servidor, nunca aqui.
+ * Front e API moram no mesmo endereco (docs/07, D3): sem VITE_API_URL, como
+ * na versao publicada, a API e o /api do proprio endereco.
  */
 
-const BASE = (import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '')
+const BASE = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '')
 
 const CODIGO_POR_STATUS: Record<number, CodigoErro> = {
   400: 'VALIDACAO',

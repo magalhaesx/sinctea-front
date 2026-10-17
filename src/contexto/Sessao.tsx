@@ -1,7 +1,7 @@
 import {
   createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode,
 } from 'react'
-import { servicos, type AceiteConvite, type Perfil, type SessaoUsuario, type Usuario } from '../servicos'
+import { ErroServico, servicos, type AceiteConvite, type Perfil, type SessaoUsuario, type Usuario } from '../servicos'
 
 /**
  * Sessao do usuario autenticado e perfil ativo.
@@ -58,7 +58,10 @@ export function ProvedorSessao({ children }: { children: ReactNode }) {
   }, [])
 
   const entrarDemonstracao = useCallback(async (perfil: PerfilDemonstracao) => {
-    setEstado(autenticado(await servicos.autenticacao.entrarDemonstracao(perfil)))
+    // So a implementacao simulada tem conta sem senha (docs/07, D6).
+    const semSenha = servicos.autenticacao.entrarDemonstracao
+    if (!semSenha) throw new ErroServico('NAO_ENCONTRADO', 'A entrada de demonstração não existe no sistema real.')
+    setEstado(autenticado(await semSenha(perfil)))
   }, [])
 
   const entrarComConvite = useCallback(async (token: string, dados: AceiteConvite) => {

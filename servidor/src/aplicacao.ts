@@ -20,6 +20,17 @@ import { ModuloAplicacao } from './modulo-aplicacao.js'
 export async function criarAplicacao(opcoes: NestApplicationOptions = {}): Promise<NestExpressApplication> {
   const aplicacao = await NestFactory.create<NestExpressApplication>(ModuloAplicacao, opcoes)
   aplicacao.setGlobalPrefix('api')
+  // Em toda resposta, da API e do front (docs/07, secao 0, item 5): o
+  // navegador nao adivinha o tipo do arquivo, nao manda o endereco de origem
+  // a outro site e nao deixa outra pagina emoldurar o sistema. Sem CSP, por
+  // ora. Vem antes dos arquivos do front, para valer tambem para eles.
+  aplicacao.disable('x-powered-by')
+  aplicacao.use((_pedido: unknown, resposta: { setHeader(nome: string, valor: string): void }, seguir: () => void) => {
+    resposta.setHeader('X-Content-Type-Options', 'nosniff')
+    resposta.setHeader('Referrer-Policy', 'no-referrer')
+    resposta.setHeader('X-Frame-Options', 'DENY')
+    seguir()
+  })
   // No Render, o pedido chega por um proxy: o IP da auditoria e o do
   // X-Forwarded-For que ele poe, e so o dele. Fora de producao, nenhum proxy.
   if (process.env.NODE_ENV === 'production') aplicacao.set('trust proxy', 1)

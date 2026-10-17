@@ -1,7 +1,9 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { BarraPreferencias } from '../componentes/BarraPreferencias'
+import { RodapeAmbiente } from '../componentes/AvisoAmbiente'
 import { usarSessao } from '../contexto/Sessao'
 import type { Perfil } from '../servicos'
+import { SO_CAMINHO_PRINCIPAL } from './caminhoPrincipal'
 import { NOME_DO_PERFIL } from './perfis'
 
 /**
@@ -11,7 +13,8 @@ import { NOME_DO_PERFIL } from './perfis'
  * cada leitura e o servidor.
  */
 
-type Item = { para: string; nome: string; uc?: string; cor: string; fim?: boolean }
+/** `fora`: fora do caminho principal, so com o mock (caminhoPrincipal.ts). */
+type Item = { para: string; nome: string; uc?: string; cor: string; fim?: boolean; fora?: true }
 type Grupo = { titulo: string; perfis: Perfil[]; itens: Item[] }
 
 const CLI = '#00a2af'
@@ -24,7 +27,7 @@ const menu: Grupo[] = [
     titulo: 'Área clínica',
     perfis: ['TERAPEUTA', 'COORDENADOR'],
     itens: [
-      { para: '/app/clinica', nome: 'Painel do terapeuta', uc: 'UC10', cor: CLI, fim: true },
+      { para: '/app/clinica', nome: 'Painel do terapeuta', uc: 'UC10', cor: CLI, fim: true, fora: true },
       // Plano, sessao e evolucao se abrem pela ficha, com o paciente escolhido.
       { para: '/app/clinica/pacientes', nome: 'Pacientes', uc: 'UC01', cor: CLI },
     ],
@@ -33,9 +36,9 @@ const menu: Grupo[] = [
     titulo: 'Coordenação',
     perfis: ['COORDENADOR'],
     itens: [
-      { para: '/app/coordenacao', nome: 'Indicadores da clínica', uc: 'UC18', cor: CLI, fim: true },
+      { para: '/app/coordenacao', nome: 'Indicadores da clínica', uc: 'UC18', cor: CLI, fim: true, fora: true },
       { para: '/app/coordenacao/planos', nome: 'Validar planos', uc: 'UC17', cor: CLI },
-      { para: '/app/coordenacao/auditoria', nome: 'Registro de auditoria', uc: 'UC19', cor: CLI },
+      { para: '/app/coordenacao/auditoria', nome: 'Registro de auditoria', uc: 'UC19', cor: CLI, fora: true },
     ],
   },
   {
@@ -74,7 +77,9 @@ const menu: Grupo[] = [
 export function LayoutApp() {
   const { usuario, perfilAtivo, sair } = usarSessao()
   const navegar = useNavigate()
-  const grupos = menu.filter((g) => perfilAtivo !== null && g.perfis.includes(perfilAtivo))
+  const grupos = menu
+    .filter((g) => perfilAtivo !== null && g.perfis.includes(perfilAtivo))
+    .map((g) => ({ ...g, itens: g.itens.filter((i) => !(SO_CAMINHO_PRINCIPAL && i.fora)) }))
 
   const encerrar = async () => {
     await sair()
@@ -149,6 +154,8 @@ export function LayoutApp() {
           </div>
         </main>
       </div>
+
+      <RodapeAmbiente />
     </div>
   )
 }

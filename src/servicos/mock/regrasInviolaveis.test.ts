@@ -36,7 +36,7 @@ async function erroDe(promessa: Promise<unknown>): Promise<ErroServico> {
 }
 
 const entrarComo = (perfil: 'TERAPEUTA' | 'COORDENADOR' | 'RESPONSAVEL' | 'PROFESSOR') =>
-  chamar(s.autenticacao.entrarDemonstracao(perfil))
+  chamar(s.autenticacao.entrarDemonstracao!(perfil))
 
 async function ultimaAuditoria() {
   const perfilAnterior = (await chamar(s.autenticacao.sessaoAtual()))?.perfilAtivo

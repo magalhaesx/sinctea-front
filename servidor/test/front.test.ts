@@ -72,6 +72,16 @@ describe('com PASTA_DO_FRONT', () => {
     }
   })
 
+  it('toda resposta leva os cabecalhos de seguranca: do front, da API, e do 404', async () => {
+    for (const caminho of ['/', '/assets/app.js', '/api/saude', '/api/inexistente', '/nao-existe']) {
+      const resposta = await fetch(`${endereco}${caminho}`)
+      expect(resposta.headers.get('x-content-type-options'), caminho).toBe('nosniff')
+      expect(resposta.headers.get('referrer-policy'), caminho).toBe('no-referrer')
+      expect(resposta.headers.get('x-frame-options'), caminho).toBe('DENY')
+      expect(resposta.headers.get('x-powered-by'), caminho).toBeNull()
+    }
+  })
+
   it('caminho que nao e arquivo do front tambem e 404, sem fallback: o HashRouter nao precisa', async () => {
     const resposta = await fetch(`${endereco}/familia/consentimento`)
     expect(resposta.status).toBe(404)

@@ -69,7 +69,7 @@ export function VitrineEstados() {
       if (falhar) throw new ErroServico('INDISPONIVEL', 'Falha provocada pela vitrine.')
       // A vitrine entra como coordenadora para enxergar os cinco pacientes.
       const sessao = await servicos.autenticacao.sessaoAtual()
-      if (sessao?.perfilAtivo !== 'COORDENADOR') await servicos.autenticacao.entrarDemonstracao('COORDENADOR')
+      if (sessao?.perfilAtivo !== 'COORDENADOR') await servicos.autenticacao.entrarDemonstracao?.('COORDENADOR')
       return servicos.pacientes.listar({ pagina, porPagina: 2 })
     }
     carregar()

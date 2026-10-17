@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { Tela } from '../LayoutApp'
+import { SO_CAMINHO_PRINCIPAL } from '../caminhoPrincipal'
 import { dataIsoParaLocal } from '@sinctea/compartilhado/dominio/datas'
 import { Aviso } from '../../ui/Aviso'
 import { Botao, BotaoLink } from '../../ui/Botao'
@@ -350,7 +351,9 @@ export function RegistroSessao() {
                   )}
                 </Cartao>
 
-                {aberta && (
+                {/* Ocorrencias comportamentais: fora do caminho principal ate o
+                    servico chegar ao servidor (app/caminhoPrincipal.ts). */}
+                {aberta && !SO_CAMINHO_PRINCIPAL && (
                   <Cartao>
                     <h2 className="text-base font-bold">Ocorrência comportamental</h2>
                     <p className="mt-1 text-sm text-tinta2">
