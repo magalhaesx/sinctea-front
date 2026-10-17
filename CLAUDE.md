@@ -205,10 +205,10 @@ Atualizado em 16/10/2026, lendo o código — não a memória.
   simulada que aplica controle de acesso e auditoria; o cliente da API, que
   não aplica regra nenhuma. A versão publicada usa só a API, e o mock fica
   fora do pacote; no desenvolvimento, `VITE_API_URL` escolhe entre as duas
-- **360 testes em 26 arquivos, nos três pacotes**, rodados por um único
+- **375 testes em 27 arquivos, nos três pacotes**, rodados por um único
   `npm test` na raiz, sem passo manual. O principal ainda é
   `src/servicos/mock/regrasInviolaveis.test.ts`, que verifica as regras
-  invioláveis na camada de dados, e não na tela. Os 150 do servidor rodam contra
+  invioláveis na camada de dados, e não na tela. Os 165 do servidor rodam contra
   um PostgreSQL 17 de verdade
 - **As seis regras verificadas** em `docs/06`: para cada teste citado, a regra foi
   quebrada de propósito para confirmar que ele falha, e as quebras que não
@@ -333,9 +333,14 @@ em produção (o antigo passo B5) foi cancelada. No código, hoje:
   dias e sai da lista com a leitura; o evento continua na ficha. Encerrado o
   acesso da escola, o que ela relatou continua na clínica. Testes em
   `servidor/test/ocorrencias.test.ts`, quebras no `docs/06`
-- `npm run criar-administrador -w @sinctea/servidor -- .env.producao` cria o
-  primeiro administrador: pede nome, e-mail e senha, sem mostrar a senha, e
-  recusa se já houver administrador
+- `npm run criar-administrador -w @sinctea/servidor -- .env.producao --nome
+  "Nome Completo" --email voce@exemplo.com` cria o primeiro administrador:
+  nome e e-mail vêm da linha de comando, e só a senha é pedida, escondida e duas
+  vezes. Da leitura do teclado, só caractere imprimível entra; o `\n` que o
+  Windows manda depois do `\r` é pulado (`servidor/src/comandos/terminal.ts`).
+  O build fica no script `pre`: com `npm run build && node`, o npm escapava os
+  argumentos para dois passes do `cmd.exe`, e o nome com espaço chegava com `^`.
+  Recusa se já houver administrador
 - Depois do ensaio, o banco volta a ficar vazio:
   `npm run zerar-banco -w @sinctea/servidor -- .env.dono`, com a URL direta do
   dono num arquivo fora do git, apaga o esquema, aplica as migrações sem semente

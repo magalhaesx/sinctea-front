@@ -55,7 +55,7 @@ try {
     console.log(`\nZerado. Migracoes aplicadas: ${aplicadas.join(', ')}.`)
     console.log(`Agora: ${depois.tabelas} tabelas, ${depois.usuarios ?? 0} usuarios. Privilegios do ${PAPEL} reaplicados.`)
     console.log('\nFalta: npm run conferir-papel -w @sinctea/servidor -- .env.producao')
-    console.log('e o primeiro administrador: npm run criar-administrador -w @sinctea/servidor -- .env.producao')
+    console.log('e o primeiro administrador: npm run criar-administrador -w @sinctea/servidor -- .env.producao --nome "Nome Completo" --email voce@exemplo.com')
   }
 } catch (erro) {
   console.error(`\nFalhou: ${(erro as Error).message}`)

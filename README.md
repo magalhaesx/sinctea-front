@@ -120,7 +120,7 @@ No segundo:
 
 ```bash
 npm exec -w @sinctea/servidor -- prisma migrate deploy   # as migrações no banco local
-npm run criar-administrador -w @sinctea/servidor         # o primeiro administrador
+npm run criar-administrador -w @sinctea/servidor -- --nome "Seu Nome" --email voce@exemplo.com
 npm run build -w @sinctea/servidor
 npm start -w @sinctea/servidor                           # a API em http://localhost:3000/api
 ```

@@ -1,18 +1,37 @@
 import { existsSync } from 'node:fs'
 import { PrismaPg } from '@prisma/adapter-pg'
 import { ErroServico } from '@sinctea/compartilhado'
+import { emailValido, normalizarEmail } from '@sinctea/compartilhado/dominio/regras'
 import { PrismaClient } from '../gerado/client.js'
 import { criarPrimeiroAdministrador } from './administrador.js'
+import { aplicarTeclas, lerArgumentos, novaLeitura, type Leitura } from './terminal.js'
 
 /**
- * npm run criar-administrador -w @sinctea/servidor -- .env.producao
+ * npm run criar-administrador -w @sinctea/servidor -- .env.producao --nome "Nome Completo" --email voce@exemplo.com
  *
  * Cria a conta do primeiro administrador no banco do arquivo de ambiente
- * indicado (sem argumento, o .env). Pede nome, e-mail e senha no terminal; a
- * senha nao aparece enquanto e digitada e e pedida duas vezes.
+ * indicado (sem arquivo, o .env). Nome e e-mail vem da linha de comando; so a
+ * senha e pedida no terminal, escondida e duas vezes. Da leitura do teclado,
+ * so caractere imprimivel entra na senha (terminal.ts).
  */
 
-const arquivo = process.argv[2] ?? '.env'
+const USO = 'Uso: npm run criar-administrador -w @sinctea/servidor -- .env.producao --nome "Nome Completo" --email voce@exemplo.com'
+
+const argumentos = lerArgumentos(process.argv.slice(2))
+if ('erro' in argumentos) {
+  console.error(`${argumentos.erro}\n${USO}`)
+  process.exit(1)
+}
+const { arquivo, nome, email } = argumentos
+// Antes de pedir a senha: errado o e-mail, ninguem digita a senha duas vezes a toa.
+if (!nome.trim()) {
+  console.error(`Escreva o nome do administrador. Nome recebido: ${JSON.stringify(nome)}`)
+  process.exit(1)
+}
+if (!emailValido(normalizarEmail(email))) {
+  console.error(`Escreva um e-mail valido. E-mail recebido: ${JSON.stringify(email)}`)
+  process.exit(1)
+}
 if (!existsSync(arquivo)) {
   console.error(`Arquivo de ambiente nao encontrado: ${arquivo}`)
   process.exit(1)
@@ -28,40 +47,31 @@ if (!process.stdin.isTTY || !process.stdout.isTTY) {
   process.exit(1)
 }
 
-/** Le uma linha do teclado. Com `oculto`, nada do que se digita aparece. */
-function perguntar(texto: string, oculto = false): Promise<string> {
+/** Se o Enter anterior foi "\r", o "\n" que chega depois e o resto dele. */
+let ultimoEnterFoiCr = false
+
+/** Le a senha do teclado, sem mostrar nada. */
+function lerSenha(texto: string): Promise<string> {
   process.stdout.write(texto)
   const entrada = process.stdin
   return new Promise((resolver) => {
-    let valor = ''
+    let leitura: Leitura = novaLeitura({ pularLf: ultimoEnterFoiCr })
     entrada.setRawMode(true)
     entrada.setEncoding('utf8')
     entrada.resume()
-    const aoDigitar = (teclas: string) => {
-      for (const tecla of teclas) {
-        if (tecla === '\u0003') {
-          entrada.setRawMode(false)
-          process.stdout.write('\nCancelado.\n')
-          process.exit(130)
-        }
-        if (tecla === '\r' || tecla === '\n') {
-          entrada.off('data', aoDigitar)
-          entrada.setRawMode(false)
-          entrada.pause()
-          process.stdout.write('\n')
-          resolver(valor)
-          return
-        }
-        if (tecla === '\u007f' || tecla === '\b') {
-          if (valor.length > 0) {
-            valor = valor.slice(0, -1)
-            if (!oculto) process.stdout.write('\b \b')
-          }
-          continue
-        }
-        valor += tecla
-        if (!oculto) process.stdout.write(tecla)
+    const aoDigitar = (pedaco: string) => {
+      leitura = aplicarTeclas(leitura, pedaco)
+      if (!leitura.fim) return
+      entrada.off('data', aoDigitar)
+      entrada.setRawMode(false)
+      entrada.pause()
+      process.stdout.write('\n')
+      if (leitura.fim === 'CANCELADO') {
+        process.stdout.write('Cancelado. Nada foi criado.\n')
+        process.exit(130)
       }
+      ultimoEnterFoiCr = leitura.terminouComCr
+      resolver(leitura.valor)
     }
     entrada.on('data', aoDigitar)
   })
@@ -69,11 +79,11 @@ function perguntar(texto: string, oculto = false): Promise<string> {
 
 const banco = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }) })
 try {
-  console.log(`Primeiro administrador do SINCTEA, no banco de ${arquivo}.\n`)
-  const nome = await perguntar('Nome: ')
-  const email = await perguntar('E-mail: ')
-  const senha = await perguntar('Senha (nao aparece): ', true)
-  const confirmacao = await perguntar('Repita a senha: ', true)
+  console.log(`Primeiro administrador do SINCTEA, no banco de ${arquivo}.`)
+  console.log(`Nome: ${nome}`)
+  console.log(`E-mail: ${email}\n`)
+  const senha = await lerSenha('Senha (nao aparece): ')
+  const confirmacao = await lerSenha('Repita a senha: ')
   if (senha !== confirmacao) {
     console.error('\nAs duas senhas nao conferem. Nada foi criado.')
     process.exitCode = 1
@@ -82,7 +92,11 @@ try {
     console.log(`\nAdministrador criado: ${criado.email}. Entre pela tela de entrada com essa senha.`)
   }
 } catch (erro) {
-  console.error(`\n${erro instanceof ErroServico ? erro.message : `Falhou: ${(erro as Error).message}`} Nada foi criado.`)
+  const mensagem = erro instanceof ErroServico ? erro.message : `Falhou: ${(erro as Error).message}`
+  console.error(`\n${mensagem} Nada foi criado.`)
+  // Para enxergar o caractere invisivel, se houver: o valor exato, entre aspas. Nunca a senha.
+  if (erro instanceof ErroServico && erro.campos.email) console.error(`E-mail recebido: ${JSON.stringify(email)}`)
+  if (erro instanceof ErroServico && erro.campos.nome) console.error(`Nome recebido: ${JSON.stringify(nome)}`)
   process.exitCode = 1
 } finally {
   await banco.$disconnect()

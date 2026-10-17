@@ -13,9 +13,12 @@
     "build": "npm run build -w @sinctea/compartilhado && prisma generate && tsc -p tsconfig.json && tsc -p tsconfig.build.json",
     "start": "node dist/src/main.js",
     "semente": "node dist/prisma/semente.js",
-    "criar-administrador": "npm run build && node dist/src/comandos/criar-administrador.js",
-    "zerar-banco": "npm run build && node dist/src/comandos/zerar-banco.js",
-    "conferir-papel": "npm run build && node dist/src/comandos/conferir-papel.js",
+    "precriar-administrador": "npm run build",
+    "criar-administrador": "node dist/src/comandos/criar-administrador.js",
+    "prezerar-banco": "npm run build",
+    "zerar-banco": "node dist/src/comandos/zerar-banco.js",
+    "preconferir-papel": "npm run build",
+    "conferir-papel": "node dist/src/comandos/conferir-papel.js",
     "test": "vitest run"
   },
   "dependencies": {
