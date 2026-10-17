@@ -309,6 +309,16 @@ export interface NovoObjetivo {
   criterio: CriterioDominio
 }
 
+/**
+ * O que se edita num objetivo enquanto o plano esta em RASCUNHO ou DEVOLVIDO
+ * (item 7): as duas redacoes e o criterio. O dominio fica.
+ */
+export interface EdicaoObjetivo {
+  descricaoTecnica: string
+  descricaoAcessivel: string
+  criterio: CriterioDominio
+}
+
 /** O plano nasce em RASCUNHO, com as duas datas (docs/07, secao 0, lacuna 3). */
 export interface NovoPlano {
   dataInicio: DataCivil

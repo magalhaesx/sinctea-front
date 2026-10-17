@@ -198,7 +198,8 @@ export function Ocorrencia() {
       papel={estado.tipo === 'pronto'
         ? `${estado.aluno.nome} · ${estado.aluno.turma}`
         : undefined}
-      caminho={['Início', estado.tipo === 'pronto' ? estado.aluno.nome : 'Aluno', 'Registrar ocorrência']}
+      caminho={['Área da escola', { rotulo: 'Meus alunos', para: '/app/escola' },
+        { rotulo: estado.tipo === 'pronto' ? estado.aluno.nome : 'Aluno', para: `/app/escola/${pacienteId}` }, 'Registrar ocorrência']}
       estreito
     >
       {estado.tipo === 'carregando' && (

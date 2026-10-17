@@ -4,8 +4,10 @@ import {
   type PlanoParaValidacao, type PlanoTerapeutico,
 } from '@sinctea/compartilhado'
 import { inicioDoDia } from '@sinctea/compartilhado/dominio/datas'
+import { anterioresQueMudaram } from '@sinctea/compartilhado/dominio/auditoria'
+import { jsonCanonico } from '@sinctea/compartilhado/dominio/hash'
 import {
-  itensPreenchidos, objetivoAtingiuCriterio, validarCartao, validarDevolucaoPlano, validarNovoObjetivo,
+  itensPreenchidos, objetivoAtingiuCriterio, planoEditavel, validarCartao, validarDevolucaoPlano, validarNovoObjetivo,
   validarNovoPlano,
 } from '@sinctea/compartilhado/dominio/regras'
 import { ServicoBanco } from '../banco/servico-banco.js'
@@ -13,10 +15,19 @@ import { paginar } from '../http/paginacao.js'
 import type { SessaoServidor } from '../http/tipos-http.js'
 import { exigirUuid, exigirValido, textoOuVazio } from '../http/validacao.js'
 import { exigirPacienteClinico } from './alcance.js'
-import { deDataCivil, paraCartao, paraObjetivo, paraPlano, paraSessao } from './mapeadores.js'
+import { deDataCivil, paraCartao, paraDataCivil, paraObjetivo, paraPlano, paraSessao } from './mapeadores.js'
 
 /** O resultado e de que paciente ele era: o controlador entrega o paciente a auditoria. */
 export interface DoPaciente<T> { resultado: T; pacienteId: string }
+
+/** Uma edicao: o valor anterior so dos campos que mudaram, ou nulo se nada mudou. */
+export interface Editado<T> extends DoPaciente<T> { valorAnterior: string | null }
+
+const exigirPlanoEditavel = (status: Parameters<typeof planoEditavel>[0]) => {
+  if (!planoEditavel(status)) {
+    throw new ErroServico('CONFLITO', 'O plano só se edita em rascunho ou devolvido pela coordenação. Vigente ou em validação, ele fica como está.')
+  }
+}
 
 /**
  * Plano terapeutico, objetivos, dominio e cartao de estrategias (UC04, UC05,
@@ -83,6 +94,53 @@ export class ServicoPlanos {
       percentualMinimo: novo.criterio.percentualMinimo, sessoesConsecutivas: novo.criterio.sessoesConsecutivas,
     } })
     return { resultado: paraObjetivo(objetivo), pacienteId: plano.pacienteId }
+  }
+
+  /**
+   * Item 7: as duas redacoes e o criterio, com o plano em rascunho ou
+   * devolvido. A redacao acessivel continua sendo a do terapeuta (regra 4):
+   * a edicao grava o que ele escreveu agora, e nada e derivado da tecnica.
+   */
+  async editarObjetivo(sessao: SessaoServidor, objetivoId: string, dados: Record<string, unknown>): Promise<Editado<Objetivo>> {
+    const objetivo = await this.objetivoAlcancado(sessao, objetivoId)
+    exigirPlanoEditavel(objetivo.plano.status)
+    const criterio = (dados.criterio ?? {}) as Record<string, unknown>
+    const novo: NovoObjetivo = {
+      dominio: objetivo.dominio,
+      descricaoTecnica: textoOuVazio(dados.descricaoTecnica),
+      descricaoAcessivel: textoOuVazio(dados.descricaoAcessivel),
+      criterio: { percentualMinimo: Number(criterio.percentualMinimo), sessoesConsecutivas: Number(criterio.sessoesConsecutivas) },
+    }
+    exigirValido(validarNovoObjetivo(novo))
+    const depois = {
+      descricaoTecnica: novo.descricaoTecnica, descricaoAcessivel: novo.descricaoAcessivel,
+      percentualMinimo: novo.criterio.percentualMinimo, sessoesConsecutivas: novo.criterio.sessoesConsecutivas,
+    }
+    const anteriores = anterioresQueMudaram({
+      descricaoTecnica: objetivo.descricaoTecnica, descricaoAcessivel: objetivo.descricaoAcessivel,
+      percentualMinimo: objetivo.percentualMinimo, sessoesConsecutivas: objetivo.sessoesConsecutivas,
+    }, depois)
+    const pacienteId = objetivo.plano.pacienteId
+    if (!anteriores) return { resultado: paraObjetivo(objetivo), pacienteId, valorAnterior: null }
+    const editado = await this.banco.objetivo.update({ where: { id: objetivo.id }, data: depois })
+    return { resultado: paraObjetivo(editado), pacienteId, valorAnterior: jsonCanonico(anteriores) }
+  }
+
+  /** Item 7: as datas do plano, nas mesmas condicoes da edicao do objetivo. */
+  async editarDatas(sessao: SessaoServidor, planoId: string, dados: Record<string, unknown>): Promise<Editado<PlanoTerapeutico>> {
+    const plano = await this.planoAlcancado(sessao, planoId)
+    exigirPlanoEditavel(plano.status)
+    const depois = { dataInicio: textoOuVazio(dados.dataInicio), dataRevisao: textoOuVazio(dados.dataRevisao) }
+    exigirValido(validarNovoPlano(depois))
+    const anteriores = anterioresQueMudaram(
+      { dataInicio: paraDataCivil(plano.dataInicio), dataRevisao: paraDataCivil(plano.dataRevisao) }, depois)
+    if (!anteriores) return { resultado: paraPlano(plano), pacienteId: plano.pacienteId, valorAnterior: null }
+    const editado = await this.banco.planoTerapeutico.update({
+      where: { id: plano.id },
+      data: { dataInicio: deDataCivil(depois.dataInicio), dataRevisao: deDataCivil(depois.dataRevisao) },
+      include: { objetivos: true },
+    })
+    return { resultado: paraPlano(editado), pacienteId: plano.pacienteId, valorAnterior: jsonCanonico(anteriores) }
   }
 
   async enviarParaValidacao(sessao: SessaoServidor, planoId: string): Promise<PlanoTerapeutico> {

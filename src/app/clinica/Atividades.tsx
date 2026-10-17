@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { Tela } from '../LayoutApp'
+import { PACIENTES, doPaciente } from './caminho'
 import { Aviso } from '../../ui/Aviso'
 import { Botao } from '../../ui/Botao'
 import { Campo } from '../../ui/Campo'
@@ -398,7 +399,7 @@ export function Atividades() {
     && plano.erro.codigo === 'ACESSO_NEGADO'
 
   return (
-    <Tela area="cli" caminho={['Área clínica', 'Pacientes', 'Atividades para casa']}>
+    <Tela area="cli" caminho={['Área clínica', PACIENTES, doPaciente(id, null), 'Atividades para casa']}>
       <Titulo sub="O que a família faz entre uma sessão e outra, escrito na linguagem de quem vai ler">
         Atividades para casa
       </Titulo>

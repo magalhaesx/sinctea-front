@@ -25,6 +25,23 @@ export const NOME_DO_CAMPO: Record<string, string> = {
   tipo: 'O que aconteceu',
   intensidade: 'Intensidade',
   contexto: 'Em que momento',
+  descricaoTecnica: 'Redação técnica',
+  descricaoAcessivel: 'Redação acessível',
+  percentualMinimo: 'Percentual mínimo',
+  sessoesConsecutivas: 'Sessões consecutivas',
+  dataInicio: 'Início do plano',
+  dataRevisao: 'Revisão do plano',
+}
+
+/**
+ * O que vai para o `valorAnterior` de uma ALTERACAO: so os campos que
+ * mudaram, com o valor de antes — nunca o registro inteiro, por minimizacao
+ * (revisao do modelo de 11/10). Nada mudou: nulo, e nao ha o que registrar.
+ */
+export function anterioresQueMudaram<T extends Record<string, unknown>>(antes: T, depois: T): Partial<T> | null {
+  const mudaram = (Object.keys(depois) as Array<keyof T>).filter((campo) => antes[campo] !== depois[campo])
+  if (mudaram.length === 0) return null
+  return Object.fromEntries(mudaram.map((campo) => [campo, antes[campo]])) as Partial<T>
 }
 
 /**

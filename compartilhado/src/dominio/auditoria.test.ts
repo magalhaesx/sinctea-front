@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { versaoAnteriorEmTexto } from './auditoria.js'
+import { anterioresQueMudaram, versaoAnteriorEmTexto } from './auditoria.js'
 import { jsonCanonico } from './hash.js'
 
 describe('versaoAnteriorEmTexto', () => {
@@ -21,5 +21,23 @@ describe('versaoAnteriorEmTexto', () => {
 
   it('texto que nao e JSON nao se perde', () => {
     expect(versaoAnteriorEmTexto('algo antigo')).toBe('Valor anterior: algo antigo')
+  })
+})
+
+describe('anterioresQueMudaram (item 7)', () => {
+  const antes = { descricaoTecnica: 'A', descricaoAcessivel: 'B', percentualMinimo: 80, sessoesConsecutivas: 2 }
+
+  it('so os campos que mudaram, com o valor de antes', () => {
+    expect(anterioresQueMudaram(antes, { ...antes, descricaoAcessivel: 'B2', percentualMinimo: 90 }))
+      .toEqual({ descricaoAcessivel: 'B', percentualMinimo: 80 })
+  })
+
+  it('nada mudou: nulo, e nao ha o que registrar', () => {
+    expect(anterioresQueMudaram(antes, { ...antes })).toBeNull()
+  })
+
+  it('os campos editados viram nomes de gente na trilha', () => {
+    expect(versaoAnteriorEmTexto(jsonCanonico({ descricaoAcessivel: 'B', dataRevisao: '2027-04-01' })))
+      .toBe('Revisão do plano: 2027-04-01 · Redação acessível: B')
   })
 })

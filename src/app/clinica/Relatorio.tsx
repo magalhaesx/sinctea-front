@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Tela } from '../LayoutApp'
+import { PACIENTES, doPaciente } from './caminho'
 import { Aviso } from '../../ui/Aviso'
 import { Botao } from '../../ui/Botao'
 import { Campo } from '../../ui/Campo'
@@ -149,7 +150,7 @@ export function Relatorio() {
     && plano.erro.codigo === 'NAO_ENCONTRADO'
 
   return (
-    <Tela area="cli" caminho={['Área clínica', 'Pacientes', 'Relatório de evolução']}>
+    <Tela area="cli" caminho={['Área clínica', PACIENTES, doPaciente(id, null), 'Relatório de evolução']}>
       <Titulo sub="Documento clínico: o que sair aqui fica guardado como saiu, e a emissão entra na auditoria">
         Emitir relatório de evolução
       </Titulo>

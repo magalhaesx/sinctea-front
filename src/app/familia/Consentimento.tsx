@@ -73,6 +73,8 @@ export function Consentimento() {
   const [estado, setEstado] = useState<Estado>({ tipo: 'carregando' })
   const [tentativa, setTentativa] = useState(0)
   const [pacienteId, setPacienteId] = useState<string | null>(null)
+  /** De que filho e o que esta na tela: recarga do mesmo nao volta ao "carregando". */
+  const carregadoPara = useRef<string | null | undefined>(undefined)
 
   const [escolaId, setEscolaId] = useState('')
   const [cadastrandoEscola, setCadastrandoEscola] = useState(false)
@@ -122,7 +124,9 @@ export function Consentimento() {
 
   useEffect(() => {
     let ativo = true
-    setEstado({ tipo: 'carregando' })
+    // Recarga do mesmo filho, depois de autorizar ou gerar convite: a tela
+    // continua como esta enquanto busca (item 7).
+    if (carregadoPara.current !== pacienteId) setEstado({ tipo: 'carregando' })
     const carregar = async () => {
       const [filhos, escolas] = await Promise.all([
         servicos.familia.listarFilhos(),
@@ -137,6 +141,7 @@ export function Consentimento() {
     carregar()
       .then(({ filhos, escolas, consentimentos, alvo }) => {
         if (!ativo) return
+        carregadoPara.current = alvo
         setPacienteId(alvo)
         setEstado({ tipo: 'pronto', filhos, escolas, consentimentos })
       })
@@ -313,7 +318,7 @@ export function Consentimento() {
       area="fam"
       nome="Acesso da escola"
       papel={semAutoridadeLegal ? 'Quem autoriza é o responsável legal' : 'Quem autoriza é você'}
-      caminho={['Área da família', 'Autorizar o acesso da escola']}
+      caminho={[{ rotulo: 'Início', para: '/app/familia' }, 'Autorizar o acesso da escola']}
       estreito
     >
       <Titulo sub={semAutoridadeLegal

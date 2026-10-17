@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Tela } from '../LayoutApp'
+import { PACIENTES } from './caminho'
 import { Botao, BotaoLink } from '../../ui/Botao'
 import { Campo } from '../../ui/Campo'
 import { Cartao } from '../../ui/Cartao'
@@ -74,7 +75,7 @@ export function NovoPaciente() {
     : null
 
   return (
-    <Tela area="cli" caminho={['Área clínica', 'Pacientes', 'Cadastrar paciente']} estreito>
+    <Tela area="cli" caminho={['Área clínica', PACIENTES, 'Cadastrar paciente']} estreito>
       <Titulo sub="Os dados de identificação. O plano terapêutico vem depois, na ficha.">
         Cadastrar paciente
       </Titulo>

@@ -1,4 +1,4 @@
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { BarraPreferencias } from '../componentes/BarraPreferencias'
 import { RodapeAmbiente } from '../componentes/AvisoAmbiente'
 import { usarSessao } from '../contexto/Sessao'
@@ -15,6 +15,9 @@ import { NOME_DO_PERFIL } from './perfis'
 
 /** `fora`: fora do caminho principal, so com o mock (caminhoPrincipal.ts). */
 type Item = { para: string; nome: string; uc?: string; cor: string; fim?: boolean; fora?: true }
+
+/** Um passo da trilha que leva de volta a outra tela. */
+export type ItemDoCaminho = { rotulo: string; para: string }
 type Grupo = { titulo: string; perfis: Perfil[]; itens: Item[] }
 
 const CLI = '#00a2af'
@@ -167,11 +170,16 @@ export function Tela({
   area: 'cli' | 'fam' | 'esc' | 'neutro'
   papel?: string
   nome?: string
-  caminho: string[]
+  /**
+   * A trilha ate esta tela. Item com `para` vira link: e o caminho de volta
+   * visivel (item 7), alem do Voltar do navegador. O ultimo e a propria tela.
+   */
+  caminho: Array<string | ItemDoCaminho>
   children: React.ReactNode
   estreito?: boolean
 }) {
   const fundo = { cli: 'bg-cli-ink', fam: 'bg-fam-ink', esc: 'bg-esc-ink', neutro: 'bg-tinta2' }[area]
+  const corDoLink = { cli: 'text-cli-ink', fam: 'text-fam-ink', esc: 'text-esc-ink', neutro: 'text-tinta' }[area]
   const iniciais = nome ? nome.split(' ').map((p) => p[0]).slice(0, 2).join('') : ''
   return (
     <div className={`rounded-2xl border border-cromo-linha bg-fundo text-tinta overflow-hidden ${estreito ? 'max-w-lg' : ''}`}>
@@ -190,12 +198,20 @@ export function Tela({
       )}
       <nav aria-label="Trilha de navegação" className="px-5 pt-3 text-[13px] text-tinta2 break-words">
         Você está em:{' '}
-        {caminho.map((p, i) => (
-          <span key={p}>
-            {i > 0 && <span aria-hidden="true"> › </span>}
-            {i === caminho.length - 1 ? <b className="text-tinta2">{p}</b> : p}
-          </span>
-        ))}
+        {caminho.map((item, i) => {
+          const rotulo = typeof item === 'string' ? item : item.rotulo
+          const para = typeof item === 'string' || i === caminho.length - 1 ? undefined : item.para
+          return (
+            <span key={`${i}-${rotulo}`}>
+              {i > 0 && <span aria-hidden="true"> › </span>}
+              {i === caminho.length - 1
+                ? <b className="text-tinta2" aria-current="page">{rotulo}</b>
+                : para
+                  ? <Link to={para} className={`font-bold underline underline-offset-2 ${corDoLink}`}>{rotulo}</Link>
+                  : rotulo}
+            </span>
+          )
+        })}
       </nav>
       <div className="flex flex-col gap-4 px-5 pb-6 pt-3.5">{children}</div>
     </div>

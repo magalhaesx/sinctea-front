@@ -4,7 +4,7 @@ import type {
   ConsentimentoConcedido, ConsentimentoDetalhe, ContaCriada, ConvitePublico, Desempenho, Escola,
   ExecucaoAtividadeCasa, FiltroAgenda, FiltroAuditoria, FiltroOcorrencia, FiltroPaciente,
   FiltroPaginacao, FiltroSessao, FiltroUsuario, FilhoResumo, ItemAgenda, LinkPrimeiroAcesso, NovaAtividadeCasa,
-  NovaOcorrenciaComportamental, NovaOcorrenciaEscolar, NovoConsentimento, NovoObjetivo,
+  NovaOcorrenciaComportamental, NovaOcorrenciaEscolar, NovoConsentimento, NovoObjetivo, EdicaoObjetivo,
   NovoPaciente, NovoPlano, NovoResponsavel, ResponsavelCadastrado, DadosCartao, NovaEscola, Objetivo, ObjetivoAcessivel, OcorrenciaComportamental, OcorrenciaEscolar,
   ConteudoRelatorio, DadosProfissionais, MotivoAtencao, Pagina, PacienteDetalhe, PacienteResumo, PedidoRelatorio,
   Perfil, PlanoParaValidacao, PlanoTerapeutico, PonteEscola, PrimeiroAcessoPublico, Profissional, RegistroAtividade,
@@ -78,6 +78,10 @@ export interface ServicoPlano {
   criar(pacienteId: string, dados: NovoPlano): Promise<PlanoTerapeutico>
   /** Rejeita objetivo sem descricao acessivel. Nao existe geracao automatica. */
   adicionarObjetivo(planoId: string, dados: NovoObjetivo): Promise<Objetivo>
+  /** So com o plano em RASCUNHO ou DEVOLVIDO. A trilha guarda o valor anterior dos campos que mudaram. */
+  editarObjetivo(objetivoId: string, dados: EdicaoObjetivo): Promise<Objetivo>
+  /** As datas do plano, nas mesmas condicoes da edicao do objetivo. */
+  editarDatas(planoId: string, dados: NovoPlano): Promise<PlanoTerapeutico>
   enviarParaValidacao(planoId: string): Promise<PlanoTerapeutico>
   listarAguardandoValidacao(filtro?: FiltroPaginacao): Promise<Pagina<PlanoParaValidacao>>
   aprovar(planoId: string): Promise<PlanoTerapeutico>

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { Tela } from '../LayoutApp'
+import { PACIENTES, doPaciente } from './caminho'
 import { Aviso } from '../../ui/Aviso'
 import { Botao } from '../../ui/Botao'
 import { Campo } from '../../ui/Campo'
@@ -223,7 +224,7 @@ export function Evolucao() {
     && estado.erro.codigo === 'NAO_ENCONTRADO'
 
   return (
-    <Tela area="cli" caminho={['Área clínica', 'Pacientes', 'Evolução por objetivo']}>
+    <Tela area="cli" caminho={['Área clínica', PACIENTES, doPaciente(id, null), 'Evolução por objetivo']}>
       {estado.tipo === 'carregando' && (
         <>
           <Titulo>Evolução por objetivo</Titulo>

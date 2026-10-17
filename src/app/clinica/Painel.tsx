@@ -88,7 +88,8 @@ export function PainelClinica() {
 
   useEffect(() => {
     let ativo = true
-    setAvisos({ tipo: 'carregando' })
+    // Depois da leitura clinica, a lista continua na tela enquanto se atualiza.
+    setAvisos((atual) => (atual.tipo === 'pronto' ? atual : { tipo: 'carregando' }))
     servicos.ocorrencias.listarAvisosDaEscola({ porPagina: 5 })
       .then((dados) => { if (ativo) setAvisos({ tipo: 'pronto', dados }) })
       .catch((erro) => { if (ativo) setAvisos({ tipo: 'erro', erro }) })

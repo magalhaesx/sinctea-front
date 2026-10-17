@@ -2,7 +2,7 @@ import { diaCivilEm, fimDaValidade, inicioDoDia, partesDaDataCivil } from './dat
 import type {
   Consentimento, ConviteEscolar, CriterioDominio, DataCivil, DataIso, Destinatario, EscopoAcesso, NivelSuporte,
   NovoConsentimento, NovoObjetivo, OcorrenciaComportamental, Origem, PlanoTerapeutico,
-  RegistroAtividade, Sessao, SituacaoConsentimento, SituacaoConvite, SituacaoPrimeiroAcesso, StatusObjetivo,
+  RegistroAtividade, Sessao, SituacaoConsentimento, SituacaoConvite, SituacaoPlano, SituacaoPrimeiroAcesso, StatusObjetivo,
 } from '../tipos.js'
 
 /**
@@ -336,6 +336,11 @@ export function validarCartao(dados: { tituloSimples: string; oQueFazer: string[
   if (itensPreenchidos(dados.oQueEvitar).length === 0) erros.oQueEvitar = 'Escreva ao menos uma coisa a evitar.'
   if (!dados.sinalAlerta.trim()) erros.sinalAlerta = 'Escreva o sinal de que a criança precisa de apoio.'
   return erros
+}
+
+/** Objetivo e datas se editam so com o plano em rascunho ou devolvido (item 7). */
+export function planoEditavel(status: SituacaoPlano): boolean {
+  return status === 'RASCUNHO' || status === 'DEVOLVIDO'
 }
 
 /**

@@ -8,7 +8,7 @@ import { lerInstante, lerPaginacao, lerTexto } from '../http/paginacao.js'
 import type { RequisicaoHttp } from '../http/tipos-http.js'
 import { ServicoOcorrencias, type FiltroOcorrenciaServidor } from './servico-ocorrencias.js'
 import { ServicoPacientes } from './servico-pacientes.js'
-import { ServicoPlanos, type DoPaciente } from './servico-planos.js'
+import { ServicoPlanos, type DoPaciente, type Editado } from './servico-planos.js'
 import { ServicoSessoesClinicas } from './servico-sessoes-clinicas.js'
 
 /**
@@ -26,6 +26,17 @@ function doPaciente<T>(req: RequisicaoHttp, { resultado, pacienteId }: DoPacient
   return resultado
 }
 const deParametro = { parametro: 'id' }
+
+/**
+ * A edicao leva para a trilha o valor anterior so dos campos que mudaram. Sem
+ * mudanca, nada foi escrito, e nada se registra.
+ */
+function comValorAnterior<T>(req: RequisicaoHttp, { resultado, pacienteId, valorAnterior }: Editado<T>): T {
+  req.sinctea!.pacienteId = pacienteId
+  if (valorAnterior === null) req.sinctea!.dispensarRegistro = true
+  else req.sinctea!.valorAnterior = valorAnterior
+  return resultado
+}
 const ORIGENS: Origem[] = ['CLINICA', 'CASA', 'ESCOLA']
 
 function lerFiltroOcorrencia(query: Record<string, unknown>): FiltroOcorrenciaServidor {
@@ -145,6 +156,24 @@ export class ControladorPlanos {
   })
   async adicionarObjetivo(@Req() req: RequisicaoHttp, @Param('id') id: string, @Body() corpo: Record<string, unknown> | undefined) {
     return doPaciente(req, await this.planos.adicionarObjetivo(sessaoDe(req), id, corpo ?? {}))
+  }
+
+  @Put('objetivos/:id')
+  @Auditar({
+    entidade: 'Objetivo', acao: 'ALTERACAO', idEntidade: deParametro,
+    detalhe: 'Objetivo editado com o plano em rascunho ou devolvido.',
+  })
+  async editarObjetivo(@Req() req: RequisicaoHttp, @Param('id') id: string, @Body() corpo: Record<string, unknown> | undefined) {
+    return comValorAnterior(req, await this.planos.editarObjetivo(sessaoDe(req), id, corpo ?? {}))
+  }
+
+  @Put('planos/:id/datas')
+  @Auditar({
+    entidade: 'PlanoTerapeutico', acao: 'ALTERACAO', idEntidade: deParametro,
+    detalhe: 'Datas do plano editadas com o plano em rascunho ou devolvido.',
+  })
+  async editarDatas(@Req() req: RequisicaoHttp, @Param('id') id: string, @Body() corpo: Record<string, unknown> | undefined) {
+    return comValorAnterior(req, await this.planos.editarDatas(sessaoDe(req), id, corpo ?? {}))
   }
 
   @Post('planos/:id/envio')

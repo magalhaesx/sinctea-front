@@ -4,10 +4,12 @@ import {
   type PlanoTerapeutico, type Sessao,
 } from '@sinctea/compartilhado'
 import {
-  ehPreliminar, erroDaEvolucao, itensPreenchidos, objetivoAtingiuCriterio, validarCartao, validarDevolucaoPlano,
+  ehPreliminar, erroDaEvolucao, itensPreenchidos, objetivoAtingiuCriterio, planoEditavel, validarCartao, validarDevolucaoPlano,
   validarNovoObjetivo, validarNovoPlano,
 } from '@sinctea/compartilhado/dominio/regras'
 import { inicioDoDia } from '@sinctea/compartilhado/dominio/datas'
+import { anterioresQueMudaram } from '@sinctea/compartilhado/dominio/auditoria'
+import { jsonCanonico } from '@sinctea/compartilhado/dominio/hash'
 import { alcancaClinicamente, exigirPacienteClinico } from './acesso'
 import {
   auditar, banco, exigirPerfil, exigirSessao, exigirValido, gerarId, naoEncontrado, paginar,
@@ -73,6 +75,48 @@ export const planosMock: ServicoPlano = {
     plano.objetivos.push(objetivo)
     auditar(sessao, { acao: 'CRIACAO', entidade: 'Objetivo', idEntidade: objetivo.id, pacienteId: plano.pacienteId, detalhe: `Objetivo em ${objetivo.dominio}.` })
     return objetivo
+  }),
+
+  // As mesmas regras do servidor: so em rascunho ou devolvido, e a trilha com
+  // o valor anterior so dos campos que mudaram.
+  editarObjetivo: (objetivoId, dados) => responder(() => {
+    const plano = banco.planos.find((p) => p.objetivos.some((o) => o.id === objetivoId)) ?? naoEncontrado('Objetivo')
+    const { sessao } = exigirPlanoEditavel(plano.id)
+    if (!planoEditavel(plano.status)) throw new ErroServico('CONFLITO', 'O plano só se edita em rascunho ou devolvido pela coordenação. Vigente ou em validação, ele fica como está.')
+    const objetivo = plano.objetivos.find((o) => o.id === objetivoId)!
+    exigirValido(validarNovoObjetivo({ dominio: objetivo.dominio, ...dados }))
+    const depois = {
+      descricaoTecnica: dados.descricaoTecnica.trim(), descricaoAcessivel: dados.descricaoAcessivel.trim(),
+      percentualMinimo: dados.criterio.percentualMinimo, sessoesConsecutivas: dados.criterio.sessoesConsecutivas,
+    }
+    const anteriores = anterioresQueMudaram({
+      descricaoTecnica: objetivo.descricaoTecnica, descricaoAcessivel: objetivo.descricaoAcessivel,
+      percentualMinimo: objetivo.criterio.percentualMinimo, sessoesConsecutivas: objetivo.criterio.sessoesConsecutivas,
+    }, depois)
+    if (!anteriores) return objetivo
+    objetivo.descricaoTecnica = depois.descricaoTecnica
+    objetivo.descricaoAcessivel = depois.descricaoAcessivel
+    objetivo.criterio = { percentualMinimo: depois.percentualMinimo, sessoesConsecutivas: depois.sessoesConsecutivas }
+    auditar(sessao, {
+      acao: 'ALTERACAO', entidade: 'Objetivo', idEntidade: objetivo.id, pacienteId: plano.pacienteId,
+      detalhe: 'Objetivo editado com o plano em rascunho ou devolvido.', valorAnterior: jsonCanonico(anteriores),
+    })
+    return objetivo
+  }),
+
+  editarDatas: (planoId, dados) => responder(() => {
+    const { sessao, plano } = exigirPlanoEditavel(planoId)
+    if (!planoEditavel(plano.status)) throw new ErroServico('CONFLITO', 'O plano só se edita em rascunho ou devolvido pela coordenação. Vigente ou em validação, ele fica como está.')
+    exigirValido(validarNovoPlano(dados))
+    const anteriores = anterioresQueMudaram({ dataInicio: plano.dataInicio, dataRevisao: plano.dataRevisao }, { dataInicio: dados.dataInicio, dataRevisao: dados.dataRevisao })
+    if (!anteriores) return plano
+    plano.dataInicio = dados.dataInicio
+    plano.dataRevisao = dados.dataRevisao
+    auditar(sessao, {
+      acao: 'ALTERACAO', entidade: 'PlanoTerapeutico', idEntidade: plano.id, pacienteId: plano.pacienteId,
+      detalhe: 'Datas do plano editadas com o plano em rascunho ou devolvido.', valorAnterior: jsonCanonico(anteriores),
+    })
+    return plano
   }),
 
   enviarParaValidacao: (planoId) => responder(() => {

@@ -205,10 +205,10 @@ Atualizado em 16/10/2026, lendo o código — não a memória.
   simulada que aplica controle de acesso e auditoria; o cliente da API, que
   não aplica regra nenhuma. A versão publicada usa só a API, e o mock fica
   fora do pacote; no desenvolvimento, `VITE_API_URL` escolhe entre as duas
-- **386 testes em 28 arquivos, nos três pacotes**, rodados por um único
+- **397 testes em 29 arquivos, nos três pacotes**, rodados por um único
   `npm test` na raiz, sem passo manual. O principal ainda é
   `src/servicos/mock/regrasInviolaveis.test.ts`, que verifica as regras
-  invioláveis na camada de dados, e não na tela. Os 175 do servidor rodam contra
+  invioláveis na camada de dados, e não na tela. Os 183 do servidor rodam contra
   um PostgreSQL 17 de verdade
 - **As seis regras verificadas** em `docs/06`: para cada teste citado, a regra foi
   quebrada de propósito para confirmar que ele falha, e as quebras que não
@@ -340,6 +340,12 @@ em produção (o antigo passo B5) foi cancelada. No código, hoje:
   equipe e a coordenação, e a trilha registra que foi escrita, sem o texto. O
   registro ABC na sessão voltou à versão publicada. Testes em
   `servidor/test/sessao.test.ts`
+- **Item 7, parte 2 — navegação e edição.** Toda tela do app tem a trilha
+  com links de volta (Pacientes › nome do paciente › Plano), e o Voltar do
+  navegador funciona. Depois de salvar, a tela fica onde estava: a recarga não
+  volta ao "carregando". Com o plano em `RASCUNHO` ou `DEVOLVIDO`, editam-se o
+  objetivo (as duas redações e o critério) e as datas, com `ALTERACAO` e o
+  `valorAnterior` só do que mudou. Testes em `servidor/test/edicao-plano.test.ts`
 - `npm run criar-administrador -w @sinctea/servidor -- .env.producao --nome
   "Nome Completo" --email voce@exemplo.com` cria o primeiro administrador:
   nome e e-mail vêm da linha de comando, e só a senha é pedida, escondida e duas

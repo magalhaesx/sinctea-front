@@ -68,7 +68,8 @@ export function Planos() {
 
   useEffect(() => {
     let ativo = true
-    setFila({ tipo: 'carregando' })
+    // Depois de decidir, a fila continua na tela enquanto se atualiza (item 7).
+    setFila((atual) => (atual.tipo === 'pronto' && atual.dados.pagina === pagina ? atual : { tipo: 'carregando' }))
     servicos.planos.listarAguardandoValidacao({ pagina, porPagina: POR_PAGINA })
       .then((dados) => { if (ativo) setFila({ tipo: 'pronto', dados }) })
       .catch((erro) => { if (ativo) setFila({ tipo: 'erro', erro }) })

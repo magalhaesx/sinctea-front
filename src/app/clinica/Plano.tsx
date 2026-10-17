@@ -10,9 +10,11 @@ import { Medidor } from '../../ui/Medidor'
 import { Titulo } from '../../ui/Titulo'
 import { EstadoCarregando } from '../../ui/EstadoCarregando'
 import { EstadoErro } from '../../ui/EstadoErro'
-import { validarNovoObjetivo } from '@sinctea/compartilhado/dominio/regras'
+import { planoEditavel, validarNovoObjetivo } from '@sinctea/compartilhado/dominio/regras'
 import { CartoesDoObjetivo } from './CartoesDoObjetivo'
 import { CriarPlano } from './CriarPlano'
+import { EditarDatas, EditarObjetivo } from './EdicaoDoPlano'
+import { PACIENTES, doPaciente, usarNomeDoPaciente } from './caminho'
 import { emDataCivil } from '@sinctea/compartilhado/dominio/datas'
 import {
   ErroServico, servicos, type NovoObjetivo, type Objetivo, type PlanoTerapeutico,
@@ -59,6 +61,7 @@ function porDominio(objetivos: Objetivo[]): [string, Objetivo[]][] {
 
 export function Plano() {
   const { id = '' } = useParams()
+  const nomeDoPaciente = usarNomeDoPaciente(id)
   const [estado, setEstado] = useState<Estado>({ tipo: 'carregando' })
   const [tentativa, setTentativa] = useState(0)
 
@@ -70,6 +73,18 @@ export function Plano() {
   const [erros, setErros] = useState<Record<string, string>>({})
   const [salvando, setSalvando] = useState(false)
   const [aviso, setAviso] = useState<string | null>(null)
+  /** Item 7: o objetivo em edicao, e se as datas estao em edicao. */
+  const [editandoObjetivo, setEditandoObjetivo] = useState<string | null>(null)
+  const [editandoDatas, setEditandoDatas] = useState(false)
+
+  /** Fechada a edicao, o foco volta ao botao que a abriu. */
+  const devolverFoco = (idDoBotao: string) => setTimeout(() => document.getElementById(idDoBotao)?.focus())
+
+  /** Salvo, o plano muda na propria tela: nada recarrega, nada sai do lugar. */
+  const trocarPlano = (plano: PlanoTerapeutico) => setEstado({ tipo: 'pronto', plano })
+  const trocarObjetivo = (editado: Objetivo) => setEstado((atual) => atual.tipo === 'pronto'
+    ? { tipo: 'pronto', plano: { ...atual.plano, objetivos: atual.plano.objetivos.map((o) => (o.id === editado.id ? editado : o)) } }
+    : atual)
 
   // Aviso de sucesso e do plano que acabou de mudar: trocar de paciente o
   // apaga. So a troca de paciente, e nao toda recarga: gravar e recarregar em
@@ -78,7 +93,10 @@ export function Plano() {
 
   useEffect(() => {
     let ativo = true
-    setEstado({ tipo: 'carregando' })
+    // Recarga depois de salvar (item 7): o plano continua na tela, com o
+    // cartao aberto e a rolagem onde estavam. So outro paciente volta ao
+    // "carregando".
+    setEstado((atual) => (atual.tipo === 'pronto' && atual.plano.pacienteId === id ? atual : { tipo: 'carregando' }))
     servicos.planos.obterPorPaciente(id)
       .then((plano) => { if (ativo) setEstado({ tipo: 'pronto', plano }) })
       .catch((erro) => { if (ativo) setEstado({ tipo: 'erro', erro }) })
@@ -147,7 +165,7 @@ export function Plano() {
     && estado.erro.codigo === 'ACESSO_NEGADO'
 
   return (
-    <Tela area="cli" caminho={['Área clínica', 'Pacientes', 'Plano Terapêutico Individual']}>
+    <Tela area="cli" caminho={['Área clínica', PACIENTES, doPaciente(id, nomeDoPaciente), 'Plano Terapêutico Individual']}>
       {estado.tipo === 'carregando' && (
         <>
           <Titulo>Plano Terapêutico Individual</Titulo>
@@ -185,6 +203,7 @@ export function Plano() {
         const plano = estado.plano
         const s = SITUACAO[plano.status]
         const podeEnviar = plano.status === 'RASCUNHO' || plano.status === 'DEVOLVIDO'
+        const editavel = planoEditavel(plano.status)
         return (
           <>
             <div className="flex flex-wrap items-start justify-between gap-3">
@@ -193,6 +212,11 @@ export function Plano() {
               </Titulo>
               <div className="flex flex-wrap items-center gap-2">
                 <Etiqueta tom={s.tom} simbolo={s.simbolo}>{s.rotulo}</Etiqueta>
+                {editavel && !editandoDatas && (
+                  <Botao id="btn-editar-datas" area="cli" variante="secundaria" onClick={() => { setAviso(null); setEditandoDatas(true) }}>
+                    Editar as datas
+                  </Botao>
+                )}
                 {/* Uma alternancia para a tela inteira, nao um botao por objetivo. */}
                 <Botao area="cli" variante="secundaria" aria-pressed={acessivel}
                   onClick={() => setAcessivel((v) => !v)}>
@@ -200,6 +224,19 @@ export function Plano() {
                 </Botao>
               </div>
             </div>
+
+            {editavel && editandoDatas && (
+              <EditarDatas
+                plano={plano}
+                aoSalvar={(editado) => {
+                  trocarPlano(editado)
+                  setEditandoDatas(false)
+                  setAviso('Datas do plano salvas. A versão anterior fica no registro de acessos.')
+                  devolverFoco('btn-editar-datas')
+                }}
+                aoCancelar={() => { setEditandoDatas(false); devolverFoco('btn-editar-datas') }}
+              />
+            )}
 
             {/* O retorno da coordenacao vem ANTES dos objetivos: no rodape, o
                 terapeuta reenvia sem corrigir. */}
@@ -244,6 +281,26 @@ export function Plano() {
                             Critério: {o.criterio.percentualMinimo}% em {o.criterio.sessoesConsecutivas}{' '}
                             {o.criterio.sessoesConsecutivas === 1 ? 'sessão consecutiva' : 'sessões consecutivas'}
                           </p>
+                          {editavel && editandoObjetivo !== o.id && (
+                            <p className="mt-2">
+                              <Botao id={`btn-editar-${o.id}`} area="cli" variante="secundaria"
+                                onClick={() => { setAviso(null); setEditandoObjetivo(o.id) }}>
+                                Editar o objetivo
+                              </Botao>
+                            </p>
+                          )}
+                          {editavel && editandoObjetivo === o.id && (
+                            <EditarObjetivo
+                              objetivo={o}
+                              aoSalvar={(editado) => {
+                                trocarObjetivo(editado)
+                                setEditandoObjetivo(null)
+                                setAviso('Objetivo salvo. A versão anterior fica no registro de acessos.')
+                                devolverFoco(`btn-editar-${o.id}`)
+                              }}
+                              aoCancelar={() => { setEditandoObjetivo(null); devolverFoco(`btn-editar-${o.id}`) }}
+                            />
+                          )}
                           <CartoesDoObjetivo objetivoId={o.id} />
                         </Cartao>
                       </li>

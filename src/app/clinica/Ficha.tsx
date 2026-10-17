@@ -11,6 +11,7 @@ import { EstadoCarregando } from '../../ui/EstadoCarregando'
 import { EstadoErro } from '../../ui/EstadoErro'
 import { Paginacao } from '../../ui/Paginacao'
 import { RedeDeApoio } from './RedeDeApoio'
+import { PACIENTES } from './caminho'
 import { descricaoNivelSuporte, ehPreliminar } from '@sinctea/compartilhado/dominio/regras'
 import { emData, emDataCivil } from '@sinctea/compartilhado/dominio/datas'
 import {
@@ -82,7 +83,8 @@ function EventosComportamentais({ pacienteId, primeiroNome }: {
 
   useEffect(() => {
     let ativo = true
-    setEstado({ tipo: 'carregando' })
+    // Depois da leitura clinica, a mesma pagina continua na tela enquanto se atualiza.
+    setEstado((atual) => (atual.tipo === 'pronto' && atual.dados.pagina === pagina ? atual : { tipo: 'carregando' }))
     const desde = new Date(Date.now() - DIAS_RECENTES * 86_400_000).toISOString()
     servicos.ocorrencias.listarPorPaciente(pacienteId, { desde, pagina, porPagina: EVENTOS_POR_PAGINA })
       .then((dados) => { if (ativo) setEstado({ tipo: 'pronto', dados }) })
@@ -308,7 +310,7 @@ export function Ficha() {
     && estado.erro.codigo === 'ACESSO_NEGADO'
 
   return (
-    <Tela area="cli" caminho={['Área clínica', 'Pacientes', nome]}>
+    <Tela area="cli" caminho={['Área clínica', PACIENTES, nome]}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Titulo sub="Identificação, rede de apoio, equipe e vínculo escolar">{nome}</Titulo>
         <Link to="/app/clinica/pacientes" className="min-h-11 items-center font-bold text-cli-ink underline">

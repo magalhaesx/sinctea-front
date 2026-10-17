@@ -80,7 +80,7 @@ export function CartaoEstrategias() {
       area="esc"
       nome={usuario?.nome}
       papel={estado.tipo === 'pronto' ? `${estado.cartao.turma} · ${estado.cartao.turno}` : undefined}
-      caminho={['Área da escola', 'Meus alunos', estado.tipo === 'pronto' ? estado.cartao.nome : 'Cartão de estratégias']}
+      caminho={['Área da escola', { rotulo: 'Meus alunos', para: '/app/escola' }, estado.tipo === 'pronto' ? estado.cartao.nome : 'Cartão de estratégias']}
       estreito
     >
       <Titulo sub="Orientações práticas para o dia a dia em sala. Não é diagnóstico nem laudo.">

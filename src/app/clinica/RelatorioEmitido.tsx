@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { Tela } from '../LayoutApp'
+import { PACIENTES, doPaciente } from './caminho'
 import { Aviso } from '../../ui/Aviso'
 import { Botao } from '../../ui/Botao'
 import { Titulo } from '../../ui/Titulo'
@@ -67,7 +68,7 @@ export function RelatorioEmitido() {
     && estado.erro.codigo === 'ACESSO_NEGADO'
 
   return (
-    <Tela area="cli" caminho={['Área clínica', 'Pacientes', 'Relatório emitido']}>
+    <Tela area="cli" caminho={['Área clínica', PACIENTES, doPaciente(id, null), { rotulo: 'Relatório de evolução', para: `/app/clinica/pacientes/${id}/relatorio` }, 'Relatório emitido']}>
       <div className="nao-imprimir flex flex-col gap-4">
         <Titulo sub="Documento emitido. Não se regenera: é esta cópia que a família ou o outro profissional recebeu">
           Relatório de evolução

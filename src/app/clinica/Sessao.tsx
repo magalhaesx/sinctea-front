@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { Tela } from '../LayoutApp'
+import { PACIENTES, doPaciente, usarNomeDoPaciente } from './caminho'
 import { dataIsoParaLocal } from '@sinctea/compartilhado/dominio/datas'
 import { Aviso } from '../../ui/Aviso'
 import { Botao, BotaoLink } from '../../ui/Botao'
@@ -62,6 +63,7 @@ const hora = (iso: string) =>
 
 export function RegistroSessao() {
   const { id = '' } = useParams()
+  const nomeDoPaciente = usarNomeDoPaciente(id)
   const [estado, setEstado] = useState<Estado>({ tipo: 'carregando' })
   const [tentativa, setTentativa] = useState(0)
   const [objetivoId, setObjetivoId] = useState('')
@@ -193,7 +195,7 @@ export function RegistroSessao() {
     && estado.erro.codigo === 'ACESSO_NEGADO'
 
   return (
-    <Tela area="cli" caminho={['Área clínica', 'Pacientes', 'Registro de sessão']}>
+    <Tela area="cli" caminho={['Área clínica', PACIENTES, doPaciente(id, nomeDoPaciente), 'Registro de sessão']}>
       {estado.tipo === 'carregando' && (
         <>
           <Titulo>Registro de sessão</Titulo>

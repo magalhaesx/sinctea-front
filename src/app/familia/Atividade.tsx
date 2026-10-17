@@ -112,7 +112,7 @@ export function Atividade() {
       papel={estado.tipo === 'pronto'
         ? `Sugerida pela equipe em ${porExtenso(estado.atividade.prescritaEm)}`
         : undefined}
-      caminho={['Início', estado.tipo === 'pronto' ? estado.atividade.titulo : 'Atividade']}
+      caminho={[{ rotulo: 'Início', para: '/app/familia' }, estado.tipo === 'pronto' ? estado.atividade.titulo : 'Atividade']}
       estreito
     >
       {/* Fora do bloco "pronto": salvar recarrega a tela, e a regiao viva
