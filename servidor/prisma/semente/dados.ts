@@ -364,6 +364,8 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
       local: 'Clínica · sala 2',
       situacao: 'ENCERRADA',
       statusSync: 'SINCRONIZADO',
+      // Dado de teste: na tela, a evolucao e sempre texto do profissional.
+      evolucao: `Sessão ${numero}, registro fictício de teste. Trabalhados ${Object.keys(porObjetivo).length} objetivo(s) do plano.`,
       registros: Object.entries(porObjetivo).flatMap(([obj, p]) => tentativas(id, obj, p, inicio)),
     })
   }
@@ -405,7 +407,7 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
     sessoes.push({
       id, pacienteId, profissionalId, numero,
       inicioPrevistoEm: em(0, hora, minuto), inicio: null, fim: null,
-      local: 'Clínica · sala 2', situacao: 'AGENDADA', statusSync: 'SINCRONIZADO', registros: [],
+      local: 'Clínica · sala 2', situacao: 'AGENDADA', statusSync: 'SINCRONIZADO', evolucao: null, registros: [],
     })
   }
   agendada('s-hoje-1', 'p-001', 'u-prof-1', 8)

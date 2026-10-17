@@ -293,6 +293,10 @@ model Sessao {
   local            String
   situacao         SituacaoSessao
   statusSync       StatusSync
+  /// Registro documental da sessao (Resolucao CFP 001/2009), escrito pelo
+  /// profissional ao encerrar. CHECK na migracao: preenchida se, e somente
+  /// se, a sessao esta encerrada.
+  evolucao         String?
 
   paciente     Paciente                   @relation(fields: [pacienteId], references: [id])
   profissional Profissional               @relation(fields: [profissionalId], references: [usuarioId])

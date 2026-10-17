@@ -205,10 +205,10 @@ Atualizado em 16/10/2026, lendo o código — não a memória.
   simulada que aplica controle de acesso e auditoria; o cliente da API, que
   não aplica regra nenhuma. A versão publicada usa só a API, e o mock fica
   fora do pacote; no desenvolvimento, `VITE_API_URL` escolhe entre as duas
-- **375 testes em 27 arquivos, nos três pacotes**, rodados por um único
+- **386 testes em 28 arquivos, nos três pacotes**, rodados por um único
   `npm test` na raiz, sem passo manual. O principal ainda é
   `src/servicos/mock/regrasInviolaveis.test.ts`, que verifica as regras
-  invioláveis na camada de dados, e não na tela. Os 165 do servidor rodam contra
+  invioláveis na camada de dados, e não na tela. Os 175 do servidor rodam contra
   um PostgreSQL 17 de verdade
 - **As seis regras verificadas** em `docs/06`: para cada teste citado, a regra foi
   quebrada de propósito para confirmar que ele falha, e as quebras que não
@@ -315,8 +315,7 @@ em produção (o antigo passo B5) foi cancelada. No código, hoje:
   `servicos/index.ts` usa só a API, no `/api` do mesmo endereço, e o plugin
   `semMockNoPacote` do `vite.config.ts` deixa o mock fora do pacote. As telas
   fora do caminho principal — agenda, indicadores, auditoria, evolução,
-  atividades de casa, relatório e o registro de ocorrência na sessão — saem
-  das rotas e do menu (`src/app/caminhoPrincipal.ts`); a coordenação entra na
+  atividades de casa e relatório — saem das rotas e do menu (`src/app/caminhoPrincipal.ts`); a coordenação entra na
   fila de planos.
   Saíram também `entrarDemonstracao` da API, o bloco de demonstração da
   entrada e `/dev/estados`. O aviso do ambiente está na entrada e no rodapé.
@@ -333,6 +332,14 @@ em produção (o antigo passo B5) foi cancelada. No código, hoje:
   dias e sai da lista com a leitura; o evento continua na ficha. Encerrado o
   acesso da escola, o que ela relatou continua na clínica. Testes em
   `servidor/test/ocorrencias.test.ts`, quebras no `docs/06`
+- **Item 7, parte 1 — a evolução da sessão** (Resolução CFP 001/2009). Encerrar
+  exige a evolução, escrita pelo profissional e gravada como veio; o CHECK
+  `sessao_evolucao_so_encerrada` (migração `evolucao_da_sessao`, `NOT VALID`
+  para as sessões do primeiro ensaio) a quer preenchida se e só se a sessão
+  está encerrada. Ela aparece no histórico de sessões da ficha, só para a
+  equipe e a coordenação, e a trilha registra que foi escrita, sem o texto. O
+  registro ABC na sessão voltou à versão publicada. Testes em
+  `servidor/test/sessao.test.ts`
 - `npm run criar-administrador -w @sinctea/servidor -- .env.producao --nome
   "Nome Completo" --email voce@exemplo.com` cria o primeiro administrador:
   nome e e-mail vêm da linha de comando, e só a senha é pedida, escondida e duas
@@ -373,8 +380,8 @@ Não se corta, nem com pressa: as regras 1, 2, 3, 5 e 6 provadas por teste contr
 a API no caminho principal, o *trigger* da auditoria, o papel que não é dono e o
 argon2id.
 
-Depois de 19/10, sem data: indicadores, relatórios, atividades de casa, o
-registro de ocorrência na sessão, evolução, a tela de auditoria e a agenda; o
+Depois de 19/10, sem data: indicadores, relatórios, atividades de casa, a
+evolução por objetivo (tela 8), a tela de auditoria e a agenda; o
 envio de e-mail, com a recuperação de senha de responsável e professor; a remoção completa de `servicos/mock`; o offline reduzido ao registro de
 sessão (`docs/07`, seção 3A); e a Etapa 13, de 16/11 a 23/11 — artigo, slides,
 vídeo e ensaio.

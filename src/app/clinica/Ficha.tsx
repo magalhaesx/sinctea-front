@@ -15,7 +15,7 @@ import { descricaoNivelSuporte, ehPreliminar } from '@sinctea/compartilhado/domi
 import { emData, emDataCivil } from '@sinctea/compartilhado/dominio/datas'
 import {
   ErroServico, servicos, type OcorrenciaComportamental, type Origem, type Pagina,
-  type PacienteDetalhe, type SituacaoConsentimento, type SituacaoPlano,
+  type PacienteDetalhe, type Sessao, type SituacaoConsentimento, type SituacaoPlano,
 } from '../../servicos'
 
 /**
@@ -200,6 +200,92 @@ function EventosComportamentais({ pacienteId, primeiroNome }: {
   )
 }
 
+type EstadoSessoes =
+  | { tipo: 'carregando' }
+  | { tipo: 'erro'; erro: unknown }
+  | { tipo: 'pronto'; dados: Pagina<Sessao> }
+
+const SESSOES_POR_PAGINA = 5
+
+/**
+ * Historico de sessoes, com a evolucao de cada uma (Resolucao CFP 001/2009).
+ * So a equipe do paciente e a coordenacao chegam a esta tela; a familia e a
+ * escola nao tem rota que leia sessao, e a API recusa (regra 3).
+ */
+function HistoricoDeSessoes({ pacienteId, equipe }: {
+  pacienteId: string
+  equipe: PacienteDetalhe['equipe']
+}) {
+  const [estado, setEstado] = useState<EstadoSessoes>({ tipo: 'carregando' })
+  const [pagina, setPagina] = useState(1)
+  const [tentativa, setTentativa] = useState(0)
+
+  useEffect(() => {
+    let ativo = true
+    setEstado({ tipo: 'carregando' })
+    servicos.sessoes.listarPorPaciente(pacienteId, { situacao: 'ENCERRADA', pagina, porPagina: SESSOES_POR_PAGINA })
+      .then((dados) => { if (ativo) setEstado({ tipo: 'pronto', dados }) })
+      .catch((erro) => { if (ativo) setEstado({ tipo: 'erro', erro }) })
+    return () => { ativo = false }
+  }, [pacienteId, pagina, tentativa])
+
+  const quem = (profissionalId: string) => {
+    const membro = equipe.find((m) => m.id === profissionalId)
+    return membro ? `${membro.nome}${membro.especialidade ? ` · ${membro.especialidade}` : ''}` : 'Profissional que saiu da equipe'
+  }
+
+  return (
+    <Cartao>
+      <h2 className="text-lg font-bold">Histórico de sessões</h2>
+      <p className="mt-1 text-sm text-tinta2">A evolução de cada sessão encerrada, da mais recente para a mais antiga.</p>
+
+      {estado.tipo === 'carregando' && (
+        <div className="mt-3"><EstadoCarregando forma="lista" linhas={3} rotulo="Carregando o histórico de sessões" /></div>
+      )}
+
+      {estado.tipo === 'erro' && (
+        <div className="mt-3">
+          <EstadoErro erro={estado.erro} oQue="o histórico de sessões" nivel={3} aoTentarDeNovo={() => setTentativa((t) => t + 1)} />
+        </div>
+      )}
+
+      {estado.tipo === 'pronto' && (
+        estado.dados.total === 0 ? (
+          // Sem EstadoVazio: "Iniciar sessao" ja esta nas acoes desta tela.
+          <p className="mt-3 text-tinta2">Nenhuma sessão encerrada ainda.</p>
+        ) : (
+          <>
+            <ul className="mt-3 flex flex-col gap-2.5">
+              {estado.dados.itens.map((s) => (
+                <li key={s.id} className="rounded-lg border border-linha bg-sup px-3 py-2.5">
+                  <h3 className="font-bold">
+                    Sessão {s.numero} · {emData(s.inicio ?? s.inicioPrevistoEm)}
+                  </h3>
+                  <p className="text-sm text-tinta2">{quem(s.profissionalId)} · {s.registros.length} {s.registros.length === 1 ? 'registro' : 'registros'}</p>
+                  {s.evolucao
+                    ? <p className="mt-2 whitespace-pre-line">{s.evolucao}</p>
+                    // So as sessoes encerradas antes de a evolucao ser exigida.
+                    : <p className="mt-2 text-sm text-tinta2">Sessão encerrada antes de a evolução ser exigida: sem evolução registrada.</p>}
+                </li>
+              ))}
+            </ul>
+            <div className="mt-3">
+              <Paginacao
+                pagina={estado.dados.pagina}
+                porPagina={estado.dados.porPagina}
+                total={estado.dados.total}
+                aoMudar={setPagina}
+                rotulo="Páginas do histórico de sessões"
+                nomeItens={{ singular: 'sessão', plural: 'sessões' }}
+              />
+            </div>
+          </>
+        )
+      )}
+    </Cartao>
+  )
+}
+
 export function Ficha() {
   const { id = '' } = useParams()
   const [estado, setEstado] = useState<Estado>({ tipo: 'carregando' })
@@ -321,6 +407,8 @@ export function Ficha() {
                 <dd>{p.ultimaSessaoEm ? emData(p.ultimaSessaoEm) : 'Nenhuma sessão registrada'}</dd>
               </dl>
             </Cartao>
+
+            <HistoricoDeSessoes pacienteId={p.id} equipe={p.equipe} />
 
             <section aria-labelledby="h-acoes">
               <h2 id="h-acoes" className="mb-3 text-lg font-bold">Ações</h2>

@@ -277,7 +277,7 @@ export async function semear(
       data: dados.sessoes.map((s) => ({
         id: s.id, pacienteId: s.pacienteId, profissionalId: s.profissionalId, numero: s.numero,
         inicioPrevistoEm: instante(s.inicioPrevistoEm), inicio: talvez(s.inicio), fim: talvez(s.fim),
-        local: s.local, situacao: s.situacao, statusSync: s.statusSync,
+        local: s.local, situacao: s.situacao, statusSync: s.statusSync, evolucao: s.evolucao,
       })),
     })
     await tx.registroAtividade.createMany({

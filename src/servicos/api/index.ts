@@ -69,7 +69,7 @@ export const servicosApi: Servicos = {
       r('POST', `/sessoes/${id(sessaoId)}/registros`, { objetivoId, resultado }),
     desfazerUltimoRegistro: (sessaoId) => r('DELETE', `/sessoes/${id(sessaoId)}/registros/ultimo`),
     pausar: (sessaoId) => r('POST', `/sessoes/${id(sessaoId)}/pausa`),
-    encerrar: (sessaoId) => r('POST', `/sessoes/${id(sessaoId)}/encerramento`),
+    encerrar: (sessaoId, evolucao) => r('POST', `/sessoes/${id(sessaoId)}/encerramento`, { evolucao }),
   },
 
   ocorrencias: {

@@ -184,7 +184,7 @@ describe('camada simulada', () => {
     const depois = await chamar(s.sessoes.desfazerUltimoRegistro(sessao.id))
     expect([contar(depois, 'o-006'), contar(depois, 'o-007')]).toEqual([2, 0])
 
-    await chamar(s.sessoes.encerrar(sessao.id))
+    await chamar(s.sessoes.encerrar(sessao.id, 'Evolução de teste, escrita pelo profissional.'))
   })
 
   it('confirmar dominio exige criterio atingido, e e o unico caminho para DOMINADO', async () => {
@@ -261,7 +261,7 @@ describe('camada simulada', () => {
     }))
     // Quem registrou e o profissional: nao ha o que ler depois.
     expect(ocorrencia.leituraClinicaEm).not.toBeNull()
-    await chamar(s.sessoes.encerrar(sessao.id))
+    await chamar(s.sessoes.encerrar(sessao.id, 'Evolução de teste, escrita pelo profissional.'))
   })
 
   it('so quem alcanca o paciente confirma dominio ou registra leitura', async () => {
@@ -1110,7 +1110,7 @@ describe('painel da coordenacao — conta e aponta', () => {
       id, pacienteId: 'p-001', profissionalId: 'u-prof-1', numero: 900,
       inicioPrevistoEm: inicio.toISOString(), inicio: inicio.toISOString(),
       fim: inicio.toISOString(), local: 'Sala', situacao: 'ENCERRADA',
-      statusSync: 'SINCRONIZADO', registros: [],
+      statusSync: 'SINCRONIZADO', evolucao: 'Evolução de teste.', registros: [],
     })
     const ocorrencia = (id: string, ocorridaEm: Date): OcorrenciaComportamental => ({
       id, pacienteId: 'p-001', origem: 'ESCOLA', ocorridaEm: ocorridaEm.toISOString(),

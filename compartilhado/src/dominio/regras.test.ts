@@ -47,7 +47,7 @@ function sessao(numero: number, independentes: number, total = 10, situacao: Ses
   return {
     id: `s${numero}`, pacienteId: 'p1', profissionalId: 'u1', numero,
     inicioPrevistoEm: dias(-30 + numero), inicio: dias(-30 + numero), fim: dias(-30 + numero),
-    local: 'Sala 2', situacao, statusSync: 'SINCRONIZADO', registros,
+    local: 'Sala 2', situacao, statusSync: 'SINCRONIZADO', evolucao: situacao === 'ENCERRADA' ? 'Evolução de teste.' : null, registros,
   }
 }
 

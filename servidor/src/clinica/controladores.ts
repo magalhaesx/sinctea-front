@@ -308,9 +308,19 @@ export class ControladorSessoes {
   @Auditar({
     entidade: 'Sessao', acao: 'ALTERACAO', idEntidade: deParametro,
     pacienteId: (_q, r) => (r as Sessao).pacienteId,
-    detalhe: (_q, r) => `Sessão encerrada com ${(r as Sessao).registros.length} registros.`,
+    // A evolucao fica na sessao, e nao na trilha: a trilha diz que ela foi escrita, nao o que diz.
+    detalhe: (_q, r) => `Sessão encerrada com ${(r as Sessao).registros.length} registros e a evolução.`,
   })
-  encerrar(@Req() req: RequisicaoHttp, @Param('id') id: string) {
-    return this.sessoes.encerrar(sessaoDe(req), id)
+  encerrar(@Req() req: RequisicaoHttp, @Param('id') id: string, @Body() corpo: { evolucao?: unknown } | undefined) {
+    return this.sessoes.encerrar(sessaoDe(req), id, corpo?.evolucao)
+  }
+
+  @Post(':id/ocorrencias')
+  @Auditar({
+    entidade: 'OcorrenciaComportamental', acao: 'CRIACAO', idEntidade: (_q, r) => (r as OcorrenciaComportamental).id,
+    detalhe: 'Ocorrência registrada na sessão, com a leitura clínica de quem registrou.',
+  })
+  async registrarOcorrencia(@Req() req: RequisicaoHttp, @Param('id') id: string, @Body() corpo: Record<string, unknown> | undefined) {
+    return doPaciente(req, await this.sessoes.registrarOcorrencia(sessaoDe(req), id, corpo ?? {}))
   }
 }

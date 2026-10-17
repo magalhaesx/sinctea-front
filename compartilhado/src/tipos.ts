@@ -366,6 +366,13 @@ export interface Sessao {
   local: string
   situacao: SituacaoSessao
   statusSync: StatusSync
+  /**
+   * O registro documental da sessao (Resolucao CFP 001/2009), escrito pelo
+   * profissional ao encerrar — nunca gerado nem pre-preenchido, como a redacao
+   * acessivel do objetivo. Nulo enquanto a sessao esta aberta. So a equipe do
+   * paciente e a coordenacao o leem: a familia e a escola, nunca (regra 3).
+   */
+  evolucao: string | null
   registros: RegistroAtividade[]
 }
 

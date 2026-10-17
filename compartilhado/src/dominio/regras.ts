@@ -22,6 +22,8 @@ export const VALIDADE_PRIMEIRO_ACESSO_HORAS = 72
 /** Senha: ao menos 8 caracteres, como no aceite do convite; no maximo 128, para o hash ter custo limitado. */
 export const SENHA_MINIMO = 8
 export const SENHA_MAXIMO = 128
+/** Evolucao da sessao: o registro documental tem limite, para nao virar deposito de arquivo. */
+export const EVOLUCAO_MAXIMO = 10_000
 /** Janela para o professor corrigir a ocorrencia registrada (tela 19). */
 export const JANELA_CORRECAO_OCORRENCIA_MINUTOS = 30
 /** Suficiencia para comparar contextos na evolucao (tela 8). */
@@ -334,6 +336,17 @@ export function validarCartao(dados: { tituloSimples: string; oQueFazer: string[
   if (itensPreenchidos(dados.oQueEvitar).length === 0) erros.oQueEvitar = 'Escreva ao menos uma coisa a evitar.'
   if (!dados.sinalAlerta.trim()) erros.sinalAlerta = 'Escreva o sinal de que a criança precisa de apoio.'
   return erros
+}
+
+/**
+ * Encerrar a sessao exige a evolucao (Resolucao CFP 001/2009, registro
+ * documental). E texto do profissional: o sistema nunca a gera nem a
+ * pre-preenche, no mesmo espirito da regra 4. Erro em palavras, ou nulo.
+ */
+export function erroDaEvolucao(evolucao: string): string | null {
+  if (!evolucao.trim()) return 'Escreva a evolução da sessão antes de encerrar.'
+  if (evolucao.length > EVOLUCAO_MAXIMO) return `A evolução pode ter no máximo ${EVOLUCAO_MAXIMO.toLocaleString('pt-BR')} caracteres.`
+  return null
 }
 
 // ---------------------------------------------------------------- Conta e senha

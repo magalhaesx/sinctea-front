@@ -299,7 +299,7 @@ describe('sessao, registro e dominio', () => {
     expect(desfeita.corpo.registros.map((r: { resultado: string }) => r.resultado)).toEqual(['INDEPENDENTE'])
     expect((await api.pedir('POST', `/sessoes/${id}/pausa`, { cookie: c.ana })).corpo.situacao).toBe('PAUSADA')
     expect((await api.pedir('POST', `/sessoes/${id}/registros`, { cookie: c.ana, corpo: { objetivoId, resultado: 'INDEPENDENTE' } })).status).toBe(409)
-    expect((await api.pedir('POST', `/sessoes/${id}/encerramento`, { cookie: c.ana })).corpo.situacao).toBe('ENCERRADA')
+    expect((await api.pedir('POST', `/sessoes/${id}/encerramento`, { cookie: c.ana, corpo: { evolucao: 'Evolução de teste.' } })).corpo.situacao).toBe('ENCERRADA')
 
     // Cada tentativa gravada e uma escrita de dado do paciente: as duas na trilha.
     // A recusada, na sessao pausada, nao gravou nada.
@@ -307,7 +307,7 @@ describe('sessao, registro e dominio', () => {
   })
 
   it('encerrar atualiza o medidor do objetivo, e a primeira sessao tira o objetivo de "nao iniciado"', async () => {
-    await api.pedir('POST', `/sessoes/${await sessaoCom(['INDEPENDENTE', 'AJUDA_GESTUAL', 'INDEPENDENTE', 'INDEPENDENTE'])}/encerramento`, { cookie: c.ana })
+    await api.pedir('POST', `/sessoes/${await sessaoCom(['INDEPENDENTE', 'AJUDA_GESTUAL', 'INDEPENDENTE', 'INDEPENDENTE'])}/encerramento`, { cookie: c.ana, corpo: { evolucao: 'Evolução de teste.' } })
     const plano = await api.pedir('GET', `/pacientes/${p1}/plano`, { cookie: c.ana })
     expect(plano.corpo.objetivos[0]).toMatchObject({ percentualAtual: 75, status: 'EM_AQUISICAO' })
   })
@@ -315,7 +315,7 @@ describe('sessao, registro e dominio', () => {
   it('dominio so com o criterio atingido nas sessoes encerradas; uma vez so', async () => {
     expect((await api.pedir('POST', `/objetivos/${objetivoId}/dominio`, { cookie: c.ana })).status).toBe(409)
     for (let i = 0; i < 2; i++) {
-      await api.pedir('POST', `/sessoes/${await sessaoCom(['INDEPENDENTE', 'INDEPENDENTE', 'INDEPENDENTE', 'INDEPENDENTE', 'AJUDA_GESTUAL'])}/encerramento`, { cookie: c.ana })
+      await api.pedir('POST', `/sessoes/${await sessaoCom(['INDEPENDENTE', 'INDEPENDENTE', 'INDEPENDENTE', 'INDEPENDENTE', 'AJUDA_GESTUAL'])}/encerramento`, { cookie: c.ana, corpo: { evolucao: 'Evolução de teste.' } })
     }
     const r = await api.pedir('POST', `/objetivos/${objetivoId}/dominio`, { cookie: c.ana })
     expect(r.status).toBe(200)

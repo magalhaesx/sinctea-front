@@ -45,7 +45,7 @@ export function paraSessao(s: LinhaSessao & { registros: LinhaRegistro[] }): Ses
   return {
     id: s.id, pacienteId: s.pacienteId, profissionalId: s.profissionalId, numero: s.numero,
     inicioPrevistoEm: s.inicioPrevistoEm.toISOString(), inicio: instante(s.inicio), fim: instante(s.fim),
-    local: s.local, situacao: s.situacao, statusSync: s.statusSync,
+    local: s.local, situacao: s.situacao, statusSync: s.statusSync, evolucao: s.evolucao,
     registros: [...s.registros].sort((a, b) => a.ordem - b.ordem).map(paraRegistro),
   }
 }

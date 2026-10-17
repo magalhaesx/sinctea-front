@@ -4,7 +4,7 @@ import {
   type PlanoTerapeutico, type Sessao,
 } from '@sinctea/compartilhado'
 import {
-  ehPreliminar, itensPreenchidos, objetivoAtingiuCriterio, validarCartao, validarDevolucaoPlano,
+  ehPreliminar, erroDaEvolucao, itensPreenchidos, objetivoAtingiuCriterio, validarCartao, validarDevolucaoPlano,
   validarNovoObjetivo, validarNovoPlano,
 } from '@sinctea/compartilhado/dominio/regras'
 import { inicioDoDia } from '@sinctea/compartilhado/dominio/datas'
@@ -312,6 +312,7 @@ export const sessoesMock: ServicoSessao = {
       situacao: 'EM_ANDAMENTO',
       // Idem: sessao aberta agora nasce pendente de sincronizacao.
       statusSync: 'PENDENTE',
+      evolucao: null,
       registros: [],
     }
     banco.sessoes.push(nova)
@@ -351,11 +352,15 @@ export const sessoesMock: ServicoSessao = {
     return sessao
   }),
 
-  encerrar: (sessaoId) => responder(() => {
+  encerrar: (sessaoId, evolucao) => responder(() => {
     const sessao = exigirConducao(sessaoId)
     if (sessao.situacao !== 'EM_ANDAMENTO' && sessao.situacao !== 'PAUSADA') {
       throw new ErroServico('CONFLITO', 'A sessão não está aberta.')
     }
+    // A mesma regra do servidor: a evolucao e do profissional, e sem ela nao se encerra.
+    const erro = erroDaEvolucao(evolucao)
+    if (erro) throw new ErroServico('VALIDACAO', erro, { evolucao: erro })
+    sessao.evolucao = evolucao
     sessao.situacao = 'ENCERRADA'
     sessao.fim = relogio.agora().toISOString()
     auditar(exigirSessao(), { acao: 'ALTERACAO', entidade: 'Sessao', idEntidade: sessao.id, pacienteId: sessao.pacienteId, detalhe: `Sessão encerrada com ${sessao.registros.length} registros.` })

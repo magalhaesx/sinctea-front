@@ -1,15 +1,16 @@
 import { Injectable } from '@nestjs/common'
 import {
-  ErroServico, type FiltroSessao, type Pagina, type RegistroAtividade, type Resultado, type Sessao,
+  ErroServico, type FiltroSessao, type OcorrenciaComportamental, type Pagina, type RegistroAtividade, type Resultado,
+  type Sessao,
 } from '@sinctea/compartilhado'
-import { percentualIndependente } from '@sinctea/compartilhado/dominio/regras'
+import { erroDaEvolucao, percentualIndependente } from '@sinctea/compartilhado/dominio/regras'
 import { Negacao } from '../acesso/negacao.js'
 import { ServicoBanco } from '../banco/servico-banco.js'
 import { paginar } from '../http/paginacao.js'
 import type { SessaoServidor } from '../http/tipos-http.js'
-import { exigirUuid } from '../http/validacao.js'
+import { exigirUuid, exigirValido } from '../http/validacao.js'
 import { exigirPacienteClinico } from './alcance.js'
-import { paraRegistro, paraSessao } from './mapeadores.js'
+import { paraOcorrencia, paraRegistro, paraSessao } from './mapeadores.js'
 import type { DoPaciente } from './servico-planos.js'
 
 const RESULTADOS: Resultado[] = ['INDEPENDENTE', 'AJUDA_GESTUAL', 'AJUDA_FISICA', 'SEM_RESPOSTA']
@@ -118,15 +119,46 @@ export class ServicoSessoesClinicas {
   }
 
   /**
-   * Encerra, e o objetivo trabalhado passa a mostrar o percentual de
-   * independencia desta sessao — o medidor da tela 6. O mock nunca atualizava
-   * o percentual; com o sistema vazio, ele ficaria em zero para sempre.
+   * Ocorrencia comportamental registrada na sessao (registro ABC), pelo
+   * profissional que a conduz. Quem registra ja e o profissional habilitado:
+   * a leitura clinica e esta, e o evento nao entra nos avisos.
    */
-  async encerrar(sessao: SessaoServidor, sessaoId: string): Promise<Sessao> {
+  async registrarOcorrencia(sessao: SessaoServidor, sessaoId: string, dados: Record<string, unknown>): Promise<DoPaciente<OcorrenciaComportamental>> {
+    const linha = await this.exigirConducao(sessao, sessaoId)
+    this.exigirEmAndamento(linha)
+    const texto = (valor: unknown) => (typeof valor === 'string' ? valor.trim() : '')
+    const conteudo = {
+      antecedente: texto(dados.antecedente), comportamento: texto(dados.comportamento),
+      consequencia: texto(dados.consequencia), intensidade: Number(dados.intensidade),
+    }
+    const erros: Record<string, string> = {}
+    if (!conteudo.antecedente) erros.antecedente = 'Descreva o que aconteceu antes.'
+    if (!conteudo.comportamento) erros.comportamento = 'Descreva o comportamento.'
+    if (!conteudo.consequencia) erros.consequencia = 'Descreva o que aconteceu depois.'
+    if (![1, 2, 3, 4, 5].includes(conteudo.intensidade)) erros.intensidade = 'Escolha a intensidade, de 1 a 5.'
+    exigirValido(erros)
+    const agora = new Date()
+    const ocorrencia = await this.banco.ocorrenciaComportamental.create({ data: {
+      pacienteId: linha.pacienteId, origem: 'CLINICA', ocorridaEm: agora, ...conteudo,
+      leituraClinicaEm: agora, sessaoId: linha.id, ocorrenciaEscolarId: null,
+    } })
+    return { resultado: paraOcorrencia(ocorrencia), pacienteId: linha.pacienteId }
+  }
+
+  /**
+   * Encerra com a evolucao do profissional (Resolucao CFP 001/2009), e o
+   * objetivo trabalhado passa a mostrar o percentual de independencia desta
+   * sessao — o medidor da tela 6. A evolucao e gravada como veio: o sistema
+   * nao a gera, nao a completa e nao a corrige.
+   */
+  async encerrar(sessao: SessaoServidor, sessaoId: string, evolucao: unknown): Promise<Sessao> {
     const linha = await this.exigirConducao(sessao, sessaoId)
     if (linha.situacao !== 'EM_ANDAMENTO' && linha.situacao !== 'PAUSADA') {
       throw new ErroServico('CONFLITO', 'A sessão não está aberta.')
     }
+    const texto = typeof evolucao === 'string' ? evolucao : ''
+    const erro = erroDaEvolucao(texto)
+    if (erro) throw new ErroServico('VALIDACAO', erro, { evolucao: erro })
     const registros = linha.registros.map(paraRegistro)
     const trabalhados = [...new Set(registros.map((r) => r.objetivoId))]
     const encerrada = await this.banco.$transaction(async (tx) => {
@@ -137,7 +169,7 @@ export class ServicoSessoesClinicas {
         // Primeira sessao em que o objetivo foi trabalhado: deixa de ser "nao iniciado".
         await tx.objetivo.updateMany({ where: { id: objetivoId, status: 'NAO_INICIADO' }, data: { status: 'EM_AQUISICAO' } })
       }
-      return tx.sessao.update({ where: { id: linha.id }, data: { situacao: 'ENCERRADA', fim: new Date() }, include: { registros: true } })
+      return tx.sessao.update({ where: { id: linha.id }, data: { situacao: 'ENCERRADA', fim: new Date(), evolucao: texto }, include: { registros: true } })
     })
     return paraSessao(encerrada)
   }

@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { Tela } from '../LayoutApp'
-import { SO_CAMINHO_PRINCIPAL } from '../caminhoPrincipal'
 import { dataIsoParaLocal } from '@sinctea/compartilhado/dominio/datas'
 import { Aviso } from '../../ui/Aviso'
 import { Botao, BotaoLink } from '../../ui/Botao'
@@ -12,7 +11,7 @@ import { Medidor } from '../../ui/Medidor'
 import { Titulo } from '../../ui/Titulo'
 import { EstadoCarregando } from '../../ui/EstadoCarregando'
 import { EstadoErro } from '../../ui/EstadoErro'
-import { percentualIndependente } from '@sinctea/compartilhado/dominio/regras'
+import { EVOLUCAO_MAXIMO, erroDaEvolucao, percentualIndependente } from '@sinctea/compartilhado/dominio/regras'
 import {
   ErroServico, servicos, type Intensidade, type Objetivo, type Resultado, type Sessao,
 } from '../../servicos'
@@ -30,6 +29,10 @@ import {
  * A fila de sincronizacao — IndexedDB e chave de idempotencia gerada no
  * aparelho — esta prevista depois da Etapa 11 (docs/07, secao 3A): ate la,
  * sem conexao o toque nao e gravado, e a tela diz isso.
+ *
+ * ENCERRAR EXIGE A EVOLUCAO (Resolucao CFP 001/2009, registro documental). O
+ * campo abre vazio e assim fica ate o profissional escrever: nada aqui gera,
+ * sugere ou pre-preenche o texto, no mesmo espirito da regra 4.
  */
 
 const RESPOSTAS: { valor: Resultado; rotulo: string }[] = [
@@ -67,7 +70,17 @@ export function RegistroSessao() {
   const [aviso, setAviso] = useState<string | null>(null)
   const [ocupado, setOcupado] = useState(false)
   const [online, setOnline] = useState(() => navigator.onLine)
+  /** A segunda etapa do encerramento: a evolucao, escrita pelo profissional. */
+  const [encerrando, setEncerrando] = useState(false)
+  const [evolucao, setEvolucao] = useState('')
   const primeiraResposta = useRef<HTMLButtonElement>(null)
+  const campoEvolucao = useRef<HTMLTextAreaElement>(null)
+  const botaoEncerrar = useRef<HTMLButtonElement>(null)
+
+  // Aberta a etapa da evolucao, o foco vai para o campo; fechada, volta ao botao.
+  useEffect(() => {
+    if (encerrando) campoEvolucao.current?.focus()
+  }, [encerrando])
 
   useEffect(() => {
     const mudou = () => setOnline(navigator.onLine)
@@ -138,11 +151,20 @@ export function RegistroSessao() {
     setAviso('Sessão pausada. Os registros continuam guardados.')
   })
 
-  const encerrar = (sessaoId: string) => comErro(async () => {
-    const sessao = await servicos.sessoes.encerrar(sessaoId)
-    atualizarSessao(sessao)
-    setAviso(`Sessão encerrada com ${sessao.registros.length} ${sessao.registros.length === 1 ? 'registro' : 'registros'}.`)
-  })
+  const encerrar = (evento: FormEvent, sessaoId: string) => {
+    evento.preventDefault()
+    // A mesma regra do servidor, antes de ir a ele: sem evolucao, nao se encerra.
+    const erro = erroDaEvolucao(evolucao)
+    if (erro) { setErros({ evolucao: erro }); campoEvolucao.current?.focus(); return }
+    void comErro(async () => {
+      setErros({})
+      const sessao = await servicos.sessoes.encerrar(sessaoId, evolucao)
+      atualizarSessao(sessao)
+      setEncerrando(false)
+      setEvolucao('')
+      setAviso(`Sessão encerrada com ${sessao.registros.length} ${sessao.registros.length === 1 ? 'registro' : 'registros'} e a evolução. Ela aparece no histórico de sessões da ficha.`)
+    })
+  }
 
   const registrarOcorrencia = (evento: FormEvent, sessaoId: string) => {
     evento.preventDefault()
@@ -351,9 +373,7 @@ export function RegistroSessao() {
                   )}
                 </Cartao>
 
-                {/* Ocorrencias comportamentais: fora do caminho principal ate o
-                    servico chegar ao servidor (app/caminhoPrincipal.ts). */}
-                {aberta && !SO_CAMINHO_PRINCIPAL && (
+                {aberta && (
                   <Cartao>
                     <h2 className="text-base font-bold">Ocorrência comportamental</h2>
                     <p className="mt-1 text-sm text-tinta2">
@@ -407,13 +427,43 @@ export function RegistroSessao() {
                   </Cartao>
                 )}
 
-                {aberta && (
+                {aberta && !encerrando && (
                   <div className="flex flex-wrap gap-2">
                     <Botao area="cli" variante="secundaria" disabled={ocupado}
                       onClick={() => void pausar(sessao.id)}>Pausar a sessão</Botao>
-                    <Botao area="cli" disabled={ocupado}
-                      onClick={() => void encerrar(sessao.id)}>Encerrar a sessão</Botao>
+                    <Botao ref={botaoEncerrar} area="cli" disabled={ocupado}
+                      onClick={() => { setErros({}); setEncerrando(true) }}>Encerrar a sessão</Botao>
                   </div>
+                )}
+
+                {aberta && encerrando && (
+                  <Cartao>
+                    <h2 className="text-lg font-bold">Evolução da sessão</h2>
+                    <p className="mt-1 text-sm text-tinta2">
+                      O registro documental desta sessão, com as suas palavras. Ele fica no histórico
+                      de sessões da ficha, só para a equipe e a coordenação — a família e a escola
+                      nunca o veem.
+                    </p>
+                    <form className="mt-3 flex flex-col gap-3" onSubmit={(e) => encerrar(e, sessao.id)} noValidate>
+                      <Campo id="evolucao" rotulo="Evolução" dica={`O que foi trabalhado, como a pessoa respondeu e o que fica para a próxima sessão. Até ${EVOLUCAO_MAXIMO.toLocaleString('pt-BR')} caracteres.`}>
+                        <textarea id="evolucao" ref={campoEvolucao} rows={6} maxLength={EVOLUCAO_MAXIMO}
+                          className={`${campo} min-h-40`} value={evolucao}
+                          onChange={(e) => setEvolucao(e.target.value)}
+                          aria-describedby={erros.evolucao ? 'evolucao-dica evolucao-erro' : 'evolucao-dica'}
+                          aria-invalid={erros.evolucao ? true : undefined} />
+                        <Erro chave="evolucao" />
+                      </Campo>
+                      <div className="flex flex-wrap gap-2">
+                        <Botao area="cli" type="submit" disabled={ocupado}>
+                          {ocupado ? 'Encerrando…' : 'Encerrar com esta evolução'}
+                        </Botao>
+                        <Botao area="cli" variante="secundaria" disabled={ocupado}
+                          onClick={() => { setEncerrando(false); setErros({}); setTimeout(() => botaoEncerrar.current?.focus()) }}>
+                          Voltar à sessão
+                        </Botao>
+                      </div>
+                    </form>
+                  </Cartao>
                 )}
               </>
             )}

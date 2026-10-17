@@ -113,7 +113,8 @@ export interface ServicoSessao {
   registrarAtividade(sessaoId: string, objetivoId: string, resultado: Resultado): Promise<RegistroAtividade>
   desfazerUltimoRegistro(sessaoId: string): Promise<Sessao>
   pausar(sessaoId: string): Promise<Sessao>
-  encerrar(sessaoId: string): Promise<Sessao>
+  /** Encerrar exige a evolucao da sessao, escrita pelo profissional (validarEvolucao). */
+  encerrar(sessaoId: string, evolucao: string): Promise<Sessao>
 }
 
 export interface ServicoOcorrencia {
