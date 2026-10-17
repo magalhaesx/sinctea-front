@@ -205,10 +205,10 @@ Atualizado em 16/10/2026, lendo o código — não a memória.
   simulada que aplica controle de acesso e auditoria; o cliente da API, que
   não aplica regra nenhuma. A versão publicada usa só a API, e o mock fica
   fora do pacote; no desenvolvimento, `VITE_API_URL` escolhe entre as duas
-- **354 testes em 25 arquivos, nos três pacotes**, rodados por um único
+- **360 testes em 26 arquivos, nos três pacotes**, rodados por um único
   `npm test` na raiz, sem passo manual. O principal ainda é
   `src/servicos/mock/regrasInviolaveis.test.ts`, que verifica as regras
-  invioláveis na camada de dados, e não na tela. Os 144 do servidor rodam contra
+  invioláveis na camada de dados, e não na tela. Os 150 do servidor rodam contra
   um PostgreSQL 17 de verdade
 - **As seis regras verificadas** em `docs/06`: para cada teste citado, a regra foi
   quebrada de propósito para confirmar que ele falha, e as quebras que não
@@ -336,6 +336,13 @@ em produção (o antigo passo B5) foi cancelada. No código, hoje:
 - `npm run criar-administrador -w @sinctea/servidor -- .env.producao` cria o
   primeiro administrador: pede nome, e-mail e senha, sem mostrar a senha, e
   recusa se já houver administrador
+- Depois do ensaio, o banco volta a ficar vazio:
+  `npm run zerar-banco -w @sinctea/servidor -- .env.dono`, com a URL direta do
+  dono num arquivo fora do git, apaga o esquema, aplica as migrações sem semente
+  e devolve ao `sinctea_app` os privilégios do modelo, sem recriar o papel. Pede
+  que se digite o nome do banco. `npm run conferir-papel -w @sinctea/servidor --
+  .env.producao` é a conferência do B3, só leitura, como o `sinctea_app`. Os dois
+  estão provados em `servidor/test/zerar.test.ts`; o zerar ainda não rodou no Neon
 
 **Próximo, pela seção 0 do `docs/07`**
 

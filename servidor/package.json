@@ -14,6 +14,8 @@
     "start": "node dist/src/main.js",
     "semente": "node dist/prisma/semente.js",
     "criar-administrador": "npm run build && node dist/src/comandos/criar-administrador.js",
+    "zerar-banco": "npm run build && node dist/src/comandos/zerar-banco.js",
+    "conferir-papel": "npm run build && node dist/src/comandos/conferir-papel.js",
     "test": "vitest run"
   },
   "dependencies": {
