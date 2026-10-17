@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { Tela } from '../LayoutApp'
+import { comEspecialidade } from '../perfis'
 import { SO_CAMINHO_PRINCIPAL } from '../caminhoPrincipal'
 import { Aviso } from '../../ui/Aviso'
 import { Botao } from '../../ui/Botao'
@@ -178,8 +179,8 @@ export function Planos() {
                 nivel={3}
                 titulo="Nenhum plano aguardando validação"
                 explicacao={SO_CAMINHO_PRINCIPAL
-                  ? 'Quando um terapeuta enviar um plano, ele aparece aqui. Enquanto isso, a lista de pacientes mostra a situação do plano de cada um.'
-                  : 'Quando um terapeuta enviar um plano, ele aparece aqui. Enquanto isso, o registro de auditoria mostra as validações já feitas.'}
+                  ? 'Quando um profissional enviar um plano, ele aparece aqui. Enquanto isso, a lista de pacientes mostra a situação do plano de cada um.'
+                  : 'Quando um profissional enviar um plano, ele aparece aqui. Enquanto isso, o registro de auditoria mostra as validações já feitas.'}
                 acao={SO_CAMINHO_PRINCIPAL ? (
                   <Link to="/app/clinica/pacientes" className="min-h-11 items-center font-bold text-cli-ink underline">
                     Ver a lista de pacientes
@@ -208,7 +209,7 @@ export function Planos() {
                         >
                           <b className="text-cli-ink">{p.paciente.nome}</b>
                           <span className="text-sm text-tinta2">
-                            {p.autor.nome} · enviado em {emData(p.enviadoEm)}
+                            {comEspecialidade(p.autor)} · enviado em {emData(p.enviadoEm)}
                           </span>
                           <span className="text-sm text-tinta2">
                             {p.totalObjetivos} {p.totalObjetivos === 1 ? 'objetivo' : 'objetivos'}
@@ -279,7 +280,7 @@ export function Planos() {
               <Cartao>
                 <dl className="grid gap-x-4 gap-y-1.5 text-[15px] sm:grid-cols-[auto_1fr]">
                   <dt className="font-bold">Autor</dt>
-                  <dd>{item?.autor.nome ?? '—'}</dd>
+                  <dd>{item ? comEspecialidade(item.autor) : '—'}</dd>
                   <dt className="font-bold">Início previsto</dt>
                   <dd>{emDataCivil(plano.dados.dataInicio)}</dd>
                   <dt className="font-bold">Próxima revisão</dt>

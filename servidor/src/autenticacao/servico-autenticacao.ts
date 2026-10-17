@@ -13,13 +13,14 @@ import { conferirSenha, hashDaSenha, hashDeSenhaDesconhecida } from './senhas.js
 import { ServicoSessoes, novoToken, resumoDoToken } from './servico-sessoes.js'
 
 /** A projecao publica do usuario: o que sai numa resposta. Nunca o senhaHash. */
-export function paraSessaoUsuario(usuario: UsuarioDaSessao, perfilAtivo: Perfil): SessaoUsuario {
+export function paraSessaoUsuario(usuario: UsuarioDaSessao, perfilAtivo: Perfil, especialidade: string | null = null): SessaoUsuario {
   return {
     usuario: {
       id: usuario.id, nome: usuario.nome, email: usuario.email, perfis: usuario.perfis,
       ativo: usuario.ativo, ultimoAcessoEm: usuario.ultimoAcessoEm?.toISOString() ?? null,
     },
     perfilAtivo,
+    especialidade: especialidade || null,
   }
 }
 
@@ -33,6 +34,12 @@ export class ServicoAutenticacao {
     private readonly auditoria: ServicoAuditoria,
     private readonly limite: LimiteDeTentativas,
   ) {}
+
+  /** A sessao que sai na resposta, com a especialidade de quem e da equipe (item 7). */
+  async sessaoUsuario(usuario: UsuarioDaSessao, perfilAtivo: Perfil): Promise<SessaoUsuario> {
+    const profissional = await this.banco.profissional.findUnique({ where: { usuarioId: usuario.id }, select: { especialidade: true } })
+    return paraSessaoUsuario(usuario, perfilAtivo, profissional?.especialidade ?? null)
+  }
 
   /** Mensagem unica para e-mail inexistente, senha errada e conta desativada (tela 1). */
   async entrar(email: unknown, senha: unknown, ip: string | null, resposta: RespostaHttp): Promise<SessaoUsuario> {
@@ -56,7 +63,7 @@ export class ServicoAutenticacao {
     })
     const perfilAtivo = usuario.perfis[0]
     await this.sessoes.abrir(usuario.id, perfilAtivo, resposta)
-    return paraSessaoUsuario(atualizado, perfilAtivo)
+    return this.sessaoUsuario(atualizado, perfilAtivo)
   }
 
   async trocarPerfil(sessao: SessaoServidor, perfil: unknown): Promise<SessaoUsuario> {
@@ -64,7 +71,7 @@ export class ServicoAutenticacao {
       throw new ErroServico('ACESSO_NEGADO', 'Este perfil não está associado à sua conta.')
     }
     await this.sessoes.trocarPerfil(sessao.sessaoId, perfil as Perfil)
-    return paraSessaoUsuario(sessao.usuario, perfil as Perfil)
+    return this.sessaoUsuario(sessao.usuario, perfil as Perfil)
   }
 
   // ------------------------------------------------------------ Primeiro acesso
@@ -148,6 +155,6 @@ export class ServicoAutenticacao {
       { sessaoId: '', perfilAtivo, usuario },
       { acao: 'ALTERACAO', entidade: 'Usuario', idEntidade: usuario.id, detalhe: 'Senha definida pelo link de primeiro acesso.' },
     )
-    return paraSessaoUsuario(usuario, perfilAtivo)
+    return this.sessaoUsuario(usuario, perfilAtivo)
   }
 }

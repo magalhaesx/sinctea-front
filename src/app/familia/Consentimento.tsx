@@ -58,7 +58,7 @@ const ESCOPOS: { valor: EscopoAcesso; rotulo: string; explicacao: string }[] = [
   {
     valor: 'REGISTRO_OCORRENCIA',
     rotulo: 'Registrar o que acontece na escola',
-    explicacao: 'O professor descreve situações; a leitura clínica continua com a terapeuta.',
+    explicacao: 'O professor descreve situações; a leitura clínica continua com o profissional da clínica.',
   },
 ]
 

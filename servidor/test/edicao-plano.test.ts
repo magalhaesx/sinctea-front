@@ -121,6 +121,11 @@ describe('so em rascunho ou devolvido', () => {
     expect((await editarObjetivo(c.ana, edicao({ descricaoTecnica: 'Corrigida depois da devolução.', percentualMinimo: 90 }))).status).toBe(200)
 
     await api.pedir('POST', `/planos/${p.plano}/envio`, { cookie: c.ana })
+    // Item 7, parte 4: quem escreveu aparece pelo nome e pela especialidade.
+    const fila = await api.pedir('GET', '/planos/aguardando-validacao', { cookie: c.coord })
+    expect(fila.corpo.itens[0].autor).toEqual({ id: u.ana, nome: 'Ana Souza', especialidade: 'Fonoaudiologia' })
+    const lista = await api.pedir('GET', '/pacientes', { cookie: c.ana })
+    expect(lista.corpo.itens[0].profissionalResponsavel).toEqual({ id: u.ana, nome: 'Ana Souza', especialidade: 'Fonoaudiologia' })
     expect((await api.pedir('POST', `/planos/${p.plano}/aprovacao`, { cookie: c.coord })).corpo.status).toBe('VIGENTE')
     const vigente = await editarObjetivo(c.ana, edicao({ descricaoTecnica: 'Depois de vigente.' }))
     expect(vigente.status).toBe(409)

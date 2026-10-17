@@ -21,13 +21,15 @@ type PerfilDemonstracao = Exclude<Perfil, 'ADMINISTRADOR'>
 type Estado =
   | { situacao: 'CARREGANDO' }
   | { situacao: 'ANONIMO' }
-  | { situacao: 'AUTENTICADO'; usuario: Usuario; perfilAtivo: Perfil }
+  | { situacao: 'AUTENTICADO'; usuario: Usuario; perfilAtivo: Perfil; especialidade: string | null }
 
 interface Ctx {
   estado: Estado
   /** Atalhos para o caso autenticado. */
   usuario: Usuario | null
   perfilAtivo: Perfil | null
+  /** A especialidade de quem e da equipe, para a tela mostrar no lugar do perfil (item 7). */
+  especialidade: string | null
   entrar(email: string, senha: string): Promise<void>
   entrarDemonstracao(perfil: PerfilDemonstracao): Promise<void>
   /** Aceite de convite: cria a conta do professor e ja abre a sessao. */
@@ -46,7 +48,7 @@ interface Ctx {
 const SessaoCtx = createContext<Ctx | null>(null)
 
 const autenticado = (s: SessaoUsuario): Estado =>
-  ({ situacao: 'AUTENTICADO', usuario: s.usuario, perfilAtivo: s.perfilAtivo })
+  ({ situacao: 'AUTENTICADO', usuario: s.usuario, perfilAtivo: s.perfilAtivo, especialidade: s.especialidade })
 
 export function ProvedorSessao({ children }: { children: ReactNode }) {
   const [estado, setEstado] = useState<Estado>({ situacao: 'CARREGANDO' })
@@ -124,6 +126,7 @@ export function ProvedorSessao({ children }: { children: ReactNode }) {
     estado,
     usuario: estado.situacao === 'AUTENTICADO' ? estado.usuario : null,
     perfilAtivo: estado.situacao === 'AUTENTICADO' ? estado.perfilAtivo : null,
+    especialidade: estado.situacao === 'AUTENTICADO' ? estado.especialidade : null,
     entrar, entrarDemonstracao, entrarComConvite, entrarComPrimeiroAcesso, trocarPerfil, sair, mudanca,
   }), [estado, entrar, entrarDemonstracao, entrarComConvite, entrarComPrimeiroAcesso, trocarPerfil, sair, mudanca])
 

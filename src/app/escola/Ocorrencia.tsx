@@ -224,7 +224,7 @@ export function Ocorrencia() {
 
       {estado.tipo === 'pronto' && (
         <>
-          <Titulo sub="Descreva o que aconteceu, não o que significa. A interpretação clínica é da terapeuta.">
+          <Titulo sub="Descreva o que aconteceu, não o que significa. A leitura clínica é do profissional habilitado.">
             {corrigindo ? 'Corrigir o que você registrou' : 'O que você observou?'}
           </Titulo>
 

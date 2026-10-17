@@ -205,10 +205,10 @@ Atualizado em 16/10/2026, lendo o código — não a memória.
   simulada que aplica controle de acesso e auditoria; o cliente da API, que
   não aplica regra nenhuma. A versão publicada usa só a API, e o mock fica
   fora do pacote; no desenvolvimento, `VITE_API_URL` escolhe entre as duas
-- **404 testes em 30 arquivos, nos três pacotes**, rodados por um único
+- **406 testes em 30 arquivos, nos três pacotes**, rodados por um único
   `npm test` na raiz, sem passo manual. O principal ainda é
   `src/servicos/mock/regrasInviolaveis.test.ts`, que verifica as regras
-  invioláveis na camada de dados, e não na tela. Os 183 do servidor rodam contra
+  invioláveis na camada de dados, e não na tela. Os 184 do servidor rodam contra
   um PostgreSQL 17 de verdade
 - **As seis regras verificadas** em `docs/06`: para cada teste citado, a regra foi
   quebrada de propósito para confirmar que ele falha, e as quebras que não
@@ -351,6 +351,13 @@ em produção (o antigo passo B5) foi cancelada. No código, hoje:
   `src/servicos/api/cliente.ts`); se outra janela trocou a conta ou o perfil,
   ou saiu, um aviso por cima da tela diz isso e pede para recarregar
   (`src/app/AvisoDeJanela.tsx`). Testes em `src/contexto/mudancaDaSessao.test.ts`
+- **Item 7, parte 4 — especialidade no lugar de "terapeuta".** Nenhuma tela
+  diz a palavra: o perfil aparece como "Profissional da clínica", a pessoa
+  como "Ana Souza · Psicologia" (`comEspecialidade` e `papelNaTela`, em
+  `src/app/perfis.ts`), e o texto genérico diz "profissional". A sessão, a
+  lista de pacientes e a fila de planos trazem a especialidade; convidar
+  profissional da clínica a exige. O enum `TERAPEUTA` continua no código e no
+  banco. `src/publicacao.test.ts` confere que o pacote não tem a palavra
 - `npm run criar-administrador -w @sinctea/servidor -- .env.producao --nome
   "Nome Completo" --email voce@exemplo.com` cria o primeiro administrador:
   nome e e-mail vêm da linha de comando, e só a senha é pedida, escondida e duas

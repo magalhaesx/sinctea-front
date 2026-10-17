@@ -137,7 +137,11 @@ export const planosMock: ServicoPlano = {
       .map((p) => ({
         planoId: p.id,
         paciente: { id: p.pacienteId, nome: banco.pacientes.find((x) => x.id === p.pacienteId)?.nome ?? '—' },
-        autor: { id: p.autorId, nome: banco.profissionais.find((x) => x.id === p.autorId)?.nome ?? '—' },
+        autor: {
+          id: p.autorId,
+          nome: banco.profissionais.find((x) => x.id === p.autorId)?.nome ?? '—',
+          especialidade: banco.profissionais.find((x) => x.id === p.autorId)?.especialidade ?? '',
+        },
         // O mock nao guarda a data do envio; usa o inicio do plano como aproximacao.
         enviadoEm: inicioDoDia(p.dataInicio).toISOString(),
         totalObjetivos: p.objetivos.length,

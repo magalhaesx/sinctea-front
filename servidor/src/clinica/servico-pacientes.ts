@@ -60,7 +60,7 @@ export class ServicoPacientes {
       .filter((p) => !busca || paraBusca(p.nome).includes(busca))
       .map((p): PacienteResumo => ({
         id: p.id, nome: p.nome, idade: idadeEmAnos(paraDataCivil(p.dataNascimento), agora), nivelSuporte: comoNivel(p.nivelSuporte),
-        profissionalResponsavel: { id: p.profissionalResponsavelId, nome: p.profissionalResponsavel.usuario.nome },
+        profissionalResponsavel: { id: p.profissionalResponsavelId, nome: p.profissionalResponsavel.usuario.nome, especialidade: p.profissionalResponsavel.especialidade },
         situacaoPlano: (p.planos[0]?.status ?? 'SEM_PLANO') as SituacaoPlano,
         ultimaSessaoEm: ultimaDe(p.sessoes),
       }))

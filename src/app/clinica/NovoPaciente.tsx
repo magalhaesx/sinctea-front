@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Tela } from '../LayoutApp'
+import { comEspecialidade } from '../perfis'
 import { PACIENTES } from './caminho'
 import { Botao, BotaoLink } from '../../ui/Botao'
 import { Campo } from '../../ui/Campo'
@@ -118,7 +119,7 @@ export function NovoPaciente() {
               {...erroDe('profissionalResponsavelId')}>
               <option value="">Escolha o profissional</option>
               {profissionais.map((p) => (
-                <option key={p.id} value={p.id}>{p.nome} · {p.especialidade}</option>
+                <option key={p.id} value={p.id}>{comEspecialidade(p)}</option>
               ))}
             </select>
             <Erro chave="profissionalResponsavelId" />

@@ -49,7 +49,7 @@ const titulos: [padrao: string, titulo: string][] = [
   ['/app/entrar', 'Entrar'],
   ['/app/convite/:token', 'Aceitar convite'],
   ['/app/primeiro-acesso/:token', 'Definir minha senha'],
-  ['/app/clinica', 'Painel do terapeuta'],
+  ['/app/clinica', 'Painel do profissional'],
   ['/app/clinica/pacientes', 'Lista de pacientes'],
   ['/app/clinica/pacientes/novo', 'Cadastrar paciente'],
   ['/app/clinica/pacientes/:id', 'Ficha do paciente'],

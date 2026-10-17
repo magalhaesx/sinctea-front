@@ -92,7 +92,7 @@ export function Atividade() {
       await servicos.atividades.registrarExecucao(id, desempenho, observacao)
       setDesempenho(null)
       setObservacao('')
-      setSalvo('A terapeuta vai ver isso antes da próxima sessão. Obrigado por registrar.')
+      setSalvo('O profissional vai ver isso antes da próxima sessão. Obrigado por registrar.')
       focarAviso.current = true
       setTentativa((t) => t + 1)
     } catch (e) {

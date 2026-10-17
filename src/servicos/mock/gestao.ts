@@ -127,6 +127,10 @@ export const usuariosMock: ServicoUsuario = {
     if (perfis.some((p) => !PERFIS_DE_EQUIPE.includes(p))) {
       erros.perfis = 'Esta tela cadastra apenas a equipe da clínica. O responsável nasce do vínculo com o paciente, e o professor, do convite da família.'
     }
+    // A mesma regra do servidor (item 7): quem atende nasce com a especialidade.
+    if (perfis.includes('TERAPEUTA') && !dados.especialidade?.trim()) {
+      erros.especialidade = 'Escreva a especialidade do profissional da clínica: Psicologia, Fonoaudiologia, Terapia Ocupacional.'
+    }
     exigirValido(erros)
     if (todosUsuarios().some((u) => u.email.toLowerCase() === email)) {
       throw new ErroServico('CONFLITO', 'Já existe uma conta com este e-mail.')

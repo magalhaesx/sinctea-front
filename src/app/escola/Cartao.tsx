@@ -116,7 +116,7 @@ export function CartaoEstrategias() {
           <EstadoVazio
             area="esc"
             titulo="Ainda não há estratégias para este aluno"
-            explicacao="A terapeuta escreve o cartão a partir dos objetivos do plano. Assim que ela publicar o primeiro, ele aparece aqui."
+            explicacao="O profissional da clínica escreve o cartão a partir dos objetivos do plano. Assim que o primeiro for publicado, ele aparece aqui."
             acao={<Link to="/app/escola" className="inline-flex min-h-11 items-center font-bold text-esc-ink underline">Voltar para meus alunos</Link>}
           />
         ) : (

@@ -118,7 +118,9 @@ export function sessaoServidor(): SessaoServidor | null {
 /** Projecao publica: sem o discriminador interno nem campos da subclasse. */
 export function paraSessaoUsuario(s: SessaoServidor): SessaoUsuario {
   const { id, nome, email, perfis, ativo, ultimoAcessoEm } = s.usuario
-  return { usuario: { id, nome, email, perfis, ativo, ultimoAcessoEm }, perfilAtivo: s.perfilAtivo }
+  // A especialidade de quem e da equipe, como no servidor (item 7).
+  const especialidade = s.usuario.tipo === 'PROFISSIONAL' ? s.usuario.especialidade || null : null
+  return { usuario: { id, nome, email, perfis, ativo, ultimoAcessoEm }, perfilAtivo: s.perfilAtivo, especialidade }
 }
 
 // ---------------------------------------------------------------- Auditoria

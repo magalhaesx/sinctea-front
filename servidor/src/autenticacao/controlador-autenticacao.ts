@@ -2,7 +2,7 @@ import { Body, Controller, Get, HttpCode, Param, Post, Req, Res } from '@nestjs/
 import { ErroServico, type PrimeiroAcessoPublico, type SessaoUsuario } from '@sinctea/compartilhado'
 import { Publico, SemDadoDoPaciente } from '../acesso/metadados.js'
 import type { RequisicaoHttp, RespostaHttp } from '../http/tipos-http.js'
-import { ServicoAutenticacao, paraSessaoUsuario } from './servico-autenticacao.js'
+import { ServicoAutenticacao } from './servico-autenticacao.js'
 import { ServicoSessoes } from './servico-sessoes.js'
 
 /**
@@ -36,13 +36,13 @@ export class ControladorAutenticacao {
   sessaoAtual(
     @Req() requisicao: RequisicaoHttp,
     @Res({ passthrough: true }) resposta: RespostaHttp,
-  ): SessaoUsuario | undefined {
+  ): Promise<SessaoUsuario | undefined> | undefined {
     const sessao = requisicao.sinctea?.sessao
     if (!sessao) {
       resposta.status(204)
       return undefined
     }
-    return paraSessaoUsuario(sessao.usuario, sessao.perfilAtivo)
+    return this.autenticacao.sessaoUsuario(sessao.usuario, sessao.perfilAtivo)
   }
 
   @Post('perfil')

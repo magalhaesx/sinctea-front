@@ -75,7 +75,7 @@ describe('convidar: a conta da equipe nasce com link, e a senha e da pessoa', ()
   it('cria com e-mail em minusculas, devolve o link uma vez, e a pessoa entra pela senha que escolheu', async () => {
     const r = await api.pedir('POST', '/usuarios', {
       cookie: cookies.admin,
-      corpo: { nome: '  Fábio Novo ', email: ' Fabio.Novo@Teste.EXAMPLE ', perfis: ['TERAPEUTA', 'TERAPEUTA'] },
+      corpo: { nome: '  Fábio Novo ', email: ' Fabio.Novo@Teste.EXAMPLE ', perfis: ['TERAPEUTA', 'TERAPEUTA'], especialidade: 'Psicologia' },
     })
     expect(r.status).toBe(201)
     expect(r.corpo.usuario).toMatchObject({ nome: 'Fábio Novo', email: 'fabio.novo@teste.example', perfis: ['TERAPEUTA'], ativo: true, ultimoAcessoEm: null })
@@ -91,7 +91,18 @@ describe('convidar: a conta da equipe nasce com link, e a senha e da pessoa', ()
 
     const definida = await api.pedir('POST', `/auth/primeiro-acesso/${token}`, { corpo: { senha: 'a-senha-do-fabio' } })
     expect(definida.status).toBe(200)
+    // Item 7: a sessao leva a especialidade, que a tela mostra no lugar do perfil.
+    expect(definida.corpo).toMatchObject({ perfilAtivo: 'TERAPEUTA', especialidade: 'Psicologia' })
     await api.entrar('fabio.novo@teste.example', 'a-senha-do-fabio')
+  })
+
+  it('item 7: o profissional da clinica nasce com a especialidade; a coordenacao, nao precisa', async () => {
+    const convidar = (corpo: unknown) => api.pedir('POST', '/usuarios', { cookie: cookies.admin, corpo })
+    const sem = await convidar({ nome: 'Sem Especialidade', email: 'sem@teste.example', perfis: ['TERAPEUTA', 'COORDENADOR'], especialidade: '  ' })
+    expect(sem.status).toBe(422)
+    expect(sem.corpo.campos.especialidade).toMatch(/especialidade/)
+    expect(await prisma.usuario.count({ where: { email: 'sem@teste.example' } })).toBe(0)
+    expect((await convidar({ nome: 'Coordenação Só', email: 'coord-so@teste.example', perfis: ['COORDENADOR'] })).status).toBe(201)
   })
 
   it('recusa responsavel e professor, e-mail repetido em outra caixa e dados faltando', async () => {
@@ -100,7 +111,7 @@ describe('convidar: a conta da equipe nasce com link, e a senha e da pessoa', ()
     expect(familia.status).toBe(422)
     expect(familia.corpo.campos.perfis).toMatch(/apenas a equipe/)
     expect((await convidar({ nome: 'X', email: 'x2@teste.example', perfis: ['PROFESSOR'] })).status).toBe(422)
-    const repetido = await convidar({ nome: 'X', email: 'TERAPEUTA@teste.example', perfis: ['TERAPEUTA'] })
+    const repetido = await convidar({ nome: 'X', email: 'TERAPEUTA@teste.example', perfis: ['TERAPEUTA'], especialidade: 'Psicologia' })
     expect(repetido.status).toBe(409)
     const vazio = await convidar({})
     expect(vazio.status).toBe(422)

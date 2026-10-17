@@ -4,7 +4,7 @@ import { RodapeAmbiente } from '../componentes/AvisoAmbiente'
 import { usarSessao } from '../contexto/Sessao'
 import type { Perfil } from '../servicos'
 import { SO_CAMINHO_PRINCIPAL } from './caminhoPrincipal'
-import { NOME_DO_PERFIL } from './perfis'
+import { papelNaTela } from './perfis'
 
 /**
  * Moldura do sistema (/app). O menu mostra as telas do perfil ATIVO: as tres
@@ -30,7 +30,7 @@ const menu: Grupo[] = [
     titulo: 'Área clínica',
     perfis: ['TERAPEUTA', 'COORDENADOR'],
     itens: [
-      { para: '/app/clinica', nome: 'Painel do terapeuta', uc: 'UC10', cor: CLI, fim: true },
+      { para: '/app/clinica', nome: 'Painel do profissional', uc: 'UC10', cor: CLI, fim: true },
       // Plano, sessao e evolucao se abrem pela ficha, com o paciente escolhido.
       { para: '/app/clinica/pacientes', nome: 'Pacientes', uc: 'UC01', cor: CLI },
     ],
@@ -78,7 +78,7 @@ const menu: Grupo[] = [
 ]
 
 export function LayoutApp() {
-  const { usuario, perfilAtivo, sair } = usarSessao()
+  const { usuario, perfilAtivo, especialidade, sair } = usarSessao()
   const navegar = useNavigate()
   const grupos = menu
     .filter((g) => perfilAtivo !== null && g.perfis.includes(perfilAtivo))
@@ -107,7 +107,7 @@ export function LayoutApp() {
             <div className="flex items-center gap-2.5">
               <span className="text-right text-[12px] leading-tight text-cromo-tinta">
                 <span className="block font-bold">{usuario.nome}</span>
-                <span className="block text-cromo-tinta2">{NOME_DO_PERFIL[perfilAtivo]}</span>
+                <span className="block text-cromo-tinta2">{papelNaTela(perfilAtivo, especialidade)}</span>
               </span>
               <button
                 type="button"

@@ -903,7 +903,7 @@ describe('outras regras de tela aplicadas no servico', () => {
     await entrarComo('COORDENADOR')
     await chamar(s.autenticacao.trocarPerfil('ADMINISTRADOR'))
     const { usuario: nova } = await chamar(s.usuarios.convidar({
-      nome: 'Tereza Nogueira Pinho', email: 'tereza.pinho@clinica.example', perfis: ['TERAPEUTA'],
+      nome: 'Tereza Nogueira Pinho', email: 'tereza.pinho@clinica.example', perfis: ['TERAPEUTA'], especialidade: 'Psicologia',
     }))
     expect(nova.ativo).toBe(true)
     expect(nova.ultimoAcessoEm).toBeNull()
@@ -918,7 +918,7 @@ describe('outras regras de tela aplicadas no servico', () => {
     await entrarComo('COORDENADOR')
     await chamar(s.autenticacao.trocarPerfil('ADMINISTRADOR'))
     const { usuario: alvo } = await chamar(s.usuarios.convidar({
-      nome: 'Bruno Sales Ferraz', email: 'bruno.ferraz@clinica.example', perfis: ['TERAPEUTA'],
+      nome: 'Bruno Sales Ferraz', email: 'bruno.ferraz@clinica.example', perfis: ['TERAPEUTA'], especialidade: 'Psicologia',
     }))
     await chamar(s.usuarios.desativar(alvo.id))
 

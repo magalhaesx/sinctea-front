@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { Tela } from '../LayoutApp'
 import { SO_CAMINHO_PRINCIPAL } from '../caminhoPrincipal'
-import { NOME_DO_PERFIL } from '../perfis'
+import { papelNaTela } from '../perfis'
 import { Aviso } from '../../ui/Aviso'
 import { Botao, BotaoLink } from '../../ui/Botao'
 import { Cartao } from '../../ui/Cartao'
@@ -62,7 +62,7 @@ const quando = (iso: string) => {
 }
 
 export function PainelClinica() {
-  const { usuario, perfilAtivo } = usarSessao()
+  const { usuario, perfilAtivo, especialidade } = usarSessao()
   const [params, setParams] = useSearchParams()
   const dia = params.get('dia') ?? diaDeHoje()
   const pagina = Math.max(1, Number(params.get('pagina') ?? 1) || 1)
@@ -140,8 +140,8 @@ export function PainelClinica() {
     <Tela
       area="cli"
       nome={usuario?.nome}
-      papel={perfilAtivo ? NOME_DO_PERFIL[perfilAtivo] : undefined}
-      caminho={['Área clínica', 'Painel do terapeuta']}
+      papel={perfilAtivo ? papelNaTela(perfilAtivo, especialidade) : undefined}
+      caminho={['Área clínica', 'Painel do profissional']}
     >
       <Titulo sub={resumo}>{dataPorExtenso}</Titulo>
 

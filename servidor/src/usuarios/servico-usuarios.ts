@@ -59,6 +59,11 @@ export class ServicoUsuarios {
     if (perfis.some((p) => !PERFIS_DE_EQUIPE.includes(p))) {
       erros.perfis = 'Esta tela cadastra apenas a equipe da clínica. O responsável nasce do vínculo com o paciente, e o professor, do convite da família.'
     }
+    // Item 7: a tela mostra o profissional pelo nome e pela especialidade, e
+    // nunca como "terapeuta". Quem atende nasce com ela.
+    if (perfis.includes('TERAPEUTA') && !textoOuVazio(dados.especialidade)) {
+      erros.especialidade = 'Escreva a especialidade do profissional da clínica: Psicologia, Fonoaudiologia, Terapia Ocupacional.'
+    }
     exigirValido(erros)
     if (await this.banco.usuario.count({ where: { email } }) > 0) {
       throw new ErroServico('CONFLITO', 'Já existe uma conta com este e-mail.')

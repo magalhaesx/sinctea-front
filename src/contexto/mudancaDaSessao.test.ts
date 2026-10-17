@@ -11,6 +11,7 @@ import { mudancaDaSessao } from './mudancaDaSessao'
 const sessao = (id: string, nome: string, perfilAtivo: SessaoUsuario['perfilAtivo']): SessaoUsuario => ({
   usuario: { id, nome, email: `${id}@teste.example`, perfis: [perfilAtivo], ativo: true, ultimoAcessoEm: null },
   perfilAtivo,
+  especialidade: null,
 })
 
 describe('o que mudou na sessao desde que a janela a leu', () => {

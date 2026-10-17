@@ -3,7 +3,9 @@ import { SO_CAMINHO_PRINCIPAL } from './caminhoPrincipal'
 
 /** Como cada perfil aparece na interface, e para onde ele entra ao autenticar. */
 export const NOME_DO_PERFIL: Record<Perfil, string> = {
-  TERAPEUTA: 'Terapeuta',
+  // Item 7: nenhuma tela diz "terapeuta". O enum continua TERAPEUTA no codigo
+  // e no banco; muda so o que a pessoa le.
+  TERAPEUTA: 'Profissional da clínica',
   COORDENADOR: 'Coordenador clínico',
   ADMINISTRADOR: 'Administrador',
   RESPONSAVEL: 'Responsável',
@@ -22,6 +24,16 @@ export const PAINEL_DO_PERFIL: Record<Perfil, string> = {
   ADMINISTRADOR: '/app/admin/usuarios',
   RESPONSAVEL: '/app/familia',
   PROFESSOR: '/app/escola',
+}
+
+/** Uma pessoa da equipe na tela: "Ana Souza · Psicologia" (item 7). Sem especialidade, so o nome. */
+export function comEspecialidade(pessoa: { nome: string; especialidade?: string | null }): string {
+  return pessoa.especialidade ? `${pessoa.nome} · ${pessoa.especialidade}` : pessoa.nome
+}
+
+/** O que aparece debaixo do nome de quem esta na sessao: a especialidade, para quem atende; o perfil, para os demais. */
+export function papelNaTela(perfil: Perfil, especialidade: string | null): string {
+  return perfil === 'TERAPEUTA' && especialidade ? especialidade : NOME_DO_PERFIL[perfil]
 }
 
 /** Area visual de cada perfil (docs/02, secao 1). */

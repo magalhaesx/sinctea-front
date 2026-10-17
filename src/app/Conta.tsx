@@ -9,7 +9,7 @@ import { usarPreferencias, type Preferencias } from '../contexto/Preferencias'
 import { usarSessao } from '../contexto/Sessao'
 import { ErroServico, servicos, type DadosProfissionais, type Perfil } from '../servicos'
 import { Tela } from './LayoutApp'
-import { AREA_DO_PERFIL, NOME_DO_PERFIL, PAINEL_DO_PERFIL } from './perfis'
+import { AREA_DO_PERFIL, NOME_DO_PERFIL, PAINEL_DO_PERFIL, papelNaTela } from './perfis'
 
 /**
  * Tela 21 · Perfil e preferências · /app/conta
@@ -30,7 +30,7 @@ const PREFERENCIAS: { chave: keyof Preferencias; rotulo: string; efeito: string 
 ]
 
 export function Conta() {
-  const { usuario, perfilAtivo, trocarPerfil, sair } = usarSessao()
+  const { usuario, perfilAtivo, especialidade, trocarPerfil, sair } = usarSessao()
   const prefs = usarPreferencias()
   const navegar = useNavigate()
   const [aviso, setAviso] = useState<string | null>(null)
@@ -98,7 +98,7 @@ export function Conta() {
     <Tela
       area={AREA_DO_PERFIL[perfilAtivo]}
       nome={usuario.nome}
-      papel={NOME_DO_PERFIL[perfilAtivo]}
+      papel={papelNaTela(perfilAtivo, especialidade)}
       caminho={['Apoio', 'Perfil e preferências']}
       estreito
     >

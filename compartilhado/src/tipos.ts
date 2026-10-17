@@ -116,6 +116,12 @@ export type UsuarioQualquer = Profissional | Responsavel | ProfessorAEE
 export interface SessaoUsuario {
   usuario: Usuario
   perfilAtivo: Perfil
+  /**
+   * A especialidade de quem e da equipe, para a tela mostrar "nome ·
+   * especialidade" no lugar do perfil (item 7). Nulo para quem nao e da
+   * equipe, ou ainda nao a preencheu.
+   */
+  especialidade: string | null
 }
 
 /**
@@ -202,7 +208,7 @@ export interface PacienteResumo {
   nome: string
   idade: number
   nivelSuporte: NivelSuporte
-  profissionalResponsavel: { id: string; nome: string }
+  profissionalResponsavel: { id: string; nome: string; especialidade: string }
   situacaoPlano: SituacaoPlano
   ultimaSessaoEm: DataIso | null
 }
@@ -341,7 +347,7 @@ export interface PlanoTerapeutico {
 export interface PlanoParaValidacao {
   planoId: string
   paciente: { id: string; nome: string }
-  autor: { id: string; nome: string }
+  autor: { id: string; nome: string; especialidade: string }
   enviadoEm: DataIso
   totalObjetivos: number
 }

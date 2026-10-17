@@ -44,7 +44,7 @@ export function Sobre() {
         <Cartao className="border-l-4 border-l-cli">
           <h3 className="font-bold text-cli-ink">Na clínica</h3>
           <p className="mt-2 text-sm text-tinta2">
-            O terapeuta mantém o Plano Terapêutico Individual e registra a sessão em um toque por
+            O profissional da clínica mantém o Plano Terapêutico Individual e registra a sessão em um toque por
             tentativa. Funciona sem internet e sincroniza depois — o que importa no atendimento
             domiciliar e em instituições do interior.
           </p>

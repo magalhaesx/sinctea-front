@@ -31,7 +31,10 @@ function resumo(p: Paciente): PacienteResumo {
     nome: p.nome,
     idade: idadeEmAnos(p.dataNascimento, relogio.agora()),
     nivelSuporte: p.nivelSuporte,
-    profissionalResponsavel: { id: p.profissionalResponsavelId, nome: responsavel?.nome ?? '—' },
+    profissionalResponsavel: {
+      id: p.profissionalResponsavelId, nome: responsavel?.nome ?? '—',
+      especialidade: responsavel && responsavel.tipo === 'PROFISSIONAL' ? responsavel.especialidade : '',
+    },
     situacaoPlano: situacaoPlanoDe(p.id),
     ultimaSessaoEm: ultimaSessaoDe(p.id),
   }

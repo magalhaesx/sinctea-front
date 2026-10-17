@@ -171,7 +171,7 @@ export class ServicoPlanos {
     const itens = planos.map((p) => ({
       planoId: p.id,
       paciente: { id: p.pacienteId, nome: p.paciente.nome },
-      autor: { id: p.autorId, nome: p.autor.usuario.nome },
+      autor: { id: p.autorId, nome: p.autor.usuario.nome, especialidade: p.autor.especialidade },
       enviadoEm: (ultimoEnvio.get(p.id) ?? inicioDoDia(p.dataInicio.toISOString().slice(0, 10))).toISOString(),
       totalObjetivos: p.objetivos.length,
     })).sort((a, b) => a.enviadoEm.localeCompare(b.enviadoEm))

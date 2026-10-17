@@ -266,9 +266,15 @@ export function Usuarios() {
                 completa depois e a propria pessoa, em Perfil e preferencias.
                 Sem o registro preenchido, essa pessoa nao emite relatorio. */}
             <div className="grid gap-3 [&>*]:min-w-0 sm:grid-cols-2">
-              <Campo id="especialidade" rotulo="Especialidade (opcional)">
+              {/* Item 7: obrigatoria para o profissional da clinica, que a tela
+                  mostra pelo nome e pela especialidade. */}
+              <Campo id="especialidade"
+                rotulo={convite.perfis.includes('TERAPEUTA') ? 'Especialidade' : 'Especialidade (opcional)'}
+                dica={convite.perfis.includes('TERAPEUTA') ? 'Obrigatória para o profissional da clínica: Psicologia, Fonoaudiologia, Terapia Ocupacional.' : undefined}>
                 <input id="especialidade" className={campo} value={convite.especialidade}
-                  onChange={(e) => setConvite((c) => ({ ...c, especialidade: e.target.value }))} />
+                  onChange={(e) => setConvite((c) => ({ ...c, especialidade: e.target.value }))}
+                  aria-invalid={erros.especialidade ? true : undefined} />
+                {erros.especialidade && <p className="text-sm font-bold text-cr">{erros.especialidade}</p>}
               </Campo>
               <Campo id="registro" rotulo="Registro no conselho (opcional)"
                 dica="Sem ele, a pessoa completa em Perfil e preferências antes de emitir relatório.">

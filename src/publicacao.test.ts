@@ -69,6 +69,12 @@ describe('a versao publicada', () => {
     expect(pacote).toContain('Registro ABC')
   })
 
+  it('nenhuma tela diz "terapeuta": a pessoa aparece pelo nome e pela especialidade (item 7)', () => {
+    // O enum TERAPEUTA, em maiusculas, continua no codigo: so o que se le muda.
+    expect(pacote).not.toMatch(/[Tt]erapeutas?\b/)
+    expect(pacote).toContain('Profissional da clínica')
+  })
+
   it('leva o aviso do ambiente', () => {
     expect(pacote).toContain('Ambiente acadêmico do TCC SINCTEA. Não cadastre dados de pacientes reais.')
   })

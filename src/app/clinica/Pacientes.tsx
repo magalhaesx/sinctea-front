@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { Tela } from '../LayoutApp'
+import { comEspecialidade } from '../perfis'
 import { BotaoLink } from '../../ui/Botao'
 import { Campo } from '../../ui/Campo'
 import { Etiqueta } from '../../ui/Etiqueta'
@@ -60,7 +61,7 @@ const colunas: Coluna<PacienteResumo>[] = [
     id: 'nivel', titulo: 'Nível de suporte',
     celula: (p) => descricaoNivelSuporte(p.nivelSuporte),
   },
-  { id: 'prof', titulo: 'Profissional responsável', celula: (p) => p.profissionalResponsavel.nome },
+  { id: 'prof', titulo: 'Profissional responsável', celula: (p) => comEspecialidade(p.profissionalResponsavel) },
   {
     id: 'plano', titulo: 'Situação do plano',
     celula: (p) => {
@@ -185,7 +186,7 @@ export function Pacientes() {
             <select id="profissional" className={campo} value={profissionalId}
               onChange={(e) => atualizar({ profissional: e.target.value || null })}>
               <option value="">Todos</option>
-              {profissionais.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
+              {profissionais.map((p) => <option key={p.id} value={p.id}>{comEspecialidade(p)}</option>)}
             </select>
           </Campo>
 
