@@ -32,6 +32,16 @@ export function comParametros(caminho: string, parametros: object = {}): string 
   return texto ? `${caminho}?${texto}` : caminho
 }
 
+/**
+ * Quem quer saber de toda negativa (401 ou 403) fora da autenticacao: o
+ * contexto da sessao, que rele a sessao atual para descobrir se outra janela
+ * trocou a conta (item 7). Um so ouvinte; nulo, ninguem.
+ */
+let ouvinteDeNegativa: (() => void) | null = null
+export function aoNegarAcesso(ouvinte: (() => void) | null): void {
+  ouvinteDeNegativa = ouvinte
+}
+
 export async function requisitar<T>(metodo: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE', caminho: string, corpo?: unknown): Promise<T> {
   let resposta: Response
   try {
@@ -48,6 +58,8 @@ export async function requisitar<T>(metodo: 'GET' | 'POST' | 'PUT' | 'PATCH' | '
   }
 
   if (!resposta.ok) {
+    // A negativa de entrar, sair ou trocar de perfil a propria tela explica.
+    if ((resposta.status === 401 || resposta.status === 403) && !caminho.startsWith('/auth/')) ouvinteDeNegativa?.()
     const corpoErro = await resposta.json().catch(() => ({})) as {
       mensagem?: string; campos?: Record<string, string>; motivo?: MotivoNegativa
     }

@@ -16,6 +16,9 @@ export const usandoApi: boolean = import.meta.env.PROD || Boolean(import.meta.en
 
 export const servicos: Servicos = usandoApi ? servicosApi : servicosMock
 
+// A negativa da API avisa o contexto da sessao (item 7). Com o mock, nunca chama.
+export { aoNegarAcesso } from './api/cliente'
+
 // Tipos e contratos moram em compartilhado/, junto com o dominio: o servidor
 // importa os mesmos. Componentes continuam importando daqui.
 export * from '@sinctea/compartilhado'

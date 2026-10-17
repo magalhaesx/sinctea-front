@@ -1,7 +1,10 @@
 import {
-  createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode,
+  createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode,
 } from 'react'
-import { ErroServico, servicos, type AceiteConvite, type Perfil, type SessaoUsuario, type Usuario } from '../servicos'
+import {
+  aoNegarAcesso, ErroServico, servicos, type AceiteConvite, type Perfil, type SessaoUsuario, type Usuario,
+} from '../servicos'
+import { mudancaDaSessao, type MudancaDaSessao } from './mudancaDaSessao'
 
 /**
  * Sessao do usuario autenticado e perfil ativo.
@@ -33,6 +36,11 @@ interface Ctx {
   entrarComPrimeiroAcesso(token: string, senha: string): Promise<void>
   trocarPerfil(perfil: Perfil): Promise<void>
   sair(): Promise<void>
+  /**
+   * O que mudou na sessao desde que esta janela a leu: outra janela entrou com
+   * outra conta, trocou de perfil ou saiu (item 7). MESMA, nada.
+   */
+  mudanca: MudancaDaSessao
 }
 
 const SessaoCtx = createContext<Ctx | null>(null)
@@ -42,6 +50,33 @@ const autenticado = (s: SessaoUsuario): Estado =>
 
 export function ProvedorSessao({ children }: { children: ReactNode }) {
   const [estado, setEstado] = useState<Estado>({ situacao: 'CARREGANDO' })
+  const [mudanca, setMudanca] = useState<MudancaDaSessao>({ tipo: 'MESMA' })
+  // O que a janela mostra agora, para o ouvinte comparar sem refazer o efeito.
+  const naJanela = useRef(estado)
+  naJanela.current = estado
+  const conferindo = useRef(false)
+
+  /*
+   * Toda negativa que a tela nao explica faz reler a sessao. Se a conta ou o
+   * perfil mudou em outra janela, a tela diz isso e pede para recarregar.
+   * Varios pedidos negados ao mesmo tempo fazem uma releitura so.
+   */
+  useEffect(() => {
+    aoNegarAcesso(() => {
+      if (conferindo.current) return
+      conferindo.current = true
+      const atual = naJanela.current
+      const quem = atual.situacao === 'AUTENTICADO' ? { usuarioId: atual.usuario.id, perfilAtivo: atual.perfilAtivo } : null
+      servicos.autenticacao.sessaoAtual()
+        .then((agora) => {
+          const resultado = mudancaDaSessao(quem, agora)
+          if (resultado.tipo !== 'MESMA') setMudanca(resultado)
+        })
+        .catch(() => { /* sem servidor, a propria tela ja mostra o erro */ })
+        .finally(() => { conferindo.current = false })
+    })
+    return () => aoNegarAcesso(null)
+  }, [])
 
   useEffect(() => {
     let ativo = true
@@ -89,8 +124,8 @@ export function ProvedorSessao({ children }: { children: ReactNode }) {
     estado,
     usuario: estado.situacao === 'AUTENTICADO' ? estado.usuario : null,
     perfilAtivo: estado.situacao === 'AUTENTICADO' ? estado.perfilAtivo : null,
-    entrar, entrarDemonstracao, entrarComConvite, entrarComPrimeiroAcesso, trocarPerfil, sair,
-  }), [estado, entrar, entrarDemonstracao, entrarComConvite, entrarComPrimeiroAcesso, trocarPerfil, sair])
+    entrar, entrarDemonstracao, entrarComConvite, entrarComPrimeiroAcesso, trocarPerfil, sair, mudanca,
+  }), [estado, entrar, entrarDemonstracao, entrarComConvite, entrarComPrimeiroAcesso, trocarPerfil, sair, mudanca])
 
   return <SessaoCtx.Provider value={valor}>{children}</SessaoCtx.Provider>
 }

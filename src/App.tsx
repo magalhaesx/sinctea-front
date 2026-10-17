@@ -32,6 +32,7 @@ import { Alunos } from './app/escola/Alunos'
 import { CartaoEstrategias } from './app/escola/Cartao'
 import { Ocorrencia } from './app/escola/Ocorrencia'
 import { Sobre } from './paginas/Sobre'
+import { AvisoDeJanela } from './app/AvisoDeJanela'
 
 /* Vitrine de componentes: so existe em desenvolvimento com o mock. No build
    de producao a condicao vira `false` e o modulo nem entra no pacote. */
@@ -102,6 +103,9 @@ export function App() {
   }, [pathname])
 
   return (
+    <>
+    {/* Outra janela trocou a conta ou o perfil, ou saiu: o aviso vale para qualquer tela. */}
+    <AvisoDeJanela />
     <Routes>
       {/* A raiz leva ao login. Uma pagina institucional pode ocupa-la, se houver
           tempo (docs/07, Etapa 13). */}
@@ -160,5 +164,6 @@ export function App() {
 
       <Route path="*" element={<Navigate to="/app" replace />} />
     </Routes>
+    </>
   )
 }

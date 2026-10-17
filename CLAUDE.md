@@ -205,7 +205,7 @@ Atualizado em 16/10/2026, lendo o código — não a memória.
   simulada que aplica controle de acesso e auditoria; o cliente da API, que
   não aplica regra nenhuma. A versão publicada usa só a API, e o mock fica
   fora do pacote; no desenvolvimento, `VITE_API_URL` escolhe entre as duas
-- **397 testes em 29 arquivos, nos três pacotes**, rodados por um único
+- **404 testes em 30 arquivos, nos três pacotes**, rodados por um único
   `npm test` na raiz, sem passo manual. O principal ainda é
   `src/servicos/mock/regrasInviolaveis.test.ts`, que verifica as regras
   invioláveis na camada de dados, e não na tela. Os 183 do servidor rodam contra
@@ -346,6 +346,11 @@ em produção (o antigo passo B5) foi cancelada. No código, hoje:
   volta ao "carregando". Com o plano em `RASCUNHO` ou `DEVOLVIDO`, editam-se o
   objetivo (as duas redações e o critério) e as datas, com `ALTERACAO` e o
   `valorAnterior` só do que mudou. Testes em `servidor/test/edicao-plano.test.ts`
+- **Item 7, parte 3 — duas contas no mesmo navegador.** Um 401 ou 403 fora
+  da autenticação faz o front reler a sessão (`aoNegarAcesso`, em
+  `src/servicos/api/cliente.ts`); se outra janela trocou a conta ou o perfil,
+  ou saiu, um aviso por cima da tela diz isso e pede para recarregar
+  (`src/app/AvisoDeJanela.tsx`). Testes em `src/contexto/mudancaDaSessao.test.ts`
 - `npm run criar-administrador -w @sinctea/servidor -- .env.producao --nome
   "Nome Completo" --email voce@exemplo.com` cria o primeiro administrador:
   nome e e-mail vêm da linha de comando, e só a senha é pedida, escondida e duas
