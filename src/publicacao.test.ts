@@ -51,11 +51,16 @@ describe('a versao publicada', () => {
   })
 
   it('nao leva as telas fora do caminho principal', () => {
-    // Um texto proprio de cada tela que so existe com o mock: a agenda, as
-    // atividades de casa, os eventos comportamentais da ficha e o relatorio.
-    for (const tela of ['Voltar para hoje', 'Atividades desta semana', 'Eventos comportamentais recentes', 'Emitir relat']) {
+    // Um texto proprio de cada tela ou secao que so existe com o mock: a
+    // agenda, as atividades de casa, o relatorio e a ocorrencia na sessao.
+    for (const tela of ['Agenda do dia', 'Voltar para hoje', 'Atividades desta semana', 'Emitir relat', 'Registro ABC']) {
       expect(pacote, tela).not.toContain(tela)
     }
+  })
+
+  it('leva o ciclo clinica–escola do item 6: os avisos da escola e os eventos da ficha', () => {
+    expect(pacote).toContain('Avisos da escola')
+    expect(pacote).toContain('Eventos comportamentais recentes')
   })
 
   it('leva o aviso do ambiente', () => {

@@ -205,10 +205,10 @@ Atualizado em 16/10/2026, lendo o código — não a memória.
   simulada que aplica controle de acesso e auditoria; o cliente da API, que
   não aplica regra nenhuma. A versão publicada usa só a API, e o mock fica
   fora do pacote; no desenvolvimento, `VITE_API_URL` escolhe entre as duas
-- **345 testes em 24 arquivos, nos três pacotes**, rodados por um único
+- **354 testes em 25 arquivos, nos três pacotes**, rodados por um único
   `npm test` na raiz, sem passo manual. O principal ainda é
   `src/servicos/mock/regrasInviolaveis.test.ts`, que verifica as regras
-  invioláveis na camada de dados, e não na tela. Os 136 do servidor rodam contra
+  invioláveis na camada de dados, e não na tela. Os 144 do servidor rodam contra
   um PostgreSQL 17 de verdade
 - **As seis regras verificadas** em `docs/06`: para cada teste citado, a regra foi
   quebrada de propósito para confirmar que ele falha, e as quebras que não
@@ -315,15 +315,24 @@ em produção (o antigo passo B5) foi cancelada. No código, hoje:
   `servicos/index.ts` usa só a API, no `/api` do mesmo endereço, e o plugin
   `semMockNoPacote` do `vite.config.ts` deixa o mock fora do pacote. As telas
   fora do caminho principal — agenda, indicadores, auditoria, evolução,
-  atividades de casa, relatório e os eventos comportamentais da ficha e da
-  sessão — saem das rotas e do menu (`src/app/caminhoPrincipal.ts`); o
-  terapeuta entra na lista de pacientes, e a coordenação na fila de planos.
+  atividades de casa, relatório e o registro de ocorrência na sessão — saem
+  das rotas e do menu (`src/app/caminhoPrincipal.ts`); a coordenação entra na
+  fila de planos.
   Saíram também `entrarDemonstracao` da API, o bloco de demonstração da
   entrada e `/dev/estados`. O aviso do ambiente está na entrada e no rodapé.
   O servidor manda `nosniff`, `no-referrer` e `X-Frame-Options: DENY` em toda
   resposta. `src/publicacao.test.ts` confere o próprio pacote de produção. No
   desenvolvimento sem `VITE_API_URL` e nos testes, o mock e as telas
   continuam
+- **Item 6 feito — o relato da escola chega à clínica** (decisão do Cowork em
+  16/10). Os avisos da escola no painel do terapeuta (tela 3, sem a agenda),
+  os eventos comportamentais na ficha (tela 5) e a leitura clínica falam com a
+  API. Só a equipe do paciente e a coordenação alcançam o evento; a leitura
+  clínica é gravada uma vez, com trava na própria gravação; a lista de avisos,
+  os eventos, a leitura e a negativa entram na trilha. O aviso vale por sete
+  dias e sai da lista com a leitura; o evento continua na ficha. Encerrado o
+  acesso da escola, o que ela relatou continua na clínica. Testes em
+  `servidor/test/ocorrencias.test.ts`, quebras no `docs/06`
 - `npm run criar-administrador -w @sinctea/servidor -- .env.producao` cria o
   primeiro administrador: pede nome, e-mail e senha, sem mostrar a senha, e
   recusa se já houver administrador
@@ -345,14 +354,16 @@ tipos do compartilhado, auditoria pelo interceptador), o cliente em
 5. ~~O front publicado só com a API: o mock fora do pacote, as telas fora do
    caminho principal fora da navegação e das rotas, e sem `entrarDemonstracao`,
    avisos de demonstração nem `/dev/estados`~~ — feito em 16/10
+6. ~~Avisos da escola na clínica, eventos comportamentais na ficha e a
+   leitura clínica, para fechar o ciclo clínica–escola~~ — feito em 17/10
 
 Não se corta, nem com pressa: as regras 1, 2, 3, 5 e 6 provadas por teste contra
 a API no caminho principal, o *trigger* da auditoria, o papel que não é dono e o
 argon2id.
 
-Depois de 19/10, sem data: indicadores, relatórios, atividades de casa,
-ocorrências comportamentais, evolução, avisos da escola, a tela de auditoria e a
-agenda; a remoção completa de `servicos/mock`; o offline reduzido ao registro de
+Depois de 19/10, sem data: indicadores, relatórios, atividades de casa, o
+registro de ocorrência na sessão, evolução, a tela de auditoria e a agenda; o
+envio de e-mail, com a recuperação de senha de responsável e professor; a remoção completa de `servicos/mock`; o offline reduzido ao registro de
 sessão (`docs/07`, seção 3A); e a Etapa 13, de 16/11 a 23/11 — artigo, slides,
 vídeo e ensaio.
 
@@ -382,6 +393,10 @@ Enquanto não se resolverem, não devem ser afirmadas na defesa:
    Lucas terminar o B4 — a `DATABASE_URL` do Render com o `sinctea_app` — e
    conferir no ar `/`, `/api/saude` com a última migração e o 404 em JSON.
    Não se divulga antes disso.
+4. **Responsável e professor não recuperam a senha.** Sem envio de e-mail, só
+   a equipe recebe link novo, pela administração. A clínica não troca a senha
+   de quem autoriza a escola. Limite declarado em 16/10: fica assim até o envio
+   de e-mail, depois de 19/10.
 
 O cartão de estratégias saiu desta lista em 16/10/2026: o terapeuta o escreve
 na tela 6, com conteúdo, e não existe mais cartão em branco.

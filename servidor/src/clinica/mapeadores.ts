@@ -1,11 +1,11 @@
 import type {
-  CartaoEstrategia, Consentimento, NivelSuporte, Objetivo, PlanoTerapeutico, RegistroAtividade,
-  ResponsavelNaFicha, Sessao,
+  CartaoEstrategia, Consentimento, Intensidade, NivelSuporte, Objetivo, OcorrenciaComportamental, PlanoTerapeutico,
+  RegistroAtividade, ResponsavelNaFicha, Sessao,
 } from '@sinctea/compartilhado'
 import type {
   CartaoEstrategia as LinhaCartao, Consentimento as LinhaConsentimento, Objetivo as LinhaObjetivo,
-  PlanoTerapeutico as LinhaPlano, RegistroAtividade as LinhaRegistro, Sessao as LinhaSessao,
-  Usuario as LinhaUsuario, VinculoFamiliar as LinhaVinculo,
+  OcorrenciaComportamental as LinhaOcorrencia, PlanoTerapeutico as LinhaPlano, RegistroAtividade as LinhaRegistro,
+  Sessao as LinhaSessao, Usuario as LinhaUsuario, VinculoFamiliar as LinhaVinculo,
 } from '../gerado/client.js'
 
 /**
@@ -78,3 +78,12 @@ export function paraResponsavelNaFicha(
 }
 
 export const comoNivel = (n: number) => n as NivelSuporte
+
+export function paraOcorrencia(o: LinhaOcorrencia): OcorrenciaComportamental {
+  return {
+    id: o.id, pacienteId: o.pacienteId, origem: o.origem, ocorridaEm: o.ocorridaEm.toISOString(),
+    antecedente: o.antecedente, comportamento: o.comportamento, consequencia: o.consequencia,
+    intensidade: o.intensidade as Intensidade, leituraClinicaEm: instante(o.leituraClinicaEm),
+    sessaoId: o.sessaoId, ocorrenciaEscolarId: o.ocorrenciaEscolarId,
+  }
+}

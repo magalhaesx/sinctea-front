@@ -27,7 +27,7 @@ const menu: Grupo[] = [
     titulo: 'Área clínica',
     perfis: ['TERAPEUTA', 'COORDENADOR'],
     itens: [
-      { para: '/app/clinica', nome: 'Painel do terapeuta', uc: 'UC10', cor: CLI, fim: true, fora: true },
+      { para: '/app/clinica', nome: 'Painel do terapeuta', uc: 'UC10', cor: CLI, fim: true },
       // Plano, sessao e evolucao se abrem pela ficha, com o paciente escolhido.
       { para: '/app/clinica/pacientes', nome: 'Pacientes', uc: 'UC01', cor: CLI },
     ],

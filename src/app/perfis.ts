@@ -12,11 +12,12 @@ export const NOME_DO_PERFIL: Record<Perfil, string> = {
 
 /**
  * Painel inicial de cada perfil (mapa de rotas: docs/01, secao 2). So no
- * caminho principal, a agenda do terapeuta e os indicadores da coordenacao
- * ainda nao existem: a entrada e a lista de pacientes e a fila de planos.
+ * caminho principal, os indicadores da coordenacao ainda nao existem: a
+ * entrada dela e a fila de planos. O painel do terapeuta abre com os avisos
+ * da escola, sem a agenda.
  */
 export const PAINEL_DO_PERFIL: Record<Perfil, string> = {
-  TERAPEUTA: SO_CAMINHO_PRINCIPAL ? '/app/clinica/pacientes' : '/app/clinica',
+  TERAPEUTA: '/app/clinica',
   COORDENADOR: SO_CAMINHO_PRINCIPAL ? '/app/coordenacao/planos' : '/app/coordenacao',
   ADMINISTRADOR: '/app/admin/usuarios',
   RESPONSAVEL: '/app/familia',

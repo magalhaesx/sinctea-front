@@ -48,6 +48,7 @@ const titulos: [padrao: string, titulo: string][] = [
   ['/app/entrar', 'Entrar'],
   ['/app/convite/:token', 'Aceitar convite'],
   ['/app/primeiro-acesso/:token', 'Definir minha senha'],
+  ['/app/clinica', 'Painel do terapeuta'],
   ['/app/clinica/pacientes', 'Lista de pacientes'],
   ['/app/clinica/pacientes/novo', 'Cadastrar paciente'],
   ['/app/clinica/pacientes/:id', 'Ficha do paciente'],
@@ -64,7 +65,6 @@ const titulos: [padrao: string, titulo: string][] = [
   ['/app/ajuda', 'Acessibilidade e ajuda'],
   // Fora do caminho principal: so com o mock (app/caminhoPrincipal.ts).
   ...(SO_CAMINHO_PRINCIPAL ? [] : [
-    ['/app/clinica', 'Painel do terapeuta'],
     ['/app/clinica/pacientes/:id/evolucao', 'Evolução por objetivo'],
     ['/app/clinica/pacientes/:id/atividades', 'Atividades para casa'],
     ['/app/clinica/pacientes/:id/relatorio', 'Relatório de evolução'],
@@ -117,6 +117,7 @@ export function App() {
       <Route path="/app" element={protegida(TODOS, <LayoutApp />)}>
         <Route index element={<RaizDoApp />} />
 
+        <Route path="clinica" element={protegida(CLINICA, <PainelClinica />)} />
         <Route path="clinica/pacientes" element={protegida(CLINICA, <Pacientes />)} />
         <Route path="clinica/pacientes/novo" element={protegida(CLINICA, <NovoPaciente />)} />
         <Route path="clinica/pacientes/:id" element={protegida(CLINICA, <Ficha />)} />
@@ -142,7 +143,6 @@ export function App() {
             cai no "*" e volta ao painel do perfil. */}
         {!SO_CAMINHO_PRINCIPAL && (
           <>
-            <Route path="clinica" element={protegida(CLINICA, <PainelClinica />)} />
             <Route path="clinica/pacientes/:id/evolucao" element={protegida(CLINICA, <Evolucao />)} />
             <Route path="clinica/pacientes/:id/atividades" element={protegida(CLINICA, <Atividades />)} />
             <Route path="clinica/pacientes/:id/relatorio" element={protegida(CLINICA, <Relatorio />)} />

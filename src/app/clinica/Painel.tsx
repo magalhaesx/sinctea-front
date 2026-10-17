@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { Tela } from '../LayoutApp'
+import { SO_CAMINHO_PRINCIPAL } from '../caminhoPrincipal'
 import { NOME_DO_PERFIL } from '../perfis'
 import { Aviso } from '../../ui/Aviso'
 import { Botao, BotaoLink } from '../../ui/Botao'
@@ -25,6 +26,9 @@ import {
  * O professor relata o que observou; a leitura clinica e de quem tem
  * habilitacao para faze-la. E aqui que ela e registrada, e o aviso lido sai
  * da lista: o bloco mostra o que ainda espera pelo profissional.
+ *
+ * So no caminho principal (app/caminhoPrincipal.ts), a agenda e os registros
+ * a sincronizar ainda nao existem no servidor: o painel abre so com os avisos.
  */
 
 const SITUACAO: Record<SituacaoSessao, { rotulo: string; tom: 'ok' | 'at' | 'neutro'; simbolo: string }> = {
@@ -73,6 +77,7 @@ export function PainelClinica() {
   const [erroLeitura, setErroLeitura] = useState<string | null>(null)
 
   useEffect(() => {
+    if (SO_CAMINHO_PRINCIPAL) return
     let ativo = true
     setAgenda({ tipo: 'carregando' })
     servicos.sessoes.listarAgenda({ dia, pagina, porPagina: POR_PAGINA })
@@ -91,6 +96,7 @@ export function PainelClinica() {
   }, [tentativaAvisos])
 
   useEffect(() => {
+    if (SO_CAMINHO_PRINCIPAL) return
     let ativo = true
     servicos.sessoes.listarPendentesDeSincronizacao({ porPagina: 1 })
       .then((p) => { if (ativo) setPendentes(p.total) })
@@ -120,7 +126,11 @@ export function PainelClinica() {
   const totalNaAgenda = agenda.tipo === 'pronto' ? agenda.dados.total : null
   const totalAvisos = avisos.tipo === 'pronto' ? avisos.dados.total : 0
 
-  const resumo = totalNaAgenda === null
+  const resumoDosAvisos = avisos.tipo !== 'pronto'
+    ? 'Carregando os avisos da escola'
+    : totalAvisos === 0 ? 'Nenhum aviso novo da escola' : totalAvisos === 1 ? '1 aviso novo da escola' : `${totalAvisos} avisos novos da escola`
+
+  const resumo = SO_CAMINHO_PRINCIPAL ? resumoDosAvisos : totalNaAgenda === null
     ? 'Carregando a agenda'
     : `${totalNaAgenda === 0 ? 'Nenhum atendimento' : totalNaAgenda === 1 ? '1 atendimento' : `${totalNaAgenda} atendimentos`}` +
       `${ehHoje ? ' hoje' : ''} · ${totalAvisos === 0 ? 'nenhum aviso novo' : totalAvisos === 1 ? '1 aviso novo' : `${totalAvisos} avisos novos`}`
@@ -134,7 +144,7 @@ export function PainelClinica() {
     >
       <Titulo sub={resumo}>{dataPorExtenso}</Titulo>
 
-      {!ehHoje && (
+      {!ehHoje && !SO_CAMINHO_PRINCIPAL && (
         <p className="text-sm">
           Você está vendo a agenda de outro dia.{' '}
           <Link to="/app/clinica" className="font-bold text-cli-ink underline">Voltar para hoje</Link>
@@ -197,6 +207,7 @@ export function PainelClinica() {
         )}
       </section>
 
+      {!SO_CAMINHO_PRINCIPAL && (
       <section aria-labelledby="h-agenda" className="flex flex-col gap-3">
         <h2 id="h-agenda" className="text-lg font-bold">Agenda do dia</h2>
 
@@ -267,9 +278,10 @@ export function PainelClinica() {
           )
         )}
       </section>
+      )}
 
       {/* Bloco que so diz "nada aqui" gasta atencao: sem pendencia, sem bloco. */}
-      {pendentes > 0 && (
+      {pendentes > 0 && !SO_CAMINHO_PRINCIPAL && (
         <Aviso titulo={`${pendentes} ${pendentes === 1 ? 'registro aguardando' : 'registros aguardando'} sincronização`}>
           Foram feitos sem conexão e serão enviados assim que a rede voltar. Nada se perde — você
           pode continuar registrando normalmente.

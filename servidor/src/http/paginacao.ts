@@ -1,4 +1,4 @@
-import type { FiltroPaginacao, Pagina } from '@sinctea/compartilhado'
+import { ErroServico, type FiltroPaginacao, type Pagina } from '@sinctea/compartilhado'
 
 /**
  * A mesma pagina que o mock devolvia (src/servicos/mock/infra.ts): de 1 a 100
@@ -24,6 +24,15 @@ export function lerPaginacao(query: Record<string, unknown>): FiltroPaginacao {
 
 export function lerTexto(valor: unknown): string | undefined {
   return typeof valor === 'string' && valor.trim() !== '' ? valor : undefined
+}
+
+/** Instante ISO na query; ausente, nulo. Texto que nao e data e erro de quem pediu. */
+export function lerInstante(valor: unknown, campo: string): Date | undefined {
+  const texto = lerTexto(valor)
+  if (texto === undefined) return undefined
+  const data = new Date(texto)
+  if (Number.isNaN(data.getTime())) throw new ErroServico('VALIDACAO', 'Data inválida.', { [campo]: 'Data inválida.' })
+  return data
 }
 
 export function lerBooleano(valor: unknown): boolean | undefined {

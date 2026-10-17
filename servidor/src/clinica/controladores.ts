@@ -1,11 +1,12 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, Post, Put, Query, Req } from '@nestjs/common'
 import type {
-  CartaoEstrategia, NivelSuporte, Objetivo, PacienteDetalhe, Pagina, PlanoTerapeutico, RegistroAtividade,
-  ResponsavelCadastrado, Sessao, SituacaoPlano, SituacaoSessao,
+  CartaoEstrategia, NivelSuporte, Objetivo, OcorrenciaComportamental, Origem, PacienteDetalhe, Pagina, PlanoTerapeutico,
+  RegistroAtividade, ResponsavelCadastrado, Sessao, SituacaoPlano, SituacaoSessao,
 } from '@sinctea/compartilhado'
 import { Auditar, Perfis } from '../acesso/metadados.js'
-import { lerPaginacao, lerTexto } from '../http/paginacao.js'
+import { lerInstante, lerPaginacao, lerTexto } from '../http/paginacao.js'
 import type { RequisicaoHttp } from '../http/tipos-http.js'
+import { ServicoOcorrencias, type FiltroOcorrenciaServidor } from './servico-ocorrencias.js'
 import { ServicoPacientes } from './servico-pacientes.js'
 import { ServicoPlanos, type DoPaciente } from './servico-planos.js'
 import { ServicoSessoesClinicas } from './servico-sessoes-clinicas.js'
@@ -25,6 +26,16 @@ function doPaciente<T>(req: RequisicaoHttp, { resultado, pacienteId }: DoPacient
   return resultado
 }
 const deParametro = { parametro: 'id' }
+const ORIGENS: Origem[] = ['CLINICA', 'CASA', 'ESCOLA']
+
+function lerFiltroOcorrencia(query: Record<string, unknown>): FiltroOcorrenciaServidor {
+  const origem = lerTexto(query.origem) as Origem | undefined
+  return {
+    ...lerPaginacao(query),
+    origem: origem && ORIGENS.includes(origem) ? origem : undefined,
+    desde: lerInstante(query.desde, 'desde'),
+  }
+}
 
 @Controller('pacientes')
 @Perfis(...CLINICA)
@@ -33,6 +44,7 @@ export class ControladorPacientes {
     private readonly pacientes: ServicoPacientes,
     private readonly planos: ServicoPlanos,
     private readonly sessoes: ServicoSessoesClinicas,
+    private readonly ocorrencias: ServicoOcorrencias,
   ) {}
 
   @Get()
@@ -104,6 +116,12 @@ export class ControladorPacientes {
   })
   criarPlano(@Req() req: RequisicaoHttp, @Param('id') id: string, @Body() corpo: Record<string, unknown> | undefined) {
     return this.planos.criar(sessaoDe(req), id, corpo ?? {})
+  }
+
+  @Get(':id/ocorrencias')
+  @Auditar({ entidade: 'OcorrenciaComportamental', acao: 'LEITURA_AUTORIZADA', pacienteId: deParametro, detalhe: 'Eventos comportamentais.' })
+  listarOcorrencias(@Req() req: RequisicaoHttp, @Param('id') id: string, @Query() query: Record<string, unknown>) {
+    return this.ocorrencias.listarPorPaciente(sessaoDe(req), id, lerFiltroOcorrencia(query))
   }
 
   @Get(':id/sessoes')
@@ -200,6 +218,37 @@ export class ControladorPlanos {
   })
   async editarCartao(@Req() req: RequisicaoHttp, @Param('id') id: string, @Body() corpo: Record<string, unknown> | undefined) {
     return doPaciente(req, await this.planos.editarCartao(sessaoDe(req), id, corpo ?? {}))
+  }
+}
+
+/**
+ * Avisos da escola e leitura clinica (item 6 do caminho principal): o fim do
+ * ciclo clinica–escola. O relato do professor e evento preliminar; a leitura
+ * clinica e do profissional habilitado.
+ */
+@Controller('ocorrencias')
+@Perfis(...CLINICA)
+export class ControladorOcorrencias {
+  constructor(private readonly ocorrencias: ServicoOcorrencias) {}
+
+  /** A lista atravessa pacientes: o registro guarda quantos avisos sairam, como a lista de pacientes. */
+  @Get('avisos-escola')
+  @Auditar({
+    entidade: 'OcorrenciaEscolar', acao: 'LEITURA_AUTORIZADA',
+    detalhe: (_q, r) => `Avisos da escola: ${(r as Pagina<unknown>).total}.`,
+  })
+  listarAvisos(@Req() req: RequisicaoHttp, @Query() query: Record<string, unknown>) {
+    return this.ocorrencias.listarAvisosDaEscola(sessaoDe(req), lerFiltroOcorrencia(query))
+  }
+
+  @Post(':id/leitura-clinica')
+  @HttpCode(200)
+  @Auditar({
+    entidade: 'OcorrenciaComportamental', acao: 'ALTERACAO', idEntidade: deParametro,
+    detalhe: (_q, r) => `Leitura clínica registrada (evento de origem ${(r as OcorrenciaComportamental).origem}).`,
+  })
+  async registrarLeitura(@Req() req: RequisicaoHttp, @Param('id') id: string) {
+    return doPaciente(req, await this.ocorrencias.registrarLeituraClinica(sessaoDe(req), id))
   }
 }
 
