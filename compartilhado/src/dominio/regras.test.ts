@@ -10,6 +10,7 @@ import {
   textoDoCriterio, textoDoPeriodo,
   validarDevolucaoPlano, validarNovoConsentimento, validarNovoObjetivo, verificarAcessoEscola,
   calcularExpiracaoPrimeiroAcesso, emailValido, erroDaSenhaNova, normalizarEmail, situacaoPrimeiroAcesso,
+  escolaParecida,
 } from './regras.js'
 import { diaCivilEm } from './datas.js'
 
@@ -396,5 +397,28 @@ describe('conta e primeiro acesso (docs/07, secao 0)', () => {
     expect(situacaoPrimeiroAcesso({ expiraEm, usadoEm: null }, new Date(horas(71.99)))).toBe('VALIDO')
     expect(situacaoPrimeiroAcesso({ expiraEm, usadoEm: null }, new Date(horas(72)))).toBe('EXPIRADO')
     expect(situacaoPrimeiroAcesso({ expiraEm, usadoEm: horas(1) }, new Date(horas(2)))).toBe('USADO')
+  })
+})
+
+describe('escolaParecida (lacuna 4)', () => {
+  const vitoria = { nome: 'Escola Municipal Vitória-Régia', municipio: 'Manaus' }
+
+  it('o mesmo nome escrito de outro jeito, no mesmo municipio, parece a mesma escola', () => {
+    expect(escolaParecida('EM Vitoria Regia', 'manaus', vitoria)).toBe(true)
+    expect(escolaParecida('Vitória-Régia', ' Manaus ', vitoria)).toBe(true)
+    expect(escolaParecida('escola municipal vitoria-regia', 'MANAUS', vitoria)).toBe(true)
+  })
+
+  it('so as palavras comuns de escola nao bastam', () => {
+    expect(escolaParecida('Escola Municipal Rio Negro', 'Manaus', vitoria)).toBe(false)
+    expect(escolaParecida('Escola Estadual de Ensino Fundamental', 'Manaus', vitoria)).toBe(false)
+  })
+
+  it('outro municipio nunca e a mesma escola', () => {
+    expect(escolaParecida('Escola Municipal Vitória-Régia', 'Parintins', vitoria)).toBe(false)
+  })
+
+  it('nome vazio nao parece nada', () => {
+    expect(escolaParecida('   ', 'Manaus', vitoria)).toBe(false)
   })
 })

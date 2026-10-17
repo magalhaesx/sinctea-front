@@ -20,6 +20,7 @@ import {
 import { EstadoCarregando } from '../../ui/EstadoCarregando'
 import { EstadoErro } from '../../ui/EstadoErro'
 import { NUNCA_VISIVEL } from '../limites'
+import { CadastroDeEscola } from './CadastroDeEscola'
 
 /**
  * Tela 17 · Autorizar o acesso da escola · /app/familia/consentimento
@@ -33,6 +34,10 @@ import { NUNCA_VISIVEL } from '../limites'
  * O servico recusa do mesmo jeito; a tela so nao oferece o que vai ser negado.
  *
  * A revogacao vale na hora (regra 5) e tem confirmacao em duas etapas.
+ *
+ * A escola que nao esta na lista, a familia cadastra aqui mesmo (lacuna 4),
+ * depois de ver as parecidas do mesmo municipio. O sistema comeca vazio: sem
+ * nenhuma escola, o cadastro ja abre.
  *
  * Conceder tambem vai em duas etapas, e a segunda e o TERMO INTEIRO. Dado de
  * saude exige consentimento especifico e destacado (LGPD, art. 11, I): uma
@@ -70,6 +75,7 @@ export function Consentimento() {
   const [pacienteId, setPacienteId] = useState<string | null>(null)
 
   const [escolaId, setEscolaId] = useState('')
+  const [cadastrandoEscola, setCadastrandoEscola] = useState(false)
   const [escopos, setEscopos] = useState<EscopoAcesso[]>(['CARTAO_ESTRATEGIA', 'REGISTRO_OCORRENCIA'])
   const [validadeAte, setValidadeAte] = useState('')
   const [erros, setErros] = useState<Record<string, string>>({})
@@ -139,6 +145,17 @@ export function Consentimento() {
   }, [pacienteId, tentativa])
 
   const recarregar = () => setTentativa((t) => t + 1)
+
+  /** A escola cadastrada (ou a parecida escolhida) entra na lista ja selecionada. */
+  const escolherEscola = (escola: Escola) => {
+    setEstado((atual) => atual.tipo === 'pronto' && !atual.escolas.some((e) => e.id === escola.id)
+      ? { ...atual, escolas: [...atual.escolas, escola].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')) }
+      : atual)
+    setEscolaId(escola.id)
+    setCadastrandoEscola(false)
+    setErros(({ escolaId: _, ...resto }) => resto)
+    focoPendente.current = 'escola'
+  }
 
   const alternarEscopo = (valor: EscopoAcesso) =>
     setEscopos((atual) => atual.includes(valor) ? atual.filter((e) => e !== valor) : [...atual, valor])
@@ -334,16 +351,37 @@ export function Consentimento() {
           <Cartao>
             <h2 className="text-lg font-bold">Autorizar uma escola</h2>
             <form className="mt-3 flex flex-col gap-4" onSubmit={revisarTermo} noValidate>
-              <Campo id="escola" rotulo="Escola" dica="O acesso vale para esta escola. Outra escola precisa de uma autorização própria.">
-                <select id="escola" ref={selectDaEscola} className={campo} value={escolaId}
-                  onChange={(e) => setEscolaId(e.target.value)}>
-                  <option value="">Escolha a escola</option>
-                  {estado.escolas.map((e) => (
-                    <option key={e.id} value={e.id}>{e.nome} · {e.rede} · {e.municipio}</option>
-                  ))}
-                </select>
-                {erros.escolaId && <p className="text-sm font-bold text-cr">{erros.escolaId}</p>}
-              </Campo>
+              {cadastrandoEscola || estado.escolas.length === 0 ? (
+                <>
+                  {estado.escolas.length === 0 && (
+                    <p className="text-sm text-tinta2">
+                      Nenhuma escola foi cadastrada ainda. Cadastre a escola de {primeiroNome}.
+                    </p>
+                  )}
+                  <CadastroDeEscola
+                    campo={campo}
+                    focar={cadastrandoEscola}
+                    aoEscolher={escolherEscola}
+                    aoCancelar={estado.escolas.length > 0 ? () => { setCadastrandoEscola(false); focoPendente.current = 'escola' } : undefined}
+                  />
+                  {erros.escolaId && <p className="text-sm font-bold text-cr">{erros.escolaId}</p>}
+                </>
+              ) : (
+                <Campo id="escola" rotulo="Escola" dica="O acesso vale para esta escola. Outra escola precisa de uma autorização própria.">
+                  <select id="escola" ref={selectDaEscola} className={campo} value={escolaId}
+                    aria-describedby="escola-dica" onChange={(e) => setEscolaId(e.target.value)}>
+                    <option value="">Escolha a escola</option>
+                    {estado.escolas.map((e) => (
+                      <option key={e.id} value={e.id}>{e.nome} · {e.rede} · {e.municipio}</option>
+                    ))}
+                  </select>
+                  {erros.escolaId && <p className="text-sm font-bold text-cr">{erros.escolaId}</p>}
+                  <button type="button" className="self-start font-bold text-fam-ink underline underline-offset-2"
+                    onClick={() => setCadastrandoEscola(true)}>
+                    A escola não está na lista
+                  </button>
+                </Campo>
+              )}
 
               <fieldset className="rounded-lg border border-linha p-4">
                 <legend className="px-1.5 font-bold">O que a escola poderá acessar</legend>

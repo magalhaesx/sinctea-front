@@ -1,7 +1,9 @@
 import type { ServicoEscola, ServicoPaciente, ServicoProfissional } from '@sinctea/compartilhado'
-import { ErroServico, type Paciente, type PacienteDetalhe, type PacienteResumo, type Responsavel, type SituacaoPlano } from '@sinctea/compartilhado'
+import { ErroServico, REDES_DE_ENSINO, type Paciente, type PacienteDetalhe, type PacienteResumo, type Responsavel, type SituacaoPlano } from '@sinctea/compartilhado'
 import { partesDaDataCivil } from '@sinctea/compartilhado/dominio/datas'
-import { emailValido, idadeEmAnos, normalizarEmail, situacaoConsentimento } from '@sinctea/compartilhado/dominio/regras'
+import {
+  emailValido, escolaParecida, idadeEmAnos, normalizarEmail, paraBusca, situacaoConsentimento,
+} from '@sinctea/compartilhado/dominio/regras'
 import { alcancaClinicamente, exigirPacienteClinico } from './acesso'
 import {
   auditar, banco, exigirPerfil, exigirValido, gerarId, paginar, relogio, responder, todosUsuarios, usuarioPorId,
@@ -188,5 +190,31 @@ export const escolasMock: ServicoEscola = {
   listar: (filtro = {}) => responder(() => {
     exigirPerfil(['TERAPEUTA', 'COORDENADOR', 'ADMINISTRADOR', 'RESPONSAVEL'], 'Escola')
     return paginar([...banco.escolas].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')), filtro)
+  }),
+
+  parecidas: (nome, municipio) => responder(() => {
+    exigirPerfil(['RESPONSAVEL'], 'Escola')
+    if (!nome.trim() || !municipio.trim()) return []
+    return banco.escolas.filter((e) => escolaParecida(nome, municipio, e)).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
+  }),
+
+  /** Lacuna 4: a familia cadastra a escola que nao esta na lista. As mesmas regras do servidor. */
+  cadastrar: (dados) => responder(() => {
+    const sessao = exigirPerfil(['RESPONSAVEL'], 'Escola')
+    const nome = dados.nome.trim().replace(/\s+/g, ' ')
+    const municipio = dados.municipio.trim().replace(/\s+/g, ' ')
+    const rede = REDES_DE_ENSINO.find((r) => paraBusca(r) === paraBusca(dados.rede.trim()))
+    const erros: Record<string, string> = {}
+    if (!nome) erros.nome = 'Escreva o nome da escola.'
+    if (!rede) erros.rede = 'Escolha a rede de ensino.'
+    if (!municipio) erros.municipio = 'Escreva o município.'
+    exigirValido(erros)
+    if (banco.escolas.some((e) => paraBusca(e.nome) === paraBusca(nome) && paraBusca(e.municipio) === paraBusca(municipio))) {
+      throw new ErroServico('CONFLITO', 'Esta escola já está cadastrada. Escolha-a na lista.', { nome: 'Esta escola já está cadastrada. Escolha-a na lista.' })
+    }
+    const escola = { id: gerarId('esc'), nome, rede: rede!, municipio }
+    banco.escolas.push(escola)
+    auditar(sessao, { acao: 'CRIACAO', entidade: 'Escola', idEntidade: escola.id, detalhe: `Escola cadastrada pela família: ${nome} (${rede}, ${municipio}).` })
+    return escola
   }),
 }

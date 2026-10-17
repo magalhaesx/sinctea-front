@@ -20,14 +20,15 @@ export class InterceptadorAuditoria implements NestInterceptor {
     return proximo.handle().pipe(mergeMap(async (resposta: unknown) => {
       const ctx = requisicao.sinctea
       const declaracao = ctx?.declaracao
-      if (ctx && declaracao?.acao) {
+      if (ctx && declaracao?.acao && !ctx.dispensarRegistro) {
         await this.auditoria.registrar(ctx.sessao, {
           acao: declaracao.acao,
           entidade: declaracao.entidade,
-          idEntidade: textoOuNulo(resolver(declaracao.idEntidade, requisicao, resposta)),
+          idEntidade: ctx.idEntidade ?? textoOuNulo(resolver(declaracao.idEntidade, requisicao, resposta)),
           pacienteId: ctx.pacienteId ?? textoOuNulo(resolver(declaracao.pacienteId, requisicao, resposta)),
           detalhe: textoOuNulo(resolver(declaracao.detalhe, requisicao, resposta)) ?? declaracao.entidade,
           ipOrigem: requisicao.ip ?? null,
+          valorAnterior: ctx.valorAnterior ?? null,
         })
       }
       return resposta

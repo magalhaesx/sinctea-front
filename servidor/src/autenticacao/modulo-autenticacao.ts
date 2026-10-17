@@ -9,6 +9,6 @@ import { ServicoSessoes } from './servico-sessoes.js'
   imports: [ModuloAuditoria],
   controllers: [ControladorAutenticacao],
   providers: [ServicoAutenticacao, ServicoSessoes, LimiteDeTentativas],
-  exports: [ServicoAutenticacao, ServicoSessoes],
+  exports: [ServicoAutenticacao, ServicoSessoes, LimiteDeTentativas],
 })
 export class ModuloAutenticacao {}

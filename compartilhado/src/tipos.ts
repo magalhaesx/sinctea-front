@@ -671,6 +671,18 @@ export interface Escola {
   municipio: string
 }
 
+export const REDES_DE_ENSINO = ['Municipal', 'Estadual', 'Federal', 'Particular'] as const
+
+/**
+ * Escola cadastrada pelo responsavel, no formulario de consentimento (docs/07,
+ * secao 0, lacuna 4): a familia nomeia a instituicao (LGPD, art. 7 e 8).
+ */
+export interface NovaEscola {
+  nome: string
+  rede: string
+  municipio: string
+}
+
 /**
  * Quem concede e sempre o Responsavel (regra 1). O estado vigente e derivado
  * das datas, nunca guardado em um campo proprio que possa ficar desatualizado.

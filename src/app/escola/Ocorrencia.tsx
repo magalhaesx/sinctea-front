@@ -248,7 +248,7 @@ export function Ocorrencia() {
               <Botao area="esc" className="w-full" disabled={salvando} onClick={() => void enviar()}>
                 {salvando
                   ? 'Enviando…'
-                  : corrigindo ? 'Salvar a correção' : 'Registrar e avisar a terapeuta'}
+                  : corrigindo ? 'Salvar a correção' : 'Registrar a ocorrência'}
               </Botao>
 
               {corrigindo && (
@@ -263,8 +263,11 @@ export function Ocorrencia() {
           <div ref={regiaoViva} tabIndex={-1} aria-live="polite">
             {registrada && !corrigindo && (
               <Aviso tom="ok" titulo={registrada.corrigidaEm ? 'Correção salva' : 'Ocorrência registrada'}>
+                {/* Guardada, e nao "avisada": o aviso a clinica (avisos da escola)
+                    ainda nao existe no sistema real (docs/07, secao 0). */}
                 <p>
-                  A terapeuta responsável foi avisada. Você não precisa fazer mais nada.
+                  O registro foi guardado para a leitura da equipe terapêutica. Você não precisa
+                  fazer mais nada.
                 </p>
                 <p className="mt-2">
                   {naPrazo

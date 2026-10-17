@@ -30,7 +30,7 @@ export interface DeclaracaoAuditoria {
    * O que se registra quando a rota responde com sucesso. Nulo: a rota nao
    * toca dado do paciente, e so a negativa entra na trilha (regra 6).
    */
-  acao: Extract<RegistroAuditoria['acao'], 'LEITURA_AUTORIZADA' | 'CRIACAO' | 'ALTERACAO'> | null
+  acao: Exclude<RegistroAuditoria['acao'], 'ACESSO_NEGADO'> | null
   /** O paciente: nome do parametro da rota, ou funcao sobre requisicao e resposta. */
   pacienteId?: DeOnde<string | null> | { parametro: string }
   idEntidade?: DeOnde<string | null> | { parametro: string }

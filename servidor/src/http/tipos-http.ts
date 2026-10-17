@@ -41,6 +41,15 @@ export interface ContextoSinctea {
    * sessao) e o controlador o descobre. O interceptador o prefere ao da rota.
    */
   pacienteId?: string
+  /** O id do registro criado, quando a resposta nao o traz (o aceite do convite). */
+  idEntidade?: string
+  /** A versao anterior dos campos que mudaram (a correcao de ocorrencia escolar). */
+  valorAnterior?: string
+  /**
+   * A operacao nao mudou nem revelou nada — o convite que nao vale mais, a
+   * revogacao repetida —, e nao ha o que registrar. A negativa nunca usa isto.
+   */
+  dispensarRegistro?: boolean
 }
 
 export interface RequisicaoHttp {

@@ -343,6 +343,33 @@ export function paraBusca(texto: string): string {
   return texto.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase()
 }
 
+/** Palavras que toda escola tem e que nao ajudam a distinguir uma da outra. */
+const PALAVRAS_COMUNS_DE_ESCOLA = new Set([
+  'escola', 'municipal', 'estadual', 'federal', 'particular', 'colegio', 'centro', 'educacional',
+  'ensino', 'fundamental', 'medio', 'infantil', 'instituto', 'unidade', 'professor', 'professora',
+  'de', 'da', 'do', 'das', 'dos', 'e', 'em', 'emef', 'eeef', 'cmei',
+])
+
+function palavrasQueDistinguem(nome: string): string[] {
+  return paraBusca(nome).split(/[^a-z0-9]+/).filter((p) => p.length >= 3 && !PALAVRAS_COMUNS_DE_ESCOLA.has(p))
+}
+
+/**
+ * Duas escolas do mesmo municipio parecem a mesma quando dividem uma palavra
+ * que distingue — "Escola Municipal Vitoria-Regia" e "EM Vitoria Regia" —, ou
+ * quando um nome contem o outro. Serve para mostrar as candidatas antes de
+ * cadastrar: quem decide se e a mesma e a familia.
+ */
+export function escolaParecida(nome: string, municipio: string, escola: { nome: string; municipio: string }): boolean {
+  if (paraBusca(municipio.trim()) !== paraBusca(escola.municipio.trim())) return false
+  const a = paraBusca(nome.trim())
+  const b = paraBusca(escola.nome.trim())
+  if (!a || !b) return false
+  if (a.includes(b) || b.includes(a)) return true
+  const deB = new Set(palavrasQueDistinguem(escola.nome))
+  return palavrasQueDistinguem(nome).some((p) => deB.has(p))
+}
+
 /** E-mail como fica gravado: sem espacos nas pontas e em minusculas. */
 export function normalizarEmail(email: string): string {
   return email.trim().toLowerCase()

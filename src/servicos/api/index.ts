@@ -7,8 +7,9 @@ import { comParametros as q, requisitar as r } from './cliente'
  * Mesmos contratos do mock. Nenhuma regra de acesso e aplicada aqui: quem
  * decide e o servidor. Ja implementados no servidor: autenticacao (item 1 da
  * secao 0 do docs/07), usuarios e profissionais (item 2), pacientes, plano,
- * cartao e sessao (item 3). Os demais caminhos sao provisorios ate o item de
- * cada um chegar.
+ * cartao e sessao (item 3); familia, escolas, consentimento, convite e area
+ * da escola (item 4). Os demais caminhos sao provisorios ate o item de cada
+ * um chegar.
  */
 
 const id = encodeURIComponent
@@ -42,6 +43,8 @@ export const servicosApi: Servicos = {
 
   escolas: {
     listar: (filtro) => r('GET', q('/escolas', filtro)),
+    parecidas: (nome, municipio) => r('GET', q('/escolas/parecidas', { nome, municipio })),
+    cadastrar: (dados) => r('POST', '/escolas', dados),
   },
 
   planos: {

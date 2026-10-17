@@ -5,7 +5,7 @@ import type {
   ExecucaoAtividadeCasa, FiltroAgenda, FiltroAuditoria, FiltroOcorrencia, FiltroPaciente,
   FiltroPaginacao, FiltroSessao, FiltroUsuario, FilhoResumo, ItemAgenda, LinkPrimeiroAcesso, NovaAtividadeCasa,
   NovaOcorrenciaComportamental, NovaOcorrenciaEscolar, NovoConsentimento, NovoObjetivo,
-  NovoPaciente, NovoPlano, NovoResponsavel, ResponsavelCadastrado, DadosCartao, Objetivo, ObjetivoAcessivel, OcorrenciaComportamental, OcorrenciaEscolar,
+  NovoPaciente, NovoPlano, NovoResponsavel, ResponsavelCadastrado, DadosCartao, NovaEscola, Objetivo, ObjetivoAcessivel, OcorrenciaComportamental, OcorrenciaEscolar,
   ConteudoRelatorio, DadosProfissionais, MotivoAtencao, Pagina, PacienteDetalhe, PacienteResumo, PedidoRelatorio,
   Perfil, PlanoParaValidacao, PlanoTerapeutico, PonteEscola, PrimeiroAcessoPublico, Profissional, RegistroAtividade,
   RegistroAuditoria, RelatorioEvolucao, ResumoClinica, Resultado, Sessao, SessaoUsuario,
@@ -60,6 +60,13 @@ export interface ServicoProfissional {
 
 export interface ServicoEscola {
   listar(filtro?: FiltroPaginacao): Promise<Pagina<Escola>>
+  /**
+   * As escolas do mesmo municipio com nome parecido: aparecem antes de
+   * cadastrar, para a familia escolher a que ja existe em vez de duplicar.
+   */
+  parecidas(nome: string, municipio: string): Promise<Escola[]>
+  /** Lacuna 4: quem cadastra e o proprio responsavel. Auditado. */
+  cadastrar(dados: NovaEscola): Promise<Escola>
 }
 
 export interface ServicoPlano {

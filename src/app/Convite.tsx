@@ -22,6 +22,10 @@ import { NUNCA_VISIVEL } from './limites'
  * A escola foi nomeada pela familia no consentimento e aparece ANTES do
  * formulario: e assim que o professor distingue um convite legitimo. Ele
  * declara apenas turma, turno e atuacao.
+ *
+ * Professor com mais de um aluno usa o mesmo formulario (revisao de 16/10): o
+ * e-mail da conta que ja existe, com a senha dela, e o aluno novo entra nessa
+ * conta. A senha errada conta no limite de tentativas, como na entrada.
  */
 
 const ESCOPO: Record<string, string> = {
@@ -120,7 +124,7 @@ export function Convite() {
         {estado.tipo === 'pronto' && estado.convite.situacao === 'VALIDO' && (
           <>
             <Titulo sub={`${estado.convite.responsavel} convidou você a acompanhar ${estado.convite.aluno} na ${estado.convite.escola}.`}>
-              Criar minha conta de professor
+              Aceitar o convite da família
             </Titulo>
 
             <Cartao>
@@ -159,8 +163,13 @@ export function Convite() {
                 )}
               </div>
 
-              <Campo id="nome" rotulo="Seu nome">
-                <input type="text" autoComplete="name" {...campo('nome')} />
+              <p className="text-sm text-tinta2">
+                Se você já tem conta no SINCTEA, use o mesmo e-mail e senha. O aluno novo entra na
+                sua lista.
+              </p>
+
+              <Campo id="nome" rotulo="Seu nome" dica="Se você já tem conta, pode deixar em branco.">
+                <input type="text" autoComplete="name" aria-describedby="nome-dica" {...campo('nome')} />
                 {erros.nome && <p className="text-sm font-bold text-cr">{erros.nome}</p>}
               </Campo>
 
@@ -169,8 +178,8 @@ export function Convite() {
                 {erros.email && <p className="text-sm font-bold text-cr">{erros.email}</p>}
               </Campo>
 
-              <Campo id="senha" rotulo="Crie uma senha" dica="Ao menos 8 caracteres.">
-                <input type="password" autoComplete="new-password" {...campo('senha')} />
+              <Campo id="senha" rotulo="Senha" dica="Conta nova: crie uma senha de ao menos 8 caracteres. Conta que já existe: a senha dela.">
+                <input type="password" autoComplete="new-password" aria-describedby="senha-dica" {...campo('senha')} />
                 {erros.senha && <p className="text-sm font-bold text-cr">{erros.senha}</p>}
               </Campo>
 
@@ -191,7 +200,7 @@ export function Convite() {
               </Campo>
 
               <Botao area="esc" type="submit" disabled={enviando}>
-                {enviando ? 'Criando…' : 'Criar minha conta'}
+                {enviando ? 'Enviando…' : 'Aceitar o convite'}
               </Botao>
             </form>
           </>
