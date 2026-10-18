@@ -187,14 +187,14 @@ Qualidade: ISO/IEC 25010:2023. Método: Kanban com limites de trabalho em progre
 
 ## 7. Estado atual
 
-Atualizado em 16/10/2026, lendo o código — não a memória.
+Atualizado em 18/10/2026, lendo o código — não a memória.
 
 **Concluído**
 - Pré-projeto entregue em 17/08 — não pode mais ser alterado
 - Alinhamento aos 5 eixos · cronograma de 13 semanas · quadro Kanban
-- Modelagem UML: casos de uso, classes (revisão de 15/10 em `docs/uml/`), sequência
-- DER e dicionário de dados (`docs/uml/` e `docs/09`), gerados em 15/10 do
-  catálogo do PostgreSQL com as três migrações. Não se editam à mão: mudou o
+- Modelagem UML: casos de uso, classes (revisão de 18/10 em `docs/uml/`), sequência
+- DER e dicionário de dados (`docs/uml/` e `docs/09`), gerados em 18/10 do
+  catálogo do PostgreSQL com as seis migrações. Não se editam à mão: mudou o
   esquema, geram-se de novo
 - Documento de IHC e UX/UI com avaliação heurística e conformidade
 - **As 22 telas existem e falam com a camada de serviços**, em 24 rotas do
@@ -218,7 +218,8 @@ Atualizado em 16/10/2026, lendo o código — não a memória.
   PostgreSQL 17, constrói a imagem Docker, põe a imagem para rodar e só então
   migra o banco, com o papel dono. Não publica mais no GitHub Pages. Em pull
   request, `verificar.yml` roda testes e build
-- Uma tag por etapa fechada: `entrega-2026-09-14`, `etapa-6`, `etapa-7`, `etapa-8`
+- Uma tag por etapa fechada: `entrega-2026-09-14`, `etapa-6`, `etapa-7`, `etapa-8`,
+  `etapa-9`
 
 **Em construção — o caminho principal, até 19/10 (`docs/07`, seção 0)**
 
@@ -263,9 +264,9 @@ em produção (o antigo passo B5) foi cancelada. No código, hoje:
   dependências de produção, sem o Prisma CLI); o Nest servindo o build do front
   na raiz quando `PASTA_DO_FRONT` aponta para ele, com a API em `/api` e 404 em
   JSON para o resto; e o papel `sinctea_app`, que não é dono de nada
-  (`servidor/prisma/papel-aplicacao.exemplo.sql`). O Neon tem as três
-  migrações, aplicadas pelo job `migrar`, e nenhum registro; o `sinctea_app`
-  foi conferido nele. O Render está em configuração
+  (`servidor/prisma/papel-aplicacao.exemplo.sql`). O Neon tem as seis
+  migrações, aplicadas pelo job `migrar`; o `sinctea_app` foi conferido nele.
+  O Render publica em https://sinctea.onrender.com
 - Os três pacotes são ESM. O front compila o fonte do compartilhado pela
   condição `fonte` do `package.json`; o servidor importa o JavaScript de
   `compartilhado/dist`, que o build dele gera antes
@@ -425,15 +426,14 @@ Enquanto não se resolverem, não devem ser afirmadas na defesa:
    ser construído, não há manifesto nem *service worker*. O registro de sessão
    (tela 7) mostra o estado da conexão e marca como pendente o que ainda não
    subiu, mas a fila de sincronização não existe.
-3. **O endereço do Render ainda não foi conferido com o sistema real.** Com
-   o item 5 na main, o CI publica a imagem que fala só com a API. Falta o
-   Lucas terminar o B4 — a `DATABASE_URL` do Render com o `sinctea_app` — e
-   conferir no ar `/`, `/api/saude` com a última migração e o 404 em JSON.
-   Não se divulga antes disso.
-4. **Responsável e professor não recuperam a senha.** Sem envio de e-mail, só
+3. **Responsável e professor não recuperam a senha.** Sem envio de e-mail, só
    a equipe recebe link novo, pela administração. A clínica não troca a senha
    de quem autoriza a escola. Limite declarado em 16/10: fica assim até o envio
    de e-mail, depois de 19/10.
+
+O endereço do Render saiu desta lista em 17/10/2026: o B6 conferiu no ar `/`,
+`/api/saude` com a última migração e o 404 em JSON (tag `etapa-9`). Falta
+confirmar no painel do Render que o Auto-Deploy está em *After CI Checks Pass*.
 
 O cartão de estratégias saiu desta lista em 16/10/2026: o terapeuta o escreve
 na tela 6, com conteúdo, e não existe mais cartão em branco.
@@ -455,12 +455,15 @@ termo, e a família reabre o texto da versão registrada pela própria tela 17.
   novo a partir dos dados de hoje produziria outro documento
 - 11/10/2026 — `RegistroAuditoria` ganhou `valorAnterior : String`. Guarda o JSON
   canônico **apenas dos campos que mudaram**, na versão anterior — nunca o
-  registro inteiro, por minimização. Hoje só a correção de ocorrência escolar o
-  preenche; nas demais ações é nulo
+  registro inteiro, por minimização. Hoje o preenchem a correção de ocorrência
+  escolar e a edição de objetivo e das datas do plano; nas demais ações é nulo
 - 15/10/2026 — o diagrama alcançou o banco: `RegistroAuditoria` mostra
   `pacienteId : UUID [0..1]`, que é fotografia, sem chave estrangeira;
   `RelatorioEvolucao` ganhou `destinatario : Destinatario`, e `conteudoEmitido`
   passou de `Blob` a `String`, o JSON canônico que o hash resume
+- 18/10/2026 — `Sessao` ganhou `evolucao : String [0..1]`: o registro
+  documental da sessão (Resolução CFP 001/2009), escrito pelo profissional ao
+  encerrar, nunca gerado. Preenchida se, e só se, a sessão está encerrada
 
 **Termo de consentimento**
 

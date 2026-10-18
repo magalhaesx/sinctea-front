@@ -2,7 +2,7 @@
 
 Documento normativo. Se o código divergir daqui, o código está errado.
 
-Revisto em 13/10/2026 para o servidor. **O porquê** de cada decisão está no
+Revisto em 13/10/2026 para o servidor e em 18/10/2026 para o sistema publicado. **O porquê** de cada decisão está no
 `docs/07` (D1 a D9); aqui fica **como o código se organiza**.
 
 ---
@@ -23,7 +23,7 @@ front ──▶ compartilhado ◀── servidor
 
 - `compartilhado/` não importa de `src/` nem de `servidor/`.
 - O front não importa de `servidor/` nem de `@prisma/*`.
-- O servidor não importa de `src/`. **A semente do banco é portada do mock, não
+- O servidor não importa de `src/`. **A semente de teste é portada do mock, não
   importada dele** — o mock sai na Etapa 12 e a semente fica.
 
 O teste de arquitetura (`src/arquitetura.test.ts`) garante essas regras.
@@ -55,8 +55,13 @@ sem token no `localStorage`.
 para as rotas do front: tudo depois do `#` é do navegador. Os endereços terão `#`
 — isso é proposital.
 
-O deploy no GitHub Pages continua até o passo 5 da Etapa 9, quando o Render o
-substitui.
+A publicação é do workflow **Publicar** (`.github/workflows/deploy.yml`). Ele:
+- roda os testes contra um PostgreSQL 17;
+- constrói a imagem Docker e a põe para rodar;
+- aplica as migrações no Neon com o papel dono.
+
+Só então o Render publica (*After CI Checks Pass*). O GitHub Pages foi desativado
+em 17/10/2026.
 
 ## 3. Mapa de rotas
 
@@ -67,10 +72,11 @@ substitui.
 /sobre                   O projeto, a equipe e o estágio atual
 
 /app/entrar              Login
+/app/primeiro-acesso/:token  Definir a própria senha pelo link de uso único
 /app/convite/:token      Aceite de convite (professor)
 /app                     Redireciona conforme o perfil autenticado
 
-/app/clinica                                       Painel do terapeuta
+/app/clinica                                       Painel do profissional
 /app/clinica/pacientes                             Lista de pacientes
 /app/clinica/pacientes/novo                        Cadastro de paciente
 /app/clinica/pacientes/:id                         Ficha do paciente
@@ -102,12 +108,22 @@ substitui.
 ```
 
 A página institucional em `/` está suspensa (`docs/04`); volta na Etapa 13 se
-sobrar tempo. `/dev/estados` sai na Etapa 12.
+sobrar tempo. `/dev/estados` não existe na versão publicada.
+
+**Na versão publicada, só existem as rotas cujo serviço já está no servidor**
+(`docs/07`, seção 0). As outras — evolução, atividades, relatório, indicadores e
+auditoria — somem da navegação e das rotas até o serviço chegar. Nunca aparecem
+com dado simulado.
+
+**Toda tela do app tem um caminho de volta visível** (por exemplo, Pacientes ›
+nome do paciente › Plano), e o Voltar do navegador funciona.
 
 ### API
 
-Tudo sob `/api`. Hoje existe só `GET /api/saude`. Cada módulo entra nas Etapas 10
-e 11, e a documentação OpenAPI (`docs/07`, seção 3A) também fica sob `/api`.
+Tudo sob `/api`: autenticação, usuários, pacientes, planos, sessões, família,
+escolas, consentimentos, convites, área da escola, ocorrências e `GET /api/saude`.
+Os serviços que faltam entram depois de 19/10. A documentação OpenAPI (`docs/07`,
+seção 3A) também fica sob `/api`.
 
 ## 4. Estrutura de pastas
 
@@ -140,7 +156,7 @@ e 11, e a documentação OpenAPI (`docs/07`, seção 3A) também fica sob `/api`
 │   ├── prisma/
 │   │   ├── schema.prisma      Fonte única do DER e do dicionário de dados
 │   │   ├── migracoes/         Uma pasta por migração; nunca editar a já aplicada
-│   │   └── semente.ts         Dados de demonstração, portados do mock
+│   │   └── semente.ts         Dados fictícios de teste e desenvolvimento
 │   ├── src/
 │   │   ├── main.ts            Abre a porta
 │   │   ├── aplicacao.ts       Monta o Nest; main.ts e os testes usam a mesma
@@ -232,23 +248,26 @@ apresentação; no servidor, é fronteira de confiança.
 
 ## 6. Autenticação
 
-**Até a Etapa 10, simulada.** `contexto/Sessao.tsx` guarda o usuário e o perfil
-ativo, e `/app/entrar` oferece perfis de demonstração.
-
-**A partir da Etapa 10, real (D5):**
+**Real desde 16/10/2026 (D5):**
 
 - e-mail e senha; senha guardada com argon2id, nunca em texto;
 - sessão guardada no PostgreSQL, identificada por cookie `httpOnly`,
   `SameSite=Lax`, `Secure` em produção;
 - `contexto/Sessao.tsx` pergunta ao servidor quem está autenticado — e o resto do
-  front continua igual.
+  front continua igual;
+- ninguém conhece a senha de outra pessoa: quem cadastra entrega um link de uso
+  único (72 h), e a própria pessoa define a senha;
+- limite de tentativas de entrada por e-mail e por IP;
+- se outra janela do mesmo navegador trocar de conta, a tela avisa em vez de
+  falhar em silêncio.
 
 `<ExigePerfil>` continua nas rotas, mas **é navegação, não segurança**. Deixe
 isso escrito em comentário no código: a verificação que vale é o *guard* do
 servidor.
 
-O acesso sem senha (`entrarDemonstracao`) sai na Etapa 12 (D6). A banca recebe
-os e-mails e a senha fora da tela de login.
+O acesso sem senha (`entrarDemonstracao`) não existe na versão publicada (D6).
+O primeiro administrador nasce de um comando rodado uma vez, fora do site
+(`npm run criar-administrador`); todo o resto nasce pelas telas.
 
 ## 7. Banco de dados
 
@@ -286,22 +305,19 @@ Limite declarado: o dono da tabela pode desligar o *trigger*. Em produção, a
 aplicação conecta com um papel que não é dono das tabelas; as migrações rodam
 com o dono (Etapa 9, passo 5).
 
-## 8. Dados de demonstração
+## 8. Dados
 
-Muitos, e não um: a semente tem 14 pacientes, 3 profissionais, 2 professores e
-2 escolas.
+**Em produção, o sistema nasce vazio** (`docs/07`, seção 0). Nada é
+pré-carregado; tudo é cadastrado pelas telas.
 
-Uma lista com um item não exercita paginação, busca, filtro, ordenação nem estado
-vazio — e é exatamente por isso que interfaces construídas sobre um registro
-quebram quando encontram trinta.
+**Nos testes e no desenvolvimento**, os dados são fictícios e próprios:
+- `src/servicos/mock/dados.ts`, enquanto o mock existir;
+- `servidor/prisma/semente.ts`, que nunca roda em produção.
 
-- No mock: `src/servicos/mock/dados.ts`, até a Etapa 12.
-- No banco: `servidor/prisma/semente.ts`, portada do mock.
+São muitos, e não um: uma lista com um item não exercita paginação, busca,
+filtro, ordenação nem estado vazio. Os e-mails ficam no domínio reservado
+`.example`.
 
-**Todos fictícios. Nenhum dado de pessoa real, em nenhuma hipótese, nem em
-ambiente de desenvolvimento.** E-mails no domínio reservado `.example`. A senha
-das contas de demonstração vem do ambiente — nunca do repositório e nunca da
-tela de login.
-
-O endereço é público: o rodapé leva uma linha discreta dizendo que é instância
-acadêmica e que todos os registros são fictícios (D9).
+**Nenhum dado de paciente real, em nenhuma hipótese.** A tela de entrada e o
+rodapé dizem: *"Ambiente acadêmico do TCC SINCTEA. Não cadastre dados de
+pacientes reais."*

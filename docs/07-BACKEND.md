@@ -97,7 +97,7 @@ continua até a Etapa 12, que só termina de removê-lo.
 
 **Até a virada, o endereço do Render não vai para ninguém.** Antes dela, ele
 ainda serve o front com o mock. O GitHub Pages antigo, que mostra os dados
-fictícios, é despublicado já.
+fictícios, é despublicado já (feito em 17/10).
 
 ## 1. O que mudou
 
@@ -185,8 +185,9 @@ origem cruzada para errar. **Coerência:** o `docs/01` já dizia *"um repositór
 um build, um endereço"*.
 
 Consequência: o GitHub Pages deixa de ser o endereço do sistema. O fluxo
-`verificar.yml` (testes) continua; o `deploy.yml` é substituído pelo deploy
-automático da hospedagem.
+`verificar.yml` (testes em *pull request*) continua; o `deploy.yml` virou o
+workflow **Publicar**, que testa, constrói e roda a imagem e migra o banco antes de
+o Render publicar (D4).
 
 ### D4 · Hospedagem: Render para o servidor, Neon para o banco
 

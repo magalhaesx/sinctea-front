@@ -1,6 +1,6 @@
 # 09 · Dicionário de dados
 
-Gerado em 15/10/2026 do catálogo do PostgreSQL 17, depois das três migrações do repositório (`20261015022852_inicial`, `20261015031253_caminhos_coerentes`, `20261015034333_chaves_compostas_sem_cascata`). **Não se edita à mão:** muda o esquema, gera de novo.
+Gerado em 18/10/2026 do catálogo do PostgreSQL 17, depois das 6 migrações do repositório (`20261015022852_inicial`, `20261015031253_caminhos_coerentes`, `20261015034333_chaves_compostas_sem_cascata`, `20261016004020_sessao_e_acesso_inicial`, `20261016022012_convite_token_resumo`, `20261017213654_evolucao_da_sessao`). **Não se edita à mão:** muda o esquema, gera de novo.
 
 O significado de cada coluna está escrito a partir de `compartilhado/src/tipos.ts`, do `schema.prisma` e das regras do `CLAUDE.md`. O tipo, a nulidade, as chaves, as restrições, os índices e os gatilhos saem do próprio banco. O DER está em `docs/uml/SINCTEA_DER.svg` (todas as colunas) e `docs/uml/SINCTEA_DER_chaves.svg` (só as chaves).
 
@@ -13,7 +13,7 @@ O significado de cada coluna está escrito a partir de `compartilhado/src/tipos.
 - **Chave composta:** quando o mesmo paciente é alcançável por dois caminhos, uma chave estrangeira composta obriga os dois a concordarem; quando o caminho tem mais de um passo, um gatilho faz o mesmo.
 - Ações de chave estrangeira: *restringe* recusa a operação enquanto houver quem aponte; *cascata* propaga a mudança.
 
-**Totais:** 22 tabelas, 158 colunas, 36 chaves estrangeiras (5 compostas), 11 CHECKs, 10 gatilhos, 13 enumerações.
+**Totais:** 24 tabelas, 171 colunas, 38 chaves estrangeiras (5 compostas), 18 CHECKs, 10 gatilhos, 13 enumerações.
 
 ## 2. Enumerações
 
@@ -55,6 +55,7 @@ Quem entra no sistema. Superclasse com autenticação única: profissional, resp
 
 - Chave primária: (id)
 - Única: (email)
+- CHECK: email só em minúsculas: a unicidade não depende de maiúsculas
 - CHECK: perfis com ao menos um elemento
 
 ### 3.2 `profissional`
@@ -237,6 +238,7 @@ Sessão terapêutica conduzida por um profissional.
 | `local` | text | não |  | Onde aconteceu: sala, domicílio, escola. |
 | `situacao` | situacao_sessao | não |  | Situação da sessão. |
 | `statusSync` | status_sync | não |  | Se o registro feito sem conexão já subiu ao servidor. |
+| `evolucao` | text | sim |  | Evolução do atendimento, escrita pelo profissional ao encerrar (registro documental, Resolução CFP nº 001/2009). Nunca gerada. Só a equipe do paciente e a coordenação a leem; nunca a família nem a escola. |
 
 **Restrições e índices**
 
@@ -244,6 +246,7 @@ Sessão terapêutica conduzida por um profissional.
 - Chave estrangeira: (pacienteId) → paciente(id); ao apagar: restringe; ao atualizar: cascata
 - Chave estrangeira: (profissionalId) → profissional(usuarioId); ao apagar: restringe; ao atualizar: cascata
 - Única: (id, pacienteId)
+- CHECK: evolucao preenchida se, e só se, a sessão está encerrada (NOT VALID: vale para linhas gravadas depois da migração)
 - Gatilho: sessao_dono_fixo — Recusa trocar o paciente de uma sessão.
 - Índice: (pacienteId)
 - Índice: (profissionalId, inicioPrevistoEm)
@@ -440,17 +443,18 @@ Convite de uso único que a família entrega ao professor. Nasce do consentiment
 |---|---|---|---|---|
 | `id` | uuid | não | PK | Identificador. |
 | `consentimentoId` | uuid | não | FK | O consentimento de que nasceu. |
-| `token` | text | não | UK | Código de uso único que vai no link entregue ao professor. Único. |
 | `criadoEm` | timestamptz(3) | não |  | Quando foi emitido. |
 | `expiraEm` | timestamptz(3) | não |  | Até quando pode ser aceito: 72 horas depois de emitido. |
 | `usadoEm` | timestamptz(3) | sim |  | Quando foi aceito. Nulo enquanto não foi usado. |
+| `tokenResumo` | text | não | UK | Resumo SHA-256 do código de uso único. O código vai só no link entregue ao professor; o banco nunca o guarda. Único. |
 
 **Restrições e índices**
 
 - Chave primária: (id)
 - Chave estrangeira: (consentimentoId) → consentimento(id); ao apagar: restringe; ao atualizar: cascata
 - Única: (id, consentimentoId)
-- Única: (token)
+- Única: (tokenResumo)
+- CHECK: tokenResumo é SHA-256 em hexadecimal (64 caracteres)
 - Índice: (consentimentoId)
 
 ### 3.19 `vinculo_escolar`
@@ -566,12 +570,62 @@ Trilha de auditoria da regra 6: concessões, revogações, leituras autorizadas,
 - Índice: (pacienteId, ocorridoEm)
 - Índice: (usuarioId)
 
+### 3.23 `sessao_login`
+
+*Classe:* infraestrutura, sem classe · *Área:* Identidade
+
+Sessão de quem entrou no sistema (docs/07, D5). O cookie leva um código aleatório; o banco guarda só o resumo dele. Vale 24 horas desde o último uso.
+
+| Coluna | Tipo | Nulo | Chave | Descrição |
+|---|---|---|---|---|
+| `id` | uuid | não | PK | Identificador. |
+| `tokenResumo` | text | não | UK | Resumo SHA-256 do código do cookie. Único. |
+| `usuarioId` | uuid | não | FK | Quem entrou. |
+| `perfilAtivo` | perfil | não |  | Perfil com que a pessoa está agindo nesta sessão. |
+| `criadaEm` | timestamptz(3) | não |  | Quando a sessão foi aberta. |
+| `expiraEm` | timestamptz(3) | não |  | Até quando vale; renovada com o uso. |
+
+**Restrições e índices**
+
+- Chave primária: (id)
+- Chave estrangeira: (usuarioId) → usuario(id); ao apagar: restringe; ao atualizar: cascata
+- Única: (tokenResumo)
+- CHECK: expiraEm depois de criadaEm
+- CHECK: tokenResumo é SHA-256 em hexadecimal (64 caracteres)
+- Índice: (usuarioId)
+
+### 3.24 `acesso_inicial`
+
+*Classe:* infraestrutura, sem classe · *Área:* Identidade
+
+Link de primeiro acesso: a pessoa cadastrada define a própria senha, e quem cadastrou nunca a conhece. Uso único, 72 horas, só o resumo do código.
+
+| Coluna | Tipo | Nulo | Chave | Descrição |
+|---|---|---|---|---|
+| `id` | uuid | não | PK | Identificador. |
+| `tokenResumo` | text | não | UK | Resumo SHA-256 do código do link. Único. |
+| `usuarioId` | uuid | não | FK | A conta que vai definir a senha. |
+| `criadoEm` | timestamptz(3) | não |  | Quando o link foi gerado. |
+| `expiraEm` | timestamptz(3) | não |  | Até quando pode ser usado: 72 horas depois de gerado. |
+| `usadoEm` | timestamptz(3) | sim |  | Quando a senha foi definida. Nulo enquanto não foi usado. |
+
+**Restrições e índices**
+
+- Chave primária: (id)
+- Chave estrangeira: (usuarioId) → usuario(id); ao apagar: restringe; ao atualizar: cascata
+- Única: (tokenResumo)
+- CHECK: expiraEm depois de criadoEm
+- CHECK: tokenResumo é SHA-256 em hexadecimal (64 caracteres)
+- Índice: (usuarioId)
+
 ## 4. O que o banco não guarda, de propósito
 
 - **A situação do consentimento** (vigente, revogado, expirado, aguardando início): deriva das datas a cada leitura, para não ficar desatualizada (regra 5).
 - **O texto do termo de consentimento:** vive versionado em `compartilhado/src/dominio/termo.ts` e se reproduz da versão mais os campos do consentimento; `hashTermo` prova que nada mudou.
 - **`SEM_PLANO`:** é o estado da tela para quem ainda não tem plano, e não a situação de um plano que existe.
 - **A senha:** só o resumo argon2id, em `usuario.senhaHash`.
+- **Os códigos do cookie de sessão, do link de primeiro acesso e do convite da escola:** só o resumo SHA-256. Quem lê o banco não consegue usar nenhum deles.
+- **Duas tabelas sem classe no diagrama:** `sessao_login` e `acesso_inicial` são infraestrutura de autenticação, e não modelo de domínio.
 - **Dado pessoal real:** todos os registros são fictícios.
 
 ## 5. Limites declarados
