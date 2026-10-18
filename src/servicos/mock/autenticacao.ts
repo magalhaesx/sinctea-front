@@ -43,8 +43,9 @@ export const autenticacaoMock: ServicoAutenticacao = {
 
   // O mock nao gera link de primeiro acesso: as contas de demonstracao ja tem
   // senha. Todo token e desconhecido aqui; o caminho de verdade e o servidor.
-  obterPrimeiroAcesso: () => responder(() => ({ situacao: 'INEXISTENTE' as const, nome: null, email: null, expiraEm: null })),
+  obterPrimeiroAcesso: () => responder(() => ({ situacao: 'INEXISTENTE' as const, nome: null, email: null, expiraEm: null, finalidade: null })),
   concluirPrimeiroAcesso: () => responder(() => {
     throw new ErroServico('NAO_ENCONTRADO', 'Este link não existe.')
   }),
+  darCienciaDaNovaSenha: () => responder(() => paraSessaoUsuario(exigirSessao())),
 }

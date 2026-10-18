@@ -52,6 +52,14 @@ export class ControladorAutenticacao {
     return this.autenticacao.trocarPerfil(requisicao.sinctea!.sessao!, corpo?.perfil)
   }
 
+  /** Item 8: a pessoa leu o aviso de que a coordenacao redefiniu a senha. */
+  @Post('aviso-de-nova-senha')
+  @HttpCode(200)
+  @SemDadoDoPaciente('Usuario')
+  darCienciaDaNovaSenha(@Req() requisicao: RequisicaoHttp): Promise<SessaoUsuario> {
+    return this.autenticacao.darCienciaDaNovaSenha(requisicao.sinctea!.sessao!)
+  }
+
   /** Publica, para sair funcionar mesmo com a sessao ja vencida. */
   @Post('sair')
   @HttpCode(204)

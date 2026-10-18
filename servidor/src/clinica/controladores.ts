@@ -5,6 +5,7 @@ import type {
 } from '@sinctea/compartilhado'
 import { Auditar, Perfis } from '../acesso/metadados.js'
 import { lerInstante, lerPaginacao, lerTexto } from '../http/paginacao.js'
+import { textoOuVazio } from '../http/validacao.js'
 import type { RequisicaoHttp } from '../http/tipos-http.js'
 import { ServicoOcorrencias, type FiltroOcorrenciaServidor } from './servico-ocorrencias.js'
 import { ServicoPacientes } from './servico-pacientes.js'
@@ -109,6 +110,25 @@ export class ControladorPacientes {
   })
   novoLinkDoResponsavel(@Req() req: RequisicaoHttp, @Param('id') id: string, @Param('responsavelId') responsavelId: string) {
     return this.pacientes.novoLinkDoResponsavel(sessaoDe(req), id, responsavelId)
+  }
+
+  /**
+   * Item 8: o link para nova senha, so pela coordenacao. O motivo vai para a
+   * trilha, com quem gerou; o token, nunca.
+   */
+  @Post(':id/responsaveis/:responsavelId/nova-senha')
+  @HttpCode(200)
+  @Perfis('COORDENADOR')
+  @Auditar({
+    entidade: 'Usuario', acao: 'ALTERACAO', pacienteId: deParametro, idEntidade: { parametro: 'responsavelId' },
+    detalhe: (req) => 'Link para nova senha do responsável, gerado pela coordenação; o anterior deixou de valer. ' +
+      `Motivo: ${textoOuVazio((req.body as { motivo?: unknown } | undefined)?.motivo)}`,
+  })
+  linkNovaSenhaDoResponsavel(
+    @Req() req: RequisicaoHttp, @Param('id') id: string, @Param('responsavelId') responsavelId: string,
+    @Body() corpo: { motivo?: unknown } | undefined,
+  ) {
+    return this.pacientes.linkNovaSenhaDoResponsavel(sessaoDe(req), id, responsavelId, corpo?.motivo)
   }
 
   /** Item 8: nome, telefone e parentesco; o e-mail, so com o primeiro acesso pendente. */

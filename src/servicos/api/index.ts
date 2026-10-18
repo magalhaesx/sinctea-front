@@ -24,6 +24,7 @@ export const servicosApi: Servicos = {
     sair: () => r('POST', '/auth/sair'),
     obterPrimeiroAcesso: (token) => r('GET', `/auth/primeiro-acesso/${id(token)}`),
     concluirPrimeiroAcesso: (token, senha) => r('POST', `/auth/primeiro-acesso/${id(token)}`, { senha }),
+    darCienciaDaNovaSenha: () => r('POST', '/auth/aviso-de-nova-senha'),
   },
 
   pacientes: {
@@ -33,6 +34,8 @@ export const servicosApi: Servicos = {
     cadastrarResponsavel: (pacienteId, dados) => r('POST', `/pacientes/${id(pacienteId)}/responsaveis`, dados),
     novoLinkDoResponsavel: (pacienteId, responsavelId) =>
       r('POST', `/pacientes/${id(pacienteId)}/responsaveis/${id(responsavelId)}/acesso-inicial`),
+    linkNovaSenhaDoResponsavel: (pacienteId, responsavelId, motivo) =>
+      r('POST', `/pacientes/${id(pacienteId)}/responsaveis/${id(responsavelId)}/nova-senha`, { motivo }),
     editarResponsavel: (pacienteId, responsavelId, dados) =>
       r('PUT', `/pacientes/${id(pacienteId)}/responsaveis/${id(responsavelId)}`, dados),
   },

@@ -132,6 +132,15 @@ enum OrigemAuditoria {
   @@map("origem_auditoria")
 }
 
+/// Para que serve o link de definir senha (item 8): o primeiro acesso, ou a
+/// nova senha do responsavel, que so a coordenacao gera.
+enum FinalidadeAcesso {
+  PRIMEIRO_ACESSO
+  NOVA_SENHA
+
+  @@map("finalidade_acesso")
+}
+
 // ---------------------------------------------------------------- Usuarios
 // Tabela por subclasse: a chave de profissional, responsavel e professor_aee
 // e o proprio usuarioId, que e tambem chave estrangeira para usuario.
@@ -151,7 +160,8 @@ model Usuario {
   professorAee       ProfessorAEE?
   registrosAuditoria RegistroAuditoria[]
   sessoesLogin       SessaoLogin[]
-  acessosIniciais    AcessoInicial[]
+  acessosIniciais    AcessoInicial[]     @relation("AcessoDoUsuario")
+  acessosGerados     AcessoInicial[]     @relation("AcessoGeradoPor")
 
   @@map("usuario")
 }
@@ -178,17 +188,26 @@ model SessaoLogin {
 
 /// Link de primeiro acesso (docs/07, secao 0, lacuna 1): uso unico, 72 horas.
 /// So o resumo SHA-256 do token: o link existe uma vez, na mao de quem cadastra.
+/// O mesmo link serve a nova senha do responsavel (item 8), com quem o gerou:
+/// o aviso do proximo acesso diz quem foi, ate a pessoa dar ciencia.
 model AcessoInicial {
-  id          String    @id @default(uuid(7)) @db.Uuid
-  tokenResumo String    @unique
-  usuarioId   String    @db.Uuid
-  criadoEm    DateTime  @db.Timestamptz(3)
-  expiraEm    DateTime  @db.Timestamptz(3)
-  usadoEm     DateTime? @db.Timestamptz(3)
+  id          String           @id @default(uuid(7)) @db.Uuid
+  tokenResumo String           @unique
+  usuarioId   String           @db.Uuid
+  finalidade  FinalidadeAcesso @default(PRIMEIRO_ACESSO)
+  /// Quem gerou o link de nova senha. Nulo no primeiro acesso.
+  geradoPorId String?          @db.Uuid
+  criadoEm    DateTime         @db.Timestamptz(3)
+  expiraEm    DateTime         @db.Timestamptz(3)
+  usadoEm     DateTime?        @db.Timestamptz(3)
+  /// Quando a pessoa deu ciencia do aviso da nova senha.
+  avisadoEm   DateTime?        @db.Timestamptz(3)
 
-  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
+  usuario   Usuario  @relation("AcessoDoUsuario", fields: [usuarioId], references: [id], onDelete: Restrict)
+  geradoPor Usuario? @relation("AcessoGeradoPor", fields: [geradoPorId], references: [id], onDelete: Restrict)
 
   @@index([usuarioId])
+  @@index([geradoPorId])
   @@map("acesso_inicial")
 }
 

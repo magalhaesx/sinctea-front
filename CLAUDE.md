@@ -195,7 +195,8 @@ Atualizado em 18/10/2026, lendo o código — não a memória.
 - Modelagem UML: casos de uso, classes (revisão de 18/10 em `docs/uml/`), sequência
 - DER e dicionário de dados (`docs/uml/` e `docs/09`), gerados em 18/10 do
   catálogo do PostgreSQL com as seis migrações. Não se editam à mão: mudou o
-  esquema, geram-se de novo
+  esquema, geram-se de novo. A sétima, `link_de_nova_senha` (item 8), ainda
+  não está neles
 - Documento de IHC e UX/UI com avaliação heurística e conformidade
 - **As 22 telas existem e falam com a camada de serviços**, em 24 rotas do
   produto, mais `/sobre` e a vitrine `/dev/estados`, que só existe no servidor de
@@ -205,10 +206,10 @@ Atualizado em 18/10/2026, lendo o código — não a memória.
   simulada que aplica controle de acesso e auditoria; o cliente da API, que
   não aplica regra nenhuma. A versão publicada usa só a API, e o mock fica
   fora do pacote; no desenvolvimento, `VITE_API_URL` escolhe entre as duas
-- **414 testes em 31 arquivos, nos três pacotes**, rodados por um único
+- **423 testes em 32 arquivos, nos três pacotes**, rodados por um único
   `npm test` na raiz, sem passo manual. O principal ainda é
   `src/servicos/mock/regrasInviolaveis.test.ts`, que verifica as regras
-  invioláveis na camada de dados, e não na tela. Os 192 do servidor rodam contra
+  invioláveis na camada de dados, e não na tela. Os 200 do servidor rodam contra
   um PostgreSQL 17 de verdade
 - **As seis regras verificadas** em `docs/06`: para cada teste citado, a regra foi
   quebrada de propósito para confirmar que ele falha, e as quebras que não
@@ -264,7 +265,7 @@ em produção (o antigo passo B5) foi cancelada. No código, hoje:
   dependências de produção, sem o Prisma CLI); o Nest servindo o build do front
   na raiz quando `PASTA_DO_FRONT` aponta para ele, com a API em `/api` e 404 em
   JSON para o resto; e o papel `sinctea_app`, que não é dono de nada
-  (`servidor/prisma/papel-aplicacao.exemplo.sql`). O Neon tem as seis
+  (`servidor/prisma/papel-aplicacao.exemplo.sql`). O Neon tem as sete
   migrações, aplicadas pelo job `migrar`; o `sinctea_app` foi conferido nele.
   O Render publica em https://sinctea.onrender.com
 - Os três pacotes são ESM. O front compila o fonte do compartilhado pela
@@ -367,6 +368,17 @@ em produção (o antigo passo B5) foi cancelada. No código, hoje:
   recusado. `ALTERACAO` com o `valorAnterior` só do que mudou. Quem responde
   legalmente não se edita (afirmação 4, abaixo). Testes em
   `servidor/test/responsavel.test.ts`
+- **Item 8, parte 2 — link para nova senha do responsável** (decisão de
+  18/10, que muda a de 16/10). Depois que o responsável definiu a senha, só a
+  coordenação gera o link para nova senha, nunca a equipe sozinha, e com
+  motivo, que vai para a trilha com quem gerou. O link é o mesmo
+  `acesso_inicial` — 72 horas, uso único, só o resumo SHA-256 —, agora com
+  `finalidade` e `geradoPorId` (migração `link_de_nova_senha`). Usado, troca a
+  senha e encerra todas as sessões da pessoa; no acesso seguinte, ela vê
+  *"Sua senha foi redefinida pela clínica em <data>, a pedido de <nome da
+  coordenação>. Se não foi você quem pediu, procure a clínica."*, até dar
+  ciência. Enquanto o primeiro acesso está pendente, o "Gerar novo link"
+  continua com a equipe. Testes em `servidor/test/responsavel.test.ts`
 - `npm run criar-administrador -w @sinctea/servidor -- .env.producao --nome
   "Nome Completo" --email voce@exemplo.com` cria o primeiro administrador:
   nome e e-mail vêm da linha de comando, e só a senha é pedida, escondida e duas
@@ -434,10 +446,10 @@ Enquanto não se resolverem, não devem ser afirmadas na defesa:
    ser construído, não há manifesto nem *service worker*. O registro de sessão
    (tela 7) mostra o estado da conexão e marca como pendente o que ainda não
    subiu, mas a fila de sincronização não existe.
-3. **Responsável e professor não recuperam a senha.** Sem envio de e-mail, só
-   a equipe recebe link novo, pela administração. A clínica não troca a senha
-   de quem autoriza a escola. Limite declarado em 16/10: fica assim até o envio
-   de e-mail, depois de 19/10.
+3. **O professor não recupera a senha.** Sem envio de e-mail, a equipe recebe
+   link novo pela administração, e o responsável, pela coordenação (item 8,
+   decisão de 18/10, que mudou o limite declarado em 16/10). O professor fica
+   sem caminho até o envio de e-mail, depois de 19/10.
 4. **Quem responde legalmente não se corrige.** Na edição do responsável
    (item 8), o `responsavelLegal` do vínculo não se edita: a resposta dada no
    cadastro fica como está, e não há, no sistema, como corrigi-la. Limite

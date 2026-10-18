@@ -4,11 +4,11 @@ import { anterioresQueMudaram } from '@sinctea/compartilhado/dominio/auditoria'
 import { partesDaDataCivil } from '@sinctea/compartilhado/dominio/datas'
 import { jsonCanonico } from '@sinctea/compartilhado/dominio/hash'
 import {
-  emailValido, escolaParecida, idadeEmAnos, normalizarEmail, paraBusca, situacaoConsentimento,
+  emailValido, erroDoMotivoDaNovaSenha, escolaParecida, idadeEmAnos, normalizarEmail, paraBusca, situacaoConsentimento,
 } from '@sinctea/compartilhado/dominio/regras'
 import { alcancaClinicamente, exigirPacienteClinico } from './acesso'
 import {
-  auditar, banco, exigirPerfil, exigirValido, gerarId, paginar, relogio, responder, todosUsuarios, usuarioPorId,
+  auditar, banco, exigirPerfil, exigirSessao, exigirValido, gerarId, negar, paginar, relogio, responder, todosUsuarios, usuarioPorId,
 } from './infra'
 
 const normalizar = (texto: string) =>
@@ -169,13 +169,34 @@ export const pacientesMock: ServicoPaciente = {
     const responsavel = banco.responsaveis.find((r) => r.id === responsavelId)
     if (!vinculo || !responsavel) throw new ErroServico('NAO_ENCONTRADO', 'Responsável não encontrado na rede de apoio deste paciente.')
     if (responsavel.ultimoAcessoEm !== null) {
-      throw new ErroServico('CONFLITO', 'Esta pessoa já definiu a senha. Se esqueceu, quem troca é ela, e não a clínica.')
+      throw new ErroServico('CONFLITO', 'Esta pessoa já definiu a senha. O link para nova senha é com a coordenação, com o motivo.')
     }
     auditar(sessao, { acao: 'ALTERACAO', entidade: 'Usuario', idEntidade: responsavel.id, pacienteId: paciente.id, detalhe: 'Novo link de primeiro acesso do responsável; o anterior deixou de valer.' })
     return linkDoMock()
   }),
 
   // Item 8: as mesmas regras do servidor (servidor/src/clinica/servico-pacientes.ts).
+  linkNovaSenhaDoResponsavel: (pacienteId, responsavelId, motivo) => responder(() => {
+    const quem = exigirSessao()
+    if (quem.perfilAtivo !== 'COORDENADOR') {
+      negar(quem, { entidade: 'Usuario', pacienteId, detalhe: 'Link para nova senha: só a coordenação gera.' })
+    }
+    const { sessao, paciente } = exigirPacienteClinico(pacienteId, 'Usuario')
+    const vinculo = banco.vinculosFamiliares.find((v) => v.pacienteId === paciente.id && v.responsavelId === responsavelId)
+    const responsavel = banco.responsaveis.find((r) => r.id === responsavelId)
+    if (!vinculo || !responsavel) throw new ErroServico('NAO_ENCONTRADO', 'Responsável não encontrado na rede de apoio deste paciente.')
+    if (responsavel.ultimoAcessoEm === null) {
+      throw new ErroServico('CONFLITO', 'Esta pessoa ainda não definiu a senha: use "Gerar novo link", que a equipe também gera.')
+    }
+    const erroMotivo = erroDoMotivoDaNovaSenha(motivo)
+    if (erroMotivo) throw new ErroServico('VALIDACAO', erroMotivo, { motivo: erroMotivo })
+    auditar(sessao, {
+      acao: 'ALTERACAO', entidade: 'Usuario', idEntidade: responsavel.id, pacienteId: paciente.id,
+      detalhe: `Link para nova senha do responsável, gerado pela coordenação; o anterior deixou de valer. Motivo: ${motivo.trim()}`,
+    })
+    return linkDoMock()
+  }),
+
   editarResponsavel: (pacienteId, responsavelId, dados) => responder(() => {
     const { sessao, paciente } = exigirPacienteClinico(pacienteId, 'Responsavel')
     const vinculo = banco.vinculosFamiliares.find((v) => v.pacienteId === paciente.id && v.responsavelId === responsavelId)

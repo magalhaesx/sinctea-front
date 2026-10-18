@@ -136,7 +136,9 @@ export function Entrar() {
               <p className="max-w-[65ch] text-sm text-tinta2">
                 Esta versão ainda não redefine senha sozinha, nem manda e-mail. Se você é da
                 equipe da clínica, peça à administração um novo link de acesso: com ele, você
-                define outra senha. Para a família e a escola, a redefinição ainda não existe.
+                define outra senha. Se você é responsável por um paciente, peça à clínica: a
+                coordenação gera um link para você escolher uma nova senha. Para a escola, a
+                redefinição ainda não existe.
               </p>
             )}
           </div>

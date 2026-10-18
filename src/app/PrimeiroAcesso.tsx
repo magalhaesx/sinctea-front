@@ -105,9 +105,16 @@ export function PrimeiroAcesso() {
 
         {estado.tipo === 'pronto' && estado.acesso.situacao === 'VALIDO' && (
           <>
-            <Titulo sub={`A conta de ${estado.acesso.nome} (${estado.acesso.email}) está pronta. Falta só a sua senha.`}>
-              Definir minha senha
-            </Titulo>
+            {estado.acesso.finalidade === 'NOVA_SENHA' ? (
+              // Item 8: o link que a coordenacao gerou para a nova senha.
+              <Titulo sub={`Conta de ${estado.acesso.nome} (${estado.acesso.email}). Ao salvar, a senha anterior deixa de valer e as sessões abertas se encerram.`}>
+                Escolher uma nova senha
+              </Titulo>
+            ) : (
+              <Titulo sub={`A conta de ${estado.acesso.nome} (${estado.acesso.email}) está pronta. Falta só a sua senha.`}>
+                Definir minha senha
+              </Titulo>
+            )}
 
             <form className="flex flex-col gap-4" onSubmit={definirSenha} noValidate>
               <div role="alert" aria-live="assertive">
@@ -136,7 +143,9 @@ export function PrimeiroAcesso() {
                 {erros.confirmacao && <p id="erro-confirmacao" className="text-sm font-bold text-cr">{erros.confirmacao}</p>}
               </Campo>
 
-              <Botao type="submit" disabled={enviando}>{enviando ? 'Salvando…' : 'Definir senha e entrar'}</Botao>
+              <Botao type="submit" disabled={enviando}>
+                {enviando ? 'Salvando…' : estado.acesso.finalidade === 'NOVA_SENHA' ? 'Salvar a nova senha e entrar' : 'Definir senha e entrar'}
+              </Botao>
             </form>
           </>
         )}

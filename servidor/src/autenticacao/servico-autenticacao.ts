@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import {
-  ErroServico, type Perfil, type PrimeiroAcessoPublico, type SessaoUsuario,
+  ErroServico, type AvisoDeRedefinicao, type Perfil, type PrimeiroAcessoPublico, type SessaoUsuario,
 } from '@sinctea/compartilhado'
 import {
   calcularExpiracaoPrimeiroAcesso, erroDaSenhaNova, normalizarEmail, situacaoPrimeiroAcesso,
@@ -13,7 +13,10 @@ import { conferirSenha, hashDaSenha, hashDeSenhaDesconhecida } from './senhas.js
 import { ServicoSessoes, novoToken, resumoDoToken } from './servico-sessoes.js'
 
 /** A projecao publica do usuario: o que sai numa resposta. Nunca o senhaHash. */
-export function paraSessaoUsuario(usuario: UsuarioDaSessao, perfilAtivo: Perfil, especialidade: string | null = null): SessaoUsuario {
+export function paraSessaoUsuario(
+  usuario: UsuarioDaSessao, perfilAtivo: Perfil, especialidade: string | null = null,
+  avisoDeRedefinicao: AvisoDeRedefinicao | null = null,
+): SessaoUsuario {
   return {
     usuario: {
       id: usuario.id, nome: usuario.nome, email: usuario.email, perfis: usuario.perfis,
@@ -21,6 +24,7 @@ export function paraSessaoUsuario(usuario: UsuarioDaSessao, perfilAtivo: Perfil,
     },
     perfilAtivo,
     especialidade: especialidade || null,
+    avisoDeRedefinicao,
   }
 }
 
@@ -35,10 +39,33 @@ export class ServicoAutenticacao {
     private readonly limite: LimiteDeTentativas,
   ) {}
 
-  /** A sessao que sai na resposta, com a especialidade de quem e da equipe (item 7). */
+  /**
+   * A sessao que sai na resposta, com a especialidade de quem e da equipe
+   * (item 7) e o aviso da senha redefinida pela coordenacao, enquanto a pessoa
+   * nao der ciencia dele (item 8).
+   */
   async sessaoUsuario(usuario: UsuarioDaSessao, perfilAtivo: Perfil): Promise<SessaoUsuario> {
-    const profissional = await this.banco.profissional.findUnique({ where: { usuarioId: usuario.id }, select: { especialidade: true } })
-    return paraSessaoUsuario(usuario, perfilAtivo, profissional?.especialidade ?? null)
+    const [profissional, redefinicao] = await Promise.all([
+      this.banco.profissional.findUnique({ where: { usuarioId: usuario.id }, select: { especialidade: true } }),
+      this.banco.acessoInicial.findFirst({
+        where: { usuarioId: usuario.id, finalidade: 'NOVA_SENHA', usadoEm: { not: null }, avisadoEm: null },
+        orderBy: { usadoEm: 'desc' },
+        include: { geradoPor: { select: { nome: true } } },
+      }),
+    ])
+    const aviso = redefinicao?.usadoEm && redefinicao.geradoPor
+      ? { redefinidaEm: redefinicao.usadoEm.toISOString(), aPedidoDe: redefinicao.geradoPor.nome }
+      : null
+    return paraSessaoUsuario(usuario, perfilAtivo, profissional?.especialidade ?? null, aviso)
+  }
+
+  /** A pessoa leu o aviso da nova senha (item 8): ele nao aparece mais. */
+  async darCienciaDaNovaSenha(sessao: SessaoServidor): Promise<SessaoUsuario> {
+    await this.banco.acessoInicial.updateMany({
+      where: { usuarioId: sessao.usuario.id, finalidade: 'NOVA_SENHA', usadoEm: { not: null }, avisadoEm: null },
+      data: { avisadoEm: new Date() },
+    })
+    return this.sessaoUsuario(sessao.usuario, sessao.perfilAtivo)
   }
 
   /** Mensagem unica para e-mail inexistente, senha errada e conta desativada (tela 1). */
@@ -79,9 +106,10 @@ export class ServicoAutenticacao {
   /**
    * Gera o link de primeiro acesso de uma conta. Devolve o token uma vez: o
    * banco fica so com o resumo. Um link novo invalida os anteriores ainda nao
-   * usados da mesma conta. Usado por quem cadastra (itens 2 e 3).
+   * usados da mesma conta. Usado por quem cadastra (itens 2 e 3) e, com quem
+   * o gerou, pela coordenacao, para a nova senha do responsavel (item 8).
    */
-  async gerarAcessoInicial(usuarioId: string): Promise<{ token: string; expiraEm: Date }> {
+  async gerarAcessoInicial(usuarioId: string, novaSenha?: { geradoPorId: string }): Promise<{ token: string; expiraEm: Date }> {
     const token = novoToken()
     const criadoEm = new Date()
     const expiraEm = calcularExpiracaoPrimeiroAcesso(criadoEm)
@@ -89,6 +117,7 @@ export class ServicoAutenticacao {
       this.banco.acessoInicial.deleteMany({ where: { usuarioId, usadoEm: null } }),
       this.banco.acessoInicial.create({ data: {
         tokenResumo: resumoDoToken(token), usuarioId, criadoEm, expiraEm,
+        ...(novaSenha ? { finalidade: 'NOVA_SENHA' as const, geradoPorId: novaSenha.geradoPorId } : {}),
       } }),
     ])
     return { token, expiraEm }
@@ -107,10 +136,10 @@ export class ServicoAutenticacao {
     const situacao = situacaoPrimeiroAcesso(acesso && {
       expiraEm: acesso.expiraEm.toISOString(), usadoEm: acesso.usadoEm?.toISOString() ?? null,
     }, new Date())
-    if (situacao !== 'VALIDO' || !acesso) return { situacao, nome: null, email: null, expiraEm: null }
+    if (situacao !== 'VALIDO' || !acesso) return { situacao, nome: null, email: null, expiraEm: null, finalidade: null }
     return {
       situacao, nome: acesso.usuario.nome, email: acesso.usuario.email,
-      expiraEm: acesso.expiraEm.toISOString(),
+      expiraEm: acesso.expiraEm.toISOString(), finalidade: acesso.finalidade,
     }
   }
 
@@ -153,7 +182,12 @@ export class ServicoAutenticacao {
     await this.sessoes.abrir(usuario.id, perfilAtivo, resposta)
     await this.auditoria.registrar(
       { sessaoId: '', perfilAtivo, usuario },
-      { acao: 'ALTERACAO', entidade: 'Usuario', idEntidade: usuario.id, detalhe: 'Senha definida pelo link de primeiro acesso.' },
+      {
+        acao: 'ALTERACAO', entidade: 'Usuario', idEntidade: usuario.id,
+        detalhe: acesso.finalidade === 'NOVA_SENHA'
+          ? 'Senha redefinida pelo link que a coordenação gerou; as sessões abertas foram encerradas.'
+          : 'Senha definida pelo link de primeiro acesso.',
+      },
     )
     return this.sessaoUsuario(usuario, perfilAtivo)
   }

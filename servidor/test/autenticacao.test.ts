@@ -262,7 +262,7 @@ describe('primeiro acesso por link', () => {
     const cookie = cookieDaSessao(r)
     expect((await pedir('GET', '/auth/sessao', { cookie })).corpo.usuario.id).toBe(u.novato)
 
-    expect((await pedir('GET', `/auth/primeiro-acesso/${token}`)).corpo).toEqual({ situacao: 'USADO', nome: null, email: null, expiraEm: null })
+    expect((await pedir('GET', `/auth/primeiro-acesso/${token}`)).corpo).toEqual({ situacao: 'USADO', nome: null, email: null, expiraEm: null, finalidade: null })
     expect((await pedir('POST', `/auth/primeiro-acesso/${token}`, { corpo: { senha: 'outra-senha-longa' } })).status).toBe(409)
     // Quem tem o link usado nao troca a senha: a do novato continua a dele.
     await entrarComo('novato@teste.example', 'a-senha-do-novato')
@@ -292,7 +292,7 @@ describe('primeiro acesso por link', () => {
 
   it('link que nao existe: INEXISTENTE, sem dizer de quem seria', async () => {
     const r = await pedir('GET', '/auth/primeiro-acesso/nao-existe')
-    expect(r.corpo).toEqual({ situacao: 'INEXISTENTE', nome: null, email: null, expiraEm: null })
+    expect(r.corpo).toEqual({ situacao: 'INEXISTENTE', nome: null, email: null, expiraEm: null, finalidade: null })
     expect((await pedir('POST', '/auth/primeiro-acesso/nao-existe', { corpo: { senha: 'senha-qualquer-longa' } })).status).toBe(404)
   })
 })

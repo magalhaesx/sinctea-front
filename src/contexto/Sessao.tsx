@@ -2,7 +2,8 @@ import {
   createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode,
 } from 'react'
 import {
-  aoNegarAcesso, ErroServico, servicos, type AceiteConvite, type Perfil, type SessaoUsuario, type Usuario,
+  aoNegarAcesso, ErroServico, servicos, type AceiteConvite, type AvisoDeRedefinicao, type Perfil, type SessaoUsuario,
+  type Usuario,
 } from '../servicos'
 import { mudancaDaSessao, type MudancaDaSessao } from './mudancaDaSessao'
 
@@ -21,7 +22,10 @@ type PerfilDemonstracao = Exclude<Perfil, 'ADMINISTRADOR'>
 type Estado =
   | { situacao: 'CARREGANDO' }
   | { situacao: 'ANONIMO' }
-  | { situacao: 'AUTENTICADO'; usuario: Usuario; perfilAtivo: Perfil; especialidade: string | null }
+  | {
+    situacao: 'AUTENTICADO'; usuario: Usuario; perfilAtivo: Perfil; especialidade: string | null
+    avisoDeRedefinicao: AvisoDeRedefinicao | null
+  }
 
 interface Ctx {
   estado: Estado
@@ -30,6 +34,9 @@ interface Ctx {
   perfilAtivo: Perfil | null
   /** A especialidade de quem e da equipe, para a tela mostrar no lugar do perfil (item 7). */
   especialidade: string | null
+  /** A coordenacao redefiniu a senha, e a pessoa ainda nao deu ciencia (item 8). */
+  avisoDeRedefinicao: AvisoDeRedefinicao | null
+  darCienciaDaNovaSenha(): Promise<void>
   entrar(email: string, senha: string): Promise<void>
   entrarDemonstracao(perfil: PerfilDemonstracao): Promise<void>
   /** Aceite de convite: cria a conta do professor e ja abre a sessao. */
@@ -47,8 +54,10 @@ interface Ctx {
 
 const SessaoCtx = createContext<Ctx | null>(null)
 
-const autenticado = (s: SessaoUsuario): Estado =>
-  ({ situacao: 'AUTENTICADO', usuario: s.usuario, perfilAtivo: s.perfilAtivo, especialidade: s.especialidade })
+const autenticado = (s: SessaoUsuario): Estado => ({
+  situacao: 'AUTENTICADO', usuario: s.usuario, perfilAtivo: s.perfilAtivo, especialidade: s.especialidade,
+  avisoDeRedefinicao: s.avisoDeRedefinicao,
+})
 
 export function ProvedorSessao({ children }: { children: ReactNode }) {
   const [estado, setEstado] = useState<Estado>({ situacao: 'CARREGANDO' })
@@ -113,6 +122,10 @@ export function ProvedorSessao({ children }: { children: ReactNode }) {
     setEstado(autenticado(await servicos.autenticacao.trocarPerfil(perfil)))
   }, [])
 
+  const darCienciaDaNovaSenha = useCallback(async () => {
+    setEstado(autenticado(await servicos.autenticacao.darCienciaDaNovaSenha()))
+  }, [])
+
   const sair = useCallback(async () => {
     try {
       await servicos.autenticacao.sair()
@@ -127,8 +140,10 @@ export function ProvedorSessao({ children }: { children: ReactNode }) {
     usuario: estado.situacao === 'AUTENTICADO' ? estado.usuario : null,
     perfilAtivo: estado.situacao === 'AUTENTICADO' ? estado.perfilAtivo : null,
     especialidade: estado.situacao === 'AUTENTICADO' ? estado.especialidade : null,
+    avisoDeRedefinicao: estado.situacao === 'AUTENTICADO' ? estado.avisoDeRedefinicao : null,
+    darCienciaDaNovaSenha,
     entrar, entrarDemonstracao, entrarComConvite, entrarComPrimeiroAcesso, trocarPerfil, sair, mudanca,
-  }), [estado, entrar, entrarDemonstracao, entrarComConvite, entrarComPrimeiroAcesso, trocarPerfil, sair, mudanca])
+  }), [estado, darCienciaDaNovaSenha, entrar, entrarDemonstracao, entrarComConvite, entrarComPrimeiroAcesso, trocarPerfil, sair, mudanca])
 
   return <SessaoCtx.Provider value={valor}>{children}</SessaoCtx.Provider>
 }

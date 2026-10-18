@@ -37,6 +37,8 @@ export interface ServicoAutenticacao {
   obterPrimeiroAcesso(token: string): Promise<PrimeiroAcessoPublico>
   /** Define a senha da conta, gasta o link e ja abre a sessao. */
   concluirPrimeiroAcesso(token: string, senha: string): Promise<SessaoUsuario>
+  /** A pessoa leu o aviso de que a senha foi redefinida pela clinica (item 8). */
+  darCienciaDaNovaSenha(): Promise<SessaoUsuario>
 }
 
 export interface ServicoPaciente {
@@ -51,10 +53,16 @@ export interface ServicoPaciente {
    */
   cadastrarResponsavel(pacienteId: string, dados: NovoResponsavel): Promise<ResponsavelCadastrado>
   /**
-   * Link novo para o responsavel que ainda nao definiu senha. Conta que ja
-   * entra nao recebe: a clinica nao troca a senha de quem autoriza a escola.
+   * Link novo para o responsavel que ainda nao definiu senha, pela equipe do
+   * paciente. Depois da senha definida, o link e o de nova senha, abaixo.
    */
   novoLinkDoResponsavel(pacienteId: string, responsavelId: string): Promise<LinkPrimeiroAcesso>
+  /**
+   * Link para nova senha do responsavel que ja definiu a dele (item 8). So a
+   * coordenacao gera, nunca a equipe sozinha, e o motivo vai para a trilha.
+   * Usado, troca a senha e encerra todas as sessoes da pessoa.
+   */
+  linkNovaSenhaDoResponsavel(pacienteId: string, responsavelId: string, motivo: string): Promise<LinkPrimeiroAcesso>
   /**
    * Corrige os dados do responsavel na rede de apoio (item 8), pela equipe do
    * paciente ou pela coordenacao. O e-mail so muda enquanto o primeiro acesso

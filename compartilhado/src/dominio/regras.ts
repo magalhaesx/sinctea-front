@@ -404,6 +404,15 @@ export function erroDaSenhaNova(senha: string): string | null {
   return null
 }
 
+/** O motivo do link de nova senha (item 8): obrigatorio, e fica na trilha. */
+export const MOTIVO_NOVA_SENHA_MAXIMO = 500
+
+export function erroDoMotivoDaNovaSenha(motivo: string): string | null {
+  if (!motivo.trim()) return 'Escreva o motivo: ele fica na trilha de auditoria, com o seu nome.'
+  if (motivo.trim().length > MOTIVO_NOVA_SENHA_MAXIMO) return `O motivo pode ter no máximo ${MOTIVO_NOVA_SENHA_MAXIMO} caracteres.`
+  return null
+}
+
 export function calcularExpiracaoPrimeiroAcesso(criadoEm: Date): Date {
   return new Date(criadoEm.getTime() + VALIDADE_PRIMEIRO_ACESSO_HORAS * MS_HORA)
 }

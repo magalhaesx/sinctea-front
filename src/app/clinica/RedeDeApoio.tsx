@@ -5,16 +5,20 @@ import { Campo } from '../../ui/Campo'
 import { Cartao } from '../../ui/Cartao'
 import { Etiqueta } from '../../ui/Etiqueta'
 import { LinkDePrimeiroAcesso } from '../../componentes/LinkDePrimeiroAcesso'
-import { ErroServico, servicos, type LinkPrimeiroAcesso, type PacienteDetalhe } from '../../servicos'
+import { usarSessao } from '../../contexto/Sessao'
+import { MOTIVO_NOVA_SENHA_MAXIMO } from '@sinctea/compartilhado/dominio/regras'
+import { ErroServico, servicos, type FinalidadeAcesso, type LinkPrimeiroAcesso, type PacienteDetalhe } from '../../servicos'
 import { EdicaoDoResponsavel } from './EdicaoDoResponsavel'
 
 /**
  * Rede de apoio da ficha (tela 5), com o cadastro do responsavel (docs/07,
  * secao 0, lacuna 2). A conta nova vem com o link de primeiro acesso, que o
- * terapeuta entrega: a pessoa define a propria senha.
+ * profissional entrega: a pessoa define a propria senha.
  *
- * O link novo so existe enquanto a pessoa nao definiu a senha. Depois disso, a
- * clinica nao troca a senha de quem autoriza o acesso da escola (regra 1).
+ * Enquanto a pessoa nao definiu a senha, a equipe gera link novo. Depois, a
+ * senha de quem autoriza o acesso da escola (regra 1) nao passa pela mao da
+ * equipe: so a coordenacao gera o link para nova senha, com o motivo, que vai
+ * para a trilha (item 8).
  */
 
 const VAZIO = { nome: '', email: '', telefone: '', parentesco: '', responsavelLegal: '' as '' | 'sim' | 'nao' }
@@ -25,9 +29,14 @@ export function RedeDeApoio({ paciente, aoMudar }: { paciente: PacienteDetalhe; 
   const [erros, setErros] = useState<Record<string, string>>({})
   const [ocupado, setOcupado] = useState(false)
   const [aviso, setAviso] = useState<string | null>(null)
-  const [link, setLink] = useState<{ nome: string; link: LinkPrimeiroAcesso } | null>(null)
+  const [link, setLink] = useState<{ nome: string; link: LinkPrimeiroAcesso; finalidade?: FinalidadeAcesso } | null>(null)
   /** O responsavel em edicao (item 8), pelo id da conta. */
   const [editando, setEditando] = useState<string | null>(null)
+  /** O responsavel para quem a coordenacao esta pedindo o link de nova senha. */
+  const [pedindoNovaSenha, setPedindoNovaSenha] = useState<string | null>(null)
+  const [motivo, setMotivo] = useState('')
+  const { perfilAtivo } = usarSessao()
+  const coordenacao = perfilAtivo === 'COORDENADOR'
 
   const comErro = (e: unknown) => {
     const erro = e as ErroServico
@@ -84,6 +93,25 @@ export function RedeDeApoio({ paciente, aoMudar }: { paciente: PacienteDetalhe; 
     }
   }
 
+  const gerarNovaSenha = async (evento: FormEvent, responsavelId: string, nome: string) => {
+    evento.preventDefault()
+    setErros({})
+    setAviso(null)
+    setLink(null)
+    setOcupado(true)
+    try {
+      const gerado = await servicos.pacientes.linkNovaSenhaDoResponsavel(paciente.id, responsavelId, motivo)
+      setPedindoNovaSenha(null)
+      setMotivo('')
+      setAviso(`Link para nova senha de ${nome}. O motivo ficou na trilha de auditoria, com o seu nome.`)
+      setLink({ nome, link: gerado, finalidade: 'NOVA_SENHA' })
+    } catch (e) {
+      comErro(e)
+    } finally {
+      setOcupado(false)
+    }
+  }
+
   const campo = 'min-h-11 w-full min-w-0 rounded-lg border-2 border-linha bg-sup px-3 py-2.5 text-tinta'
   const Erro = ({ chave }: { chave: string }) => erros[chave]
     ? <p id={`resp-${chave}-erro`} className="text-sm font-bold text-cr">{erros[chave]}</p>
@@ -119,6 +147,12 @@ export function RedeDeApoio({ paciente, aoMudar }: { paciente: PacienteDetalhe; 
                     </Botao>
                   </>
                 )}
+                {!r.primeiroAcessoPendente && coordenacao && pedindoNovaSenha !== r.responsavelId && (
+                  <Botao area="cli" variante="secundaria" disabled={ocupado}
+                    onClick={() => { setPedindoNovaSenha(r.responsavelId); setMotivo(''); setAviso(null); setLink(null); setErros({}) }}>
+                    Gerar link para nova senha
+                  </Botao>
+                )}
                 {editando !== r.responsavelId && (
                   <Botao area="cli" variante="secundaria" disabled={ocupado}
                     onClick={() => { setEditando(r.responsavelId); setAviso(null); setLink(null); setErros({}) }}>
@@ -126,6 +160,31 @@ export function RedeDeApoio({ paciente, aoMudar }: { paciente: PacienteDetalhe; 
                   </Botao>
                 )}
               </span>
+              {!r.primeiroAcessoPendente && !coordenacao && (
+                <p className="w-full text-sm text-tinta2">Se a pessoa esquecer a senha, quem gera o link para nova senha é a coordenação.</p>
+              )}
+              {pedindoNovaSenha === r.responsavelId && (
+                <form onSubmit={(e) => void gerarNovaSenha(e, r.responsavelId, r.nome)} noValidate
+                  className="flex w-full flex-col gap-3 border-t border-linha pt-3">
+                  <h3 className="text-base font-bold">Link para nova senha de {r.nome}</h3>
+                  <p className="max-w-[65ch] text-sm text-tinta2">
+                    Ao usar o link, a pessoa escolhe a nova senha, a anterior deixa de valer e as sessões abertas se
+                    encerram. No acesso seguinte, ela vê que a senha foi redefinida pela clínica, a seu pedido.
+                  </p>
+                  <Campo id={`motivo-${r.responsavelId}`} rotulo="Motivo"
+                    dica={`Fica na trilha de auditoria, com o seu nome. Até ${MOTIVO_NOVA_SENHA_MAXIMO} caracteres.`}>
+                    <textarea id={`motivo-${r.responsavelId}`} rows={3} className={campo} value={motivo}
+                      maxLength={MOTIVO_NOVA_SENHA_MAXIMO} {...descrito('motivo')}
+                      onChange={(e) => setMotivo(e.target.value)} />
+                    <Erro chave="motivo" />
+                  </Campo>
+                  <div className="flex flex-wrap gap-2">
+                    <Botao area="cli" type="submit" disabled={ocupado}>{ocupado ? 'Gerando…' : 'Gerar o link'}</Botao>
+                    <Botao area="cli" variante="secundaria" disabled={ocupado}
+                      onClick={() => { setPedindoNovaSenha(null); setErros({}) }}>Cancelar</Botao>
+                  </div>
+                </form>
+              )}
               {editando === r.responsavelId && (
                 <EdicaoDoResponsavel
                   pacienteId={paciente.id}
@@ -145,7 +204,7 @@ export function RedeDeApoio({ paciente, aoMudar }: { paciente: PacienteDetalhe; 
 
       <div aria-live="polite" className="mt-3 flex flex-col gap-3">
         {aviso && <Aviso tom="ok" titulo="Pronto">{aviso}</Aviso>}
-        {link && <LinkDePrimeiroAcesso nome={link.nome} link={link.link} />}
+        {link && <LinkDePrimeiroAcesso nome={link.nome} link={link.link} finalidade={link.finalidade} />}
         {erros.geral && <Aviso tom="cr" titulo="Não foi possível concluir">{erros.geral}</Aviso>}
       </div>
 

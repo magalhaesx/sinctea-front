@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
 import { jsonCanonico } from '@sinctea/compartilhado/dominio/hash'
+import { resumoDoToken } from '../src/autenticacao/servico-sessoes.js'
 import type { PrismaClient } from '../src/gerado/client.js'
 import { clienteDe, criarBancoMigrado } from './apoio/banco.js'
 import { criarUsuario, subirApi, type Api } from './apoio/api.js'
@@ -10,6 +11,10 @@ import { criarUsuario, subirApi, type Api } from './apoio/api.js'
  * e-mail, so enquanto o primeiro acesso esta pendente, porque depois ele e o
  * login da pessoa. Quem responde legalmente nao se edita (limite declarado).
  * A edicao e ALTERACAO na trilha, com o valor anterior so do que mudou.
+ *
+ * Depois da senha definida, o link para nova senha e so da coordenacao, com
+ * motivo na trilha; usado, troca a senha e encerra as sessoes, e o proximo
+ * acesso avisa quem pediu, ate a pessoa dar ciencia.
  */
 
 let prisma: PrismaClient
@@ -128,5 +133,115 @@ describe('editar o responsavel depois que ele definiu a senha', () => {
 
   it('o mesmo e-mail que ela ja tem nao e troca: a edicao sem o campo e com ele dao o mesmo', async () => {
     expect((await editar(c.ana, dados({ nome: 'Patrícia Ficticia Souza', parentesco: 'Mãe biológica', telefone: '(92) 90000-0002', email: 'patricia@teste.example' }))).status).toBe(200)
+  })
+})
+
+describe('link para nova senha do responsavel', () => {
+  const MOTIVO = 'A mãe ligou para a recepção: esqueceu a senha.'
+  const novaSenha = (cookie: string, corpo: unknown, responsavelId = p.mae) =>
+    api.pedir('POST', `/pacientes/${p.paciente}/responsaveis/${responsavelId}/nova-senha`, { cookie, corpo })
+  const linksDeNovaSenha = () => prisma.acessoInicial.count({ where: { usuarioId: p.mae, finalidade: 'NOVA_SENHA' } })
+  const sessaoDe = (cookie: string) => api.pedir('GET', '/auth/sessao', { cookie })
+  const ultimaAlteracaoDaConta = () => prisma.registroAuditoria.findFirstOrThrow({
+    where: { idEntidade: p.mae, entidade: 'Usuario', acao: 'ALTERACAO' }, orderBy: { ocorridoEm: 'desc' },
+  })
+
+  beforeAll(async () => {
+    const pai = await api.pedir('POST', `/pacientes/${p.paciente}/responsaveis`, {
+      cookie: c.ana, corpo: { nome: 'Paulo Ficticio', email: 'paulo@teste.example', telefone: '(92) 90000-0003', parentesco: 'Pai', responsavelLegal: false },
+    })
+    p.pai = pai.corpo.responsavel.responsavelId
+    p.linkDoPai = pai.corpo.primeiroAcesso.token
+  })
+
+  it('a equipe nao gera, nem com motivo: negado e registrado com o paciente; o link de primeiro acesso tambem nao serve mais', async () => {
+    expect((await novaSenha(c.ana, { motivo: MOTIVO })).status).toBe(403)
+    expect(await prisma.registroAuditoria.findFirst({ where: { usuarioId: u.ana, acao: 'ACESSO_NEGADO' }, orderBy: { ocorridoEm: 'desc' } }))
+      .toMatchObject({ pacienteId: p.paciente, entidade: 'Usuario', idEntidade: p.mae })
+    expect((await api.pedir('POST', `/pacientes/${p.paciente}/responsaveis/${p.mae}/acesso-inicial`, { cookie: c.ana })).status).toBe(409)
+    expect(await linksDeNovaSenha()).toBe(0)
+  })
+
+  it('sem motivo, ou so com espacos, a coordenacao e recusada, e nenhum link nasce', async () => {
+    for (const corpo of [{}, { motivo: '   ' }, { motivo: 42 }]) {
+      const r = await novaSenha(c.coord, corpo)
+      expect(r.status).toBe(422)
+      expect(r.corpo.campos).toHaveProperty('motivo')
+    }
+    expect((await novaSenha(c.coord, { motivo: 'x'.repeat(501) })).status).toBe(422)
+    expect(await linksDeNovaSenha()).toBe(0)
+  })
+
+  it('quem ainda nao definiu a senha recebe o link de primeiro acesso, e nao este', async () => {
+    expect((await novaSenha(c.coord, { motivo: MOTIVO }, p.pai)).status).toBe(409)
+  })
+
+  it('com motivo: o link nasce, o banco guarda so o resumo, e a trilha diz quem gerou e por que', async () => {
+    const r = await novaSenha(c.coord, { motivo: `  ${MOTIVO}  ` })
+    expect(r.status, JSON.stringify(r.corpo)).toBe(200)
+    p.linkNovaSenha = r.corpo.token
+    const horas = (new Date(r.corpo.expiraEm).getTime() - Date.now()) / 3_600_000
+    expect(horas).toBeGreaterThan(71.9)
+    expect(horas).toBeLessThanOrEqual(72)
+
+    const linha = await prisma.acessoInicial.findFirstOrThrow({ where: { usuarioId: p.mae, finalidade: 'NOVA_SENHA' } })
+    expect(linha).toMatchObject({ tokenResumo: resumoDoToken(p.linkNovaSenha), geradoPorId: u.coord, usadoEm: null, avisadoEm: null })
+    expect(JSON.stringify(linha)).not.toContain(p.linkNovaSenha)
+
+    const registro = await ultimaAlteracaoDaConta()
+    expect(registro).toMatchObject({ usuarioId: u.coord, usuarioNome: 'Carla Coordenadora', perfil: 'COORDENADOR', pacienteId: p.paciente })
+    expect(registro.detalhe).toContain(`Motivo: ${MOTIVO}`)
+    expect(registro.detalhe).not.toContain(p.linkNovaSenha)
+
+    expect((await api.pedir('GET', `/auth/primeiro-acesso/${p.linkNovaSenha}`)).corpo)
+      .toMatchObject({ situacao: 'VALIDO', finalidade: 'NOVA_SENHA', email: 'patricia@teste.example' })
+  })
+
+  it('usado, troca a senha e encerra todas as sessoes da pessoa; o link nao vale de novo', async () => {
+    const abertas = [await api.entrar('patricia@teste.example', 'senha-da-patricia'), await api.entrar('patricia@teste.example', 'senha-da-patricia')]
+    for (const cookie of abertas) expect((await sessaoDe(cookie)).status).toBe(200)
+
+    const usado = await api.pedir('POST', `/auth/primeiro-acesso/${p.linkNovaSenha}`, { corpo: { senha: 'nova-senha-da-patricia' } })
+    expect(usado.status).toBe(200)
+    for (const cookie of abertas) expect((await sessaoDe(cookie)).status).toBe(204)
+    // So a sessao que o proprio link abriu.
+    expect(await prisma.sessaoLogin.count({ where: { usuarioId: p.mae } })).toBe(1)
+    expect((await api.pedir('POST', '/auth/entrar', { corpo: { email: 'patricia@teste.example', senha: 'senha-da-patricia' } })).status).toBe(401)
+    expect((await api.pedir('POST', `/auth/primeiro-acesso/${p.linkNovaSenha}`, { corpo: { senha: 'outra-senha-qualquer' } })).status).toBe(409)
+    expect((await ultimaAlteracaoDaConta()).detalhe).toMatch(/redefinida.*sessões abertas foram encerradas/)
+  })
+
+  it('no proximo acesso, o aviso diz quando e a pedido de quem; so a ciencia o tira', async () => {
+    const { usadoEm } = await prisma.acessoInicial.findFirstOrThrow({ where: { usuarioId: p.mae, finalidade: 'NOVA_SENHA' } })
+    const aviso = { redefinidaEm: usadoEm!.toISOString(), aPedidoDe: 'Carla Coordenadora' }
+
+    const entrada = await api.pedir('POST', '/auth/entrar', { corpo: { email: 'patricia@teste.example', senha: 'nova-senha-da-patricia' } })
+    expect(entrada.corpo.avisoDeRedefinicao).toEqual(aviso)
+    const daMae = await api.entrar('patricia@teste.example', 'nova-senha-da-patricia')
+    expect((await sessaoDe(daMae)).corpo.avisoDeRedefinicao).toEqual(aviso)
+
+    const ciente = await api.pedir('POST', '/auth/aviso-de-nova-senha', { cookie: daMae })
+    expect(ciente.status).toBe(200)
+    expect(ciente.corpo.avisoDeRedefinicao).toBeNull()
+    const depois = await api.entrar('patricia@teste.example', 'nova-senha-da-patricia')
+    expect((await sessaoDe(depois)).corpo.avisoDeRedefinicao).toBeNull()
+  })
+
+  it('o banco recusa link de nova senha sem quem gerou, primeiro acesso com autor e ciencia antes do uso', async () => {
+    const agora = new Date()
+    const linha = (dados: Record<string, unknown>) => prisma.acessoInicial.create({ data: {
+      tokenResumo: resumoDoToken(`teste-${Math.random()}`), usuarioId: p.mae, criadoEm: agora,
+      expiraEm: new Date(agora.getTime() + 3_600_000), ...dados,
+    } })
+    await expect(linha({ finalidade: 'NOVA_SENHA' })).rejects.toThrow(/acesso_inicial_nova_senha_com_autor/)
+    await expect(linha({ geradoPorId: u.coord })).rejects.toThrow(/acesso_inicial_nova_senha_com_autor/)
+    await expect(linha({ finalidade: 'NOVA_SENHA', geradoPorId: u.coord, avisadoEm: agora })).rejects.toThrow(/acesso_inicial_ciencia_depois_do_uso/)
+  })
+
+  it('o primeiro acesso nao traz aviso, e a ciencia sem sessao e recusada', async () => {
+    const r = await api.pedir('POST', `/auth/primeiro-acesso/${p.linkDoPai}`, { corpo: { senha: 'senha-do-paulo' } })
+    expect(r.status).toBe(200)
+    expect(r.corpo.avisoDeRedefinicao).toBeNull()
+    expect((await api.pedir('POST', '/auth/aviso-de-nova-senha')).status).toBe(401)
   })
 })

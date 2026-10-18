@@ -12,6 +12,7 @@ const sessao = (id: string, nome: string, perfilAtivo: SessaoUsuario['perfilAtiv
   usuario: { id, nome, email: `${id}@teste.example`, perfis: [perfilAtivo], ativo: true, ultimoAcessoEm: null },
   perfilAtivo,
   especialidade: null,
+  avisoDeRedefinicao: null,
 })
 
 describe('o que mudou na sessao desde que a janela a leu', () => {

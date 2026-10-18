@@ -1,10 +1,13 @@
+import { useState } from 'react'
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { BarraPreferencias } from '../componentes/BarraPreferencias'
+import { Botao } from '../ui/Botao'
 import { RodapeAmbiente } from '../componentes/AvisoAmbiente'
 import { usarSessao } from '../contexto/Sessao'
 import type { Perfil } from '../servicos'
 import { SO_CAMINHO_PRINCIPAL } from './caminhoPrincipal'
 import { papelNaTela } from './perfis'
+import { textoDoAvisoDeRedefinicao } from './textoDaRedefinicao'
 
 /**
  * Moldura do sistema (/app). O menu mostra as telas do perfil ATIVO: as tres
@@ -153,12 +156,47 @@ export function LayoutApp() {
 
         <main id="conteudo" tabIndex={-1} className="min-w-0 overflow-x-hidden bg-cromo2 p-3 sm:p-5">
           <div className="mx-auto min-w-0 max-w-5xl">
+            <AvisoDeRedefinicao />
             <Outlet />
           </div>
         </main>
       </div>
 
       <RodapeAmbiente />
+    </div>
+  )
+}
+
+/**
+ * Item 8: a coordenacao redefiniu a senha desta conta. O aviso fica acima de
+ * qualquer tela ate a pessoa dar ciencia, em qualquer janela e em qualquer
+ * acesso: a ciencia fica no servidor.
+ */
+function AvisoDeRedefinicao() {
+  const { avisoDeRedefinicao, darCienciaDaNovaSenha, perfilAtivo } = usarSessao()
+  const [ocupado, setOcupado] = useState(false)
+  const [falhou, setFalhou] = useState(false)
+  if (!avisoDeRedefinicao) return null
+  const ciente = async () => {
+    setOcupado(true)
+    setFalhou(false)
+    try {
+      await darCienciaDaNovaSenha()
+    } catch {
+      setFalhou(true)
+    } finally {
+      setOcupado(false)
+    }
+  }
+  return (
+    <div role="alert" className="mb-4 rounded-xl border border-cromo-linha border-l-4 border-l-at bg-at-sup p-4 text-tinta">
+      <h2 className="mb-1 text-base font-bold">Sua senha foi redefinida</h2>
+      <p className="max-w-[65ch] text-[15px]">{textoDoAvisoDeRedefinicao(avisoDeRedefinicao)}</p>
+      {falhou && <p className="mt-2 text-sm font-bold text-cr">Não foi possível registrar agora. Tente de novo.</p>}
+      <p className="mt-3">
+        <Botao area={perfilAtivo === 'RESPONSAVEL' ? 'fam' : perfilAtivo === 'PROFESSOR' ? 'esc' : 'cli'} variante="secundaria"
+          disabled={ocupado} onClick={() => void ciente()}>{ocupado ? 'Registrando…' : 'Entendi'}</Botao>
+      </p>
     </div>
   )
 }

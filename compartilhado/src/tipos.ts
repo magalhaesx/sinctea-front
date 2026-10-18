@@ -122,6 +122,18 @@ export interface SessaoUsuario {
    * equipe, ou ainda nao a preencheu.
    */
   especialidade: string | null
+  /**
+   * A senha foi redefinida pelo link que a coordenacao gerou (item 8), e a
+   * pessoa ainda nao deu ciencia: a tela mostra o aviso ate ela dar. Nulo no
+   * mais das vezes.
+   */
+  avisoDeRedefinicao: AvisoDeRedefinicao | null
+}
+
+/** Quando a senha foi redefinida, e a pedido de quem da coordenacao. */
+export interface AvisoDeRedefinicao {
+  redefinidaEm: DataIso
+  aPedidoDe: string
 }
 
 /**
@@ -129,6 +141,12 @@ export interface SessaoUsuario {
  * o link, e a pessoa define a propria senha. Uso unico, 72 horas.
  */
 export type SituacaoPrimeiroAcesso = 'VALIDO' | 'USADO' | 'EXPIRADO' | 'INEXISTENTE'
+
+/**
+ * O mesmo link serve ao primeiro acesso e a nova senha do responsavel, que so
+ * a coordenacao gera, com motivo (item 8).
+ */
+export type FinalidadeAcesso = 'PRIMEIRO_ACESSO' | 'NOVA_SENHA'
 
 /**
  * O que a tela do link mostra antes da senha: so o nome e o e-mail da conta,
@@ -139,6 +157,7 @@ export interface PrimeiroAcessoPublico {
   nome: string | null
   email: string | null
   expiraEm: DataIso | null
+  finalidade: FinalidadeAcesso | null
 }
 
 /**

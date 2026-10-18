@@ -7,8 +7,9 @@ import { anterioresQueMudaram } from '@sinctea/compartilhado/dominio/auditoria'
 import { partesDaDataCivil } from '@sinctea/compartilhado/dominio/datas'
 import { jsonCanonico } from '@sinctea/compartilhado/dominio/hash'
 import {
-  emailValido, idadeEmAnos, normalizarEmail, paraBusca, situacaoConsentimento,
+  emailValido, erroDoMotivoDaNovaSenha, idadeEmAnos, normalizarEmail, paraBusca, situacaoConsentimento,
 } from '@sinctea/compartilhado/dominio/regras'
+import { Negacao, SEM_PERMISSAO } from '../acesso/negacao.js'
 import { ServicoAutenticacao } from '../autenticacao/servico-autenticacao.js'
 import { hashDeSenhaDesconhecida } from '../autenticacao/senhas.js'
 import { ServicoBanco } from '../banco/servico-banco.js'
@@ -159,9 +160,9 @@ export class ServicoPacientes {
   }
 
   /**
-   * Link novo so para quem ainda nao definiu senha. A clinica nao troca a
-   * senha de quem ja entra: o responsavel e quem autoriza a escola (regra 1),
-   * e a conta dele nao pode passar pela mao da equipe.
+   * Link novo so para quem ainda nao definiu senha, pela equipe do paciente.
+   * Depois disso, a senha de quem autoriza a escola (regra 1) nao passa pela
+   * mao da equipe: o link de nova senha e da coordenacao, abaixo.
    */
   async novoLinkDoResponsavel(sessao: SessaoServidor, pacienteId: string, responsavelId: string): Promise<LinkPrimeiroAcesso> {
     const paciente = await exigirPacienteClinico(this.banco, sessao, pacienteId)
@@ -171,9 +172,40 @@ export class ServicoPacientes {
     })
     if (!vinculo) throw new ErroServico('NAO_ENCONTRADO', 'Responsável não encontrado na rede de apoio deste paciente.')
     if (vinculo.responsavel.usuario.ultimoAcessoEm !== null) {
-      throw new ErroServico('CONFLITO', 'Esta pessoa já definiu a senha. Se esqueceu, quem troca é ela, e não a clínica.')
+      throw new ErroServico('CONFLITO', 'Esta pessoa já definiu a senha. O link para nova senha é com a coordenação, com o motivo.')
     }
     const link = await this.autenticacao.gerarAcessoInicial(vinculo.responsavelId)
+    return { token: link.token, expiraEm: link.expiraEm.toISOString() }
+  }
+
+  /**
+   * Item 8 (decisao de 18/10, que muda a de 16/10): o link para nova senha do
+   * responsavel que ja definiu a dele. So a coordenacao gera, nunca a equipe
+   * sozinha — separacao de funcoes —, com motivo, que vai para a trilha com
+   * quem gerou. O link guarda quem o gerou, para o aviso do proximo acesso.
+   * Usado, troca a senha e encerra todas as sessoes da pessoa.
+   */
+  async linkNovaSenhaDoResponsavel(
+    sessao: SessaoServidor, pacienteId: string, responsavelId: string, motivo: unknown,
+  ): Promise<LinkPrimeiroAcesso> {
+    // A rota ja so aceita a coordenacao; a regra fica tambem aqui, onde mora.
+    if (sessao.perfilAtivo !== 'COORDENADOR') {
+      throw new Negacao(SEM_PERMISSAO, { pacienteId: exigirUuid(pacienteId, 'Paciente'), detalhe: 'Link para nova senha: só a coordenação gera.' })
+    }
+    const paciente = await exigirPacienteClinico(this.banco, sessao, pacienteId)
+    const vinculo = await this.banco.vinculoFamiliar.findFirst({
+      where: { pacienteId: paciente.id, responsavelId: exigirUuid(responsavelId, 'Responsável') },
+      include: { responsavel: { include: { usuario: true } } },
+    })
+    if (!vinculo) throw new ErroServico('NAO_ENCONTRADO', 'Responsável não encontrado na rede de apoio deste paciente.')
+    const { usuario } = vinculo.responsavel
+    if (!usuario.ativo) throw new ErroServico('CONFLITO', 'Esta conta está desativada.')
+    if (usuario.ultimoAcessoEm === null) {
+      throw new ErroServico('CONFLITO', 'Esta pessoa ainda não definiu a senha: use "Gerar novo link", que a equipe também gera.')
+    }
+    const erroMotivo = erroDoMotivoDaNovaSenha(typeof motivo === 'string' ? motivo : '')
+    if (erroMotivo) throw new ErroServico('VALIDACAO', erroMotivo, { motivo: erroMotivo })
+    const link = await this.autenticacao.gerarAcessoInicial(usuario.id, { geradoPorId: sessao.usuario.id })
     return { token: link.token, expiraEm: link.expiraEm.toISOString() }
   }
 
