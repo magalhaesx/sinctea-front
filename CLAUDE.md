@@ -205,10 +205,10 @@ Atualizado em 18/10/2026, lendo o código — não a memória.
   simulada que aplica controle de acesso e auditoria; o cliente da API, que
   não aplica regra nenhuma. A versão publicada usa só a API, e o mock fica
   fora do pacote; no desenvolvimento, `VITE_API_URL` escolhe entre as duas
-- **406 testes em 30 arquivos, nos três pacotes**, rodados por um único
+- **414 testes em 31 arquivos, nos três pacotes**, rodados por um único
   `npm test` na raiz, sem passo manual. O principal ainda é
   `src/servicos/mock/regrasInviolaveis.test.ts`, que verifica as regras
-  invioláveis na camada de dados, e não na tela. Os 184 do servidor rodam contra
+  invioláveis na camada de dados, e não na tela. Os 192 do servidor rodam contra
   um PostgreSQL 17 de verdade
 - **As seis regras verificadas** em `docs/06`: para cada teste citado, a regra foi
   quebrada de propósito para confirmar que ele falha, e as quebras que não
@@ -359,6 +359,14 @@ em produção (o antigo passo B5) foi cancelada. No código, hoje:
   lista de pacientes e a fila de planos trazem a especialidade; convidar
   profissional da clínica a exige. O enum `TERAPEUTA` continua no código e no
   banco. `src/publicacao.test.ts` confere que o pacote não tem a palavra
+- **Item 8, parte 1 — editar o responsável na rede de apoio.** A equipe do
+  paciente e a coordenação corrigem nome, telefone e parentesco a qualquer
+  momento; o e-mail, só enquanto o primeiro acesso está pendente, porque
+  depois ele é o login da pessoa — conferido antes e na própria gravação. O
+  e-mail fica em minúsculas e único, e o de uma conta da equipe ou da escola é
+  recusado. `ALTERACAO` com o `valorAnterior` só do que mudou. Quem responde
+  legalmente não se edita (afirmação 4, abaixo). Testes em
+  `servidor/test/responsavel.test.ts`
 - `npm run criar-administrador -w @sinctea/servidor -- .env.producao --nome
   "Nome Completo" --email voce@exemplo.com` cria o primeiro administrador:
   nome e e-mail vêm da linha de comando, e só a senha é pedida, escondida e duas
@@ -430,6 +438,10 @@ Enquanto não se resolverem, não devem ser afirmadas na defesa:
    a equipe recebe link novo, pela administração. A clínica não troca a senha
    de quem autoriza a escola. Limite declarado em 16/10: fica assim até o envio
    de e-mail, depois de 19/10.
+4. **Quem responde legalmente não se corrige.** Na edição do responsável
+   (item 8), o `responsavelLegal` do vínculo não se edita: a resposta dada no
+   cadastro fica como está, e não há, no sistema, como corrigi-la. Limite
+   declarado em 18/10.
 
 O endereço do Render saiu desta lista em 17/10/2026: o B6 conferiu no ar `/`,
 `/api/saude` com a última migração e o 404 em JSON (tag `etapa-9`). O
@@ -456,7 +468,8 @@ termo, e a família reabre o texto da versão registrada pela própria tela 17.
 - 11/10/2026 — `RegistroAuditoria` ganhou `valorAnterior : String`. Guarda o JSON
   canônico **apenas dos campos que mudaram**, na versão anterior — nunca o
   registro inteiro, por minimização. Hoje o preenchem a correção de ocorrência
-  escolar e a edição de objetivo e das datas do plano; nas demais ações é nulo
+  escolar, a edição de objetivo e das datas do plano e a do responsável; nas
+  demais ações é nulo
 - 15/10/2026 — o diagrama alcançou o banco: `RegistroAuditoria` mostra
   `pacienteId : UUID [0..1]`, que é fotografia, sem chave estrangeira;
   `RelatorioEvolucao` ganhou `destinatario : Destinatario`, e `conteudoEmitido`

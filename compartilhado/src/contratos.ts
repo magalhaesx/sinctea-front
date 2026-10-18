@@ -5,7 +5,7 @@ import type {
   ExecucaoAtividadeCasa, FiltroAgenda, FiltroAuditoria, FiltroOcorrencia, FiltroPaciente,
   FiltroPaginacao, FiltroSessao, FiltroUsuario, FilhoResumo, ItemAgenda, LinkPrimeiroAcesso, NovaAtividadeCasa,
   NovaOcorrenciaComportamental, NovaOcorrenciaEscolar, NovoConsentimento, NovoObjetivo, EdicaoObjetivo,
-  NovoPaciente, NovoPlano, NovoResponsavel, ResponsavelCadastrado, DadosCartao, NovaEscola, Objetivo, ObjetivoAcessivel, OcorrenciaComportamental, OcorrenciaEscolar,
+  NovoPaciente, NovoPlano, NovoResponsavel, EdicaoResponsavel, ResponsavelCadastrado, ResponsavelNaFicha, DadosCartao, NovaEscola, Objetivo, ObjetivoAcessivel, OcorrenciaComportamental, OcorrenciaEscolar,
   ConteudoRelatorio, DadosProfissionais, MotivoAtencao, Pagina, PacienteDetalhe, PacienteResumo, PedidoRelatorio,
   Perfil, PlanoParaValidacao, PlanoTerapeutico, PonteEscola, PrimeiroAcessoPublico, Profissional, RegistroAtividade,
   RegistroAuditoria, RelatorioEvolucao, ResumoClinica, Resultado, Sessao, SessaoUsuario,
@@ -55,6 +55,12 @@ export interface ServicoPaciente {
    * entra nao recebe: a clinica nao troca a senha de quem autoriza a escola.
    */
   novoLinkDoResponsavel(pacienteId: string, responsavelId: string): Promise<LinkPrimeiroAcesso>
+  /**
+   * Corrige os dados do responsavel na rede de apoio (item 8), pela equipe do
+   * paciente ou pela coordenacao. O e-mail so muda enquanto o primeiro acesso
+   * esta pendente.
+   */
+  editarResponsavel(pacienteId: string, responsavelId: string, dados: EdicaoResponsavel): Promise<ResponsavelNaFicha>
 }
 
 export interface ServicoProfissional {

@@ -1,9 +1,11 @@
 import { Injectable } from '@nestjs/common'
 import {
   ErroServico, type FiltroPaciente, type LinkPrimeiroAcesso, type Pagina, type PacienteDetalhe,
-  type PacienteResumo, type ResponsavelCadastrado, type SituacaoPlano,
+  type PacienteResumo, type ResponsavelCadastrado, type ResponsavelNaFicha, type SituacaoPlano,
 } from '@sinctea/compartilhado'
+import { anterioresQueMudaram } from '@sinctea/compartilhado/dominio/auditoria'
 import { partesDaDataCivil } from '@sinctea/compartilhado/dominio/datas'
+import { jsonCanonico } from '@sinctea/compartilhado/dominio/hash'
 import {
   emailValido, idadeEmAnos, normalizarEmail, paraBusca, situacaoConsentimento,
 } from '@sinctea/compartilhado/dominio/regras'
@@ -15,6 +17,11 @@ import type { SessaoServidor } from '../http/tipos-http.js'
 import { exigirUuid, exigirValido, textoOuVazio } from '../http/validacao.js'
 import { alcancaClinicamente, exigirPacienteClinico } from './alcance.js'
 import { comoNivel, deDataCivil, paraConsentimento, paraDataCivil, paraResponsavelNaFicha } from './mapeadores.js'
+import type { Editado } from './servico-planos.js'
+
+const EMAIL_DE_OUTRA_AREA = 'Este e-mail já é de uma conta da equipe ou da escola.'
+const EMAIL_DE_OUTRA_PESSOA = 'Este e-mail já é de outra pessoa cadastrada.'
+const EMAIL_E_LOGIN = 'Esta pessoa já definiu a senha: o e-mail é o login dela, e a clínica não o troca.'
 
 const INCLUIR_FICHA = {
   equipe: { include: { profissional: { include: { usuario: true } } } },
@@ -125,7 +132,7 @@ export class ServicoPacientes {
 
     const existente = await this.banco.usuario.findUnique({ where: { email }, include: { responsavel: true } })
     if (existente && !existente.responsavel) {
-      throw new ErroServico('CONFLITO', 'Este e-mail já é de uma conta da equipe ou da escola.', { email: 'Este e-mail já é de uma conta da equipe ou da escola.' })
+      throw new ErroServico('CONFLITO', EMAIL_DE_OUTRA_AREA, { email: EMAIL_DE_OUTRA_AREA })
     }
     if (existente && await this.banco.vinculoFamiliar.count({ where: { responsavelId: existente.id, pacienteId: paciente.id } }) > 0) {
       throw new ErroServico('CONFLITO', 'Esta pessoa já está na rede de apoio deste paciente.')
@@ -168,6 +175,76 @@ export class ServicoPacientes {
     }
     const link = await this.autenticacao.gerarAcessoInicial(vinculo.responsavelId)
     return { token: link.token, expiraEm: link.expiraEm.toISOString() }
+  }
+
+  /**
+   * Item 8: corrige os dados do responsavel na rede de apoio. Nome e telefone
+   * sao da pessoa, e mudam em todas as fichas em que ela esta; o parentesco e
+   * deste vinculo. O e-mail so muda enquanto o primeiro acesso esta pendente.
+   * Quem responde legalmente nao se edita aqui (limite declarado em 18/10).
+   */
+  async editarResponsavel(
+    sessao: SessaoServidor, pacienteId: string, responsavelId: string, dados: Record<string, unknown>,
+  ): Promise<Editado<ResponsavelNaFicha>> {
+    const paciente = await exigirPacienteClinico(this.banco, sessao, pacienteId)
+    const vinculo = await this.banco.vinculoFamiliar.findFirst({
+      where: { pacienteId: paciente.id, responsavelId: exigirUuid(responsavelId, 'Responsável') },
+      include: { responsavel: { include: { usuario: true } } },
+    })
+    if (!vinculo) throw new ErroServico('NAO_ENCONTRADO', 'Responsável não encontrado na rede de apoio deste paciente.')
+    const { usuario } = vinculo.responsavel
+    const antes = { nome: usuario.nome, email: usuario.email, telefone: vinculo.responsavel.telefone, parentesco: vinculo.parentesco }
+    const depois = {
+      nome: textoOuVazio(dados.nome),
+      email: dados.email === undefined ? usuario.email : normalizarEmail(textoOuVazio(dados.email)),
+      telefone: textoOuVazio(dados.telefone),
+      parentesco: textoOuVazio(dados.parentesco),
+    }
+    const erros: Record<string, string> = {}
+    if (!depois.nome) erros.nome = 'Escreva o nome do responsável.'
+    if (!emailValido(depois.email)) erros.email = 'Escreva um e-mail válido.'
+    if (!depois.telefone) erros.telefone = 'Escreva um telefone para contato.'
+    if (!depois.parentesco) erros.parentesco = 'Escreva o parentesco com o paciente.'
+    if (dados.responsavelLegal !== undefined && dados.responsavelLegal !== vinculo.responsavelLegal) {
+      erros.responsavelLegal = 'Quem responde legalmente não se altera depois do cadastro.'
+    }
+    exigirValido(erros)
+
+    const trocaEmail = depois.email !== antes.email
+    if (trocaEmail) {
+      if (usuario.ultimoAcessoEm !== null) throw new ErroServico('CONFLITO', EMAIL_E_LOGIN, { email: EMAIL_E_LOGIN })
+      const dono = await this.banco.usuario.findUnique({ where: { email: depois.email }, include: { responsavel: true } })
+      if (dono && !dono.responsavel) throw new ErroServico('CONFLITO', EMAIL_DE_OUTRA_AREA, { email: EMAIL_DE_OUTRA_AREA })
+      if (dono) throw new ErroServico('CONFLITO', EMAIL_DE_OUTRA_PESSOA, { email: EMAIL_DE_OUTRA_PESSOA })
+    }
+
+    const anteriores = anterioresQueMudaram(antes, depois)
+    if (!anteriores) return { resultado: paraResponsavelNaFicha(vinculo), pacienteId: paciente.id, valorAnterior: null }
+    try {
+      const editado = await this.banco.$transaction(async (tx) => {
+        if (trocaEmail) {
+          // A trava fica na propria gravacao: se a pessoa definiu a senha
+          // enquanto a equipe editava, o e-mail ja e login e nao muda.
+          const trocado = await tx.usuario.updateMany({ where: { id: usuario.id, ultimoAcessoEm: null }, data: { email: depois.email } })
+          if (trocado.count !== 1) throw new ErroServico('CONFLITO', EMAIL_E_LOGIN, { email: EMAIL_E_LOGIN })
+        }
+        if (depois.nome !== antes.nome) await tx.usuario.update({ where: { id: usuario.id }, data: { nome: depois.nome } })
+        if (depois.telefone !== antes.telefone) {
+          await tx.responsavel.update({ where: { usuarioId: usuario.id }, data: { telefone: depois.telefone } })
+        }
+        return tx.vinculoFamiliar.update({
+          where: { id: vinculo.id }, data: { parentesco: depois.parentesco },
+          include: { responsavel: { include: { usuario: true } } },
+        })
+      })
+      return { resultado: paraResponsavelNaFicha(editado), pacienteId: paciente.id, valorAnterior: jsonCanonico(anteriores) }
+    } catch (erro) {
+      // Dois pedidos com o mesmo e-mail ao mesmo tempo: o indice unico decide.
+      if ((erro as { code?: string }).code === 'P2002') {
+        throw new ErroServico('CONFLITO', EMAIL_DE_OUTRA_PESSOA, { email: EMAIL_DE_OUTRA_PESSOA })
+      }
+      throw erro
+    }
   }
 
   private async detalhe(pacienteId: string): Promise<PacienteDetalhe> {

@@ -111,6 +111,19 @@ export class ControladorPacientes {
     return this.pacientes.novoLinkDoResponsavel(sessaoDe(req), id, responsavelId)
   }
 
+  /** Item 8: nome, telefone e parentesco; o e-mail, so com o primeiro acesso pendente. */
+  @Put(':id/responsaveis/:responsavelId')
+  @Auditar({
+    entidade: 'Responsavel', acao: 'ALTERACAO', pacienteId: deParametro, idEntidade: { parametro: 'responsavelId' },
+    detalhe: 'Dados do responsável na rede de apoio.',
+  })
+  async editarResponsavel(
+    @Req() req: RequisicaoHttp, @Param('id') id: string, @Param('responsavelId') responsavelId: string,
+    @Body() corpo: Record<string, unknown> | undefined,
+  ) {
+    return comValorAnterior(req, await this.pacientes.editarResponsavel(sessaoDe(req), id, responsavelId, corpo ?? {}))
+  }
+
   @Get(':id/plano')
   @Auditar({
     entidade: 'PlanoTerapeutico', acao: 'LEITURA_AUTORIZADA', pacienteId: deParametro,

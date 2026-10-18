@@ -6,6 +6,7 @@ import { Cartao } from '../../ui/Cartao'
 import { Etiqueta } from '../../ui/Etiqueta'
 import { LinkDePrimeiroAcesso } from '../../componentes/LinkDePrimeiroAcesso'
 import { ErroServico, servicos, type LinkPrimeiroAcesso, type PacienteDetalhe } from '../../servicos'
+import { EdicaoDoResponsavel } from './EdicaoDoResponsavel'
 
 /**
  * Rede de apoio da ficha (tela 5), com o cadastro do responsavel (docs/07,
@@ -25,6 +26,8 @@ export function RedeDeApoio({ paciente, aoMudar }: { paciente: PacienteDetalhe; 
   const [ocupado, setOcupado] = useState(false)
   const [aviso, setAviso] = useState<string | null>(null)
   const [link, setLink] = useState<{ nome: string; link: LinkPrimeiroAcesso } | null>(null)
+  /** O responsavel em edicao (item 8), pelo id da conta. */
+  const [editando, setEditando] = useState<string | null>(null)
 
   const comErro = (e: unknown) => {
     const erro = e as ErroServico
@@ -116,7 +119,25 @@ export function RedeDeApoio({ paciente, aoMudar }: { paciente: PacienteDetalhe; 
                     </Botao>
                   </>
                 )}
+                {editando !== r.responsavelId && (
+                  <Botao area="cli" variante="secundaria" disabled={ocupado}
+                    onClick={() => { setEditando(r.responsavelId); setAviso(null); setLink(null); setErros({}) }}>
+                    Editar dados
+                  </Botao>
+                )}
               </span>
+              {editando === r.responsavelId && (
+                <EdicaoDoResponsavel
+                  pacienteId={paciente.id}
+                  pessoa={r}
+                  aoCancelar={() => setEditando(null)}
+                  aoSalvar={(editado) => {
+                    setEditando(null)
+                    setAviso(`Dados de ${editado.nome} salvos.`)
+                    aoMudar()
+                  }}
+                />
+              )}
             </li>
           ))}
         </ul>

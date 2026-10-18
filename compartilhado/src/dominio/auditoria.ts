@@ -31,6 +31,10 @@ export const NOME_DO_CAMPO: Record<string, string> = {
   sessoesConsecutivas: 'Sessões consecutivas',
   dataInicio: 'Início do plano',
   dataRevisao: 'Revisão do plano',
+  nome: 'Nome',
+  email: 'E-mail',
+  telefone: 'Telefone',
+  parentesco: 'Parentesco',
 }
 
 /**

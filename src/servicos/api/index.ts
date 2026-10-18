@@ -33,6 +33,8 @@ export const servicosApi: Servicos = {
     cadastrarResponsavel: (pacienteId, dados) => r('POST', `/pacientes/${id(pacienteId)}/responsaveis`, dados),
     novoLinkDoResponsavel: (pacienteId, responsavelId) =>
       r('POST', `/pacientes/${id(pacienteId)}/responsaveis/${id(responsavelId)}/acesso-inicial`),
+    editarResponsavel: (pacienteId, responsavelId, dados) =>
+      r('PUT', `/pacientes/${id(pacienteId)}/responsaveis/${id(responsavelId)}`, dados),
   },
 
   profissionais: {

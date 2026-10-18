@@ -277,6 +277,21 @@ export interface ResponsavelCadastrado {
   primeiroAcesso: LinkPrimeiroAcesso | null
 }
 
+/**
+ * Edicao do responsavel na rede de apoio (item 8). Nome, telefone e parentesco
+ * mudam a qualquer momento. O e-mail, so enquanto o primeiro acesso esta
+ * pendente, para corrigir erro de digitacao: depois, ele e o login da pessoa,
+ * e a clinica nao o troca. Quem responde legalmente nao se edita (limite
+ * declarado em 18/10): o campo nem existe aqui.
+ */
+export interface EdicaoResponsavel {
+  nome: string
+  telefone: string
+  parentesco: string
+  /** Ausente, fica o que esta. */
+  email?: string
+}
+
 // ---------------------------------------------------------------- Plano e objetivos
 
 export type StatusObjetivo = 'NAO_INICIADO' | 'EM_AQUISICAO' | 'DOMINADO'

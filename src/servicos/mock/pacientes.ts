@@ -1,6 +1,8 @@
 import type { ServicoEscola, ServicoPaciente, ServicoProfissional } from '@sinctea/compartilhado'
 import { ErroServico, REDES_DE_ENSINO, type Paciente, type PacienteDetalhe, type PacienteResumo, type Responsavel, type SituacaoPlano } from '@sinctea/compartilhado'
+import { anterioresQueMudaram } from '@sinctea/compartilhado/dominio/auditoria'
 import { partesDaDataCivil } from '@sinctea/compartilhado/dominio/datas'
+import { jsonCanonico } from '@sinctea/compartilhado/dominio/hash'
 import {
   emailValido, escolaParecida, idadeEmAnos, normalizarEmail, paraBusca, situacaoConsentimento,
 } from '@sinctea/compartilhado/dominio/regras'
@@ -171,6 +173,47 @@ export const pacientesMock: ServicoPaciente = {
     }
     auditar(sessao, { acao: 'ALTERACAO', entidade: 'Usuario', idEntidade: responsavel.id, pacienteId: paciente.id, detalhe: 'Novo link de primeiro acesso do responsável; o anterior deixou de valer.' })
     return linkDoMock()
+  }),
+
+  // Item 8: as mesmas regras do servidor (servidor/src/clinica/servico-pacientes.ts).
+  editarResponsavel: (pacienteId, responsavelId, dados) => responder(() => {
+    const { sessao, paciente } = exigirPacienteClinico(pacienteId, 'Responsavel')
+    const vinculo = banco.vinculosFamiliares.find((v) => v.pacienteId === paciente.id && v.responsavelId === responsavelId)
+    const responsavel = banco.responsaveis.find((r) => r.id === responsavelId)
+    if (!vinculo || !responsavel) throw new ErroServico('NAO_ENCONTRADO', 'Responsável não encontrado na rede de apoio deste paciente.')
+    const antes = { nome: responsavel.nome, email: responsavel.email, telefone: responsavel.telefone, parentesco: vinculo.parentesco }
+    const depois = {
+      nome: dados.nome.trim(), email: dados.email === undefined ? responsavel.email : normalizarEmail(dados.email),
+      telefone: dados.telefone.trim(), parentesco: dados.parentesco.trim(),
+    }
+    const erros: Record<string, string> = {}
+    if (!depois.nome) erros.nome = 'Escreva o nome do responsável.'
+    if (!emailValido(depois.email)) erros.email = 'Escreva um e-mail válido.'
+    if (!depois.telefone) erros.telefone = 'Escreva um telefone para contato.'
+    if (!depois.parentesco) erros.parentesco = 'Escreva o parentesco com o paciente.'
+    exigirValido(erros)
+    if (depois.email !== antes.email) {
+      const conflito = (mensagem: string) => { throw new ErroServico('CONFLITO', mensagem, { email: mensagem }) }
+      if (responsavel.ultimoAcessoEm !== null) conflito('Esta pessoa já definiu a senha: o e-mail é o login dela, e a clínica não o troca.')
+      const dono = todosUsuarios().find((u) => u.email === depois.email)
+      if (dono && dono.tipo !== 'RESPONSAVEL') conflito('Este e-mail já é de uma conta da equipe ou da escola.')
+      if (dono) conflito('Este e-mail já é de outra pessoa cadastrada.')
+    }
+    const anteriores = anterioresQueMudaram(antes, depois)
+    if (anteriores) {
+      responsavel.nome = depois.nome
+      responsavel.email = depois.email
+      responsavel.telefone = depois.telefone
+      vinculo.parentesco = depois.parentesco
+      auditar(sessao, {
+        acao: 'ALTERACAO', entidade: 'Responsavel', idEntidade: responsavel.id, pacienteId: paciente.id,
+        detalhe: 'Dados do responsável na rede de apoio.', valorAnterior: jsonCanonico(anteriores),
+      })
+    }
+    return {
+      ...vinculo, nome: responsavel.nome, email: responsavel.email, telefone: responsavel.telefone,
+      primeiroAcessoPendente: responsavel.ultimoAcessoEm === null,
+    }
   }),
 }
 
