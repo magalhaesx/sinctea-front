@@ -432,8 +432,8 @@ Enquanto não se resolverem, não devem ser afirmadas na defesa:
    de e-mail, depois de 19/10.
 
 O endereço do Render saiu desta lista em 17/10/2026: o B6 conferiu no ar `/`,
-`/api/saude` com a última migração e o 404 em JSON (tag `etapa-9`). Falta
-confirmar no painel do Render que o Auto-Deploy está em *After CI Checks Pass*.
+`/api/saude` com a última migração e o 404 em JSON (tag `etapa-9`). O
+Auto-Deploy do Render está em *After CI Checks Pass*, conferido no painel em 18/10.
 
 O cartão de estratégias saiu desta lista em 16/10/2026: o terapeuta o escreve
 na tela 6, com conteúdo, e não existe mais cartão em branco.

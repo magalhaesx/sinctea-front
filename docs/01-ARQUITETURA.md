@@ -111,7 +111,7 @@ A página institucional em `/` está suspensa (`docs/04`); volta na Etapa 13 se
 sobrar tempo. `/dev/estados` não existe na versão publicada.
 
 **Na versão publicada, só existem as rotas cujo serviço já está no servidor**
-(`docs/07`, seção 0). As outras — evolução, atividades, relatório, indicadores e
+(`docs/07`, seção 0). As outras — evolução por objetivo (tela 8), atividades, relatório, indicadores e
 auditoria — somem da navegação e das rotas até o serviço chegar. Nunca aparecem
 com dado simulado.
 
@@ -123,7 +123,7 @@ nome do paciente › Plano), e o Voltar do navegador funciona.
 Tudo sob `/api`: autenticação, usuários, pacientes, planos, sessões, família,
 escolas, consentimentos, convites, área da escola, ocorrências e `GET /api/saude`.
 Os serviços que faltam entram depois de 19/10. A documentação OpenAPI (`docs/07`,
-seção 3A) também fica sob `/api`.
+seção 3A) ainda não existe; quando existir, também fica sob `/api`.
 
 ## 4. Estrutura de pastas
 
