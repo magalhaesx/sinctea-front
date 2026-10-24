@@ -1,9 +1,9 @@
 import { Body, Controller, Get, HttpCode, Param, Post, Req, Res } from '@nestjs/common'
-import { ErroServico, type PrimeiroAcessoPublico, type SessaoUsuario } from '@sinctea/compartilhado'
+import { ErroServico, type ContaAberta, type PrimeiroAcessoPublico, type SessaoUsuario } from '@sinctea/compartilhado'
 import { Publico, SemDadoDoPaciente } from '../acesso/metadados.js'
 import type { RequisicaoHttp, RespostaHttp } from '../http/tipos-http.js'
 import { ServicoAutenticacao } from './servico-autenticacao.js'
-import { ServicoSessoes } from './servico-sessoes.js'
+import { ServicoSessoes, vagaDaRequisicao } from './servico-sessoes.js'
 
 /**
  * /api/auth — o contrato ServicoAutenticacao (compartilhado/src/contratos.ts),
@@ -26,7 +26,7 @@ export class ControladorAutenticacao {
     @Body() corpo: { email?: unknown; senha?: unknown } | undefined,
     @Res({ passthrough: true }) resposta: RespostaHttp,
   ): Promise<SessaoUsuario> {
-    return this.autenticacao.entrar(corpo?.email, corpo?.senha, requisicao.ip ?? null, resposta)
+    return this.autenticacao.entrar(corpo?.email, corpo?.senha, requisicao, resposta)
   }
 
   /** Sem sessao, 204: o cliente le como nulo. */
@@ -42,7 +42,19 @@ export class ControladorAutenticacao {
       resposta.status(204)
       return undefined
     }
-    return this.autenticacao.sessaoUsuario(sessao.usuario, sessao.perfilAtivo)
+    return this.autenticacao.sessaoUsuario(sessao.usuario, sessao.perfilAtivo, vagaDaRequisicao(requisicao))
+  }
+
+  /**
+   * Item 9: as contas abertas neste navegador, lidas dos cookies das vagas,
+   * para a aba sem conta escolher. Publica, como a sessao atual: so devolve
+   * vaga, nome e perfil ativo, nunca o token.
+   */
+  @Get('contas-abertas')
+  @Publico()
+  @SemDadoDoPaciente('Usuario')
+  contasAbertas(@Req() requisicao: RequisicaoHttp): Promise<ContaAberta[]> {
+    return this.sessoes.contasAbertas(requisicao)
   }
 
   @Post('perfil')
@@ -69,7 +81,7 @@ export class ControladorAutenticacao {
     @Req() requisicao: RequisicaoHttp,
     @Res({ passthrough: true }) resposta: RespostaHttp,
   ): Promise<void> {
-    await this.sessoes.encerrar(requisicao.sinctea?.sessao?.sessaoId ?? null, resposta)
+    await this.sessoes.encerrar(requisicao.sinctea?.sessao?.sessaoId ?? null, requisicao, resposta)
   }
 
   @Post('demonstracao')
@@ -91,10 +103,11 @@ export class ControladorAutenticacao {
   @Publico()
   @SemDadoDoPaciente('Usuario')
   concluirPrimeiroAcesso(
+    @Req() requisicao: RequisicaoHttp,
     @Param('token') token: string,
     @Body() corpo: { senha?: unknown } | undefined,
     @Res({ passthrough: true }) resposta: RespostaHttp,
   ): Promise<SessaoUsuario> {
-    return this.autenticacao.concluirPrimeiroAcesso(token, corpo?.senha, resposta)
+    return this.autenticacao.concluirPrimeiroAcesso(token, corpo?.senha, requisicao, resposta)
   }
 }

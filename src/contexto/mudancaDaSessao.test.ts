@@ -13,6 +13,7 @@ const sessao = (id: string, nome: string, perfilAtivo: SessaoUsuario['perfilAtiv
   perfilAtivo,
   especialidade: null,
   avisoDeRedefinicao: null,
+  vaga: null,
 })
 
 describe('o que mudou na sessao desde que a janela a leu', () => {

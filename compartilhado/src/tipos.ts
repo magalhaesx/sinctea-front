@@ -128,6 +128,22 @@ export interface SessaoUsuario {
    * mais das vezes.
    */
   avisoDeRedefinicao: AvisoDeRedefinicao | null
+  /**
+   * Em que vaga deste navegador a sessao esta (item 9): de 1 a 5, uma conta
+   * por aba. A aba guarda o numero e o manda em toda chamada; o token fica no
+   * cookie da vaga. Nulo onde nao ha vagas, como na implementacao simulada.
+   */
+  vaga: number | null
+}
+
+/**
+ * Uma conta aberta neste navegador, como a aba nova a ve para escolher (item 9):
+ * so a vaga, o nome e o perfil ativo. Nunca o token.
+ */
+export interface ContaAberta {
+  vaga: number
+  nome: string
+  perfilAtivo: Perfil
 }
 
 /** Quando a senha foi redefinida, e a pedido de quem da coordenacao. */

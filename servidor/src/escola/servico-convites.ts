@@ -9,7 +9,7 @@ import { ServicoSessoes } from '../autenticacao/servico-sessoes.js'
 import { resumoDoToken } from '../autenticacao/tokens.js'
 import { ServicoBanco } from '../banco/servico-banco.js'
 import { paraConsentimento, paraDataCivil } from '../clinica/mapeadores.js'
-import type { RespostaHttp, SessaoServidor } from '../http/tipos-http.js'
+import type { RequisicaoHttp, RespostaHttp, SessaoServidor } from '../http/tipos-http.js'
 import { exigirValido, textoOuVazio } from '../http/validacao.js'
 
 export interface ConviteAceito {
@@ -69,7 +69,8 @@ export class ServicoConvites {
     }
   }
 
-  async aceitar(token: string, dados: Record<string, unknown>, ip: string | null, resposta: RespostaHttp): Promise<ConviteAceito> {
+  async aceitar(token: string, dados: Record<string, unknown>, requisicao: RequisicaoHttp, resposta: RespostaHttp): Promise<ConviteAceito> {
+    const ip = requisicao.ip ?? null
     const achado = await this.conviteDoToken(token)
     if (!achado) throw new ErroServico('NAO_ENCONTRADO', 'Convite não encontrado.')
     const agora = new Date()
@@ -120,6 +121,8 @@ export class ServicoConvites {
       this.limite.entrou(email)
     }
     const senhaHash = existente ? null : await hashDaSenha(senha)
+    // A vaga antes de gastar o convite: sem vaga, o convite continua valendo.
+    const vaga = await this.sessoes.vagaLivre(requisicao)
 
     const { professor, vinculo } = await this.banco.$transaction(async (tx) => {
       // Uso unico, mesmo em corrida: so um pedido encontra o convite sem uso.
@@ -145,11 +148,11 @@ export class ServicoConvites {
       return { professor, vinculo }
     })
 
-    await this.sessoes.abrir(professor.id, 'PROFESSOR', resposta)
-    const sessaoUsuario = paraSessaoUsuario(professor, 'PROFESSOR')
+    await this.sessoes.abrir(professor.id, 'PROFESSOR', requisicao, resposta, vaga)
+    const sessaoUsuario = paraSessaoUsuario(professor, 'PROFESSOR', { vaga })
     return {
       sessaoUsuario,
-      sessao: { sessaoId: '', perfilAtivo: 'PROFESSOR', usuario: professor },
+      sessao: { sessaoId: '', perfilAtivo: 'PROFESSOR', usuario: professor, vaga },
       vinculoId: vinculo.id,
       pacienteId: vinculo.pacienteId,
     }

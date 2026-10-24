@@ -247,6 +247,27 @@ Planos gratuitos mudam: confiram de novo na véspera.
 - A sessão é guardada **no PostgreSQL**, e não na memória do processo: o Render
   reinicia serviços gratuitos quando quer, e sessão em memória deslogaria todo
   mundo a cada reinício.
+- **Uma conta por aba** (item 9, revisão de 24/10/2026). No mesmo navegador, uma
+  aba de administrador, uma de profissional e uma de responsável funcionam ao
+  mesmo tempo. O navegador tem **cinco vagas**, cada uma o seu cookie,
+  `sinctea_sessao_1` a `sinctea_sessao_5`, todos `httpOnly`, `Secure` e
+  `SameSite=Lax`. Ao abrir sessão — entrar, primeiro acesso, nova senha, aceite
+  de convite —, o servidor usa a primeira vaga sem sessão válida e devolve o
+  número dela na resposta, e confere a vaga antes de gastar o link ou o convite.
+  Com as cinco ocupadas, recusa: *"Já há 5 contas abertas neste navegador. Saia
+  de uma delas para entrar com outra."*
+- A aba guarda **só o número da vaga** em `sessionStorage` e o manda em toda
+  chamada, no cabeçalho `X-Sinctea-Aba`. O servidor resolve a sessão só pelo
+  cookie dessa vaga: sem o cabeçalho, ou com uma vaga sem cookie válido, não há
+  sessão. **O token nunca vai para `sessionStorage` nem para `localStorage`**:
+  fica no cookie, que o JavaScript não lê. Recarregar a aba mantém a conta; a
+  aba duplicada leva a mesma vaga, porque o navegador copia o `sessionStorage`.
+- A aba sem vaga lê `GET /api/auth/contas-abertas`, público, que devolve de cada
+  vaga válida só o número, o nome e o perfil ativo — nunca o token —, e oferece
+  *"Continuar como <nome>"*. Sair e trocar de perfil valem só para a vaga da
+  aba; desativar a conta ou trocar a senha encerra todas as sessões da pessoa,
+  em qualquer vaga. O cookie de antes, `sinctea_sessao`, é apagado onde
+  aparecer, com a linha dele: quem estava dentro entra de novo uma vez.
 
 ### D6 · O login de demonstração sai
 

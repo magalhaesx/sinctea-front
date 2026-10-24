@@ -33,6 +33,36 @@ export function comParametros(caminho: string, parametros: object = {}): string 
 }
 
 /**
+ * Uma conta por aba (item 9). O servidor guarda a sessao em cinco vagas, cada
+ * uma o seu cookie httpOnly; a aba guarda so o numero da vaga dela, em
+ * sessionStorage, e o manda em toda chamada. O numero nao abre nada sozinho: o
+ * token continua no cookie, que o JavaScript nao le. Nunca guarde o token aqui,
+ * nem em localStorage.
+ *
+ * sessionStorage e da aba: recarregar mantem a vaga, e a aba duplicada leva a
+ * mesma. Bloqueado (janela privada, dados do site negados), a aba fica sem
+ * vaga, e a tela de entrada resolve.
+ */
+const CHAVE_DA_VAGA = 'sinctea_aba'
+export const CABECALHO_DA_ABA = 'X-Sinctea-Aba'
+
+export function vagaDaAba(): number | null {
+  try {
+    const valor = Number(sessionStorage.getItem(CHAVE_DA_VAGA))
+    return Number.isInteger(valor) && valor >= 1 && valor <= 5 ? valor : null
+  } catch {
+    return null
+  }
+}
+
+export function guardarVaga(vaga: number | null): void {
+  try {
+    if (vaga === null) sessionStorage.removeItem(CHAVE_DA_VAGA)
+    else sessionStorage.setItem(CHAVE_DA_VAGA, String(vaga))
+  } catch { /* sem sessionStorage, a aba fica sem vaga */ }
+}
+
+/**
  * Quem quer saber de toda negativa (401 ou 403) fora da autenticacao: o
  * contexto da sessao, que rele a sessao atual para descobrir se outra janela
  * trocou a conta (item 7). Um so ouvinte; nulo, ninguem.
@@ -43,6 +73,11 @@ export function aoNegarAcesso(ouvinte: (() => void) | null): void {
 }
 
 export async function requisitar<T>(metodo: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE', caminho: string, corpo?: unknown): Promise<T> {
+  const vaga = vagaDaAba()
+  const cabecalhos: Record<string, string> = {
+    ...(corpo === undefined ? {} : { 'Content-Type': 'application/json' }),
+    ...(vaga === null ? {} : { [CABECALHO_DA_ABA]: String(vaga) }),
+  }
   let resposta: Response
   try {
     resposta = await fetch(`${BASE}${caminho}`, {
@@ -50,7 +85,7 @@ export async function requisitar<T>(metodo: 'GET' | 'POST' | 'PUT' | 'PATCH' | '
       credentials: 'include',
       // Sem cache HTTP: uma revogacao precisa valer na proxima leitura (regra 5).
       cache: 'no-store',
-      headers: corpo === undefined ? undefined : { 'Content-Type': 'application/json' },
+      headers: Object.keys(cabecalhos).length === 0 ? undefined : cabecalhos,
       body: corpo === undefined ? undefined : JSON.stringify(corpo),
     })
   } catch {

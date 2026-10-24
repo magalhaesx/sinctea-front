@@ -1,5 +1,5 @@
 import type {
-  AceiteConvite, AlertaAtencao, AlunoEscola, AtividadeCasa, AvisoOcorrenciaEscolar, CartaoEscola,
+  AceiteConvite, AlertaAtencao, ContaAberta, AlunoEscola, AtividadeCasa, AvisoOcorrenciaEscolar, CartaoEscola,
   CartaoEstrategia,
   ConsentimentoConcedido, ConsentimentoDetalhe, ContaCriada, ConvitePublico, Desempenho, Escola,
   ExecucaoAtividadeCasa, FiltroAgenda, FiltroAuditoria, FiltroOcorrencia, FiltroPaciente,
@@ -31,8 +31,14 @@ export interface ServicoAutenticacao {
    */
   entrarDemonstracao?(perfil: Exclude<Perfil, 'ADMINISTRADOR'>): Promise<SessaoUsuario>
   trocarPerfil(perfil: Perfil): Promise<SessaoUsuario>
+  /** A sessao da vaga desta aba (item 9), ou nulo. */
   sessaoAtual(): Promise<SessaoUsuario | null>
+  /** Sai so da vaga desta aba: as contas das outras abas continuam. */
   sair(): Promise<void>
+  /** As contas abertas neste navegador, para a aba sem conta escolher (item 9). */
+  contasAbertas(): Promise<ContaAberta[]>
+  /** Esta aba passa a usar a conta de uma vaga ja aberta. Nulo se ela nao vale mais. */
+  continuarComo(vaga: number): Promise<SessaoUsuario | null>
   /** Primeiro acesso por link: o que a tela mostra antes de pedir a senha. */
   obterPrimeiroAcesso(token: string): Promise<PrimeiroAcessoPublico>
   /** Define a senha da conta, gasta o link e ja abre a sessao. */

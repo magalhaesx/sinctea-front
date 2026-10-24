@@ -7,15 +7,17 @@ import {
 } from '@sinctea/compartilhado/dominio/regras'
 import { ServicoAuditoria } from '../auditoria/servico-auditoria.js'
 import { ServicoBanco } from '../banco/servico-banco.js'
-import type { RespostaHttp, SessaoServidor, UsuarioDaSessao } from '../http/tipos-http.js'
+import type { RequisicaoHttp, RespostaHttp, SessaoServidor, UsuarioDaSessao } from '../http/tipos-http.js'
 import { LimiteDeTentativas } from './limite-tentativas.js'
 import { conferirSenha, hashDaSenha, hashDeSenhaDesconhecida } from './senhas.js'
 import { ServicoSessoes, novoToken, resumoDoToken } from './servico-sessoes.js'
 
 /** A projecao publica do usuario: o que sai numa resposta. Nunca o senhaHash. */
 export function paraSessaoUsuario(
-  usuario: UsuarioDaSessao, perfilAtivo: Perfil, especialidade: string | null = null,
-  avisoDeRedefinicao: AvisoDeRedefinicao | null = null,
+  usuario: UsuarioDaSessao, perfilAtivo: Perfil,
+  { especialidade = null, avisoDeRedefinicao = null, vaga = null }: {
+    especialidade?: string | null; avisoDeRedefinicao?: AvisoDeRedefinicao | null; vaga?: number | null
+  } = {},
 ): SessaoUsuario {
   return {
     usuario: {
@@ -25,6 +27,7 @@ export function paraSessaoUsuario(
     perfilAtivo,
     especialidade: especialidade || null,
     avisoDeRedefinicao,
+    vaga,
   }
 }
 
@@ -42,9 +45,9 @@ export class ServicoAutenticacao {
   /**
    * A sessao que sai na resposta, com a especialidade de quem e da equipe
    * (item 7) e o aviso da senha redefinida pela coordenacao, enquanto a pessoa
-   * nao der ciencia dele (item 8).
+   * nao der ciencia dele (item 8), e a vaga do navegador (item 9).
    */
-  async sessaoUsuario(usuario: UsuarioDaSessao, perfilAtivo: Perfil): Promise<SessaoUsuario> {
+  async sessaoUsuario(usuario: UsuarioDaSessao, perfilAtivo: Perfil, vaga: number | null): Promise<SessaoUsuario> {
     const [profissional, redefinicao] = await Promise.all([
       this.banco.profissional.findUnique({ where: { usuarioId: usuario.id }, select: { especialidade: true } }),
       this.banco.acessoInicial.findFirst({
@@ -56,7 +59,7 @@ export class ServicoAutenticacao {
     const aviso = redefinicao?.usadoEm && redefinicao.geradoPor
       ? { redefinidaEm: redefinicao.usadoEm.toISOString(), aPedidoDe: redefinicao.geradoPor.nome }
       : null
-    return paraSessaoUsuario(usuario, perfilAtivo, profissional?.especialidade ?? null, aviso)
+    return paraSessaoUsuario(usuario, perfilAtivo, { especialidade: profissional?.especialidade ?? null, avisoDeRedefinicao: aviso, vaga })
   }
 
   /** A pessoa leu o aviso da nova senha (item 8): ele nao aparece mais. */
@@ -65,17 +68,20 @@ export class ServicoAutenticacao {
       where: { usuarioId: sessao.usuario.id, finalidade: 'NOVA_SENHA', usadoEm: { not: null }, avisadoEm: null },
       data: { avisadoEm: new Date() },
     })
-    return this.sessaoUsuario(sessao.usuario, sessao.perfilAtivo)
+    return this.sessaoUsuario(sessao.usuario, sessao.perfilAtivo, sessao.vaga ?? null)
   }
 
   /** Mensagem unica para e-mail inexistente, senha errada e conta desativada (tela 1). */
-  async entrar(email: unknown, senha: unknown, ip: string | null, resposta: RespostaHttp): Promise<SessaoUsuario> {
+  async entrar(email: unknown, senha: unknown, requisicao: RequisicaoHttp, resposta: RespostaHttp): Promise<SessaoUsuario> {
+    const ip = requisicao.ip ?? null
     if (typeof email !== 'string' || typeof senha !== 'string') {
       throw new ErroServico('NAO_AUTENTICADO', CREDENCIAL_INVALIDA)
     }
     const emailNormal = normalizarEmail(email)
     // Bloqueado, recusa antes de conferir: nem a senha certa entra.
     this.limite.exigirLiberado(emailNormal, ip)
+    // Sem vaga no navegador, recusa antes de conferir a senha: o palpite nao gasta tentativa.
+    const vaga = await this.sessoes.vagaLivre(requisicao)
     const usuario = await this.banco.usuario.findUnique({ where: { email: emailNormal } })
     // Confere sempre, mesmo sem usuario: o tempo nao diz se o e-mail existe.
     const hash = usuario?.senhaHash ?? await hashDeSenhaDesconhecida()
@@ -89,16 +95,17 @@ export class ServicoAutenticacao {
       where: { id: usuario.id }, data: { ultimoAcessoEm: new Date() },
     })
     const perfilAtivo = usuario.perfis[0]
-    await this.sessoes.abrir(usuario.id, perfilAtivo, resposta)
-    return this.sessaoUsuario(atualizado, perfilAtivo)
+    await this.sessoes.abrir(usuario.id, perfilAtivo, requisicao, resposta, vaga)
+    return this.sessaoUsuario(atualizado, perfilAtivo, vaga)
   }
 
   async trocarPerfil(sessao: SessaoServidor, perfil: unknown): Promise<SessaoUsuario> {
     if (typeof perfil !== 'string' || !sessao.usuario.perfis.includes(perfil as Perfil)) {
       throw new ErroServico('ACESSO_NEGADO', 'Este perfil não está associado à sua conta.')
     }
+    // So a sessao desta vaga: as outras abas continuam no perfil delas.
     await this.sessoes.trocarPerfil(sessao.sessaoId, perfil as Perfil)
-    return this.sessaoUsuario(sessao.usuario, perfil as Perfil)
+    return this.sessaoUsuario(sessao.usuario, perfil as Perfil, sessao.vaga ?? null)
   }
 
   // ------------------------------------------------------------ Primeiro acesso
@@ -144,7 +151,7 @@ export class ServicoAutenticacao {
   }
 
   /** Define a senha, gasta o link e abre a sessao. Uso unico mesmo em corrida. */
-  async concluirPrimeiroAcesso(token: unknown, senha: unknown, resposta: RespostaHttp): Promise<SessaoUsuario> {
+  async concluirPrimeiroAcesso(token: unknown, senha: unknown, requisicao: RequisicaoHttp, resposta: RespostaHttp): Promise<SessaoUsuario> {
     const erroSenha = typeof senha === 'string' ? erroDaSenhaNova(senha) : 'Escolha uma senha.'
     if (erroSenha) throw new ErroServico('VALIDACAO', erroSenha, { senha: erroSenha })
 
@@ -161,6 +168,8 @@ export class ServicoAutenticacao {
     if (!acesso.usuario.ativo || acesso.usuario.perfis.length === 0) {
       throw new ErroServico('CONFLITO', 'Esta conta está desativada. Fale com a coordenação da clínica.')
     }
+    // A vaga antes de gastar o link: sem vaga, o link continua valendo.
+    const vaga = await this.sessoes.vagaLivre(requisicao)
 
     const senhaHash = await hashDaSenha(senha as string)
     const usuario = await this.banco.$transaction(async (tx) => {
@@ -179,7 +188,7 @@ export class ServicoAutenticacao {
     })
 
     const perfilAtivo = usuario.perfis[0]
-    await this.sessoes.abrir(usuario.id, perfilAtivo, resposta)
+    await this.sessoes.abrir(usuario.id, perfilAtivo, requisicao, resposta, vaga)
     await this.auditoria.registrar(
       { sessaoId: '', perfilAtivo, usuario },
       {
@@ -189,6 +198,6 @@ export class ServicoAutenticacao {
           : 'Senha definida pelo link de primeiro acesso.',
       },
     )
-    return this.sessaoUsuario(usuario, perfilAtivo)
+    return this.sessaoUsuario(usuario, perfilAtivo, vaga)
   }
 }

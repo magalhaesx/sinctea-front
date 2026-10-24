@@ -121,7 +121,9 @@ export function paraSessaoUsuario(s: SessaoServidor): SessaoUsuario {
   // A especialidade de quem e da equipe, como no servidor (item 7).
   const especialidade = s.usuario.tipo === 'PROFISSIONAL' ? s.usuario.especialidade || null : null
   // O mock nao gera link de nova senha: nunca ha aviso dela (item 8).
-  return { usuario: { id, nome, email, perfis, ativo, ultimoAcessoEm }, perfilAtivo: s.perfilAtivo, especialidade, avisoDeRedefinicao: null }
+  return { usuario: { id, nome, email, perfis, ativo, ultimoAcessoEm }, perfilAtivo: s.perfilAtivo, especialidade, avisoDeRedefinicao: null,
+    // Sem vagas: a sessao simulada e uma so, guardada no proprio navegador.
+    vaga: null }
 }
 
 // ---------------------------------------------------------------- Auditoria

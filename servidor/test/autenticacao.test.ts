@@ -11,6 +11,7 @@ import { hashDaSenha, hashDeSenhaDesconhecida } from '../src/autenticacao/senhas
 import { ServicoAutenticacao } from '../src/autenticacao/servico-autenticacao.js'
 import type { PrismaClient } from '../src/gerado/client.js'
 import { ModuloAplicacao } from '../src/modulo-aplicacao.js'
+import { abaDoCookie } from './apoio/api.js'
 import { clienteDe, criarBancoMigrado } from './apoio/banco.js'
 
 /**
@@ -70,11 +71,14 @@ const u = {
 interface Resposta { status: number; corpo: any; cookies: string[] }
 
 async function pedir(metodo: string, caminho: string, opcoes: { corpo?: unknown; cookie?: string } = {}): Promise<Resposta> {
+  // A aba e a vaga do cookie (item 9): um cookie de entrarComo vale como uma aba.
+  const aba = abaDoCookie(opcoes.cookie)
   const resposta = await fetch(`${endereco}/api${caminho}`, {
     method: metodo,
     headers: {
       ...(opcoes.corpo === undefined ? {} : { 'Content-Type': 'application/json' }),
       ...(opcoes.cookie ? { Cookie: opcoes.cookie } : {}),
+      ...(aba === null ? {} : { 'X-Sinctea-Aba': String(aba) }),
     },
     body: opcoes.corpo === undefined ? undefined : JSON.stringify(opcoes.corpo),
   })
@@ -82,9 +86,9 @@ async function pedir(metodo: string, caminho: string, opcoes: { corpo?: unknown;
   return { status: resposta.status, corpo: texto ? JSON.parse(texto) : undefined, cookies: resposta.headers.getSetCookie() }
 }
 
-/** "sinctea_sessao=valor" do Set-Cookie, pronto para o cabecalho Cookie. */
+/** "sinctea_sessao_N=valor" do Set-Cookie, pronto para o cabecalho Cookie. */
 function cookieDaSessao(r: Resposta): string {
-  const linha = r.cookies.find((c) => c.startsWith('sinctea_sessao='))
+  const linha = r.cookies.find((c) => /^sinctea_sessao_\d=[^;]/.test(c))
   if (!linha) throw new Error('resposta sem cookie de sessao')
   return linha.split(';')[0]
 }
@@ -137,7 +141,8 @@ describe('entrar', () => {
     expect(r.status).toBe(200)
     expect(r.corpo).toMatchObject({ perfilAtivo: 'TERAPEUTA', usuario: { id: u.terapeuta, email: 'terapeuta@teste.example' } })
     expect(JSON.stringify(r.corpo)).not.toMatch(/senha/i)
-    const cookie = r.cookies.find((c) => c.startsWith('sinctea_sessao='))!
+    // Sem outra conta no navegador, a primeira vaga.
+    const cookie = r.cookies.find((c) => c.startsWith('sinctea_sessao_1='))!
     expect(cookie).toMatch(/HttpOnly/i)
     expect(cookie).toMatch(/Secure/i)
     expect(cookie).toMatch(/SameSite=Lax/i)
@@ -156,7 +161,7 @@ describe('entrar', () => {
       const r = await pedir('POST', '/auth/entrar', { corpo })
       expect(r.status, JSON.stringify(corpo)).toBe(401)
       expect(r.corpo).toEqual({ codigo: 'NAO_AUTENTICADO', mensagem: 'E-mail ou senha incorretos.', campos: {} })
-      expect(r.cookies.some((c) => c.startsWith('sinctea_sessao=') && !c.startsWith('sinctea_sessao=;'))).toBe(false)
+      expect(r.cookies.some((c) => /^sinctea_sessao_\d=[^;]/.test(c))).toBe(false)
     }
   })
 
@@ -176,7 +181,7 @@ describe('entrar', () => {
 describe('sessao', () => {
   it('sem cookie, a sessao atual e vazia (204)', async () => {
     expect((await pedir('GET', '/auth/sessao')).status).toBe(204)
-    expect((await pedir('GET', '/auth/sessao', { cookie: 'sinctea_sessao=inventado' })).status).toBe(204)
+    expect((await pedir('GET', '/auth/sessao', { cookie: 'sinctea_sessao_1=inventado' })).status).toBe(204)
   })
 
   it('com cookie, a sessao atual; depois de sair, o mesmo cookie nao vale mais', async () => {
@@ -187,7 +192,7 @@ describe('sessao', () => {
 
     const saida = await pedir('POST', '/auth/sair', { cookie })
     expect(saida.status).toBe(204)
-    expect(saida.cookies.some((c) => c.startsWith('sinctea_sessao=;'))).toBe(true)
+    expect(saida.cookies.some((c) => c.startsWith('sinctea_sessao_1=;'))).toBe(true)
     expect((await pedir('GET', '/auth/sessao', { cookie })).status).toBe(204)
     expect(await prisma.sessaoLogin.count({ where: { tokenResumo: sha256(tokenDoCookie(cookie)) } })).toBe(0)
   })
@@ -360,7 +365,7 @@ describe('limite de tentativas de entrada', () => {
     const bloqueado = await pedir('POST', '/auth/entrar', { corpo: { email: 'terapeuta@teste.example', senha: SENHA } })
     expect(bloqueado.status).toBe(429)
     expect(bloqueado.corpo).toMatchObject({ codigo: 'LIMITE_TENTATIVAS', mensagem: expect.stringMatching(MENSAGEM) })
-    expect(bloqueado.cookies.some((c) => c.startsWith('sinctea_sessao=') && !c.startsWith('sinctea_sessao=;'))).toBe(false)
+    expect(bloqueado.cookies.some((c) => /^sinctea_sessao_\d=[^;]/.test(c))).toBe(false)
 
     const outro = uuidV7()
     await criarUsuario(outro, `outro-${outro}@teste.example`)

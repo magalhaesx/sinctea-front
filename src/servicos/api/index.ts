@@ -1,5 +1,5 @@
 import type { DadosProfissionais, Servicos, SessaoUsuario } from '@sinctea/compartilhado'
-import { comParametros as q, requisitar as r } from './cliente'
+import { comParametros as q, guardarVaga, requisitar as r } from './cliente'
 
 /**
  * Implementacao contra a API real (servidor/, NestJS).
@@ -14,16 +14,37 @@ import { comParametros as q, requisitar as r } from './cliente'
 
 const id = encodeURIComponent
 
+/** Quem abre sessao recebe a vaga do navegador: a aba passa a ser dela (item 9). */
+async function naVaga(pedido: Promise<SessaoUsuario>): Promise<SessaoUsuario> {
+  const sessao = await pedido
+  if (sessao.vaga !== null) guardarVaga(sessao.vaga)
+  return sessao
+}
+
 export const servicosApi: Servicos = {
   autenticacao: {
     // Sem entrarDemonstracao: no sistema real nao existe conta sem senha (docs/07, D6).
-    entrar: (email, senha) => r('POST', '/auth/entrar', { email, senha }),
+    entrar: (email, senha) => naVaga(r('POST', '/auth/entrar', { email, senha })),
     trocarPerfil: (perfil) => r('POST', '/auth/perfil', { perfil }),
     // Sem sessao, o servidor responde 204: aqui isso vira nulo.
     sessaoAtual: async () => (await r<SessaoUsuario | undefined>('GET', '/auth/sessao')) ?? null,
-    sair: () => r('POST', '/auth/sair'),
+    // Sai so da vaga desta aba; a aba fica sem vaga, mesmo se o servidor nao responder.
+    sair: async () => {
+      try {
+        await r('POST', '/auth/sair')
+      } finally {
+        guardarVaga(null)
+      }
+    },
+    contasAbertas: () => r('GET', '/auth/contas-abertas'),
+    continuarComo: async (vaga) => {
+      guardarVaga(vaga)
+      const sessao = (await r<SessaoUsuario | undefined>('GET', '/auth/sessao')) ?? null
+      if (!sessao) guardarVaga(null)
+      return sessao
+    },
     obterPrimeiroAcesso: (token) => r('GET', `/auth/primeiro-acesso/${id(token)}`),
-    concluirPrimeiroAcesso: (token, senha) => r('POST', `/auth/primeiro-acesso/${id(token)}`, { senha }),
+    concluirPrimeiroAcesso: (token, senha) => naVaga(r('POST', `/auth/primeiro-acesso/${id(token)}`, { senha })),
     darCienciaDaNovaSenha: () => r('POST', '/auth/aviso-de-nova-senha'),
   },
 
@@ -110,7 +131,7 @@ export const servicosApi: Servicos = {
 
   convites: {
     obter: (token) => r('GET', `/convites/${id(token)}`),
-    aceitar: (token, dados) => r('POST', `/convites/${id(token)}/aceite`, dados),
+    aceitar: (token, dados) => naVaga(r('POST', `/convites/${id(token)}/aceite`, dados)),
   },
 
   areaEscola: {

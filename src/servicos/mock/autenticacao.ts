@@ -41,6 +41,13 @@ export const autenticacaoMock: ServicoAutenticacao = {
 
   sair: () => responder(() => { gravarSessao(null) }),
 
+  // A sessao simulada e uma so: nao ha outras contas abertas para escolher (item 9).
+  contasAbertas: () => responder(() => []),
+  continuarComo: () => responder(() => {
+    const sessao = sessaoServidor()
+    return sessao ? paraSessaoUsuario(sessao) : null
+  }),
+
   // O mock nao gera link de primeiro acesso: as contas de demonstracao ja tem
   // senha. Todo token e desconhecido aqui; o caminho de verdade e o servidor.
   obterPrimeiroAcesso: () => responder(() => ({ situacao: 'INEXISTENTE' as const, nome: null, email: null, expiraEm: null, finalidade: null })),

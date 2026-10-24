@@ -144,7 +144,7 @@ export class ControladorConvites {
     @Body() corpo: Record<string, unknown> | undefined,
     @Res({ passthrough: true }) resposta: RespostaHttp,
   ) {
-    const aceito = await this.convites.aceitar(token, corpo ?? {}, req.ip ?? null, resposta)
+    const aceito = await this.convites.aceitar(token, corpo ?? {}, req, resposta)
     req.sinctea!.sessao = aceito.sessao
     req.sinctea!.pacienteId = aceito.pacienteId
     req.sinctea!.idEntidade = aceito.vinculoId

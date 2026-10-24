@@ -205,10 +205,10 @@ Atualizado em 18/10/2026, lendo o código — não a memória.
   simulada que aplica controle de acesso e auditoria; o cliente da API, que
   não aplica regra nenhuma. A versão publicada usa só a API, e o mock fica
   fora do pacote; no desenvolvimento, `VITE_API_URL` escolhe entre as duas
-- **423 testes em 32 arquivos, nos três pacotes**, rodados por um único
+- **440 testes em 34 arquivos, nos três pacotes**, rodados por um único
   `npm test` na raiz, sem passo manual. O principal ainda é
   `src/servicos/mock/regrasInviolaveis.test.ts`, que verifica as regras
-  invioláveis na camada de dados, e não na tela. Os 200 do servidor rodam contra
+  invioláveis na camada de dados, e não na tela. Os 212 do servidor rodam contra
   um PostgreSQL 17 de verdade
 - **As seis regras verificadas** em `docs/06`: para cada teste citado, a regra foi
   quebrada de propósito para confirmar que ele falha, e as quebras que não
@@ -274,7 +274,7 @@ em produção (o antigo passo B5) foi cancelada. No código, hoje:
   sair, sessão atual, trocar de perfil e primeiro acesso por link, na API e na
   tela (`/app/primeiro-acesso/:token`). Senha em argon2id; sessão no banco
   (`sessao_login`), 24 horas desde o último uso, cookie `httpOnly`, `Secure` e
-  `SameSite=Lax`; link de 72 horas e uso único (`acesso_inicial`); dos dois
+  `SameSite=Lax` — desde o item 9, um por vaga do navegador; link de 72 horas e uso único (`acesso_inicial`); dos dois
   tokens, o banco guarda só o resumo SHA-256. E-mail gravado em minúsculas, com
   CHECK. Limite de tentativas: 5 senhas erradas para o mesmo e-mail em 15
   minutos, ou 20 do mesmo IP, bloqueiam por 15 minutos; fica em memória, e
@@ -351,7 +351,9 @@ em produção (o antigo passo B5) foi cancelada. No código, hoje:
   da autenticação faz o front reler a sessão (`aoNegarAcesso`, em
   `src/servicos/api/cliente.ts`); se outra janela trocou a conta ou o perfil,
   ou saiu, um aviso por cima da tela diz isso e pede para recarregar
-  (`src/app/AvisoDeJanela.tsx`). Testes em `src/contexto/mudancaDaSessao.test.ts`
+  (`src/app/AvisoDeJanela.tsx`). Testes em `src/contexto/mudancaDaSessao.test.ts`.
+  Com o item 9, o aviso fica para o caso que ainda existe: a aba duplicada, que
+  leva a mesma vaga, quando uma das duas sai ou troca de perfil
 - **Item 7, parte 4 — especialidade no lugar de "terapeuta".** Nenhuma tela
   diz a palavra: o perfil aparece como "Profissional da clínica", a pessoa
   como "Ana Souza · Psicologia" (`comEspecialidade` e `papelNaTela`, em
@@ -378,6 +380,18 @@ em produção (o antigo passo B5) foi cancelada. No código, hoje:
   coordenação>. Se não foi você quem pediu, procure a clínica."*, até dar
   ciência. Enquanto o primeiro acesso está pendente, o "Gerar novo link"
   continua com a equipe. Testes em `servidor/test/responsavel.test.ts`
+- **Item 9 — uma conta por aba no mesmo navegador** (`docs/07`, D5, revisto
+  em 24/10). Cinco vagas, cada uma o seu cookie httpOnly (`sinctea_sessao_1` a
+  `_5`); quem abre sessão recebe a primeira vaga livre, e a sexta conta é
+  recusada antes de gastar senha, link ou convite. A aba guarda só o número da
+  vaga em `sessionStorage` e o manda no cabeçalho `X-Sinctea-Aba`; sem ele, não
+  há sessão. O token nunca vai para `sessionStorage` nem `localStorage`. A aba
+  nova mostra *Contas abertas neste navegador* (`GET /api/auth/contas-abertas`:
+  vaga, nome e perfil ativo, nunca o token). Sair e trocar de perfil valem só
+  para a vaga; desativar e trocar a senha encerram todas. O cookie antigo,
+  `sinctea_sessao`, é apagado onde aparecer. Na rede de apoio, quem não é da
+  coordenação vê *✓ Já definiu a senha*. Testes em `servidor/test/vagas.test.ts`
+  e `src/servicos/api/vaga.test.ts`
 - `npm run criar-administrador -w @sinctea/servidor -- .env.producao --nome
   "Nome Completo" --email voce@exemplo.com` cria o primeiro administrador:
   nome e e-mail vêm da linha de comando, e só a senha é pedida, escondida e duas

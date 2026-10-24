@@ -16,9 +16,21 @@ export const SENHA_DE_TESTE = 'senha-de-teste-123'
 
 export interface Resposta { status: number; corpo: any; cookies: string[] }
 
+/**
+ * A aba que o pedido diz ser (item 9). Sem `aba`, e a da unica vaga que o
+ * cookie traz: um cookie de `api.entrar` vale como uma aba so. `null`: o
+ * pedido vai sem o cabecalho.
+ */
+export function abaDoCookie(cookie: string | undefined): number | null {
+  const vagas = [...(cookie ?? '').matchAll(/sinctea_sessao_(\d)=/g)].map((m) => Number(m[1]))
+  return vagas.length === 1 ? vagas[0] : null
+}
+
+export interface OpcoesDoPedido { corpo?: unknown; cookie?: string; aba?: number | string | null }
+
 export interface Api {
   aplicacao: INestApplication
-  pedir(metodo: string, caminho: string, opcoes?: { corpo?: unknown; cookie?: string }): Promise<Resposta>
+  pedir(metodo: string, caminho: string, opcoes?: OpcoesDoPedido): Promise<Resposta>
   entrar(email: string, senha?: string): Promise<string>
   fechar(): Promise<void>
 }
@@ -30,11 +42,13 @@ export async function subirApi(urlDoBanco: string): Promise<Api> {
   const endereco = await aplicacao.getUrl()
 
   const pedir: Api['pedir'] = async (metodo, caminho, opcoes = {}) => {
+    const aba = opcoes.aba === undefined ? abaDoCookie(opcoes.cookie) : opcoes.aba
     const r = await fetch(`${endereco}/api${caminho}`, {
       method: metodo,
       headers: {
         ...(opcoes.corpo === undefined ? {} : { 'Content-Type': 'application/json' }),
         ...(opcoes.cookie ? { Cookie: opcoes.cookie } : {}),
+        ...(aba === null ? {} : { 'X-Sinctea-Aba': String(aba) }),
       },
       body: opcoes.corpo === undefined ? undefined : JSON.stringify(opcoes.corpo),
     })
@@ -51,8 +65,9 @@ export async function subirApi(urlDoBanco: string): Promise<Api> {
   return { aplicacao, pedir, entrar, fechar: () => aplicacao.close() }
 }
 
+/** "sinctea_sessao_N=valor" do Set-Cookie, pronto para o cabecalho Cookie. */
 export function cookieDaSessao(r: Resposta): string {
-  const linha = r.cookies.find((c) => c.startsWith('sinctea_sessao='))
+  const linha = r.cookies.find((c) => /^sinctea_sessao_\d=[^;]/.test(c))
   if (!linha) throw new Error('resposta sem cookie de sessao')
   return linha.split(';')[0]
 }

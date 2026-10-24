@@ -1,11 +1,11 @@
-import { useRef, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Botao } from '../ui/Botao'
 import { Campo } from '../ui/Campo'
 import { Titulo } from '../ui/Titulo'
 import { usarSessao } from '../contexto/Sessao'
 import { AVISO_AMBIENTE } from '../componentes/AvisoAmbiente'
-import { ErroServico, usandoApi, type Perfil } from '../servicos'
+import { ErroServico, servicos, usandoApi, type ContaAberta, type Perfil } from '../servicos'
 import { LayoutAcesso } from './LayoutAcesso'
 import { NOME_DO_PERFIL } from './perfis'
 
@@ -22,6 +22,9 @@ import { NOME_DO_PERFIL } from './perfis'
  *
  * O aviso do ambiente fica aqui e no rodape (docs/07, secao 0). A entrada de
  * demonstracao so existe com o mock: na versao publicada, nem entra no pacote.
+ *
+ * Uma conta por aba (item 9): a aba sem conta mostra, acima do formulario, as
+ * contas ja abertas neste navegador, para continuar numa delas sem senha nova.
  */
 
 const PERFIS_DEMONSTRACAO: Exclude<Perfil, 'ADMINISTRADOR'>[] =
@@ -35,7 +38,7 @@ const DESCRICAO_DEMONSTRACAO: Record<Exclude<Perfil, 'ADMINISTRADOR'>, string> =
 }
 
 export function Entrar() {
-  const { entrar, entrarDemonstracao } = usarSessao()
+  const { entrar, entrarDemonstracao, continuarComo } = usarSessao()
   const navegar = useNavigate()
   const local = useLocation()
   const campoEmail = useRef<HTMLInputElement>(null)
@@ -45,6 +48,17 @@ export function Entrar() {
   const [erro, setErro] = useState<string | null>(null)
   const [entrando, setEntrando] = useState(false)
   const [mostrarAjudaSenha, setMostrarAjudaSenha] = useState(false)
+  const [abertas, setAbertas] = useState<ContaAberta[]>([])
+  const [carregarAbertas, setCarregarAbertas] = useState(0)
+
+  useEffect(() => {
+    let ativo = true
+    servicos.autenticacao.contasAbertas()
+      .then((contas) => { if (ativo) setAbertas(contas) })
+      // Sem a lista, a tela continua sendo a de entrar.
+      .catch(() => { if (ativo) setAbertas([]) })
+    return () => { ativo = false }
+  }, [carregarAbertas])
 
   // Volta para a tela que a pessoa tentou abrir antes de ser mandada ao login.
   const destino = (local.state as { destino?: string } | null)?.destino ?? '/app'
@@ -58,9 +72,10 @@ export function Entrar() {
     } catch (e) {
       // Mensagem unica: nao diz se o e-mail existe (docs/03, tela 1). O limite
       // de tentativas tem a sua, que diz quanto esperar.
+      // A recusa das cinco vagas e a conta que ja nao esta aberta dizem o que fazer.
       setErro(e instanceof ErroServico && e.codigo === 'NAO_AUTENTICADO'
         ? 'E-mail ou senha incorretos.'
-        : e instanceof ErroServico && e.codigo === 'LIMITE_TENTATIVAS'
+        : e instanceof ErroServico && ['LIMITE_TENTATIVAS', 'CONFLITO', 'NAO_ENCONTRADO'].includes(e.codigo)
           ? e.message
           : 'Não foi possível entrar agora. Tente de novo em alguns segundos.')
       campoEmail.current?.focus()
@@ -68,6 +83,13 @@ export function Entrar() {
       setEntrando(false)
     }
   }
+
+  const continuar = (conta: ContaAberta) => concluir(async () => {
+    if (!(await continuarComo(conta.vaga))) {
+      setCarregarAbertas((n) => n + 1)
+      throw new ErroServico('NAO_ENCONTRADO', `A conta de ${conta.nome} não está mais aberta. Entre com o e-mail e a senha.`)
+    }
+  })
 
   const enviar = (evento: FormEvent) => {
     evento.preventDefault()
@@ -84,6 +106,26 @@ export function Entrar() {
         <p className="rounded-xl border border-linha border-l-4 border-l-at bg-at-sup p-3 text-sm font-bold">
           {AVISO_AMBIENTE}
         </p>
+
+        {abertas.length > 0 && (
+          <section aria-labelledby="contas-abertas" className="flex flex-col gap-2 border-b border-linha pb-4">
+            <h2 id="contas-abertas" className="text-lg font-bold">Contas abertas neste navegador</h2>
+            <ul className="flex flex-col gap-2">
+              {abertas.map((conta) => (
+                <li key={conta.vaga} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-linha bg-sup px-3 py-2.5">
+                  <span>
+                    <b>{conta.nome}</b>
+                    <span className="block text-sm text-tinta2">{NOME_DO_PERFIL[conta.perfilAtivo]}</span>
+                  </span>
+                  <Botao variante="secundaria" disabled={entrando} onClick={() => void continuar(conta)}>
+                    Continuar como {conta.nome}
+                  </Botao>
+                </li>
+              ))}
+            </ul>
+            <p className="text-sm text-tinta2">Ou entre com outra conta abaixo. Cada aba fica com a sua.</p>
+          </section>
+        )}
 
         <form className="flex flex-col gap-4" onSubmit={enviar} noValidate>
           {/* Erro em regiao dinamica, com o foco devolvido ao primeiro campo —

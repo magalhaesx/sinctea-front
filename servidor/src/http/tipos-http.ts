@@ -28,6 +28,8 @@ export interface SessaoServidor {
   sessaoId: string
   usuario: UsuarioDaSessao
   perfilAtivo: Perfil
+  /** A vaga do navegador em que a sessao esta (item 9). */
+  vaga?: number
 }
 
 /** O que a guarda deixa na requisicao para o interceptador e o filtro. */

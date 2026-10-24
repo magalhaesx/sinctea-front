@@ -161,7 +161,10 @@ export function RedeDeApoio({ paciente, aoMudar }: { paciente: PacienteDetalhe; 
                 )}
               </span>
               {!r.primeiroAcessoPendente && !coordenacao && (
-                <p className="w-full text-sm text-tinta2">Se a pessoa esquecer a senha, quem gera o link para nova senha é a coordenação.</p>
+                <p className="flex w-full flex-wrap items-center gap-2 text-sm text-tinta2">
+                  <Etiqueta tom="ok" simbolo="✓">Já definiu a senha</Etiqueta>
+                  Se a pessoa esquecer a senha, quem gera o link para nova senha é a coordenação.
+                </p>
               )}
               {pedindoNovaSenha === r.responsavelId && (
                 <form onSubmit={(e) => void gerarNovaSenha(e, r.responsavelId, r.nome)} noValidate
