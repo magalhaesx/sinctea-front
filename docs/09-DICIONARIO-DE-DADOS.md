@@ -1,6 +1,6 @@
 # 09 · Dicionário de dados
 
-Gerado em 18/10/2026 do catálogo do PostgreSQL 17, depois das 6 migrações do repositório (`20261015022852_inicial`, `20261015031253_caminhos_coerentes`, `20261015034333_chaves_compostas_sem_cascata`, `20261016004020_sessao_e_acesso_inicial`, `20261016022012_convite_token_resumo`, `20261017213654_evolucao_da_sessao`). **Não se edita à mão:** muda o esquema, gera de novo.
+Gerado em 19/10/2026 do catálogo do PostgreSQL 17, depois das 7 migrações do repositório (`20261015022852_inicial`, `20261015031253_caminhos_coerentes`, `20261015034333_chaves_compostas_sem_cascata`, `20261016004020_sessao_e_acesso_inicial`, `20261016022012_convite_token_resumo`, `20261017213654_evolucao_da_sessao`, `20261018231000_link_de_nova_senha`). **Não se edita à mão:** muda o esquema, gera de novo.
 
 O significado de cada coluna está escrito a partir de `compartilhado/src/tipos.ts`, do `schema.prisma` e das regras do `CLAUDE.md`. O tipo, a nulidade, as chaves, as restrições, os índices e os gatilhos saem do próprio banco. O DER está em `docs/uml/SINCTEA_DER.svg` (todas as colunas) e `docs/uml/SINCTEA_DER_chaves.svg` (só as chaves).
 
@@ -13,7 +13,7 @@ O significado de cada coluna está escrito a partir de `compartilhado/src/tipos.
 - **Chave composta:** quando o mesmo paciente é alcançável por dois caminhos, uma chave estrangeira composta obriga os dois a concordarem; quando o caminho tem mais de um passo, um gatilho faz o mesmo.
 - Ações de chave estrangeira: *restringe* recusa a operação enquanto houver quem aponte; *cascata* propaga a mudança.
 
-**Totais:** 24 tabelas, 171 colunas, 38 chaves estrangeiras (5 compostas), 18 CHECKs, 10 gatilhos, 13 enumerações.
+**Totais:** 24 tabelas, 174 colunas, 39 chaves estrangeiras (5 compostas), 20 CHECKs, 10 gatilhos, 14 enumerações.
 
 ## 2. Enumerações
 
@@ -23,6 +23,7 @@ O significado de cada coluna está escrito a partir de `compartilhado/src/tipos.
 | `desempenho` | `SOZINHO` fez sozinho · `COM_AJUDA` fez com ajuda · `NAO_QUIS` não quis fazer |
 | `destinatario` | `PROFISSIONAIS` a equipe · `FAMILIA` a família |
 | `escopo_acesso` | `CARTAO_ESTRATEGIA` ver o cartão de estratégias · `REGISTRO_OCORRENCIA` registrar ocorrência |
+| `finalidade_acesso` | `PRIMEIRO_ACESSO` a conta ainda não tem senha · `NOVA_SENHA` a coordenação gerou para o responsável redefinir a senha |
 | `origem` | `CLINICA` na clínica · `CASA` em casa · `ESCOLA` na escola |
 | `origem_auditoria` | `CLINICA` área da clínica · `FAMILIA` área da família · `ESCOLA` área da escola · `SISTEMA` o próprio sistema |
 | `perfil` | `TERAPEUTA` profissional que atende · `COORDENADOR` coordenação clínica · `ADMINISTRADOR` gestão de usuários · `RESPONSAVEL` familiar · `PROFESSOR` professor da escola |
@@ -84,7 +85,7 @@ Dados próprios do familiar. A responsabilidade legal não fica aqui: é da rela
 | Coluna | Tipo | Nulo | Chave | Descrição |
 |---|---|---|---|---|
 | `usuarioId` | uuid | não | PK FK | O usuário que é este responsável. Chave primária e estrangeira. |
-| `telefone` | text | não |  | Telefone de contato. |
+| `telefone` | text | não |  | Telefone de contato. É da pessoa: corrigido numa ficha, vale em todas. |
 
 **Restrições e índices**
 
@@ -157,7 +158,7 @@ Liga um responsável a um paciente. Parentesco e responsabilidade legal são da 
 | `responsavelId` | uuid | não | FK | O familiar. |
 | `pacienteId` | uuid | não | FK | O paciente. |
 | `parentesco` | text | não |  | Parentesco declarado: mãe, pai, avó… |
-| `responsavelLegal` | boolean | não |  | Verdadeiro quando este familiar é o responsável legal por este paciente. Só ele concede ou revoga o acesso da escola (regra 1). |
+| `responsavelLegal` | boolean | não |  | Verdadeiro quando este familiar é o responsável legal por este paciente. Só o responsável legal concede o acesso da escola; qualquer responsável vinculado o revoga (regra 1). |
 
 **Restrições e índices**
 
@@ -598,7 +599,7 @@ Sessão de quem entrou no sistema (docs/07, D5). O cookie leva um código aleat�
 
 *Classe:* infraestrutura, sem classe · *Área:* Identidade
 
-Link de primeiro acesso: a pessoa cadastrada define a própria senha, e quem cadastrou nunca a conhece. Uso único, 72 horas, só o resumo do código.
+Link de definir senha: a pessoa define a própria senha, e quem gerou o link nunca a conhece. Serve ao primeiro acesso e, desde 18/10, à nova senha do responsável, que só a coordenação gera, com motivo. Uso único, 72 horas, só o resumo do código; um link novo invalida os anteriores ainda não usados da mesma conta.
 
 | Coluna | Tipo | Nulo | Chave | Descrição |
 |---|---|---|---|---|
@@ -608,14 +609,21 @@ Link de primeiro acesso: a pessoa cadastrada define a própria senha, e quem cad
 | `criadoEm` | timestamptz(3) | não |  | Quando o link foi gerado. |
 | `expiraEm` | timestamptz(3) | não |  | Até quando pode ser usado: 72 horas depois de gerado. |
 | `usadoEm` | timestamptz(3) | sim |  | Quando a senha foi definida. Nulo enquanto não foi usado. |
+| `avisadoEm` | timestamptz(3) | sim |  | Quando a pessoa deu ciência do aviso de que a senha foi redefinida pela clínica («Entendi»). Só em link de nova senha já usado; até lá, o aviso continua aparecendo. |
+| `finalidade` | finalidade_acesso | não |  | Para que serve o link: primeiro acesso ou nova senha. Os links gerados antes de 18/10 são de primeiro acesso. |
+| `geradoPorId` | uuid | sim | FK | Quem da coordenação gerou o link de nova senha, para o aviso dizer o nome. Preenchida se, e só se, o link é de nova senha. O motivo não fica aqui: vai para a trilha de auditoria. |
 
 **Restrições e índices**
 
 - Chave primária: (id)
+- Chave estrangeira: (geradoPorId) → usuario(id); ao apagar: restringe; ao atualizar: cascata
 - Chave estrangeira: (usuarioId) → usuario(id); ao apagar: restringe; ao atualizar: cascata
 - Única: (tokenResumo)
+- CHECK: avisadoEm só em link de nova senha já usado, e não antes do uso
 - CHECK: expiraEm depois de criadoEm
+- CHECK: geradoPorId preenchida se, e só se, o link é de nova senha
 - CHECK: tokenResumo é SHA-256 em hexadecimal (64 caracteres)
+- Índice: (geradoPorId)
 - Índice: (usuarioId)
 
 ## 4. O que o banco não guarda, de propósito
@@ -624,12 +632,14 @@ Link de primeiro acesso: a pessoa cadastrada define a própria senha, e quem cad
 - **O texto do termo de consentimento:** vive versionado em `compartilhado/src/dominio/termo.ts` e se reproduz da versão mais os campos do consentimento; `hashTermo` prova que nada mudou.
 - **`SEM_PLANO`:** é o estado da tela para quem ainda não tem plano, e não a situação de um plano que existe.
 - **A senha:** só o resumo argon2id, em `usuario.senhaHash`.
-- **Os códigos do cookie de sessão, do link de primeiro acesso e do convite da escola:** só o resumo SHA-256. Quem lê o banco não consegue usar nenhum deles.
+- **Os códigos do cookie de sessão, do link de definir senha (primeiro acesso ou nova senha) e do convite da escola:** só o resumo SHA-256. Quem lê o banco não consegue usar nenhum deles.
+- **O motivo da nova senha:** vai para a trilha de auditoria, imutável. `acesso_inicial` guarda só quem gerou o link e quando a pessoa deu ciência do aviso.
 - **Duas tabelas sem classe no diagrama:** `sessao_login` e `acesso_inicial` são infraestrutura de autenticação, e não modelo de domínio.
-- **Dado pessoal real:** todos os registros são fictícios.
+- **Dado pessoal real:** o sistema publicado começa vazio e é preenchido pelo uso; o aviso na entrada pede que não se cadastrem pacientes reais. Os testes criam os próprios dados, fictícios.
 
 ## 5. Limites declarados
 
 - O papel dono das tabelas pode desligar um gatilho. Em produção, a aplicação conecta com um papel que não é dono (`docs/07`, Etapa 9, passo 5).
 - As chaves compostas só restringem quando há quem aponte: o paciente de um consentimento sem vínculo escolar ainda pode ser trocado no banco. Nenhuma operação do contrato faz isso.
 - `objetivoIds` e as colunas de fotografia não têm chave estrangeira por desenho; os objetivos do relatório são conferidos na emissão, por gatilho.
+- Hospedagem nos Estados Unidos (Render e Neon, `docs/07`, D4): aceitável num ambiente acadêmico sem dado de paciente real; com dado real, seria transferência internacional (LGPD, art. 33).
