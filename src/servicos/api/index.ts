@@ -143,6 +143,7 @@ export const servicosApi: Servicos = {
 
   auditoria: {
     listar: (filtro) => r('GET', q('/auditoria', filtro)),
+    listarAdministrativa: (filtro) => r('GET', q('/admin/trilha', filtro)),
     exportar: (filtro) => r('GET', q('/auditoria/csv', filtro)),
   },
 
@@ -170,5 +171,6 @@ export const servicosApi: Servicos = {
     desativar: (usuarioId) => r('POST', `/usuarios/${id(usuarioId)}/desativacao`),
     reativar: (usuarioId) => r('POST', `/usuarios/${id(usuarioId)}/reativacao`),
     novoLinkDeAcesso: (usuarioId) => r('POST', `/usuarios/${id(usuarioId)}/acesso-inicial`),
+    linkNovaSenha: (usuarioId, motivo) => r('POST', `/usuarios/${id(usuarioId)}/nova-senha`, { motivo }),
   },
 }

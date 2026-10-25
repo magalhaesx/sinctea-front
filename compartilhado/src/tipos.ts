@@ -974,6 +974,21 @@ export interface RegistroAuditoria {
   readonly valorAnterior: string | null
 }
 
+/**
+ * Um registro da trilha administrativa (item 13, tela 25): so de contas, links
+ * de acesso, escolas e da propria trilha, nunca de paciente (regra 3). Sem o IP
+ * e sem o paciente, que ali e sempre nulo.
+ */
+export type RegistroAdministrativo = Omit<RegistroAuditoria, 'ipOrigem' | 'pacienteId'>
+
+/** O periodo e em dias civis de Manaus: do comeco de `desde` ao fim de `ate`. */
+export interface FiltroTrilhaAdministrativa extends FiltroPaginacao {
+  desde?: DataCivil
+  ate?: DataCivil
+  usuarioId?: string
+  acao?: AcaoAuditoria
+}
+
 export interface FiltroAuditoria extends FiltroPaginacao {
   desde?: DataIso
   ate?: DataIso

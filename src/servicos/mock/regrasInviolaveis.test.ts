@@ -3,6 +3,7 @@ import { ErroServico, type OcorrenciaComportamental, type Sessao } from '@sincte
 import { servicosMock as s } from '.'
 import { banco, relogio } from './infra'
 import { diaCivilEm } from '@sinctea/compartilhado/dominio/datas'
+import { ENTIDADES_ADMINISTRATIVAS } from '@sinctea/compartilhado/dominio/auditoria'
 import { jsonCanonico, resumoSha256 } from '@sinctea/compartilhado/dominio/hash'
 import {
   conferirResumoDoTermo, textoDoTermo, VERSAO_CORRENTE_DO_TERMO, versaoDoResumo,
@@ -849,9 +850,10 @@ describe('regra 6 — auditoria imutavel', () => {
 
 
   it('o contrato de auditoria so tem leitura', () => {
-    // As duas leem: uma pagina na tela, a outra o recorte inteiro num arquivo.
-    // Nenhuma escreve no registro, e nao ha editar nem excluir para existir.
-    expect(Object.keys(s.auditoria)).toEqual(['listar', 'exportar'])
+    // As tres leem: uma pagina na tela, a trilha administrativa (item 13) e o
+    // recorte inteiro num arquivo. Nenhuma escreve no registro, e nao ha
+    // editar nem excluir para existir.
+    expect(Object.keys(s.auditoria)).toEqual(['listar', 'listarAdministrativa', 'exportar'])
   })
 
   it('registros sao congelados', async () => {
@@ -953,6 +955,47 @@ describe('outras regras de tela aplicadas no servico', () => {
     await entrarComo('COORDENADOR')
     await chamar(s.autenticacao.trocarPerfil('ADMINISTRADOR'))
     expect((await erroDe(s.usuarios.desativar('u-prof-3'))).codigo).toBe('CONFLITO')
+  })
+
+  it('item 13: o link para nova senha pela administracao nao e do responsavel, e exige motivo', async () => {
+    await entrarComo('COORDENADOR')
+    await chamar(s.autenticacao.trocarPerfil('ADMINISTRADOR'))
+    expect((await erroDe(s.usuarios.linkNovaSenha('u-resp-1', 'Esqueceu a senha.'))).codigo).toBe('ACESSO_NEGADO')
+    const semMotivo = await erroDe(s.usuarios.linkNovaSenha('u-prof-1', '   '))
+    expect(semMotivo.codigo).toBe('VALIDACAO')
+    expect(semMotivo.campos.motivo).toBeTruthy()
+    // Quem ja definiu a senha nao recebe mais o link de primeiro acesso.
+    expect((await erroDe(s.usuarios.novoLinkDeAcesso('u-prof-1'))).codigo).toBe('CONFLITO')
+    expect((await chamar(s.usuarios.linkNovaSenha('u-prof-1', 'Esqueceu a senha.'))).token).toBeTruthy()
+    await entrarComo('COORDENADOR')
+    expect((await erroDe(s.usuarios.linkNovaSenha('u-prof-1', 'Esqueceu a senha.'))).codigo).toBe('ACESSO_NEGADO')
+  })
+
+  it('item 13: a trilha administrativa nao traz registro de paciente, nem pelo texto', async () => {
+    // A exportacao recortada por paciente leva o paciente, e sai da trilha administrativa.
+    await entrarComo('COORDENADOR')
+    await chamar(s.auditoria.exportar({ pacienteId: 'p-001' }))
+    expect(await ultimaAuditoria()).toMatchObject({ entidade: 'RegistroAuditoria', pacienteId: 'p-001' })
+    expect((await erroDe(s.auditoria.listarAdministrativa())).codigo).toBe('ACESSO_NEGADO')
+
+    await chamar(s.autenticacao.trocarPerfil('ADMINISTRADOR'))
+    const itens = []
+    for (let pagina = 1; ; pagina++) {
+      const p = await chamar(s.auditoria.listarAdministrativa({ pagina }))
+      expect(p.porPagina).toBe(20)
+      itens.push(...p.itens)
+      if (pagina * p.porPagina >= p.total) break
+    }
+    expect(itens.length).toBeGreaterThan(0)
+    for (const item of itens) {
+      expect(ENTIDADES_ADMINISTRATIVAS).toContain(item.entidade)
+      expect(item).not.toHaveProperty('pacienteId')
+      expect(item).not.toHaveProperty('ipOrigem')
+    }
+    const texto = JSON.stringify(itens)
+    for (const paciente of banco.pacientes) expect(texto).not.toContain(paciente.nome)
+    expect(texto).not.toMatch(/paciente p-/)
+    expect(await ultimaAuditoria()).toMatchObject({ entidade: 'RegistroAuditoria', acao: 'LEITURA_AUTORIZADA', pacienteId: null })
   })
 
   it('encerrar tira a atividade da familia e guarda o historico', async () => {

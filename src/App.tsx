@@ -25,6 +25,7 @@ import { PainelCoordenacao } from './app/coordenacao/Painel'
 import { Auditoria } from './app/coordenacao/Auditoria'
 import { Planos } from './app/coordenacao/Planos'
 import { Usuarios } from './app/admin/Usuarios'
+import { TrilhaAdministrativa } from './app/admin/Trilha'
 import { PainelFamilia } from './app/familia/Painel'
 import { Atividade } from './app/familia/Atividade'
 import { Consentimento } from './app/familia/Consentimento'
@@ -57,6 +58,7 @@ const titulos: [padrao: string, titulo: string][] = [
   ['/app/clinica/pacientes/:id/sessao', 'Registro de sessão'],
   ['/app/coordenacao/planos', 'Validar planos terapêuticos'],
   ['/app/admin/usuarios', 'Usuários e perfis'],
+  ['/app/admin/trilha', 'Trilha administrativa'],
   ['/app/familia', 'Painel da família'],
   ['/app/familia/consentimento', 'Autorizar o acesso da escola'],
   ['/app/escola', 'Meus alunos'],
@@ -131,6 +133,7 @@ export function App() {
         <Route path="coordenacao/planos" element={protegida(['COORDENADOR'], <Planos />)} />
 
         <Route path="admin/usuarios" element={protegida(['ADMINISTRADOR'], <Usuarios />)} />
+        <Route path="admin/trilha" element={protegida(['ADMINISTRADOR'], <TrilhaAdministrativa />)} />
 
         <Route path="familia" element={protegida(['RESPONSAVEL'], <PainelFamilia />)} />
         <Route path="familia/consentimento" element={protegida(['RESPONSAVEL'], <Consentimento />)} />

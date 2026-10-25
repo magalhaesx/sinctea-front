@@ -134,7 +134,7 @@ export class ServicoAutenticacao {
     if (typeof token !== 'string' || token.length === 0 || token.length > 200) return null
     return this.banco.acessoInicial.findUnique({
       where: { tokenResumo: resumoDoToken(token) },
-      include: { usuario: true },
+      include: { usuario: true, geradoPor: { select: { nome: true } } },
     })
   }
 
@@ -194,7 +194,7 @@ export class ServicoAutenticacao {
       {
         acao: 'ALTERACAO', entidade: 'Usuario', idEntidade: usuario.id,
         detalhe: acesso.finalidade === 'NOVA_SENHA'
-          ? 'Senha redefinida pelo link que a coordenação gerou; as sessões abertas foram encerradas.'
+          ? `Senha redefinida pelo link de nova senha que ${acesso.geradoPor?.nome ?? 'a clínica'} gerou; as sessões abertas foram encerradas.`
           : 'Senha definida pelo link de primeiro acesso.',
       },
     )

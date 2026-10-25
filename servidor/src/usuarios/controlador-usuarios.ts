@@ -1,8 +1,12 @@
 import { Body, Controller, Get, HttpCode, Param, Post, Put, Query, Req, Res } from '@nestjs/common'
-import type { ContaCriada, DadosProfissionais, Perfil, Usuario } from '@sinctea/compartilhado'
+import type {
+  AcaoAuditoria, ContaCriada, DadosProfissionais, DataCivil, Pagina, Perfil, RegistroAdministrativo, Usuario,
+} from '@sinctea/compartilhado'
 import { Auditar, Perfis, SemDadoDoPaciente } from '../acesso/metadados.js'
 import { lerBooleano, lerPaginacao, lerTexto } from '../http/paginacao.js'
 import type { RequisicaoHttp, RespostaHttp } from '../http/tipos-http.js'
+import { textoOuVazio } from '../http/validacao.js'
+import { ServicoTrilhaAdministrativa } from './servico-trilha.js'
 import { ServicoUsuarios } from './servico-usuarios.js'
 
 /**
@@ -98,6 +102,45 @@ export class ControladorUsuarios {
   })
   novoLinkDeAcesso(@Param('id') id: string) {
     return this.usuarios.novoLinkDeAcesso(id)
+  }
+
+  /** Item 13: o motivo vai para a trilha, com quem gerou; o token, nunca. */
+  @Post(':id/nova-senha')
+  @HttpCode(200)
+  @Perfis('ADMINISTRADOR')
+  @Auditar({
+    entidade: 'Usuario', acao: 'ALTERACAO', idEntidade: { parametro: 'id' },
+    detalhe: (req) => 'Link para nova senha gerado pela administração; o anterior deixou de valer. ' +
+      `Motivo: ${textoOuVazio((req.body as { motivo?: unknown } | undefined)?.motivo)}`,
+  })
+  linkNovaSenha(@Req() req: RequisicaoHttp, @Param('id') id: string, @Body() corpo: { motivo?: unknown } | undefined) {
+    return this.usuarios.linkNovaSenha(req.sinctea!.sessao!, id, corpo?.motivo)
+  }
+}
+
+/**
+ * /api/admin/trilha — a trilha administrativa (item 13, tela 25), so do
+ * administrador. Ler a trilha tambem entra na trilha, e a negativa de quem nao
+ * e administrador fica nela, pela entidade desta rota.
+ */
+@Controller('admin/trilha')
+export class ControladorTrilhaAdministrativa {
+  constructor(private readonly trilha: ServicoTrilhaAdministrativa) {}
+
+  @Get()
+  @Perfis('ADMINISTRADOR')
+  @Auditar({
+    entidade: 'RegistroAuditoria', acao: 'LEITURA_AUTORIZADA',
+    detalhe: (_req, r) => `Trilha administrativa consultada (${(r as Pagina<RegistroAdministrativo>).total} registros).`,
+  })
+  listar(@Query() query: Record<string, unknown>) {
+    return this.trilha.listar({
+      pagina: lerPaginacao(query).pagina,
+      desde: lerTexto(query.desde) as DataCivil | undefined,
+      ate: lerTexto(query.ate) as DataCivil | undefined,
+      usuarioId: lerTexto(query.usuarioId),
+      acao: lerTexto(query.acao) as AcaoAuditoria | undefined,
+    })
   }
 }
 

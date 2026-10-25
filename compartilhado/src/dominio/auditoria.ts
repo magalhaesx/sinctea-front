@@ -20,6 +20,17 @@ export function origemDoPerfil(perfil: Perfil | null): RegistroAuditoria['origem
   return 'CLINICA'
 }
 
+/**
+ * As entidades da trilha administrativa (item 13, tela 25): contas
+ * (`Usuario`, e a lista de profissionais, `Profissional`), links de acesso (que
+ * a trilha grava como `Usuario`), escolas e a propria trilha. Lista fechada:
+ * entidade nova so entra depois de conferido que nenhum registro dela, sem
+ * paciente, carrega dado de paciente (regra 3). Quem grava registro de uma
+ * delas com recorte por paciente grava o `pacienteId` junto, e o registro sai
+ * da trilha administrativa.
+ */
+export const ENTIDADES_ADMINISTRATIVAS = ['Usuario', 'Profissional', 'Escola', 'RegistroAuditoria'] as const
+
 /** Os campos que a trilha guarda hoje, com nome de gente. */
 export const NOME_DO_CAMPO: Record<string, string> = {
   tipo: 'O que aconteceu',

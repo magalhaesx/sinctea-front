@@ -54,6 +54,7 @@ const menu: Grupo[] = [
     perfis: ['ADMINISTRADOR'],
     itens: [
       { para: '/app/admin/usuarios', nome: 'Usuários e perfis', uc: 'UC20', cor: CLI },
+      { para: '/app/admin/trilha', nome: 'Trilha administrativa', uc: 'UC19', cor: CLI },
     ],
   },
   {

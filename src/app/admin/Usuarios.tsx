@@ -16,7 +16,10 @@ import { NOME_DO_PERFIL } from '../perfis'
 import { LinkDePrimeiroAcesso } from '../../componentes/LinkDePrimeiroAcesso'
 import { usarSessao } from '../../contexto/Sessao'
 import { emData } from '@sinctea/compartilhado/dominio/datas'
-import { ErroServico, servicos, type LinkPrimeiroAcesso, type Pagina, type Perfil, type Usuario } from '../../servicos'
+import { MOTIVO_NOVA_SENHA_MAXIMO } from '@sinctea/compartilhado/dominio/regras'
+import {
+  ErroServico, servicos, type FinalidadeAcesso, type LinkPrimeiroAcesso, type Pagina, type Perfil, type Usuario,
+} from '../../servicos'
 
 /**
  * Tela 14 · Gerenciar usuarios e perfis · /app/admin/usuarios (UC20)
@@ -53,6 +56,13 @@ type Estado =
 const ehDaEquipe = (u: Usuario) =>
   !u.perfis.includes('RESPONSAVEL') && !u.perfis.includes('PROFESSOR')
 
+/**
+ * Item 13: o link para nova senha, pela administracao, vale para a equipe que
+ * ja definiu a senha e para o professor. O do responsavel e da coordenacao.
+ */
+const aceitaNovaSenha = (u: Usuario) => u.ativo && u.ultimoAcessoEm !== null
+  && (u.perfis.includes('PROFESSOR') || ehDaEquipe(u))
+
 export function Usuarios() {
   const { usuario: eu } = usarSessao()
   const [params, setParams] = useSearchParams()
@@ -77,12 +87,20 @@ export function Usuarios() {
   /** De que formulario veio o erro: a criacao e a gestao da conta tem, as duas, o campo perfis. */
   const [errosDe, setErrosDe] = useState<'convite' | 'gestao'>('convite')
   const [aviso, setAviso] = useState<string | null>(null)
-  const [link, setLink] = useState<{ nome: string; link: LinkPrimeiroAcesso } | null>(null)
+  const [link, setLink] = useState<{ nome: string; link: LinkPrimeiroAcesso; finalidade?: FinalidadeAcesso } | null>(null)
+  /** Item 13: o link para nova senha da conta aberta, com o motivo. */
+  const [pedindoNovaSenha, setPedindoNovaSenha] = useState(false)
+  const [motivo, setMotivo] = useState('')
 
   const regiaoViva = useRef<HTMLDivElement>(null)
   const focarAviso = useRef(false)
+  /** O campo que recebe o foco depois do proximo desenho, pelo id: o botao que abriu some. */
+  const focarDepois = useRef<string | null>(null)
 
   useEffect(() => {
+    const alvo = focarDepois.current
+    focarDepois.current = null
+    if (alvo) document.getElementById(alvo)?.focus()
     if (!focarAviso.current) return
     focarAviso.current = false
     regiaoViva.current?.focus()
@@ -127,6 +145,8 @@ export function Usuarios() {
     setLink(null)
     setErros({})
     setConfirmandoDesativar(false)
+    setPedindoNovaSenha(false)
+    setMotivo('')
     setAbertoId(u.id)
     setPerfisEditados(u.perfis)
   }
@@ -159,6 +179,29 @@ export function Usuarios() {
       recarregar()
     } catch (e) {
       comErro(e, 'convite')
+    } finally {
+      setOcupado(false)
+    }
+  }
+
+  const gerarNovaSenha = async (evento: FormEvent, u: Usuario) => {
+    evento.preventDefault()
+    setAviso(null)
+    setLink(null)
+    setErros({})
+    setOcupado(true)
+    try {
+      const gerado = await servicos.usuarios.linkNovaSenha(u.id, motivo)
+      setPedindoNovaSenha(false)
+      setMotivo('')
+      setAviso(`Link para nova senha de ${u.nome}. O motivo ficou na trilha, com o seu nome.`)
+      setLink({ nome: u.nome, link: gerado, finalidade: 'NOVA_SENHA' })
+      focarAviso.current = true
+    } catch (e) {
+      comErro(e, 'gestao')
+      // O erro do motivo leva ao campo; o geral, ao aviso.
+      if (e instanceof ErroServico && e.campos.motivo) focarDepois.current = 'gestao-motivo'
+      else focarAviso.current = true
     } finally {
       setOcupado(false)
     }
@@ -245,7 +288,7 @@ export function Usuarios() {
 
       <div ref={regiaoViva} tabIndex={-1} aria-live="polite">
         {aviso && <Aviso tom="ok" titulo="Pronto">{aviso}</Aviso>}
-        {link && <div className="mt-3"><LinkDePrimeiroAcesso nome={link.nome} link={link.link} /></div>}
+        {link && <div className="mt-3"><LinkDePrimeiroAcesso nome={link.nome} link={link.link} finalidade={link.finalidade} /></div>}
         {erros.geral && <Aviso tom="cr" titulo="Não foi possível concluir">{erros.geral}</Aviso>}
       </div>
 
@@ -439,11 +482,21 @@ export function Usuarios() {
                 </Botao>
               )}
 
-              {/* Link vencido ou senha esquecida: so a equipe, e so conta ativa. */}
-              {ehDaEquipe(aberto) && aberto.ativo && (
+              {/* Item 13: link vencido, enquanto a pessoa nao definiu a senha. Depois,
+                  o link e o de nova senha, com motivo — da equipe e do professor. */}
+              {ehDaEquipe(aberto) && aberto.ativo && aberto.ultimoAcessoEm === null && (
                 <Botao area="cli" variante="secundaria" disabled={ocupado}
                   onClick={() => void gerarLink(aberto)}>
                   Gerar novo link de acesso
+                </Botao>
+              )}
+              {aceitaNovaSenha(aberto) && !pedindoNovaSenha && (
+                <Botao id="gestao-nova-senha" area="cli" variante="secundaria" disabled={ocupado}
+                  onClick={() => {
+                    setPedindoNovaSenha(true); setMotivo(''); setAviso(null); setLink(null); setErros({})
+                    focarDepois.current = 'gestao-motivo'
+                  }}>
+                  Gerar link para nova senha
                 </Botao>
               )}
 
@@ -465,6 +518,40 @@ export function Usuarios() {
                 </Botao>
               )}
             </div>
+
+            {aberto.perfis.includes('RESPONSAVEL') && (
+              <p className="mt-3 max-w-[65ch] text-sm text-tinta2">
+                O link para nova senha do responsável é da coordenação, na ficha do paciente.
+              </p>
+            )}
+
+            {pedindoNovaSenha && aceitaNovaSenha(aberto) && (
+              <form onSubmit={(e) => void gerarNovaSenha(e, aberto)} noValidate
+                className="mt-3 flex max-w-3xl flex-col gap-3 border-t border-linha pt-3">
+                <h3 className="text-base font-bold">Link para nova senha de {aberto.nome}</h3>
+                <p className="max-w-[65ch] text-sm text-tinta2">
+                  Ao usar o link, a pessoa escolhe a nova senha, a anterior deixa de valer e as sessões
+                  abertas se encerram. No acesso seguinte, ela vê que a senha foi redefinida pela
+                  clínica, a seu pedido.
+                </p>
+                <Campo id="gestao-motivo" rotulo="Motivo"
+                  dica={`Fica na trilha de auditoria, com o seu nome. Até ${MOTIVO_NOVA_SENHA_MAXIMO} caracteres.`}>
+                  <textarea id="gestao-motivo" rows={3} maxLength={MOTIVO_NOVA_SENHA_MAXIMO} value={motivo}
+                    className="min-h-11 w-full min-w-0 rounded-lg border-2 border-linha bg-sup px-3 py-2.5 text-tinta"
+                    aria-invalid={errosGestao.motivo ? true : undefined}
+                    aria-describedby={errosGestao.motivo ? 'gestao-motivo-erro' : undefined}
+                    onChange={(e) => setMotivo(e.target.value)} />
+                  {errosGestao.motivo && <p id="gestao-motivo-erro" className="text-sm font-bold text-cr">{errosGestao.motivo}</p>}
+                </Campo>
+                <div className="flex flex-wrap gap-2">
+                  <Botao area="cli" type="submit" disabled={ocupado}>{ocupado ? 'Gerando…' : 'Gerar o link'}</Botao>
+                  <Botao area="cli" variante="secundaria" disabled={ocupado}
+                    onClick={() => { setPedindoNovaSenha(false); setErros({}); focarDepois.current = 'gestao-nova-senha' }}>
+                    Cancelar
+                  </Botao>
+                </div>
+              </form>
+            )}
 
             {souEu && (
               <p className="mt-3 text-sm text-tinta2">

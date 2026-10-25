@@ -197,18 +197,18 @@ Atualizado em 18/10/2026, lendo o código — não a memória.
   catálogo do PostgreSQL com as sete migrações, até `link_de_nova_senha`
   (item 8). Não se editam à mão: mudou o esquema, geram-se de novo
 - Documento de IHC e UX/UI com avaliação heurística e conformidade
-- **As 22 telas existem e falam com a camada de serviços**, em 24 rotas do
-  produto, mais `/sobre` e a vitrine `/dev/estados`, que só existe no servidor de
+- **As 22 telas existem e falam com a camada de serviços**, e a tela 25,
+  trilha administrativa (item 13), em 25 rotas do produto, mais `/sobre` e a vitrine `/dev/estados`, que só existe no servidor de
   desenvolvimento. Nenhuma tela lê dado fixo: `src/dados` foi removido, e o teste
   de arquitetura impede que volte. A tela 20, ajuda, é texto fixo por natureza
 - **Camada de serviços**: `compartilhado/src/contratos.ts` com 16 serviços; implementação
   simulada que aplica controle de acesso e auditoria; o cliente da API, que
   não aplica regra nenhuma. A versão publicada usa só a API, e o mock fica
   fora do pacote; no desenvolvimento, `VITE_API_URL` escolhe entre as duas
-- **449 testes em 37 arquivos, nos três pacotes**, rodados por um único
+- **465 testes em 38 arquivos, nos três pacotes**, rodados por um único
   `npm test` na raiz, sem passo manual. O principal ainda é
   `src/servicos/mock/regrasInviolaveis.test.ts`, que verifica as regras
-  invioláveis na camada de dados, e não na tela. Os 212 do servidor rodam contra
+  invioláveis na camada de dados, e não na tela. Os 226 do servidor rodam contra
   um PostgreSQL 17 de verdade
 - **As seis regras verificadas** em `docs/06`: para cada teste citado, a regra foi
   quebrada de propósito para confirmar que ele falha, e as quebras que não
@@ -291,7 +291,8 @@ em produção (o antigo passo B5) foi cancelada. No código, hoje:
   os dados profissionais (tela 21) falam com a API. A conta da equipe nasce com
   uma senha que ninguém conhece e um link de primeiro acesso, que a tela mostra
   para quem cadastrou entregar; "Gerar novo link de acesso" serve ao link
-  vencido e à senha esquecida
+  vencido, enquanto a pessoa não definiu a senha. Depois, é o link para nova
+  senha, com motivo (item 13)
 - **Item 3 feito — pacientes, plano com cartão e sessão.** As telas 4 a 7 e a
   validação da coordenação falam com a API. Entraram o cadastro do responsável
   na ficha, com o link de primeiro acesso (lacuna 2), o "Criar plano" (lacuna 3)
@@ -367,7 +368,7 @@ em produção (o antigo passo B5) foi cancelada. No código, hoje:
   depois ele é o login da pessoa — conferido antes e na própria gravação. O
   e-mail fica em minúsculas e único, e o de uma conta da equipe ou da escola é
   recusado. `ALTERACAO` com o `valorAnterior` só do que mudou. Quem responde
-  legalmente não se edita (afirmação 4, abaixo). Testes em
+  legalmente não se edita (afirmação 3, abaixo). Testes em
   `servidor/test/responsavel.test.ts`
 - **Item 8, parte 2 — link para nova senha do responsável** (decisão de
   18/10, que muda a de 16/10). Depois que o responsável definiu a senha, só a
@@ -417,6 +418,19 @@ em produção (o antigo passo B5) foi cancelada. No código, hoje:
   gaveta (`src/app/gaveta.ts`); Esc, o ✕, o toque no fundo e a troca de rota
   fecham, e o foco volta ao ☰; o resto da página fica inerte. As preferências
   passaram para dentro do menu. O conteúdo ocupa a largura toda, até 1800 px
+- **Item 13 — o administrador além da gestão de usuários**, sem nunca alcançar
+  dado clínico (regra 3), nem pelo texto da auditoria. Na tela 14, o link para
+  nova senha da equipe que já definiu a senha e do professor, só do
+  administrador, com motivo na trilha e o mesmo `acesso_inicial` do item 8:
+  usado, troca a senha e encerra as sessões, e o acesso seguinte avisa a pedido
+  de quem. O de primeiro acesso, sem motivo, fica só para quem ainda não definiu
+  a senha. O do responsável continua com a coordenação, e o servidor recusa o
+  administrador. A tela 25, trilha administrativa (`/app/admin/trilha`), mostra
+  só registro sem paciente e de uma entidade de `ENTIDADES_ADMINISTRATIVAS`
+  (`compartilhado/src/dominio/auditoria.ts`): contas, links de acesso, escolas e
+  a própria trilha. Sem IP, vinte por página, com filtros de período, pessoa e
+  ação; sem editar, apagar nem exportar; ler a trilha entra nela. Testes em
+  `servidor/test/administracao.test.ts`
 - `npm run criar-administrador -w @sinctea/servidor -- .env.producao --nome
   "Nome Completo" --email voce@exemplo.com` cria o primeiro administrador:
   nome e e-mail vêm da linha de comando, e só a senha é pedida, escondida e duas
@@ -459,7 +473,7 @@ argon2id.
 
 Depois de 19/10, sem data: indicadores, relatórios, atividades de casa, a
 evolução por objetivo (tela 8), a tela de auditoria e a agenda; o
-envio de e-mail, com a recuperação de senha de responsável e professor; a remoção completa de `servicos/mock`; o offline reduzido ao registro de
+envio de e-mail, com a recuperação de senha sem passar pela clínica; a remoção completa de `servicos/mock`; o offline reduzido ao registro de
 sessão (`docs/07`, seção 3A); e a Etapa 13, de 16/11 a 23/11 — artigo, slides,
 vídeo e ensaio.
 
@@ -484,14 +498,15 @@ Enquanto não se resolverem, não devem ser afirmadas na defesa:
    ser construído, não há manifesto nem *service worker*. O registro de sessão
    (tela 7) mostra o estado da conexão e marca como pendente o que ainda não
    subiu, mas a fila de sincronização não existe.
-3. **O professor não recupera a senha.** Sem envio de e-mail, a equipe recebe
-   link novo pela administração, e o responsável, pela coordenação (item 8,
-   decisão de 18/10, que mudou o limite declarado em 16/10). O professor fica
-   sem caminho até o envio de e-mail, depois de 19/10.
-4. **Quem responde legalmente não se corrige.** Na edição do responsável
+3. **Quem responde legalmente não se corrige.** Na edição do responsável
    (item 8), o `responsavelLegal` do vínculo não se edita: a resposta dada no
    cadastro fica como está, e não há, no sistema, como corrigi-la. Limite
    declarado em 18/10.
+
+O professor sem recuperação de senha saiu desta lista em 25/10/2026: a
+administração gera o link para nova senha dele, com motivo (item 13), como a
+coordenação gera o do responsável (item 8). Sem envio de e-mail, o link passa
+pela mão de quem o gera.
 
 O endereço do Render saiu desta lista em 17/10/2026: o B6 conferiu no ar `/`,
 `/api/saude` com a última migração e o 404 em JSON (tag `etapa-9`). O

@@ -58,7 +58,9 @@ export function LinkDePrimeiroAcesso({ nome, link, finalidade = 'PRIMEIRO_ACESSO
         </>
       )}
       <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-        <label htmlFor="link-primeiro-acesso" className="sr-only">Link de primeiro acesso</label>
+        <label htmlFor="link-primeiro-acesso" className="sr-only">
+          {finalidade === 'NOVA_SENHA' ? 'Link para nova senha' : 'Link de primeiro acesso'}
+        </label>
         <input
           ref={campo}
           id="link-primeiro-acesso"

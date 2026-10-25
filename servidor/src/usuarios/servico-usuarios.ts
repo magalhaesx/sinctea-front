@@ -3,7 +3,10 @@ import {
   ErroServico, type ContaCriada, type DadosProfissionais, type FiltroUsuario, type LinkPrimeiroAcesso,
   type Pagina, type Perfil, type Profissional, type Usuario,
 } from '@sinctea/compartilhado'
-import { emailValido, normalizarEmail, paraBusca, podeDesativarUsuario } from '@sinctea/compartilhado/dominio/regras'
+import {
+  emailValido, erroDoMotivoDaNovaSenha, normalizarEmail, paraBusca, podeDesativarUsuario,
+} from '@sinctea/compartilhado/dominio/regras'
+import { Negacao } from '../acesso/negacao.js'
 import { ServicoAutenticacao } from '../autenticacao/servico-autenticacao.js'
 import { ServicoSessoes } from '../autenticacao/servico-sessoes.js'
 import { hashDeSenhaDesconhecida } from '../autenticacao/senhas.js'
@@ -86,13 +89,45 @@ export class ServicoUsuarios {
     return { usuario: paraUsuario(usuario), primeiroAcesso: { token: link.token, expiraEm: link.expiraEm.toISOString() } }
   }
 
+  /**
+   * O link de primeiro acesso da equipe, enquanto a pessoa nao definiu a
+   * senha. Depois, o link e o de nova senha, com motivo (item 13).
+   */
   async novoLinkDeAcesso(usuarioId: string): Promise<LinkPrimeiroAcesso> {
     const usuario = await this.buscar(usuarioId)
     if (!usuario.profissional) {
       throw new ErroServico('CONFLITO', 'O link de responsável é gerado na ficha do paciente, e o professor entra pelo convite da família.')
     }
     if (!usuario.ativo) throw new ErroServico('CONFLITO', 'Reative a conta antes de gerar um link para ela.')
+    if (usuario.ultimoAcessoEm !== null) {
+      throw new ErroServico('CONFLITO', 'Esta pessoa já definiu a senha. Use o link para nova senha, com o motivo.')
+    }
     const link = await this.autenticacao.gerarAcessoInicial(usuario.id)
+    return { token: link.token, expiraEm: link.expiraEm.toISOString() }
+  }
+
+  /**
+   * Item 13: o link para nova senha, pelo administrador, da equipe que ja
+   * definiu a senha e do professor. O mesmo do item 8: motivo na trilha, com
+   * quem gerou; uso unico, 72 horas, so o resumo; usado, troca a senha e
+   * encerra as sessoes; no acesso seguinte, o aviso diz a pedido de quem.
+   * O do responsavel nao: e da coordenacao, na ficha do paciente, porque e
+   * ele quem autoriza a escola (regra 1).
+   */
+  async linkNovaSenha(sessao: SessaoServidor, usuarioId: string, motivo: unknown): Promise<LinkPrimeiroAcesso> {
+    const usuario = await this.buscar(usuarioId)
+    if (usuario.responsavel) {
+      throw new Negacao('O link para nova senha do responsável é da coordenação, na ficha do paciente.', {
+        detalhe: 'Link para nova senha de responsável: só a coordenação gera, na ficha do paciente.',
+      })
+    }
+    if (!usuario.ativo) throw new ErroServico('CONFLITO', 'Reative a conta antes de gerar um link para ela.')
+    if (usuario.ultimoAcessoEm === null) {
+      throw new ErroServico('CONFLITO', 'Esta pessoa ainda não definiu a senha: use "Gerar novo link de acesso".')
+    }
+    const erroMotivo = erroDoMotivoDaNovaSenha(typeof motivo === 'string' ? motivo : '')
+    if (erroMotivo) throw new ErroServico('VALIDACAO', erroMotivo, { motivo: erroMotivo })
+    const link = await this.autenticacao.gerarAcessoInicial(usuario.id, { geradoPorId: sessao.usuario.id })
     return { token: link.token, expiraEm: link.expiraEm.toISOString() }
   }
 

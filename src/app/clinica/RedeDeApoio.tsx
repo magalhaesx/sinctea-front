@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Aviso } from '../../ui/Aviso'
 import { Botao } from '../../ui/Botao'
 import { Campo } from '../../ui/Campo'
@@ -35,6 +35,13 @@ export function RedeDeApoio({ paciente, aoMudar }: { paciente: PacienteDetalhe; 
   /** O responsavel para quem a coordenacao esta pedindo o link de nova senha. */
   const [pedindoNovaSenha, setPedindoNovaSenha] = useState<string | null>(null)
   const [motivo, setMotivo] = useState('')
+  /** O campo que recebe o foco depois do proximo desenho, pelo id: o botao que abriu some. */
+  const focarDepois = useRef<string | null>(null)
+  useEffect(() => {
+    const alvo = focarDepois.current
+    focarDepois.current = null
+    if (alvo) document.getElementById(alvo)?.focus()
+  })
   const { perfilAtivo } = usarSessao()
   const coordenacao = perfilAtivo === 'COORDENADOR'
 
@@ -105,8 +112,11 @@ export function RedeDeApoio({ paciente, aoMudar }: { paciente: PacienteDetalhe; 
       setMotivo('')
       setAviso(`Link para nova senha de ${nome}. O motivo ficou na trilha de auditoria, com o seu nome.`)
       setLink({ nome, link: gerado, finalidade: 'NOVA_SENHA' })
+      focarDepois.current = 'rede-de-apoio-aviso'
     } catch (e) {
       comErro(e)
+      // O erro do motivo leva ao campo; o geral, ao aviso.
+      focarDepois.current = e instanceof ErroServico && e.campos.motivo ? `motivo-${responsavelId}` : 'rede-de-apoio-aviso'
     } finally {
       setOcupado(false)
     }
@@ -148,8 +158,11 @@ export function RedeDeApoio({ paciente, aoMudar }: { paciente: PacienteDetalhe; 
                   </>
                 )}
                 {!r.primeiroAcessoPendente && coordenacao && pedindoNovaSenha !== r.responsavelId && (
-                  <Botao area="cli" variante="secundaria" disabled={ocupado}
-                    onClick={() => { setPedindoNovaSenha(r.responsavelId); setMotivo(''); setAviso(null); setLink(null); setErros({}) }}>
+                  <Botao id={`nova-senha-${r.responsavelId}`} area="cli" variante="secundaria" disabled={ocupado}
+                    onClick={() => {
+                      setPedindoNovaSenha(r.responsavelId); setMotivo(''); setAviso(null); setLink(null); setErros({})
+                      focarDepois.current = `motivo-${r.responsavelId}`
+                    }}>
                     Gerar link para nova senha
                   </Botao>
                 )}
@@ -184,7 +197,9 @@ export function RedeDeApoio({ paciente, aoMudar }: { paciente: PacienteDetalhe; 
                   <div className="flex flex-wrap gap-2">
                     <Botao area="cli" type="submit" disabled={ocupado}>{ocupado ? 'Gerando…' : 'Gerar o link'}</Botao>
                     <Botao area="cli" variante="secundaria" disabled={ocupado}
-                      onClick={() => { setPedindoNovaSenha(null); setErros({}) }}>Cancelar</Botao>
+                      onClick={() => { setPedindoNovaSenha(null); setErros({}); focarDepois.current = `nova-senha-${r.responsavelId}` }}>
+                      Cancelar
+                    </Botao>
                   </div>
                 </form>
               )}
@@ -205,7 +220,7 @@ export function RedeDeApoio({ paciente, aoMudar }: { paciente: PacienteDetalhe; 
         </ul>
       )}
 
-      <div aria-live="polite" className="mt-3 flex flex-col gap-3">
+      <div id="rede-de-apoio-aviso" tabIndex={-1} aria-live="polite" className="mt-3 flex flex-col gap-3">
         {aviso && <Aviso tom="ok" titulo="Pronto">{aviso}</Aviso>}
         {link && <LinkDePrimeiroAcesso nome={link.nome} link={link.link} finalidade={link.finalidade} />}
         {erros.geral && <Aviso tom="cr" titulo="Não foi possível concluir">{erros.geral}</Aviso>}

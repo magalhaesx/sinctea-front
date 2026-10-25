@@ -179,8 +179,8 @@ export function Entrar() {
                 Esta versão ainda não redefine senha sozinha, nem manda e-mail. Se você é da
                 equipe da clínica, peça à administração um novo link de acesso: com ele, você
                 define outra senha. Se você é responsável por um paciente, peça à clínica: a
-                coordenação gera um link para você escolher uma nova senha. Para a escola, a
-                redefinição ainda não existe.
+                coordenação gera um link para você escolher uma nova senha. Se você é da escola,
+                peça à clínica: a administração gera um link para você escolher uma nova senha.
               </p>
             )}
           </div>

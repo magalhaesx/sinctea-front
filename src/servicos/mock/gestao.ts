@@ -3,9 +3,10 @@ import {
   ErroServico, type FiltroAuditoria, type Perfil, type Profissional, type RegistroAuditoria,
   type Usuario, type UsuarioQualquer,
 } from '@sinctea/compartilhado'
-import { podeDesativarUsuario } from '@sinctea/compartilhado/dominio/regras'
+import { erroDoMotivoDaNovaSenha, podeDesativarUsuario } from '@sinctea/compartilhado/dominio/regras'
 import { montarCsv } from '@sinctea/compartilhado/dominio/csv'
-import { versaoAnteriorEmTexto } from '@sinctea/compartilhado/dominio/auditoria'
+import { ENTIDADES_ADMINISTRATIVAS, versaoAnteriorEmTexto } from '@sinctea/compartilhado/dominio/auditoria'
+import { fimDaValidade, inicioDoDia } from '@sinctea/compartilhado/dominio/datas'
 import {
   auditar, banco, exigirPerfil, exigirSessao, exigirValido, gerarId, naoEncontrado, paginar,
   relogio, responder, todosUsuarios, usuarioPorId,
@@ -52,6 +53,25 @@ export const auditoriaMock: ServicoAuditoria = {
     return paginar(filtrarAuditoria(filtro), filtro)
   }),
 
+  // Item 13: as mesmas regras do servidor (servidor/src/usuarios/servico-trilha.ts).
+  listarAdministrativa: (filtro = {}) => responder(() => {
+    const sessao = exigirPerfil(['ADMINISTRADOR'], 'RegistroAuditoria')
+    const desde = filtro.desde ? inicioDoDia(filtro.desde).toISOString() : null
+    const ate = filtro.ate ? fimDaValidade(filtro.ate).toISOString() : null
+    const itens = banco.auditoria
+      .filter((r) => r.pacienteId === null && (ENTIDADES_ADMINISTRATIVAS as readonly string[]).includes(r.entidade))
+      .filter((r) => (!desde || r.ocorridoEm >= desde) && (!ate || r.ocorridoEm < ate))
+      .filter((r) => (!filtro.usuarioId || r.usuarioId === filtro.usuarioId) && (!filtro.acao || r.acao === filtro.acao))
+      .slice().reverse()
+      .map(({ ipOrigem: _ip, pacienteId: _p, ...r }) => r)
+    const pagina = paginar(itens, { pagina: filtro.pagina, porPagina: 20 })
+    auditar(sessao, {
+      acao: 'LEITURA_AUTORIZADA', entidade: 'RegistroAuditoria', idEntidade: null,
+      detalhe: `Trilha administrativa consultada (${pagina.total} registros).`,
+    })
+    return pagina
+  }),
+
   exportar: (filtro = {}) => responder(() => {
     const sessao = exigirPerfil(['COORDENADOR'], 'RegistroAuditoria')
     // Todos os registros do filtro, e nao a pagina visivel: quem exporta quer
@@ -70,6 +90,9 @@ export const auditoriaMock: ServicoAuditoria = {
     )
     auditar(sessao, {
       acao: 'LEITURA_AUTORIZADA', entidade: 'RegistroAuditoria', idEntidade: null,
+      // O recorte por paciente leva o paciente: sem ele, o id iria para a
+      // trilha administrativa pelo texto (item 13).
+      pacienteId: filtro.pacienteId ?? null,
       detalhe: `Exportação da trilha: ${itens.length} ${itens.length === 1 ? 'registro' : 'registros'} (${descreverFiltro(filtro)}).`,
     })
     return csv
@@ -166,7 +189,30 @@ export const usuariosMock: ServicoUsuario = {
       throw new ErroServico('CONFLITO', 'O link de responsável é gerado na ficha do paciente, e o professor entra pelo convite da família.')
     }
     if (!usuario.ativo) throw new ErroServico('CONFLITO', 'Reative a conta antes de gerar um link para ela.')
+    if (usuario.ultimoAcessoEm !== null) {
+      throw new ErroServico('CONFLITO', 'Esta pessoa já definiu a senha. Use o link para nova senha, com o motivo.')
+    }
     auditar(sessao, { acao: 'ALTERACAO', entidade: 'Usuario', idEntidade: usuario.id, detalhe: 'Novo link de primeiro acesso gerado; o anterior deixou de valer.' })
+    return linkDoMock()
+  }),
+
+  // Item 13: as mesmas regras do servidor (servidor/src/usuarios/servico-usuarios.ts).
+  linkNovaSenha: (usuarioId, motivo) => responder(() => {
+    const sessao = exigirPerfil(['ADMINISTRADOR'], 'Usuario')
+    const usuario = buscarUsuario(usuarioId)
+    if (usuario.tipo === 'RESPONSAVEL') {
+      throw new ErroServico('ACESSO_NEGADO', 'O link para nova senha do responsável é da coordenação, na ficha do paciente.')
+    }
+    if (!usuario.ativo) throw new ErroServico('CONFLITO', 'Reative a conta antes de gerar um link para ela.')
+    if (usuario.ultimoAcessoEm === null) {
+      throw new ErroServico('CONFLITO', 'Esta pessoa ainda não definiu a senha: use "Gerar novo link de acesso".')
+    }
+    const erroMotivo = erroDoMotivoDaNovaSenha(motivo)
+    if (erroMotivo) throw new ErroServico('VALIDACAO', erroMotivo, { motivo: erroMotivo })
+    auditar(sessao, {
+      acao: 'ALTERACAO', entidade: 'Usuario', idEntidade: usuario.id,
+      detalhe: `Link para nova senha gerado pela administração; o anterior deixou de valer. Motivo: ${motivo.trim()}`,
+    })
     return linkDoMock()
   }),
 

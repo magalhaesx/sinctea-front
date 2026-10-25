@@ -8,7 +8,7 @@ import type {
   NovoPaciente, NovoPlano, NovoResponsavel, EdicaoResponsavel, ResponsavelCadastrado, ResponsavelNaFicha, DadosCartao, NovaEscola, Objetivo, ObjetivoAcessivel, OcorrenciaComportamental, OcorrenciaEscolar,
   ConteudoRelatorio, DadosProfissionais, MotivoAtencao, Pagina, PacienteDetalhe, PacienteResumo, PedidoRelatorio,
   Perfil, PlanoParaValidacao, PlanoTerapeutico, PonteEscola, PrimeiroAcessoPublico, Profissional, RegistroAtividade,
-  RegistroAuditoria, RelatorioEvolucao, ResumoClinica, Resultado, Sessao, SessaoUsuario,
+  RegistroAuditoria, RegistroAdministrativo, FiltroTrilhaAdministrativa, RelatorioEvolucao, ResumoClinica, Resultado, Sessao, SessaoUsuario,
   SessoesPorProfissional, Usuario,
 } from './tipos.js'
 
@@ -205,6 +205,12 @@ export interface ServicoAreaEscola {
 /** Somente leitura. O registro de auditoria e escrito pelo servidor e e imutavel. */
 export interface ServicoAuditoria {
   listar(filtro?: FiltroAuditoria): Promise<Pagina<RegistroAuditoria>>
+  /**
+   * A trilha administrativa (item 13, tela 25), so do administrador: contas,
+   * links de acesso, escolas e a propria trilha, sem nenhum registro de
+   * paciente. Ler a trilha tambem entra na trilha.
+   */
+  listarAdministrativa(filtro?: FiltroTrilhaAdministrativa): Promise<Pagina<RegistroAdministrativo>>
   /** CSV de todos os registros do filtro. A exportacao e auditada. */
   exportar(filtro?: FiltroAuditoria): Promise<string>
 }
@@ -260,6 +266,12 @@ export interface ServicoUsuario {
    * atual vale ate o novo ser usado. Serve ao link vencido e a senha esquecida.
    */
   novoLinkDeAcesso(usuarioId: string): Promise<LinkPrimeiroAcesso>
+  /**
+   * Link para nova senha (item 13), pelo administrador: da equipe que ja
+   * definiu a senha e do professor, com motivo, que vai para a trilha. O do
+   * responsavel e da coordenacao, na ficha do paciente (item 8).
+   */
+  linkNovaSenha(usuarioId: string, motivo: string): Promise<LinkPrimeiroAcesso>
   /** Dados profissionais de quem esta na sessao. Nulo para quem nao e profissional. */
   meusDadosProfissionais(): Promise<DadosProfissionais | null>
   /**
