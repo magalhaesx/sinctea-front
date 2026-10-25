@@ -157,8 +157,11 @@ Revisão de 25/10/2026, item 11.
   centralizado: são formulários curtos.
 - **A adaptação é pela largura da tela, nunca pelo tipo de aparelho.** Usa os
   breakpoints do Tailwind. Tablet, celular deitado e janela pela metade se
-  comportam do mesmo jeito. Abaixo de `lg` (1024px), o menu vira uma faixa no
-  topo e os blocos ficam um embaixo do outro.
+  comportam do mesmo jeito.
+  - Abaixo de `lg` (1024px), o menu vira uma faixa no topo.
+  - As colunas dependem de cada bloco. Formulários e algumas listas já usam duas
+    colunas a partir de `sm` (640px) ou `md` (768px).
+  - Abaixo de 640px, no celular, os blocos ficam um embaixo do outro.
 - **O que ganha a largura:** tabelas, formulários com mais colunas e listas de
   cartões em grade.
   - O texto corrido continua em no máximo 65 caracteres por linha.
