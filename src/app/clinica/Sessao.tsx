@@ -293,7 +293,7 @@ export function RegistroSessao() {
             {objetivos.length > 0 && sessao && (
               <>
                 <Cartao>
-                  <Campo id="objetivo" rotulo="Objetivo em trabalho" dica="Trocar de objetivo não perde os registros do anterior.">
+                  <Campo id="objetivo" rotulo="Objetivo em trabalho" dica="Trocar de objetivo não perde os registros do anterior." className="max-w-3xl">
                     <select id="objetivo" className={campo} value={objetivo?.id ?? ''}
                       onChange={(e) => setObjetivoId(e.target.value)}>
                       {objetivos.map((o) => (
@@ -312,7 +312,7 @@ export function RegistroSessao() {
                     <p className="mb-3 text-sm text-tinta2">
                       Um toque registra. Tentativa {doObjetivo.length + 1} deste objetivo.
                     </p>
-                    <div className="grid gap-2.5 sm:grid-cols-2" role="group" aria-labelledby="h-resp">
+                    <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4" role="group" aria-labelledby="h-resp">
                       {RESPOSTAS.map((r, i) => (
                         <button
                           key={r.valor}
@@ -382,6 +382,8 @@ export function RegistroSessao() {
                       Registro ABC: o que veio antes, o que aconteceu e o que veio depois.
                     </p>
                     <form className="mt-3 flex flex-col gap-4" onSubmit={(e) => registrarOcorrencia(e, sessao.id)} noValidate>
+                      {/* Item 11: em tela larga, antes, durante e depois lado a lado. */}
+                      <div className="grid gap-4 [&>*]:min-w-0 lg:grid-cols-3">
                       <Campo id="antecedente" rotulo="Antecedente" dica="O que acontecia antes.">
                         <input id="antecedente" type="text" className={campo} value={abc.antecedente}
                           onChange={(e) => setAbc({ ...abc, antecedente: e.target.value })}
@@ -402,6 +404,7 @@ export function RegistroSessao() {
                           {...atributosDeErro('consequencia')} />
                         <Erro chave="consequencia" />
                       </Campo>
+                      </div>
 
                       {/* Cinco opcoes com rotulo, nao um controle deslizante:
                           deslizante e impreciso no dedo e pessimo no teclado. */}
@@ -447,7 +450,7 @@ export function RegistroSessao() {
                       nunca o veem.
                     </p>
                     <form className="mt-3 flex flex-col gap-3" onSubmit={(e) => encerrar(e, sessao.id)} noValidate>
-                      <Campo id="evolucao" rotulo="Evolução" dica={`O que foi trabalhado, como a pessoa respondeu e o que fica para a próxima sessão. Até ${EVOLUCAO_MAXIMO.toLocaleString('pt-BR')} caracteres.`}>
+                      <Campo id="evolucao" className="max-w-4xl" rotulo="Evolução" dica={`O que foi trabalhado, como a pessoa respondeu e o que fica para a próxima sessão. Até ${EVOLUCAO_MAXIMO.toLocaleString('pt-BR')} caracteres.`}>
                         <textarea id="evolucao" ref={campoEvolucao} rows={6} maxLength={EVOLUCAO_MAXIMO}
                           className={`${campo} min-h-40`} value={evolucao}
                           onChange={(e) => setEvolucao(e.target.value)}

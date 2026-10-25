@@ -150,7 +150,7 @@ function EventosComportamentais({ pacienteId, primeiroNome }: {
           </p>
         ) : (
           <>
-            <ul className="mt-3 flex flex-col gap-2">
+            <ul className="mt-3 grid gap-2 [&>*]:min-w-0 lg:grid-cols-2 2xl:grid-cols-3">
               {estado.dados.itens.map((o) => (
                 <li
                   key={o.id}
@@ -254,7 +254,7 @@ function HistoricoDeSessoes({ pacienteId, equipe }: {
           <p className="mt-3 text-tinta2">Nenhuma sessão encerrada ainda.</p>
         ) : (
           <>
-            <ul className="mt-3 flex flex-col gap-2.5">
+            <ul className="mt-3 grid items-start gap-2.5 [&>*]:min-w-0 xl:grid-cols-2">
               {estado.dados.itens.map((s) => (
                 <li key={s.id} className="rounded-lg border border-linha bg-sup px-3 py-2.5">
                   <h3 className="font-bold">
@@ -262,7 +262,7 @@ function HistoricoDeSessoes({ pacienteId, equipe }: {
                   </h3>
                   <p className="text-sm text-tinta2">{quem(s.profissionalId)} · {s.registros.length} {s.registros.length === 1 ? 'registro' : 'registros'}</p>
                   {s.evolucao
-                    ? <p className="mt-2 whitespace-pre-line">{s.evolucao}</p>
+                    ? <p className="mt-2 max-w-[65ch] whitespace-pre-line">{s.evolucao}</p>
                     // So as sessoes encerradas antes de a evolucao ser exigida.
                     : <p className="mt-2 text-sm text-tinta2">Sessão encerrada antes de a evolução ser exigida: sem evolução registrada.</p>}
                 </li>
@@ -353,7 +353,7 @@ export function Ficha() {
 
             <Cartao>
               <h2 className="text-lg font-bold">Equipe multiprofissional</h2>
-              <ul className="mt-3 flex flex-col gap-2">
+              <ul className="mt-3 grid gap-2 [&>*]:min-w-0 lg:grid-cols-2 2xl:grid-cols-3">
                 {p.equipe.map((e) => (
                   <li key={e.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-linha bg-sup px-3 py-2.5">
                     <span>
@@ -376,7 +376,7 @@ export function Ficha() {
                   Nenhuma escola tem acesso aos dados de {p.nome.split(' ')[0]}.
                 </p>
               ) : (
-                <ul className="mt-3 flex flex-col gap-2">
+                <ul className="mt-3 grid gap-2 [&>*]:min-w-0 lg:grid-cols-2 2xl:grid-cols-3">
                   {p.vinculosEscolares.map((v) => {
                     const s = SITUACAO_CONSENTIMENTO[v.situacaoConsentimento]
                     return (

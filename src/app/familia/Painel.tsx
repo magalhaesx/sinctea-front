@@ -144,7 +144,6 @@ export function PainelFamilia() {
       // So o parentesco: "Mae do Miguel" nao sobrevive a dois filhos.
       papel={filho?.parentesco}
       caminho={['Início']}
-      estreito
     >
       {filhos.tipo === 'carregando' && (
         <EstadoCarregando forma="cartoes" quantidade={3} rotulo="Carregando o seu painel" />
@@ -197,7 +196,8 @@ export function PainelFamilia() {
           )}
 
           {dados.tipo === 'pronto' && (
-            <>
+            // Item 11: em tela larga, as secoes lado a lado, na mesma ordem.
+            <div className="grid items-start gap-6 [&>*]:min-w-0 xl:grid-cols-2">
               <section aria-labelledby="h-evolucao" className="flex flex-col gap-3">
                 <h2 id="h-evolucao" className="text-lg font-bold">Como está indo</h2>
 
@@ -313,7 +313,7 @@ export function PainelFamilia() {
                   </Cartao>
                 )}
               </section>
-            </>
+            </div>
           )}
         </>
       )}

@@ -76,7 +76,7 @@ export function NovoPaciente() {
     : null
 
   return (
-    <Tela area="cli" caminho={['Área clínica', PACIENTES, 'Cadastrar paciente']} estreito>
+    <Tela area="cli" caminho={['Área clínica', PACIENTES, 'Cadastrar paciente']}>
       <Titulo sub="Os dados de identificação. O plano terapêutico vem depois, na ficha.">
         Cadastrar paciente
       </Titulo>
@@ -91,7 +91,9 @@ export function NovoPaciente() {
             )}
           </div>
 
-          <Campo id="nome" rotulo="Nome completo">
+          {/* Item 11: em tela larga, os campos curtos dividem a linha. */}
+          <div className="grid gap-4 [&>*]:min-w-0 md:grid-cols-2 2xl:grid-cols-4">
+          <Campo id="nome" rotulo="Nome completo" className="md:col-span-2">
             <input ref={primeiroCampo} id="nome" type="text" className={campo}
               value={nome} onChange={(e) => setNome(e.target.value)} {...erroDe('nome')} />
             <Erro chave="nome" />
@@ -113,7 +115,7 @@ export function NovoPaciente() {
             <Erro chave="nivelSuporte" />
           </Campo>
 
-          <Campo id="profissionalResponsavelId" rotulo="Profissional responsável pelo caso">
+          <Campo id="profissionalResponsavelId" rotulo="Profissional responsável pelo caso" className="md:col-span-2">
             <select id="profissionalResponsavelId" className={campo} value={profissionalResponsavelId}
               onChange={(e) => setProfissionalResponsavelId(e.target.value)}
               {...erroDe('profissionalResponsavelId')}>
@@ -124,6 +126,7 @@ export function NovoPaciente() {
             </select>
             <Erro chave="profissionalResponsavelId" />
           </Campo>
+          </div>
 
           <div className="flex flex-wrap gap-2">
             <Botao area="cli" type="submit" disabled={salvando}>

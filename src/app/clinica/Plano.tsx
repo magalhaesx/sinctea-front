@@ -335,13 +335,15 @@ export function Plano() {
                       )}
                     </div>
 
-                    <Campo id="dominio" rotulo="Domínio" dica="Comunicação funcional, regulação sensorial, autocuidado.">
+                    <Campo id="dominio" rotulo="Domínio" dica="Comunicação funcional, regulação sensorial, autocuidado." className="max-w-2xl">
                       <input id="dominio" type="text" className={campo} value={novo.dominio}
                         onChange={(e) => setNovo({ ...novo, dominio: e.target.value })}
                         {...atributosDeErro('dominio')} />
                       <Erro chave="dominio" />
                     </Campo>
 
+                    {/* Item 11: em tela larga, as duas redacoes lado a lado, para comparar. */}
+                    <div className="grid gap-4 [&>*]:min-w-0 xl:grid-cols-2">
                     <Campo id="descricaoTecnica" rotulo="Descrição técnica" dica="Para a equipe: comportamento, condição e medida.">
                       <textarea id="descricaoTecnica" rows={3} className={area} value={novo.descricaoTecnica}
                         onChange={(e) => setNovo({ ...novo, descricaoTecnica: e.target.value })}
@@ -359,10 +361,11 @@ export function Plano() {
                         {...atributosDeErro('descricaoAcessivel')} />
                       <Erro chave="descricaoAcessivel" />
                     </Campo>
+                    </div>
 
                     <fieldset className="rounded-lg border border-linha p-4">
                       <legend className="px-1.5 font-bold">Critério de domínio</legend>
-                      <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="grid max-w-xl gap-3 sm:grid-cols-2">
                         <Campo id="percentualMinimo" rotulo="Percentual mínimo">
                           <input id="percentualMinimo" type="number" min={1} max={100} className={campo}
                             value={novo.percentualMinimo}

@@ -247,7 +247,8 @@ export function Usuarios() {
         <h2 id="h-convidar" className="text-lg font-bold">Criar conta para a equipe</h2>
         <Cartao>
           <form onSubmit={(e) => void convidar(e)} className="flex flex-col gap-4">
-            <div className="grid gap-3 [&>*]:min-w-0 sm:grid-cols-2">
+            {/* Item 11: em tela larga, os quatro campos numa linha so. */}
+            <div className="grid gap-3 [&>*]:min-w-0 sm:grid-cols-2 2xl:grid-cols-4">
               <Campo id="nome" rotulo="Nome">
                 <input id="nome" className={campo} value={convite.nome}
                   onChange={(e) => setConvite((c) => ({ ...c, nome: e.target.value }))}
@@ -258,14 +259,9 @@ export function Usuarios() {
                   onChange={(e) => setConvite((c) => ({ ...c, email: e.target.value }))}
                   aria-invalid={erros.email ? true : undefined} />
               </Campo>
-            </div>
-            {erros.nome && <p className="text-sm font-bold text-cr">{erros.nome}</p>}
-            {erros.email && <p className="text-sm font-bold text-cr">{erros.email}</p>}
-
             {/* Opcionais: o administrador costuma ter os dois a mao, e quem
                 completa depois e a propria pessoa, em Perfil e preferencias.
                 Sem o registro preenchido, essa pessoa nao emite relatorio. */}
-            <div className="grid gap-3 [&>*]:min-w-0 sm:grid-cols-2">
               {/* Item 7: obrigatoria para o profissional da clinica, que a tela
                   mostra pelo nome e pela especialidade. */}
               <Campo id="especialidade"
@@ -282,12 +278,14 @@ export function Usuarios() {
                   onChange={(e) => setConvite((c) => ({ ...c, registroConselho: e.target.value }))} />
               </Campo>
             </div>
+            {erros.nome && <p className="text-sm font-bold text-cr">{erros.nome}</p>}
+            {erros.email && <p className="text-sm font-bold text-cr">{erros.email}</p>}
 
             <fieldset className="border-0 p-0">
               <legend className="text-sm font-bold">Perfis</legend>
               {/* Responsavel e professor nao aparecem: o responsavel nasce do
                   vinculo com o paciente, e o professor, do convite da familia. */}
-              <p className="mt-1 text-sm text-tinta2">
+              <p className="mt-1 max-w-[65ch] text-sm text-tinta2">
                 Esta tela cadastra apenas a equipe da clínica. O responsável nasce do vínculo com o
                 paciente, e o professor, do convite da família.
               </p>

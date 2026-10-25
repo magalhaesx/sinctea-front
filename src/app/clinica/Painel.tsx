@@ -179,7 +179,7 @@ export function PainelClinica() {
           avisos.dados.total === 0 ? (
             <Cartao><p className="text-tinta2">Nenhum aviso novo da escola nos últimos sete dias.</p></Cartao>
           ) : (
-            <ul className="flex flex-col gap-2.5">
+            <ul className="grid items-start gap-2.5 [&>*]:min-w-0 xl:grid-cols-2">
               {avisos.dados.itens.map((a) => (
                 <li key={a.ocorrenciaId}>
                   <Aviso tom="at" titulo="A escola registrou uma ocorrência">

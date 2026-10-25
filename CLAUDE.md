@@ -401,6 +401,15 @@ em produção (o antigo passo B5) foi cancelada. No código, hoje:
   em sessão; o erro de "Enviar para validação" sai em aviso de erro; a tela 19
   só fala da versão anterior depois de uma correção. Revisar o plano vigente
   ficou como lacuna no `docs/03`: precisa de versão nova do plano
+- **Item 11 — o conteúdo do app ocupa a largura da tela.** O cartão vai até a
+  borda da área ao lado do menu, com 20 px de margem (32 px a partir de xl), e
+  para em 1800 px, centralizado (`src/app/LayoutApp.tsx`). A adaptação é pela
+  largura, com os breakpoints do Tailwind, nunca pelo aparelho. Texto corrido
+  continua em 65 caracteres por linha — inclusive o subtítulo (`Titulo`), a dica
+  do campo (`Campo`) e o texto do aviso (`Aviso`). As telas que eram estreitas
+  ganharam colunas na mesma ordem; só a entrada, o convite e o definir senha
+  continuam estreitos. Conferido em 360, 768, 1366, 1920 e 2560 px, sem rolagem
+  horizontal
 - `npm run criar-administrador -w @sinctea/servidor -- .env.producao --nome
   "Nome Completo" --email voce@exemplo.com` cria o primeiro administrador:
   nome e e-mail vêm da linha de comando, e só a senha é pedida, escondida e duas

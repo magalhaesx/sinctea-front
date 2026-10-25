@@ -81,7 +81,6 @@ export function CartaoEstrategias() {
       nome={usuario?.nome}
       papel={estado.tipo === 'pronto' ? `${estado.cartao.turma} · ${estado.cartao.turno}` : undefined}
       caminho={['Área da escola', { rotulo: 'Meus alunos', para: '/app/escola' }, estado.tipo === 'pronto' ? estado.cartao.nome : 'Cartão de estratégias']}
-      estreito
     >
       <Titulo sub="Orientações práticas para o dia a dia em sala. Não é diagnóstico nem laudo.">
         {aluno}
@@ -124,8 +123,10 @@ export function CartaoEstrategias() {
             {estado.cartao.estrategias.map((e) => (
               <article key={e.titulo} className="flex flex-col gap-3">
                 <h2 className="text-lg font-bold">{e.titulo}</h2>
-                <p className="text-tinta2">{e.paraQue}</p>
+                <p className="max-w-[65ch] text-tinta2">{e.paraQue}</p>
 
+                {/* Item 11: em tela larga, os tres blocos lado a lado. */}
+                <div className="grid items-start gap-3 [&>*]:min-w-0 lg:grid-cols-3">
                 <section className="rounded-xl border border-linha border-l-4 border-l-ok bg-ok-sup p-4">
                   <h3 className="flex items-center gap-2 text-base font-bold">
                     <span aria-hidden="true">✓</span> O que fazer
@@ -150,6 +151,7 @@ export function CartaoEstrategias() {
                   </h3>
                   <p className="mt-2 text-tinta2">{e.sinalAlerta}</p>
                 </section>
+                </div>
               </article>
             ))}
 

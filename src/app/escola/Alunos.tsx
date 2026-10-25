@@ -70,7 +70,7 @@ export function Alunos() {
             acao={<Link to="/app/ajuda" className="inline-flex min-h-11 items-center font-bold text-esc-ink underline">Ver como funciona o acesso da escola</Link>}
           />
         ) : (
-          <ul className="flex flex-col gap-3">
+          <ul className="grid items-start gap-3 [&>*]:min-w-0 md:grid-cols-2 2xl:grid-cols-3">
             {estado.dados.itens.map((aluno) => (
               <li key={aluno.pacienteId}>
                 <Cartao>

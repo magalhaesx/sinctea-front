@@ -100,12 +100,13 @@ export function Conta() {
       nome={usuario.nome}
       papel={papelNaTela(perfilAtivo, especialidade)}
       caminho={['Apoio', 'Perfil e preferências']}
-      estreito
     >
       <Titulo sub="Seus dados, o perfil com que você está trabalhando e o ajuste da interface">
         Perfil e preferências
       </Titulo>
 
+      {/* Item 11: em tela larga, os cartoes em duas colunas, na mesma ordem. */}
+      <div className="grid items-start gap-4 [&>*]:min-w-0 lg:grid-cols-2">
       <Cartao>
         <h2 className="text-lg font-bold">Dados da conta</h2>
         <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-[15px]">
@@ -119,7 +120,7 @@ export function Conta() {
       {dados && (
         <Cartao>
           <h2 className="text-lg font-bold">Dados profissionais</h2>
-          <p className="mt-1 text-sm text-tinta2">
+          <p className="mt-1 max-w-[65ch] text-sm text-tinta2">
             Vão impressos no relatório de evolução que você emitir, com o seu nome. Sem o registro
             no conselho preenchido, o relatório não é emitido — o documento precisa identificar
             quem o assina.
@@ -206,7 +207,7 @@ export function Conta() {
 
       <Cartao>
         <h2 className="text-lg font-bold">Preferências de leitura</h2>
-        <p className="mt-1 text-sm text-tinta2">
+        <p className="mt-1 max-w-[65ch] text-sm text-tinta2">
           Ficam guardadas neste aparelho e valem para todas as telas, inclusive a de entrada.
         </p>
         <ul className="mt-3 flex flex-col gap-2">
@@ -236,6 +237,7 @@ export function Conta() {
         </p>
         <p className="mt-3"><Botao variante="secundaria" area={AREA_DO_PERFIL[perfilAtivo]} onClick={encerrar}>Sair da conta</Botao></p>
       </Cartao>
+      </div>
     </Tela>
   )
 }

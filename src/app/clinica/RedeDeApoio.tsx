@@ -126,7 +126,7 @@ export function RedeDeApoio({ paciente, aoMudar }: { paciente: PacienteDetalhe; 
       {paciente.redeApoio.length === 0 ? (
         <p className="mt-1 text-tinta2">Nenhum responsável cadastrado ainda.</p>
       ) : (
-        <ul className="mt-3 flex flex-col gap-2">
+        <ul className="mt-3 grid items-start gap-2 [&>*]:min-w-0 2xl:grid-cols-2">
           {paciente.redeApoio.map((r) => (
             <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-linha bg-sup px-3 py-2.5">
               <span>
@@ -161,7 +161,7 @@ export function RedeDeApoio({ paciente, aoMudar }: { paciente: PacienteDetalhe; 
                 )}
               </span>
               {!r.primeiroAcessoPendente && !coordenacao && (
-                <p className="flex w-full flex-wrap items-center gap-2 text-sm text-tinta2">
+                <p className="flex w-full max-w-[65ch] flex-wrap items-center gap-2 text-sm text-tinta2">
                   <Etiqueta tom="ok" simbolo="✓">Já definiu a senha</Etiqueta>
                   Se a pessoa esquecer a senha, quem gera o link para nova senha é a coordenação.
                 </p>
@@ -176,7 +176,7 @@ export function RedeDeApoio({ paciente, aoMudar }: { paciente: PacienteDetalhe; 
                   </p>
                   <Campo id={`motivo-${r.responsavelId}`} rotulo="Motivo"
                     dica={`Fica na trilha de auditoria, com o seu nome. Até ${MOTIVO_NOVA_SENHA_MAXIMO} caracteres.`}>
-                    <textarea id={`motivo-${r.responsavelId}`} rows={3} className={campo} value={motivo}
+                    <textarea id={`motivo-${r.responsavelId}`} rows={3} className={`${campo} max-w-3xl`} value={motivo}
                       maxLength={MOTIVO_NOVA_SENHA_MAXIMO} {...descrito('motivo')}
                       onChange={(e) => setMotivo(e.target.value)} />
                     <Erro chave="motivo" />
@@ -220,7 +220,7 @@ export function RedeDeApoio({ paciente, aoMudar }: { paciente: PacienteDetalhe; 
       ) : (
         <form onSubmit={(e) => void cadastrar(e)} noValidate className="mt-4 flex flex-col gap-4 border-t border-linha pt-4">
           <h3 className="text-base font-bold">Cadastrar responsável</h3>
-          <div className="grid gap-3 [&>*]:min-w-0 sm:grid-cols-2">
+          <div className="grid gap-3 [&>*]:min-w-0 sm:grid-cols-2 xl:grid-cols-4">
             <Campo id="resp-nome" rotulo="Nome">
               <input id="resp-nome" className={campo} value={dados.nome} {...descrito('nome')}
                 onChange={(e) => setDados((d) => ({ ...d, nome: e.target.value }))} />

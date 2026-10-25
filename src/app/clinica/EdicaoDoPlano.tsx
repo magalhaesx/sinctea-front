@@ -67,6 +67,8 @@ export function EditarObjetivo({ objetivo, aoSalvar, aoCancelar }: {
     <form className="mt-3 flex flex-col gap-4 rounded-lg border-2 border-linha p-4" onSubmit={(e) => void salvar(e)} noValidate>
       <h4 className="font-bold">Editar o objetivo</h4>
       {erros.geral && <p role="alert" className="font-bold text-cr">{erros.geral}</p>}
+      {/* Item 11: em tela larga, as duas redacoes lado a lado, para comparar. */}
+      <div className="grid gap-4 [&>*]:min-w-0 xl:grid-cols-2">
       <Campo id={`${prefixo}-tecnica`} rotulo="Descrição técnica" dica="Para a equipe: comportamento, condição e medida.">
         <textarea id={`${prefixo}-tecnica`} ref={primeiro} rows={3} className={area} value={dados.descricaoTecnica}
           onChange={(e) => setDados({ ...dados, descricaoTecnica: e.target.value })}
@@ -79,9 +81,10 @@ export function EditarObjetivo({ objetivo, aoSalvar, aoCancelar }: {
           aria-invalid={erros.descricaoAcessivel ? true : undefined} />
         <Erro erros={erros} chave="descricaoAcessivel" />
       </Campo>
+      </div>
       <fieldset className="rounded-lg border border-linha p-4">
         <legend className="px-1.5 font-bold">Critério de domínio</legend>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid max-w-xl gap-3 sm:grid-cols-2">
           <Campo id={`${prefixo}-percentual`} rotulo="Percentual mínimo">
             <input id={`${prefixo}-percentual`} type="number" min={1} max={100} className={campo} value={dados.percentualMinimo}
               onChange={(e) => setDados({ ...dados, percentualMinimo: e.target.value })}
@@ -134,7 +137,7 @@ export function EditarDatas({ plano, aoSalvar, aoCancelar }: {
   return (
     <form className="flex flex-col gap-4 rounded-lg border-2 border-linha p-4" onSubmit={(e) => void salvar(e)} noValidate>
       <h2 className="text-base font-bold">Editar as datas do plano</h2>
-      <div className="grid gap-3 [&>*]:min-w-0 sm:grid-cols-2">
+      <div className="grid max-w-xl gap-3 [&>*]:min-w-0 sm:grid-cols-2">
         <Campo id="editar-inicio" rotulo="Início do plano">
           <input id="editar-inicio" ref={primeiro} type="date" className={campo} value={dataInicio}
             onChange={(e) => setDataInicio(e.target.value)} aria-invalid={erros.dataInicio ? true : undefined} />

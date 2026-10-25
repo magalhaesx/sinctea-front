@@ -54,7 +54,7 @@ export function CriarPlano({ pacienteId, aoCriar }: { pacienteId: string; aoCria
         nele, e depois ele segue para a coordenação validar.
       </p>
       <form onSubmit={(e) => void criar(e)} noValidate className="mt-4 flex flex-col gap-4">
-        <div className="grid gap-3 [&>*]:min-w-0 sm:grid-cols-2">
+        <div className="grid max-w-xl gap-3 [&>*]:min-w-0 sm:grid-cols-2">
           <Campo id="plano-inicio" rotulo="Início do plano">
             <input id="plano-inicio" type="date" className={campo} value={dataInicio}
               onChange={(e) => setDataInicio(e.target.value)} aria-invalid={erros.dataInicio ? true : undefined} />

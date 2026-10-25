@@ -361,7 +361,7 @@ export function Planos() {
                     </div>
                   ) : (
                     <>
-                      <p className="mt-1 text-sm text-tinta2">
+                      <p className="mt-1 max-w-[65ch] text-sm text-tinta2">
                         Aprovar faz o plano passar a vigente. Não é definitivo: o plano continua
                         podendo ser revisto depois.
                       </p>

@@ -126,7 +126,7 @@ export function CartoesDoObjetivo({ objetivoId }: { objetivoId: string }) {
           <Botao area="cli" variante="secundaria" onClick={() => abrir()}>Escrever cartão</Botao>
         </p>
       ) : (
-        <form onSubmit={(e) => void salvar(e)} noValidate className="mt-3 flex flex-col gap-4">
+        <form onSubmit={(e) => void salvar(e)} noValidate className="mt-3 flex max-w-4xl flex-col gap-4">
           <Campo id={`${prefixo}-titulo`} rotulo="Título, em linguagem simples" dica="É o que a professora lê primeiro.">
             <input id={`${prefixo}-titulo`} className={campo} value={dados.tituloSimples}
               onChange={(e) => setDados((d) => ({ ...d, tituloSimples: e.target.value }))} />

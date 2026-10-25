@@ -29,7 +29,7 @@ export function Ajuda() {
 
       <Cartao>
         <h2 className="text-lg font-bold">Ajuste a interface agora</h2>
-        <p className="mt-1 mb-4 text-sm text-tinta2">
+        <p className="mt-1 mb-4 max-w-[65ch] text-sm text-tinta2">
           As três preferências abaixo valem para todas as telas e também estão no topo da página.
         </p>
         <div className="rounded-lg bg-cromo p-3">
@@ -57,7 +57,7 @@ export function Ajuda() {
       <h2 className="mt-2 text-lg font-bold">
         Os quatro princípios da <abbr title="Web Content Accessibility Guidelines">WCAG</abbr> 2.2
       </h2>
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3 [&>*]:min-w-0 sm:grid-cols-2 2xl:grid-cols-4">
         {principios.map((p) => (
           <Cartao key={p.n}>
             <div className="flex items-center gap-2.5">
@@ -75,7 +75,7 @@ export function Ajuda() {
         <h2 className="text-lg font-bold">Heurísticas de usabilidade aplicadas</h2>
         <ul className="mt-3 flex flex-col gap-2.5">
           {heuristicas.map(([nome, texto]) => (
-            <li key={nome} className="text-sm">
+            <li key={nome} className="max-w-[65ch] text-sm">
               <b>{nome}.</b> <span className="text-tinta2">{texto}</span>
             </li>
           ))}
@@ -84,14 +84,14 @@ export function Ajuda() {
 
       <Cartao>
         <h2 className="text-lg font-bold">Conformidade declarada</h2>
-        <p className="mt-2 text-sm text-tinta2">
+        <p className="mt-2 max-w-[65ch] text-sm text-tinta2">
           Esta interface implementa 21 critérios da WCAG 2.2 em nível AA e 30 recomendações do
           e-MAG 3.1, o Modelo de Acessibilidade em Governo Eletrônico. Aplica ainda as recomendações
           de acessibilidade cognitiva do grupo COGA, do W3C, e o guia GAIA, voltado a aspectos do
           autismo. A tipografia é a Atkinson Hyperlegible, desenvolvida pelo Braille Institute of
           America para melhorar a legibilidade de pessoas com baixa visão.
         </p>
-        <p className="mt-3 text-sm text-tinta2">
+        <p className="mt-3 max-w-[65ch] text-sm text-tinta2">
           Encontrou uma barreira de acesso? Registre no repositório do projeto. Tratamos relatos de
           acessibilidade com a mesma prioridade de um defeito funcional.
         </p>

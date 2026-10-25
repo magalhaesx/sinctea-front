@@ -320,7 +320,6 @@ export function Consentimento() {
       nome="Acesso da escola"
       papel={semAutoridadeLegal ? 'Quem autoriza é o responsável legal' : 'Quem autoriza é você'}
       caminho={[{ rotulo: 'Início', para: '/app/familia' }, 'Autorizar o acesso da escola']}
-      estreito
     >
       <Titulo sub={semAutoridadeLegal
         ? 'Somente o responsável legal pode autorizar uma escola. Você pode encerrar um acesso já autorizado.'
@@ -338,8 +337,10 @@ export function Consentimento() {
 
       {estado.tipo === 'pronto' && (
         <>
+          {/* Item 11: o formulario e o termo ficam numa coluna de leitura, e as
+              autorizacoes, numa grade. A ordem nao muda: o formulario continua acima. */}
           {estado.filhos.length > 1 && (
-            <Cartao>
+            <Cartao className="max-w-3xl">
               <Campo id="filho" rotulo="Autorização de qual filho">
                 <select
                   id="filho"
@@ -354,7 +355,7 @@ export function Consentimento() {
           )}
 
           {etapa === 'formulario' && !semAutoridadeLegal && (
-          <Cartao>
+          <Cartao className="max-w-3xl">
             <h2 className="text-lg font-bold">Autorizar uma escola</h2>
             <form className="mt-3 flex flex-col gap-4" onSubmit={revisarTermo} noValidate>
               {cadastrandoEscola || estado.escolas.length === 0 ? (
@@ -424,7 +425,7 @@ export function Consentimento() {
                 </ul>
               </div>
 
-              <Campo id="validade" rotulo="Autorizar até" dica="Depois dessa data o acesso se encerra sozinho, sem você precisar fazer nada.">
+              <Campo id="validade" className="max-w-sm" rotulo="Autorizar até" dica="Depois dessa data o acesso se encerra sozinho, sem você precisar fazer nada.">
                 <input
                   id="validade" type="date" className={campo}
                   value={validadeAte} onChange={(e) => setValidadeAte(e.target.value)}
@@ -432,7 +433,7 @@ export function Consentimento() {
                 {erros.validadeAte && <p className="text-sm font-bold text-cr">{erros.validadeAte}</p>}
               </Campo>
 
-              <p className="text-sm text-tinta2">
+              <p className="max-w-[65ch] text-sm text-tinta2">
                 Guardamos a versão do termo que você aceitou e um resumo que prova que ele não
                 mudou.
               </p>
@@ -450,7 +451,7 @@ export function Consentimento() {
               para dado de saude precisa ser especifico e destacado — a pessoa le
               o que esta autorizando antes de autorizar (LGPD, art. 11, I). */}
           {etapa === 'termo' && !semAutoridadeLegal && (
-            <Cartao>
+            <Cartao className="max-w-3xl">
               <h2 className="text-lg font-bold">Leia antes de autorizar</h2>
               <p className="mt-1 text-sm text-tinta2">
                 Este é o termo com os seus dados. Ele fica registrado nesta versão, e você pode
@@ -486,7 +487,7 @@ export function Consentimento() {
             </Cartao>
           )}
 
-          <div ref={regiaoResultado} tabIndex={-1} aria-live="polite">
+          <div ref={regiaoResultado} tabIndex={-1} aria-live="polite" className="max-w-3xl">
             {aviso && (
               <Aviso tom={aviso.tom} titulo={aviso.tom === 'ok' ? 'Pronto' : 'Não foi possível concluir'}>
                 {aviso.texto}
@@ -495,7 +496,7 @@ export function Consentimento() {
           </div>
 
           {convite && (
-            <Cartao>
+            <Cartao className="max-w-3xl">
               <h2 className="text-base font-bold">Convite gerado</h2>
               <p className="mb-3 text-sm text-tinta2">
                 Entregue este convite ao professor. Ele vale para um único cadastro e expira
@@ -522,6 +523,7 @@ export function Consentimento() {
               </Cartao>
             )}
 
+            <div className="grid items-start gap-3 [&>*]:min-w-0 lg:grid-cols-2 2xl:grid-cols-3">
             {estado.consentimentos.map((c) => (
               <Cartao key={c.id}>
                 <div className="flex flex-wrap items-start justify-between gap-2">
@@ -630,6 +632,7 @@ export function Consentimento() {
                 )}
               </Cartao>
             ))}
+            </div>
           </section>
         </>
       )}

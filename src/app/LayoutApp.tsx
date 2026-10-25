@@ -154,8 +154,12 @@ export function LayoutApp() {
           ))}
         </nav>
 
-        <main id="conteudo" tabIndex={-1} className="min-w-0 overflow-x-hidden bg-cromo2 p-3 sm:p-5">
-          <div className="mx-auto min-w-0 max-w-5xl">
+        {/* Item 11: o cartao ocupa a largura ao lado do menu, com 20 px de margem
+            (32 px a partir de xl), e so para de crescer em 1800 px, centralizado.
+            A adaptacao e pela largura da tela, nunca pelo aparelho. Os 20 px
+            valem tambem no celular: o respiro minimo e 16 px (docs/02). */}
+        <main id="conteudo" tabIndex={-1} className="min-w-0 overflow-x-hidden bg-cromo2 p-5 xl:p-8">
+          <div className="mx-auto min-w-0 max-w-[1800px]">
             <AvisoDeRedefinicao />
             <Outlet />
           </div>

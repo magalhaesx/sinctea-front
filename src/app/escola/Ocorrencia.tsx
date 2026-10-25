@@ -200,7 +200,6 @@ export function Ocorrencia() {
         : undefined}
       caminho={['Área da escola', { rotulo: 'Meus alunos', para: '/app/escola' },
         { rotulo: estado.tipo === 'pronto' ? estado.aluno.nome : 'Aluno', para: `/app/escola/${pacienteId}` }, 'Registrar ocorrência']}
-      estreito
     >
       {estado.tipo === 'carregando' && (
         <EstadoCarregando forma="cartoes" quantidade={2} rotulo="Carregando o aluno" />
@@ -230,6 +229,8 @@ export function Ocorrencia() {
 
           {mostrarFormulario && (
             <>
+              {/* Item 11: em tela larga, os tres blocos lado a lado, na ordem dos toques. */}
+              <div className="grid items-start gap-4 [&>*]:min-w-0 xl:grid-cols-3">
               <Grupo id="g-tipo" titulo="1. O que aconteceu" opcoes={TIPOS} valor={tipo}
                 aoEscolher={(v) => { setTipo(v); setErro(null) }} refPrimeiro={primeiro} />
 
@@ -240,20 +241,22 @@ export function Ocorrencia() {
 
               <Grupo id="g-mom" titulo="3. Em que momento" opcoes={MOMENTOS} valor={momento}
                 aoEscolher={(v) => { setMomento(v); setErro(null) }} />
+              </div>
 
               {/* Erro descrito em texto, nomeando o que falta — WCAG 3.3.1 / e-MAG 6.6. */}
               <div aria-live="assertive">
                 {erro && <p className="font-bold text-cr" role="alert">{erro}</p>}
               </div>
 
-              <Botao area="esc" className="w-full" disabled={salvando} onClick={() => void enviar()}>
+              {/* No celular, o botao ocupa a largura do polegar; em tela larga, o do texto. */}
+              <Botao area="esc" className="w-full md:w-auto md:self-start" disabled={salvando} onClick={() => void enviar()}>
                 {salvando
                   ? 'Enviando…'
                   : corrigindo ? 'Salvar a correção' : 'Registrar a ocorrência'}
               </Botao>
 
               {corrigindo && (
-                <Botao area="esc" variante="secundaria" className="w-full" disabled={salvando}
+                <Botao area="esc" variante="secundaria" className="w-full md:w-auto md:self-start" disabled={salvando}
                   onClick={() => { setCorrigindo(false); limparFormulario(); setErro(null) }}>
                   Cancelar a correção
                 </Botao>
@@ -292,7 +295,7 @@ export function Ocorrencia() {
           </div>
 
           {!registrada && (
-            <p className="text-sm text-tinta2">
+            <p className="max-w-[65ch] text-sm text-tinta2">
               Leva cerca de 20 segundos: três toques e enviar. Feito para caber no intervalo entre
               uma atividade e outra.
             </p>
