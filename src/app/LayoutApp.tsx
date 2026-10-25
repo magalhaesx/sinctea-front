@@ -1,17 +1,18 @@
-import { useState } from 'react'
-import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react'
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { BarraPreferencias } from '../componentes/BarraPreferencias'
 import { Botao } from '../ui/Botao'
 import { RodapeAmbiente } from '../componentes/AvisoAmbiente'
 import { usarSessao } from '../contexto/Sessao'
 import type { Perfil } from '../servicos'
 import { SO_CAMINHO_PRINCIPAL } from './caminhoPrincipal'
+import { FOCAVEIS, focoPresoNaGaveta, rotuloDoBotaoDoMenu } from './gaveta'
 import { iniciaisDe } from './iniciais'
 import { papelNaTela } from './perfis'
 import { textoDoAvisoDeRedefinicao } from './textoDaRedefinicao'
 
 /**
- * Moldura do sistema (/app). O menu mostra as telas do perfil ATIVO: as tres
+ * Moldura do sistema (/app). O menu, atras do botao ☰, mostra as telas do perfil ATIVO: as tres
  * areas sao independentes, e nao um sistema unico com itens ocultos por
  * permissao. Esconder item de menu tambem nao e seguranca — quem autoriza
  * cada leitura e o servidor.
@@ -84,62 +85,175 @@ const menu: Grupo[] = [
 export function LayoutApp() {
   const { usuario, perfilAtivo, especialidade, sair } = usarSessao()
   const navegar = useNavigate()
+  const { pathname } = useLocation()
   const grupos = menu
     .filter((g) => perfilAtivo !== null && g.perfis.includes(perfilAtivo))
     .map((g) => ({ ...g, itens: g.itens.filter((i) => !(SO_CAMINHO_PRINCIPAL && i.fora)) }))
+
+  /*
+   * Item 12: o menu fica atras do botao ☰, em qualquer largura, numa gaveta
+   * que abre pela esquerda. A gaveta e um dialogo modal: o foco entra nela,
+   * fica preso nela, e volta ao ☰ quando ela fecha; o resto da pagina fica
+   * inerte enquanto ela esta aberta.
+   */
+  const [aberto, setAberto] = useState(false)
+  const botaoDoMenu = useRef<HTMLButtonElement>(null)
+  const gaveta = useRef<HTMLDivElement>(null)
+  const atras = useRef<HTMLDivElement>(null)
+  const estavaAberto = useRef(false)
+
+  // Trocar de rota fecha a gaveta, venha a troca dela ou de outro lugar.
+  useEffect(() => { setAberto(false) }, [pathname])
+
+  useEffect(() => {
+    if (atras.current) atras.current.inert = aberto
+    if (aberto) {
+      gaveta.current?.querySelector<HTMLElement>('nav a[href]')?.focus()
+      // Sem rolar o conteudo de tras enquanto a gaveta esta por cima.
+      document.body.style.overflow = 'hidden'
+      const aoTeclar = (evento: KeyboardEvent) => { if (evento.key === 'Escape') setAberto(false) }
+      document.addEventListener('keydown', aoTeclar)
+      estavaAberto.current = true
+      return () => {
+        document.removeEventListener('keydown', aoTeclar)
+        document.body.style.overflow = ''
+      }
+    }
+    if (estavaAberto.current) {
+      estavaAberto.current = false
+      botaoDoMenu.current?.focus()
+    }
+    return undefined
+  }, [aberto])
+
+  const prenderFoco = (evento: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (evento.key !== 'Tab' || !gaveta.current) return
+    // So o que esta na tela: o "Sair" da gaveta some a partir de lg.
+    const focaveis = [...gaveta.current.querySelectorAll<HTMLElement>(FOCAVEIS)].filter((el) => el.getClientRects().length > 0)
+    const destino = focoPresoNaGaveta(focaveis.indexOf(document.activeElement as HTMLElement), focaveis.length, evento.shiftKey)
+    if (destino === null) return
+    evento.preventDefault()
+    focaveis[destino].focus()
+  }
 
   const encerrar = async () => {
     await sair()
     navegar('/app/entrar', { replace: true })
   }
 
+  const quem = usuario && perfilAtivo && (
+    <span className="text-[12px] leading-tight text-cromo-tinta">
+      <span className="block font-bold">{usuario.nome}</span>
+      <span className="block text-cromo-tinta2">{papelNaTela(perfilAtivo, especialidade)}</span>
+    </span>
+  )
+  const botaoSair = (
+    <button
+      type="button"
+      onClick={encerrar}
+      className="min-h-11 cursor-pointer rounded-lg border-2 border-cromo-linha px-3 text-[13px] font-bold text-cromo-tinta hover:bg-cromo2"
+    >
+      Sair
+    </button>
+  )
+
   return (
-    <div className="min-h-screen flex flex-col">
-      <a className="pular" href="#conteudo">Pular para o conteúdo</a>
+    <div className="min-h-screen">
+      <div ref={atras} className="flex min-h-screen flex-col">
+        <a className="pular" href="#conteudo">Pular para o conteúdo</a>
 
-      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-cromo-linha px-5 py-3">
-        <div className="flex items-baseline gap-2.5 min-w-0">
-          <b className="text-cromo-tinta text-[17px] font-bold tracking-wide">SINCTEA</b>
-          <span className="text-cromo-tinta2 text-xs">
-            Continuidade terapêutica no <abbr title="Transtorno do Espectro Autista">TEA</abbr>
-          </span>
-        </div>
+        <header className="flex items-center justify-between gap-3 border-b border-cromo-linha px-3 py-2.5 sm:px-5">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <button
+              ref={botaoDoMenu}
+              type="button"
+              aria-label={rotuloDoBotaoDoMenu(aberto)}
+              aria-expanded={aberto}
+              aria-controls="menu-do-app"
+              onClick={() => setAberto((a) => !a)}
+              className="grid h-11 w-11 flex-none cursor-pointer place-items-center rounded-lg border-2 border-cromo-linha text-xl leading-none text-cromo-tinta hover:bg-cromo2"
+            >
+              <span aria-hidden="true">☰</span>
+            </button>
+            <b className="text-[17px] font-bold tracking-wide text-cromo-tinta">SINCTEA</b>
+            <span className="hidden text-xs text-cromo-tinta2 sm:inline">
+              · Continuidade terapêutica no <abbr title="Transtorno do Espectro Autista">TEA</abbr>
+            </span>
+          </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <BarraPreferencias />
-          {usuario && perfilAtivo && (
-            <div className="flex items-center gap-2.5">
-              <span className="text-right text-[12px] leading-tight text-cromo-tinta">
-                <span className="block font-bold">{usuario.nome}</span>
-                <span className="block text-cromo-tinta2">{papelNaTela(perfilAtivo, especialidade)}</span>
-              </span>
-              <button
-                type="button"
-                onClick={encerrar}
-                className="min-h-11 cursor-pointer rounded-lg border-2 border-cromo-linha px-3 text-[13px] font-bold text-cromo-tinta hover:bg-cromo2"
-              >
-                Sair
-              </button>
+          {/* No computador, quem esta na sessao fica no topo; no celular, dentro do menu. */}
+          {quem && (
+            <div className="hidden items-center gap-2.5 text-right lg:flex">
+              {quem}
+              {botaoSair}
             </div>
           )}
-        </div>
-      </header>
+        </header>
 
-      <div className="grid min-h-0 min-w-0 flex-1 lg:grid-cols-[266px_1fr]">
-        <nav aria-label="Telas do seu perfil" className="min-w-0 border-b border-cromo-linha px-3 py-4 lg:border-b-0 lg:border-r">
+        {/* Item 11: o cartao ocupa a largura da tela, com 20 px de margem (32 px
+            a partir de xl), e so para de crescer em 1800 px, centralizado. A
+            adaptacao e pela largura da tela, nunca pelo aparelho. Os 20 px
+            valem tambem no celular: o respiro minimo e 16 px (docs/02). */}
+        <main id="conteudo" tabIndex={-1} className="min-w-0 flex-1 overflow-x-hidden bg-cromo2 p-5 xl:p-8">
+          <div className="mx-auto min-w-0 max-w-[1800px]">
+            <AvisoDeRedefinicao />
+            <Outlet />
+          </div>
+        </main>
+
+        <RodapeAmbiente />
+      </div>
+
+      {/* O fundo escurecido: o toque nele fecha a gaveta. */}
+      <div
+        aria-hidden="true"
+        onClick={() => setAberto(false)}
+        className={`fixed inset-0 z-40 bg-black/55 transition-opacity duration-200 ${aberto ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
+      />
+
+      {/* Fechada, a gaveta fica invisivel: fora da leitura e do teclado. Com
+          "Reduzir animacao", a transicao vale zero, e ela abre sem deslizar. */}
+      <div
+        ref={gaveta}
+        id="menu-do-app"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Menu"
+        onKeyDown={prenderFoco}
+        // Ao abrir, so o deslize tem transicao: a gaveta fica visivel na hora, e
+        // o primeiro item ja recebe o foco. Ao fechar, ela some depois do deslize.
+        className={`fixed inset-y-0 left-0 z-50 flex w-[min(20rem,88vw)] flex-col overflow-y-auto border-r border-cromo-linha bg-cromo shadow-2xl duration-200 ${
+          aberto ? 'visible translate-x-0 transition-transform' : 'invisible -translate-x-full transition-[transform,visibility]'
+        }`}
+      >
+        <div className="flex items-center justify-between gap-2 border-b border-cromo-linha px-3 py-2.5">
+          <b className="px-2 text-[17px] font-bold tracking-wide text-cromo-tinta">SINCTEA</b>
+          <button
+            type="button"
+            aria-label="Fechar o menu"
+            onClick={() => setAberto(false)}
+            className="grid h-11 w-11 cursor-pointer place-items-center rounded-lg border-2 border-cromo-linha text-lg leading-none text-cromo-tinta hover:bg-cromo2"
+          >
+            <span aria-hidden="true">✕</span>
+          </button>
+        </div>
+
+        <nav aria-label="Telas do seu perfil" className="px-3 py-4">
           {grupos.map((g) => (
             <div key={g.titulo} className="mb-4 last:mb-0">
               <h2 className="mb-2 px-2 text-[10.5px] font-bold uppercase tracking-widest text-cromo-tinta2">
                 {g.titulo}
               </h2>
-              <ul className="flex gap-1.5 overflow-x-auto lg:flex-col lg:overflow-visible">
+              <ul className="flex flex-col gap-1.5">
                 {g.itens.map((i) => (
-                  <li key={i.para} className="flex-none lg:flex-auto">
+                  <li key={i.para}>
+                    {/* O NavLink marca a tela atual com aria-current="page". */}
                     <NavLink
                       to={i.para}
                       end={i.fim}
+                      onClick={() => setAberto(false)}
                       className={({ isActive }) =>
-                        `flex min-h-10 items-center gap-2.5 whitespace-nowrap rounded-lg px-2.5 py-2 text-[13px] text-cromo-tinta lg:w-full ${
+                        `flex min-h-11 w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-[14px] text-cromo-tinta ${
                           isActive ? 'bg-cromo2 font-bold' : 'hover:bg-cromo2'
                         }`
                       }
@@ -155,19 +269,17 @@ export function LayoutApp() {
           ))}
         </nav>
 
-        {/* Item 11: o cartao ocupa a largura ao lado do menu, com 20 px de margem
-            (32 px a partir de xl), e so para de crescer em 1800 px, centralizado.
-            A adaptacao e pela largura da tela, nunca pelo aparelho. Os 20 px
-            valem tambem no celular: o respiro minimo e 16 px (docs/02). */}
-        <main id="conteudo" tabIndex={-1} className="min-w-0 overflow-x-hidden bg-cromo2 p-5 xl:p-8">
-          <div className="mx-auto min-w-0 max-w-[1800px]">
-            <AvisoDeRedefinicao />
-            <Outlet />
-          </div>
-        </main>
-      </div>
+        <div className="border-t border-cromo-linha px-5 py-4">
+          <BarraPreferencias />
+        </div>
 
-      <RodapeAmbiente />
+        {quem && (
+          <div className="mt-auto flex items-center justify-between gap-3 border-t border-cromo-linha px-5 py-4 lg:hidden">
+            {quem}
+            {botaoSair}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

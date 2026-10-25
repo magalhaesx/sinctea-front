@@ -205,7 +205,7 @@ Atualizado em 18/10/2026, lendo o código — não a memória.
   simulada que aplica controle de acesso e auditoria; o cliente da API, que
   não aplica regra nenhuma. A versão publicada usa só a API, e o mock fica
   fora do pacote; no desenvolvimento, `VITE_API_URL` escolhe entre as duas
-- **445 testes em 36 arquivos, nos três pacotes**, rodados por um único
+- **449 testes em 37 arquivos, nos três pacotes**, rodados por um único
   `npm test` na raiz, sem passo manual. O principal ainda é
   `src/servicos/mock/regrasInviolaveis.test.ts`, que verifica as regras
   invioláveis na camada de dados, e não na tela. Os 212 do servidor rodam contra
@@ -410,6 +410,13 @@ em produção (o antigo passo B5) foi cancelada. No código, hoje:
   ganharam colunas na mesma ordem; só a entrada, o convite e o definir senha
   continuam estreitos. Conferido em 360, 768, 1366, 1920 e 2560 px, sem rolagem
   horizontal
+- **Item 12 — o menu atrás do botão ☰**, em qualquer largura. A barra do topo
+  tem o ☰ e o nome do sistema; a partir de lg, também quem está na sessão e o
+  "Sair". O menu abre como gaveta pela esquerda, um diálogo modal
+  (`src/app/LayoutApp.tsx`): o foco entra no primeiro item e fica preso na
+  gaveta (`src/app/gaveta.ts`); Esc, o ✕, o toque no fundo e a troca de rota
+  fecham, e o foco volta ao ☰; o resto da página fica inerte. As preferências
+  passaram para dentro do menu. O conteúdo ocupa a largura toda, até 1800 px
 - `npm run criar-administrador -w @sinctea/servidor -- .env.producao --nome
   "Nome Completo" --email voce@exemplo.com` cria o primeiro administrador:
   nome e e-mail vêm da linha de comando, e só a senha é pedida, escondida e duas

@@ -67,7 +67,7 @@ body {
 @media print {
   body { background: #fff; }
 
-  /* Cromo do produto: cabecalho, menu lateral, trilha de navegacao e os
+  /* Cromo do produto: barra do topo, gaveta do menu, trilha de navegacao e os
      controles da tela. Nada disso pertence ao documento. */
   header, nav, .nao-imprimir { display: none !important; }
 

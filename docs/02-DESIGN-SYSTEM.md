@@ -84,7 +84,7 @@ também como mancha, onde o piso é 3:1.
 
 ### Cromo
 
-A moldura escura do sistema — cabeçalho e menu lateral.
+A moldura escura do sistema — a barra do topo e a gaveta do menu.
 
 ```
 cromo #16272B · cromo2 #1E3338 · linha #2C464C · tinta #E8F1F2 · tinta2 #9DB6BA
@@ -158,7 +158,9 @@ Revisão de 25/10/2026, item 11.
 - **A adaptação é pela largura da tela, nunca pelo tipo de aparelho.** Usa os
   breakpoints do Tailwind. Tablet, celular deitado e janela pela metade se
   comportam do mesmo jeito.
-  - Abaixo de `lg` (1024px), o menu vira uma faixa no topo.
+  - Em qualquer largura, o menu fica atrás do botão ☰ e abre como uma gaveta
+    pela esquerda, por cima do conteúdo (item 12). A partir de `lg` (1024px),
+    o nome, o papel e o “Sair” ficam na barra do topo; abaixo, dentro do menu.
   - As colunas dependem de cada bloco. Formulários e algumas listas já usam duas
     colunas a partir de `sm` (640px) ou `md` (768px).
   - Abaixo de 640px, no celular, os blocos ficam um embaixo do outro.

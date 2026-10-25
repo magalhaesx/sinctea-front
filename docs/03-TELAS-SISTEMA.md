@@ -43,18 +43,33 @@ Nenhuma tela diz "terapeuta". Quem atende aparece pela especialidade:
 
 Vale para todas as telas de `/app`.
 
-**Topo:**
+**Topo** (item 12):
 
-- "SINCTEA · Continuidade terapêutica no TEA";
-- a barra de preferências;
-- o nome de quem está na sessão, e embaixo dele o papel;
-- o botão "Sair".
+- à esquerda, o botão ☰ e "SINCTEA · Continuidade terapêutica no TEA"; abaixo
+  de 640px, só "SINCTEA";
+- a partir de 1024px, à direita, o nome de quem está na sessão, com o papel
+  embaixo, e o botão "Sair". Abaixo disso, os dois ficam dentro do menu.
 
 O papel é a especialidade, para o profissional da clínica que a cadastrou. Para
 os demais, é o nome do perfil.
 
-**Menu.** Mostra só as telas do perfil **ativo**. Esconder item de menu não é
-segurança: quem autoriza é o servidor.
+**Menu.** Fica atrás do botão ☰, em qualquer largura (item 12). Mostra só as
+telas do perfil **ativo**. Esconder item de menu não é segurança: quem autoriza
+é o servidor.
+
+- o ☰ tem 44px e diz "Abrir o menu" ou "Fechar o menu", conforme o estado;
+- abre como uma gaveta pela esquerda, por cima do conteúdo, com o fundo
+  escurecido;
+- dentro dela, os grupos do perfil ativo, com a tela atual marcada, e
+  "Preferências": Texto maior, Alto contraste, Reduzir animação. Abaixo de
+  1024px, também o nome, o papel e o "Sair". Os códigos UC só aparecem a partir
+  de 1024px;
+- é um diálogo modal: o foco vai para o primeiro item e fica preso na gaveta;
+  Esc, o ✕ e o toque no fundo fecham, e o foco volta ao ☰; escolher uma tela
+  fecha; o conteúdo atrás fica inerte; com "Reduzir animação", abre sem
+  deslizar;
+- o "Pular para o conteúdo" continua o primeiro item do teclado. Entrar,
+  aceitar convite e definir senha não têm menu.
 
 | Perfil ativo | Itens |
 |---|---|

@@ -30,7 +30,7 @@ export function Ajuda() {
       <Cartao>
         <h2 className="text-lg font-bold">Ajuste a interface agora</h2>
         <p className="mt-1 mb-4 max-w-[65ch] text-sm text-tinta2">
-          As três preferências abaixo valem para todas as telas e também estão no topo da página.
+          As três preferências abaixo valem para todas as telas e também estão no menu, no botão ☰.
         </p>
         <div className="rounded-lg bg-cromo p-3">
           <BarraPreferencias />
