@@ -258,8 +258,12 @@ apresentação; no servidor, é fronteira de confiança.
 - ninguém conhece a senha de outra pessoa: quem cadastra entrega um link de uso
   único (72 h), e a própria pessoa define a senha;
 - limite de tentativas de entrada por e-mail e por IP;
-- se outra janela do mesmo navegador trocar de conta, a tela avisa em vez de
-  falhar em silêncio.
+- **uma conta por aba** (item 9, 24/10): até cinco contas no mesmo navegador,
+  cada uma no seu cookie `httpOnly`; a aba guarda só o número da vaga e o manda
+  no cabeçalho `X-Sinctea-Aba`. O token nunca vai para o `sessionStorage` nem
+  para o `localStorage` (`docs/07`, D5);
+- a aba duplicada leva a mesma conta: se uma das duas sair ou trocar de perfil,
+  a outra avisa em vez de falhar em silêncio.
 
 `<ExigePerfil>` continua nas rotas, mas **é navegação, não segurança**. Deixe
 isso escrito em comentário no código: a verificação que vale é o *guard* do

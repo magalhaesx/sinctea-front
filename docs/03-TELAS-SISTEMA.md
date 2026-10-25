@@ -1,370 +1,871 @@
-# 03 · Especificação das telas do sistema
+# 03 · Telas do sistema
 
-21 telas. Cada uma implementa casos de uso já especificados na modelagem UML.
+Revisão de 25/10/2026. A especificação de setembro dizia o que construir; esta
+diz o que existe, conferido no código até o item 9 (`bd2f026`). Os textos entre
+aspas são os que a pessoa lê na tela.
 
-Legenda de situação: **✓ existe** (já construída) · **↻ refazer** (existe mas muda)
-· **✗ nova**.
+**Situação de cada tela:**
+
+- **no ar**: está na versão publicada, sinctea.onrender.com.
+- **só no desenvolvimento**: fica fora do caminho principal (`docs/07`, seção
+  0). A rota nem existe na versão publicada, até o serviço dela chegar ao
+  servidor. Nunca aparece com dado simulado (`src/app/caminhoPrincipal.ts`).
+
+A numeração de setembro continua. Duas telas nasceram depois: a 23, para
+definir a senha, e a 24, para cadastrar o paciente.
 
 ---
 
 ## Perfis e o que cada um alcança
 
-| Perfil | Telas |
-|---|---|
-| Terapeuta | 3 a 10, 20, 21 |
-| Coordenador Clínico | 3 a 13, 20, 21 |
-| Administrador | 14, 20, 21 |
-| Responsável | 15 a 17, 20, 21 |
-| Professor / AEE | 2, 18, 19, 20, 21 |
+O código diz `TERAPEUTA`; a tela diz **"Profissional da clínica"** (item 7).
+Nenhuma tela diz "terapeuta". Quem atende aparece pela especialidade:
+"Ana Souza · Psicologia".
 
-Um usuário pode ter mais de um perfil. A troca acontece em `/app/conta`.
+| Perfil, como aparece | No ar | Só no desenvolvimento |
+|---|---|---|
+| Profissional da clínica | 3, 4, 24, 5, 6, 7 | 8, 9, 10 |
+| Coordenador clínico | as da clínica, e 12 | 11, 13 |
+| Administrador | 14 | — |
+| Responsável | 15, 17 | 16 |
+| Professor / AEE | 22, 18, 19 | — |
+| Todos | 20, 21 | — |
+| Sem conta | 1, 2, 23 | — |
+
+- Uma conta pode ter mais de um perfil. A troca é na tela 21.
+- **Cada aba do navegador tem a sua conta** (item 9; `docs/07`, D5). Uma aba
+  de administrador, uma de profissional e uma de responsável funcionam ao mesmo
+  tempo, até cinco contas por navegador.
+
+---
+
+# Moldura
+
+Vale para todas as telas de `/app`.
+
+**Topo:**
+
+- "SINCTEA · Continuidade terapêutica no TEA";
+- a barra de preferências;
+- o nome de quem está na sessão, e embaixo dele o papel;
+- o botão "Sair".
+
+O papel é a especialidade, para o profissional da clínica que a cadastrou. Para
+os demais, é o nome do perfil.
+
+**Menu.** Mostra só as telas do perfil **ativo**. Esconder item de menu não é
+segurança: quem autoriza é o servidor.
+
+| Perfil ativo | Itens |
+|---|---|
+| Profissional da clínica | Painel do profissional · Pacientes |
+| Coordenador clínico | Painel do profissional · Pacientes · Validar planos |
+| Administrador | Usuários e perfis |
+| Responsável | Painel da família · Autorizar a escola |
+| Professor / AEE | Meus alunos |
+| Todos | Perfil e preferências · Acessibilidade e ajuda |
+
+**Trilha.** Toda tela do app tem um caminho de volta visível:
+
+- formato: "Você está em: Área clínica › Pacientes › Ana › Plano Terapêutico
+  Individual";
+- os itens com destino são links;
+- o último item é a própria tela, em negrito, com `aria-current="page"`;
+- enquanto o nome do paciente carrega, a trilha diz "Paciente".
+
+**Rodapé:** *"Ambiente acadêmico do TCC SINCTEA. Não cadastre dados de
+pacientes reais."* Tirar o aviso é decisão do Lucas com a orientadora
+(`docs/01`, seção 8).
+
+**Aviso de senha redefinida** (item 8). Aparece acima de qualquer tela depois
+que a pessoa usa um link de nova senha:
+
+- texto: *"Sua senha foi redefinida pela clínica em {data} às {hora}, a pedido
+  de {nome}. Se não foi você quem pediu, procure a clínica."*;
+- a hora é a de Manaus;
+- o aviso volta, em qualquer aba e em qualquer acesso, até a pessoa clicar em
+  "Entendi". A ciência fica no servidor (`acesso_inicial.avisadoEm`).
+
+**Aviso de janela** (item 7). Com uma conta por aba, só sobra um caso: a aba
+duplicada, que leva a mesma conta. Se uma das duas sair ou trocar de perfil, a
+outra mostra uma faixa no alto, que recebe o foco:
+
+- *"Esta janela agora está com o perfil {perfil}. Recarregue a página para
+  continuar."*;
+- *"A conta desta janela saiu em outra janela. Recarregue a página para entrar
+  de novo."*
 
 ---
 
 # Acesso
 
-## 1 · Entrar ✗
-`/app/entrar` · Todos os perfis
+## 1 · Entrar · no ar
+`/app/entrar` · sem conta · transversal ("Autenticar-se", `Usuario.autenticar()`)
 
-Autenticação. No diagrama de casos de uso, "Autenticar-se" foi tratado como
-requisito transversal e está representado pela operação `Usuario.autenticar()`.
+**Conteúdo, nesta ordem:**
 
-**Conteúdo:** identidade do produto · campos e-mail e senha · "Entrar" · link
-"Esqueci minha senha" · link de volta para o site.
+1. "Entrar no SINCTEA", com o subtítulo "A informação acompanha a pessoa, não
+   a instituição".
+2. O aviso do ambiente, em destaque. Por isso esta tela não tem rodapé.
+3. **"Contas abertas neste navegador"** (item 9). Só aparece se houver alguma.
+   - Cada linha: nome, perfil ativo e o botão "Continuar como {nome}".
+   - Embaixo: "Ou entre com outra conta abaixo. Cada aba fica com a sua."
+4. E-mail, senha e o botão "Entrar".
+5. **"Esqueci minha senha"**. Não leva a outra tela: abre um texto que diz a
+   quem pedir.
+   - Equipe da clínica: à administração, que gera um link novo (tela 14).
+   - Responsável: à coordenação, que gera um link para nova senha (tela 5).
+   - Escola: *"a redefinição ainda não existe"*.
+   - Não há envio de e-mail.
+6. "Conhecer o SINCTEA", que leva a `/sobre`.
 
-**Bloco de demonstração**, separado por uma linha e um rótulo claro: quatro botões
-que entram direto como Terapeuta, Coordenador, Responsável ou Professor. É o que
-permite mostrar o sistema em aula sem cadastro.
+O bloco "Entrar para demonstração" só existe no desenvolvimento, com a
+implementação simulada. Ele nem entra no pacote publicado (`docs/07`, D6).
 
-**Regras:** erro de credencial nunca revela se o e-mail existe — mensagem única
-"E-mail ou senha incorretos". Sem CAPTCHA (e-MAG 6.8; WCAG 3.3.8). Sem limite de
-tempo de sessão que expire sem aviso.
+**Mensagens.** Ficam numa região `role="alert"`, e o foco volta ao e-mail.
 
-**Aceitação:** operável só por teclado · erro anunciado em região dinâmica · os
-quatro botões de demonstração levam a painéis diferentes.
+| Situação | Mensagem |
+|---|---|
+| Credencial errada, ou conta desativada | "E-mail ou senha incorretos." Nunca revela se o e-mail existe. |
+| Cinco contas já abertas | "Já há 5 contas abertas neste navegador. Saia de uma delas para entrar com outra." |
+| A conta da lista fechou | "A conta de {nome} não está mais aberta. Entre com o e-mail e a senha." |
+| Limite de tentativas | A mensagem do servidor. O limite é 5 por e-mail ou 20 por IP em 15 minutos. |
 
-## 2 · Aceitar convite ✗
-`/app/convite/:token` · Professor / AEE
+**Regras:**
 
-O professor chega por um link de uso único entregue pela família. Este é o único
-caminho de entrada da escola — **não existe autocadastro de professor**.
+- sem CAPTCHA (e-MAG 6.8; WCAG 3.3.8);
+- a sessão dura 24 horas desde o último uso, e por isso não expira sem aviso
+  (WCAG 2.2.1);
+- depois de entrar, a pessoa volta à tela que tentou abrir.
 
-**Conteúdo:** quem convidou e para qual aluno · o que ele poderá ver, e o que não
-poderá · validade do acesso · campos nome, e-mail e senha · "Criar minha conta".
+**Aceitação:** operável só por teclado · erro anunciado em região dinâmica · a
+lista de contas abertas nunca mostra e-mail nem token.
 
-**Estados:** token válido · token já usado · token expirado (72 h) · consentimento
-revogado antes do aceite. Cada um com texto próprio, explicando o que fazer.
+## 2 · Aceitar convite · no ar
+`/app/convite/:token` · Professor / AEE, ainda sem conta
 
-**Aceitação:** a lista do que ele **não** verá aparece antes do formulário, não
-depois.
+O professor chega pelo link que a família entrega (tela 17). É o único caminho
+de entrada da escola: **não existe autocadastro de professor.**
+
+**Conteúdo, nesta ordem:**
+
+1. "Aceitar o convite da família", com o subtítulo "{responsável} convidou
+   você a acompanhar {aluno} na {escola}". A escola não é perguntada: quem a
+   nomeou foi a família.
+2. "O que você poderá ver": os escopos, e "O acesso vale até {data} e a
+   família pode encerrá-lo quando quiser."
+3. **"O que você nunca verá", antes do formulário:**
+   - o plano terapêutico e os gráficos de evolução;
+   - diagnóstico, laudos e relatórios clínicos;
+   - o histórico de sessões da clínica.
+4. O formulário.
+   - *"Se você já tem conta no SINCTEA, use o mesmo e-mail e senha. O aluno
+     novo entra na sua lista."*
+   - Campos: nome, e-mail e senha.
+   - Também pede turma, turno e "Como você atua com este aluno".
+   - Botão "Aceitar o convite". Ao terminar, vai para a tela 22, já com a
+     sessão aberta numa vaga da aba.
+
+**Estados, cada um com texto próprio e o link "Ir para a entrada do sistema":**
+
+- já usado: *"Cada convite vale para um único cadastro."*;
+- expirado: *"O convite vale por 72 horas. Peça à família que gere outro: a
+  autorização dela continua valendo, só o convite venceu."*;
+- autorização encerrada antes do aceite: *"Quem decide é a família."*
+
+**Aceitação:** a lista do que ele não verá aparece antes do formulário ·
+errar a senha de uma conta que já existe conta no limite de tentativas.
+
+## 23 · Definir minha senha · no ar
+`/app/primeiro-acesso/:token` · quem recebeu o link, ainda sem senha
+
+Ninguém conhece a senha de outra pessoa (`docs/07`, seção 0). Quem cadastra
+entrega um link de uso único, e a própria pessoa escolhe a senha. O mesmo link
+serve à nova senha do responsável, que só a coordenação gera (item 8).
+
+| | Primeiro acesso | Nova senha |
+|---|---|---|
+| Título | "Definir minha senha" | "Escolher uma nova senha" |
+| Subtítulo | "A conta de {nome} ({e-mail}) está pronta. Falta só a sua senha." | "…Ao salvar, a senha anterior deixa de valer e as sessões abertas se encerram." |
+| Botão | "Definir senha e entrar" | "Salvar a nova senha e entrar" |
+
+**Campos:** "Crie uma senha", com ao menos 8 caracteres, e "Repita a senha". Se
+as duas não forem iguais: "As duas senhas não conferem."
+
+**Estados:**
+
+- já usado;
+- vencido (72 horas): *"Peça um novo a quem cadastrou você: a conta continua
+  lá, só o link venceu."*;
+- inexistente: *"Se um link mais novo foi enviado, só ele vale."*;
+- conta desativada.
+
+**Depois de salvar:**
+
+- o link é gasto;
+- as outras sessões da conta se encerram;
+- abre-se a sessão nesta aba e a pessoa vai para o seu painel;
+- se o link era de nova senha, aparece o aviso da moldura.
+
+**Regras:**
+
+- 72 horas, uso único;
+- o banco guarda só o resumo SHA-256 do código;
+- um link novo invalida os anteriores ainda não usados da mesma conta.
 
 ---
 
-# Área clínica — Terapeuta
+# Área clínica
 
-## 3 · Painel do terapeuta ✓ ↻
-`/app/clinica` · UC10, UC04, UC06
+## 3 · Painel do profissional · no ar
+`/app/clinica` · Profissional da clínica, Coordenador clínico · UC10, UC06
 
-Já existe. Muda: agenda vem de serviço paginado, e o aviso da escola vira lista
-(pode haver mais de um).
+**No ar:**
 
-**Conteúdo:** saudação com data · avisos de ocorrência escolar · agenda do dia com
-estado por atendimento · registros aguardando sincronização · atalhos.
+- o título é a data por extenso;
+- o subtítulo conta os avisos novos da escola;
+- **"Avisos da escola"**: até cinco, dos últimos sete dias.
+  - Cada aviso traz paciente, hora, escola e "Relato: {tipo} · intensidade N de
+    5. A leitura clínica é sua."
+  - Botões: "Registrar a leitura clínica" e "Abrir a ficha de {nome}".
+- o botão "Ver meus pacientes".
 
-Os avisos da escola são só os eventos ainda preliminares: é a fila do que espera a
-leitura clínica do profissional. Registrada a leitura, o aviso sai da lista — o
-histórico fica na ficha.
+**Regras:**
 
-**Aceitação:** zero atendimentos hoje mostra estado vazio com texto próprio, não
-uma lista em branco.
+- os avisos são só os eventos ainda preliminares: é a fila do que espera a
+  leitura clínica;
+- registrada a leitura, o aviso sai da lista, e o histórico fica na ficha.
 
-## 4 · Lista de pacientes ✗
-`/app/clinica/pacientes` · UC01
+**Só no desenvolvimento:** a agenda do dia, com a situação de cada atendimento,
+e a contagem de registros aguardando sincronização.
 
-**A tela que falta para o sistema parecer um sistema.** Hoje existe um paciente
-fixo no código.
+**Aceitação:** sem aviso, *"Nenhum aviso novo da escola nos últimos sete
+dias."*, e não uma lista em branco.
 
-**Conteúdo:** busca por nome · filtros por profissional responsável, nível de
-suporte e situação do plano · tabela com nome, idade, nível de suporte,
-profissional, situação do plano e data da última sessão · paginação · botão
-"Cadastrar paciente".
+## 4 · Lista de pacientes · no ar
+`/app/clinica/pacientes` · Profissional da clínica, Coordenador clínico · UC01
 
-**Regras:** o terapeuta vê apenas os pacientes que acompanha. O coordenador vê
-todos da clínica. Essa diferença é visível no rótulo acima da tabela.
+**Conteúdo:**
 
-**Aceitação:** busca sem resultado mostra estado vazio que oferece limpar o filtro
-· a tabela tem `caption` e `th scope` · rola horizontalmente em recipiente próprio,
-sem empurrar a página.
+- busca por nome;
+- filtros: profissional responsável ("Nome · Especialidade"), nível de suporte e
+  situação do plano, incluindo "Sem plano";
+- os filtros ficam no endereço;
+- tabela com paciente, idade, nível de suporte por extenso, profissional
+  responsável, situação do plano e última sessão;
+- 10 por página;
+- o botão "Cadastrar paciente".
 
-## 5 · Ficha do paciente ✗
-`/app/clinica/pacientes/:id` · UC01
+**Regras:**
 
-**Conteúdo:** identificação e nível de suporte · rede de apoio (responsáveis com
-parentesco e quem é o responsável legal) · equipe multiprofissional com
-especialidade · vínculo escolar, se houver, com situação do consentimento ·
-eventos comportamentais recentes dos últimos 30 dias, de todas as origens, com a
-situação da leitura clínica · histórico resumido · ações para plano, sessão e
-evolução.
+- o profissional vê só os pacientes de cuja equipe faz parte, e o coordenador
+  vê todos;
+- o rótulo acima da tabela mostra essa diferença: "Você acompanha N pacientes"
+  ou "N pacientes na clínica".
 
-**Regras:** nível de suporte 1, 2 ou 3 conforme DSM-5-TR, sempre com a descrição
-por extenso ao lado do número. Ninguém deve precisar decorar o que significa "2".
+**Estados vazios:**
 
-## 6 · Plano Terapêutico Individual ✓ ↻
-`/app/clinica/pacientes/:id/plano` · UC02, UC03
+- com filtro: *"Nenhum paciente encontrado"*, com "Limpar os filtros";
+- sem nenhum paciente: *"Nenhum paciente cadastrado ainda"*, com "Cadastrar
+  paciente". É a primeira tela de uma clínica que acabou de nascer.
 
-Já existe. Muda: vira editável e ganha o formulário de objetivo.
+**Aceitação:** a tabela tem `caption` e `th scope`, e rola em recipiente
+próprio, sem empurrar a página.
 
-**Conteúdo:** datas de início e revisão · situação do plano · objetivos agrupados
-por domínio, cada um com as duas redações, percentual e critério · alternância
-entre redação técnica e acessível · "Adicionar objetivo".
+## 24 · Cadastrar paciente · no ar
+`/app/clinica/pacientes/novo` · Profissional da clínica, Coordenador clínico · UC01
 
-**Formulário de objetivo:** domínio · descrição técnica · **descrição acessível** ·
-critério (percentual mínimo e sessões consecutivas).
+**Campos:**
 
-**Regra inviolável:** a descrição acessível é campo obrigatório, escrito pelo
-terapeuta. **Não ofereça botão de gerar automaticamente a partir da técnica.** Quem
-responde pelo conteúdo é o profissional.
+- nome completo;
+- data de nascimento;
+- nível de suporte, "Conforme o DSM-5-TR, registrado no laudo";
+- profissional responsável pelo caso. Se quem cadastra é profissional da
+  clínica, o campo já vem com ele, e pode ser trocado.
 
-**Aceitação:** tentar salvar sem a descrição acessível produz erro que explica por
-que o campo existe, não apenas "campo obrigatório".
+Os erros vêm do servidor, em cada campo. Depois de salvar, a pessoa vai para a
+ficha do novo paciente. A equipe nasce com o responsável pelo caso e com quem
+cadastrou. O plano vem depois, na tela 6.
 
-## 7 · Registro de sessão ✓ ↻
-`/app/clinica/pacientes/:id/sessao` · UC04, UC05, UC06
+## 5 · Ficha do paciente · no ar
+`/app/clinica/pacientes/:id` · Profissional da clínica, Coordenador clínico · UC01
 
-Já existe, com desfazer. Muda: seleção do objetivo e registro ABC de verdade.
+**Blocos, nesta ordem:**
 
-**Conteúdo:** objetivo em trabalho, trocável · quatro botões de resposta ·
-contadores · desfazer o último registro · registro de ocorrência comportamental
-com antecedente, comportamento, consequência, intensidade · encerrar ou pausar.
+1. **Identificação:**
+   - idade e data de nascimento;
+   - nível de suporte sempre por extenso, por exemplo "Nível 2 — exige apoio
+     substancial". Ninguém precisa decorar o que significa "2";
+   - situação do plano.
+2. **Rede de apoio**: os responsáveis, com parentesco, telefone e e-mail, e a
+   etiqueta "Responsável legal" ou "Não responde legalmente". Detalhes abaixo.
+3. **Equipe multiprofissional:** o nome, com a especialidade embaixo, e a
+   etiqueta "Responsável pelo caso".
+4. **Vínculo escolar:** a escola, com turma, turno e professor. Situação:
+   "Acesso vigente", "Acesso encerrado pela família", "Prazo do acesso
+   terminado" ou "Acesso ainda não começou".
+5. **Eventos comportamentais dos últimos 30 dias, de todas as origens**
+   (clínica, casa, escola):
+   - cada um com intensidade;
+   - "Aguardando leitura clínica", com o botão "Registrar a leitura clínica", ou
+     "Leitura clínica em {data}";
+   - 5 por página.
+6. **Histórico resumido:** sessões encerradas e a data da última.
+7. **Histórico de sessões:** a evolução de cada sessão encerrada, da mais
+   recente para a mais antiga, com quem conduziu ("Nome · Especialidade") e o
+   número de registros. 5 por página.
+8. **Ações:** "Abrir o plano terapêutico" e "Iniciar sessão". Evolução,
+   atividades e relatório só aparecem no desenvolvimento.
 
-**Regras:** o estado de conexão fica sempre visível. Nada se perde sem conexão. A
-sessão precisa do profissional que a conduziu — associação `Sessao 0..* — 1
-Profissional`.
+**Rede de apoio:**
 
-**Aceitação:** desfazer devolve o contador ao valor anterior · trocar de objetivo
-não perde os registros do anterior.
+- **Cadastrar responsável:**
+  - campos: nome, e-mail, telefone e parentesco;
+  - pergunta: *"É o responsável legal por {nome}?"*. **Nada vem marcado: a
+    autoridade legal nunca se presume.**
+  - Conta nova: aparece o link de primeiro acesso, para entregar à pessoa.
+  - Conta que já existia: *"nenhum link foi gerado"*.
+- **Enquanto a pessoa não definiu a senha:**
+  - aparece a etiqueta "Ainda não definiu a senha";
+  - o botão "Gerar novo link" serve a qualquer pessoa da equipe;
+  - o link anterior deixa de valer.
+- **Depois que a pessoa definiu a senha:**
+  - Coordenação: aparece **"Gerar link para nova senha"**, com motivo
+    obrigatório, de até 500 caracteres, que vai para a trilha com o nome de quem
+    gerou. É separação de funções: a senha de quem autoriza a escola (regra 1)
+    não passa pela mão de quem atende.
+  - Quem não é da coordenação vê a etiqueta "✓ Já definiu a senha" e a frase
+    *"Se a pessoa esquecer a senha, quem gera o link para nova senha é a
+    coordenação."*
+- **O link** aparece uma vez, com "Copiar link":
+  - vale 72 horas e uma única vez;
+  - *"Ele não aparece de novo: se perder, gere outro."*
+- **Editar dados:**
+  - nome, telefone e parentesco mudam sempre. São da pessoa, e valem em todas
+    as fichas;
+  - o e-mail só muda enquanto a senha não foi definida. Depois, *"É o login da
+    pessoa, que já definiu a senha: a clínica não o troca."*;
+  - **ser ou não o responsável legal não se altera depois do cadastro.**
 
-## 8 · Evolução por objetivo ✓ ↻
+**Sem alcance:** *"Esta ficha não é do seu alcance"*, sem botão de tentar de
+novo. A negativa entra na trilha (regra 6).
+
+## 6 · Plano Terapêutico Individual · no ar
+`/app/clinica/pacientes/:id/plano` · Profissional da clínica, Coordenador clínico · UC02, UC03
+
+**Sem plano:**
+
+- *"O plano nasce em rascunho; os objetivos entram nele, e depois ele segue
+  para a coordenação validar."*;
+- campos "Início do plano" e "Revisão prevista", que sugere seis meses depois;
+- o botão "Criar plano".
+
+**Com plano, nesta ordem:**
+
+1. **Cabeçalho:** início, próxima revisão, número de objetivos e a situação:
+   "Rascunho", "Aguardando validação", "Devolvido pela coordenação" ou
+   "Vigente".
+   - "Editar as datas".
+   - A alternância "Ver redação acessível" / "Ver redação técnica", que vale
+     para a tela inteira.
+2. **Plano devolvido:** *"A coordenação devolveu este plano"*, com a
+   observação, antes dos objetivos.
+3. **Objetivos agrupados por domínio:**
+   - a situação: Não iniciado, Em aquisição ou Dominado;
+   - o texto na redação escolhida;
+   - o medidor de percentual;
+   - "Critério: X% em N sessões consecutivas";
+   - "Editar o objetivo", que muda as duas redações e o critério. O domínio não
+     muda.
+4. **Cartão de estratégias para a escola**, em cada objetivo:
+   - campos: título "em linguagem simples", "O que ajuda" (uma ação por linha),
+     "O que evitar" e "Sinal de alerta";
+   - um objetivo pode ter vários cartões;
+   - nada é preenchido a partir do objetivo;
+   - sem cartão: *"Nenhum cartão ainda: a escola não lê nada sobre este
+     objetivo."*
+5. **"Adicionar objetivo":**
+   - campos: domínio, descrição técnica, **descrição acessível** e critério
+     (percentual mínimo, 80 por padrão, e sessões consecutivas, 3 por padrão);
+6. **"Enviar para validação"**:
+   - *"Se devolver, a observação aparece no topo desta tela."*
+
+**Regras:**
+
+- **Regra 4, inviolável:** a descrição acessível é obrigatória e escrita pelo
+  profissional. **Não existe botão de gerar, copiar ou sugerir a partir da
+  técnica.** O erro explica por que o campo existe: *"A descrição acessível é o
+  que a família e a escola vão ler. Ela não é gerada a partir da técnica — quem
+  escreve é você."*
+- **Datas e objetivos só se editam com o plano em rascunho ou devolvido.**
+  Vigente ou em validação, *"ele fica como está"*. Cada edição guarda a versão
+  anterior na trilha.
+- **O cartão é o único conteúdo do plano que chega à escola**, e sem nada
+  clínico (regra 3).
+
+## 7 · Registro de sessão · no ar
+`/app/clinica/pacientes/:id/sessao` · Profissional da clínica, Coordenador clínico · UC04, UC05, UC06
+
+**Conteúdo:**
+
+- o número da sessão, a situação e o local;
+- **o estado da conexão, sempre visível**: *"Conectado · cada toque é gravado
+  no servidor"* ou *"Sem conexão · o toque não é gravado até a conexão
+  voltar"*;
+- "Iniciar a sessão" ou "Retomar a sessão". A sessão em andamento ou pausada é
+  retomada ao abrir a tela;
+- **"Objetivo em trabalho"**, que pode ser trocado: *"Trocar de objetivo não
+  perde os registros do anterior."*;
+- **"Como foi esta tentativa?"**:
+  - quatro botões: "Independente", "Com ajuda gestual", "Com ajuda física" e
+    "Sem resposta";
+  - um toque registra;
+  - "Desfazer" desfaz o último registro da sessão;
+- **contagem desta sessão**, por objetivo, e o medidor "Independência em
+  {domínio} nesta sessão";
+- **ocorrência comportamental, registro ABC:** antecedente, comportamento,
+  consequência e intensidade de 1 a 5. Entra nos eventos da ficha;
+- "Pausar a sessão" e "Encerrar a sessão".
+
+**Encerrar exige a evolução** (Resolução CFP nº 001/2009, registro documental):
+
+- o campo abre vazio, com até 10.000 caracteres. **O sistema nunca a gera nem a
+  pré-preenche**, no mesmo espírito da regra 4;
+- só a equipe do paciente e a coordenação a leem, no histórico da ficha. A
+  família e a escola, nunca;
+- erro: *"Escreva a evolução da sessão antes de encerrar."*
+
+**Regras:**
+
+- quem conduz a sessão é quem a iniciou (`Sessao 0..* — 1 Profissional`), e
+  aparece no histórico da ficha;
+- não há fila sem conexão na versão publicada: sem conexão, o toque não é
+  gravado, e a tela diz isso.
+
+**Aceitação:** desfazer devolve o contador ao valor anterior · trocar de
+objetivo não perde registros · encerrar sem evolução não é possível.
+
+## 8 · Evolução por objetivo · só no desenvolvimento
 `/app/clinica/pacientes/:id/evolucao` · UC08
 
-Já existe. Muda: seletor de objetivo e a comparação entre contextos.
+**Conteúdo:**
 
-**Conteúdo:** seletor de objetivo · gráfico de linha por sessão com a referência do
-critério · alternativa em tabela · situação da promoção a dominado · **comparação
-entre os três contextos** (clínica, casa, escola).
+- seletor de objetivo;
+- gráfico de linha por sessão, com a referência do critério, e a alternativa
+  em tabela;
+- situação da promoção a dominado;
+- **comparação entre os três contextos** (clínica, casa, escola).
 
-**Cuidado com a comparação entre contextos.** As três medidas têm naturezas
-diferentes: percentual de tentativas na clínica, escolha em três opções em casa,
-intensidade de 1 a 5 na escola. **Não as coloque na mesma escala nem calcule média
-entre elas** — seria inválido do ponto de vista psicométrico e a banca pode cobrar.
+**As três medidas têm naturezas diferentes:** percentual de tentativas na
+clínica, escolha em três opções em casa e intensidade de 1 a 5 na escola.
 
-Apresente como três faixas paralelas de tendência, cada uma com sua própria escala
-rotulada, alinhadas na mesma linha do tempo. A leitura que interessa é "sobe junto
-ou diverge", não "qual é maior".
+- Nunca vão para a mesma escala, e não se calcula média entre elas.
+- Aparecem como três faixas paralelas de tendência, cada uma com a sua escala
+  rotulada, na mesma linha do tempo.
+- A comparação só aparece com ao menos cinco registros e três semanas em cada
+  contexto. Abaixo disso: "dados insuficientes para comparar", e o que falta.
 
-**Regra de suficiência:** só exiba a comparação com no mínimo cinco registros e
-três semanas em cada contexto. Abaixo disso, mostre "dados insuficientes para
-comparar" e diga o que falta.
-
-## 9 · Prescrever atividade para casa ✗
+## 9 · Prescrever atividade para casa · só no desenvolvimento
 `/app/clinica/pacientes/:id/atividades` · UC07
 
-**Conteúdo:** atividades ativas com frequência e adesão · "Prescrever nova" ·
-formulário com título, descrição, passos, frequência semanal, vídeo e objetivo
-vinculado · histórico de execuções registradas pela família.
+**Conteúdo:**
 
-**Regras:** escrita em linguagem cotidiana — a família é quem lê. Toda atividade se
-vincula a um objetivo do plano; atividade solta não existe.
+- atividades ativas, com frequência e adesão;
+- formulário com título, descrição, passos, frequência, vídeo e objetivo
+  vinculado;
+- histórico das execuções registradas pela família.
 
-## 10 · Emitir relatório de evolução ✗
+**Regras:** a escrita é em linguagem cotidiana. Toda atividade se vincula a um
+objetivo do plano.
+
+## 10 · Emitir relatório de evolução · só no desenvolvimento
 `/app/clinica/pacientes/:id/relatorio` · UC09
 
-**Conteúdo:** seleção de período e de objetivos · pré-visualização · botão de
-gerar · histórico de relatórios emitidos.
+**Conteúdo:**
 
-**Regras:** relatório é documento clínico — Terapeuta e Coordenador apenas. A
-escola **nunca** acessa esta tela. Toda emissão entra na trilha de auditoria.
+- período e objetivos;
+- destinatário: a equipe ou a família;
+- as considerações do profissional, obrigatórias e nunca geradas;
+- pré-visualização e histórico.
+
+**Regras:**
+
+- é documento clínico;
+- sem o registro no conselho, o relatório não é emitido;
+- o emitido não muda (`relatorio_evolucao` só cresce);
+- a escola nunca acessa.
 
 ---
 
-# Área clínica — Coordenação
+# Coordenação
 
-## 11 · Painel de indicadores da clínica ✗
+## 11 · Indicadores da clínica · só no desenvolvimento
 `/app/coordenacao` · UC18
 
-**É a "dashboard da clínica"** no sentido de gestão — diferente do painel do
-terapeuta, que é a visão de quem atende.
+**Conteúdo, nesta ordem:**
 
-**Conteúdo, nesta ordem de leitura:**
+1. Quatro números, sempre com o período:
+   - pacientes;
+   - sessões em 7 dias;
+   - objetivos dominados em 30 dias;
+   - revisões nos próximos 30 dias.
+2. **O que precisa de atenção**, com cada item levando ao registro:
+   - planos sem revisão há mais de 90 dias;
+   - pacientes sem sessão há mais de 15 dias;
+   - consentimentos vencendo em 30 dias;
+   - objetivos parados há 8 sessões.
+3. Sessões por profissional.
+4. A ponte clínica–escola, com a mediana até a leitura clínica.
 
-1. Quatro números no topo: pacientes em acompanhamento · sessões nos últimos 7
-   dias · objetivos dominados nos últimos 30 dias · planos com revisão nos
-   próximos 30 dias
-2. O que precisa de atenção: planos sem revisão há mais de 90 dias · pacientes
-   sem sessão há mais de 15 dias · consentimentos escolares vencendo em 30 dias ·
-   objetivos sem novo melhor resultado há 8 sessões
-3. Sessões por profissional nos últimos 30 dias
-4. Ponte clínica–escola: escolas com vínculo ativo · ocorrências nos últimos 30
-   dias · tempo até a leitura clínica (mediana) · ocorrências aguardando leitura
+**Regras:**
 
-Janela móvel, e não semana ou mês civil, para que nenhum número zere na virada.
-Mediana, e não média, porque um atraso isolado distorce a média. As ocorrências
-sem leitura ficam fora da mediana e aparecem sempre ao lado dela.
+- a janela é móvel, e não mês civil;
+- usa mediana, e não média;
+- conta e aponta, sem descrever conteúdo clínico.
 
-**O bloco 2 é o coração da tela.** Um painel que só mostra números bonitos não serve
-para nada. O que faz alguém abrir todo dia é a lista do que exige ação — e cada
-item dessa lista leva direto ao paciente correspondente.
+Na versão publicada, a coordenação entra pela tela 12.
 
-**Regras:** indicadores agregados não expõem conteúdo clínico. Contam e apontam,
-não descrevem.
+## 12 · Validar planos terapêuticos · no ar
+`/app/coordenacao/planos` · Coordenador clínico · UC17
 
-**Aceitação:** cada alerta é clicável e leva ao registro · clínica recém-criada
-mostra estado vazio explicando que os indicadores aparecem após as primeiras
-sessões · nenhum número aparece sem rótulo de período.
+É a tela de entrada da coordenação na versão publicada.
 
-## 12 · Validar planos terapêuticos ✗
-`/app/coordenacao/planos` · UC17
+**Conteúdo:**
 
-**Conteúdo:** fila de planos aguardando validação, com paciente, autor e data ·
-visualização do plano · aprovar ou devolver com observação · histórico.
+- **fila "Aguardando validação"**:
+  - cada item: paciente, autor ("Nome · Especialidade"), data de envio e número
+    de objetivos;
+  - 10 por página;
+- **o plano aberto:**
+  - autor, datas e, para cada objetivo, as duas redações **lado a lado**;
+  - o critério;
+  - a coordenação confere *"inclusive se a redação acessível é mesmo
+    acessível"*;
+- **decisão:**
+  - "Aprovar plano": passa a vigente;
+  - "Devolver para ajuste": exige o campo "O que precisa mudar".
 
-**Regras:** devolver exige observação escrita. Devolução sem justificativa não
-ensina nada a quem recebeu.
+**Regras:**
 
-## 13 · Registro de auditoria ✗
+- devolver exige observação. Sem ela: *"Escreva o que precisa mudar. Devolução
+  sem justificativa não ensina nada a quem recebeu."*;
+- **quem escreveu o plano não o valida**: *"A validação precisa de outra pessoa
+  da coordenação"*, e os botões de decisão somem;
+- a decisão entra na trilha, com quem decidiu e quando.
+
+**Fila vazia:** *"Nenhum plano aguardando validação"*, com o link para a lista
+de pacientes. O histórico das decisões fica na trilha (tela 13, só no
+desenvolvimento).
+
+## 13 · Registro de auditoria · só no desenvolvimento
 `/app/coordenacao/auditoria` · UC19
 
-**É o que prova a conformidade com a LGPD.** Se a banca perguntar como vocês
-garantem o artigo 37, esta é a resposta.
+Esta tela é a resposta da LGPD, art. 37.
 
-**Conteúdo:** filtros por período, usuário, ação e paciente · tabela com data e
-hora, usuário, perfil, ação, entidade e origem · exportação.
+**Conteúdo:**
 
-**Registra:** toda leitura e escrita de dado do paciente · concessão de acesso ·
-**tentativa de acesso negada** (regra 6 do CLAUDE.md). O pré-projeto promete
-100% dessas operações registradas; no servidor, quem registra é um interceptador.
+- filtros por período, usuário, ação e paciente;
+- tabela com data e hora, usuário, perfil, ação, entidade e origem;
+- exportação.
 
-**Regras:** registro de auditoria é imutável. Nenhuma tela oferece editar ou
-excluir. Registrar o acesso que não ocorreu é tão relevante quanto registrar o que
-ocorreu.
+**Regras:**
+
+- a trilha registra:
+  - toda leitura e escrita de dado do paciente;
+  - concessão e revogação;
+  - **tentativa negada** (regra 6);
+- nenhuma tela edita ou exclui um registro. O banco recusa por gatilho
+  (`docs/09`).
+
+A trilha já é gravada no ar. O que falta é a tela que a mostra.
 
 ---
 
 # Administração
 
-## 14 · Gerenciar usuários e perfis ✗
-`/app/admin/usuarios` · UC20
+## 14 · Usuários e perfis · no ar
+`/app/admin/usuarios` · Administrador · UC20
 
-**Conteúdo:** lista com nome, e-mail, perfis, situação e último acesso · convidar
-usuário · editar perfis · desativar.
+**Criar conta para a equipe:**
 
-**Regras:** desativar, nunca excluir — o histórico clínico precisa manter a autoria.
-Um administrador não pode desativar a si mesmo.
+- campos: nome, e-mail e perfis;
+- só perfis de equipe: Profissional da clínica, Coordenador clínico e
+  Administrador;
+- a especialidade é obrigatória para o profissional da clínica;
+- o registro no conselho é opcional aqui. Quem o completa é o próprio dono, na
+  tela 21;
+- *"Esta tela cadastra apenas a equipe da clínica. O responsável nasce do
+  vínculo com o paciente, e o professor, do convite da família."*;
+- a conta nasce sem senha conhecida. O administrador recebe o link de primeiro
+  acesso para entregar (tela 23).
+
+**Lista:**
+
+- busca por nome ou e-mail, e filtros por perfil e situação;
+- colunas: nome, e-mail, perfis, situação e último acesso, ou "Aguardando
+  primeiro acesso";
+- 10 por página.
+
+**Gerenciar uma conta:**
+
+- **Equipe:** editar perfis e "Gerar novo link de acesso". *"O anterior deixou
+  de valer; a senha atual vale até o novo ser usado."*
+- **Responsável ou professor:** aparece na lista, mas o perfil é só leitura. O
+  link de nova senha do responsável é da coordenação (tela 5).
+- **Desativar, em duas etapas, e reativar.**
+
+**Regras:**
+
+- desativar, nunca excluir: o histórico clínico precisa manter a autoria;
+- o administrador não desativa a si mesmo;
+- o administrador não alcança dado clínico (regra 3).
+
+**Para testar a tela 5 com a coordenação:** cadastre aqui uma conta com o perfil
+Coordenador clínico, ou marque esse perfil numa conta da equipe.
 
 ---
 
 # Área da família
 
-## 15 · Painel da família ✓ ↻
-`/app/familia` · UC13
+## 15 · Painel da família · no ar
+`/app/familia` · Responsável · UC13
 
-Já existe. Muda: suporta mais de um filho em acompanhamento.
+**Conteúdo:**
 
-**Conteúdo:** evolução em linguagem cotidiana · atividades da semana · situação do
-acesso da escola.
+- "Como {nome} está indo";
+- seletor "Ver o painel de", quando há mais de um filho;
+- **"Como está indo"**:
+  - cada objetivo só na redação acessível;
+  - um medidor de frequência em palavras;
+  - "Já consegue sozinho" quando o objetivo foi dominado;
+- **"Acesso da escola"**: uma linha por autorização, com a situação em palavras
+  e quem acessa.
 
-**Regras:** **nenhum termo clínico nesta área.** Só a redação acessível dos
-objetivos. Sem percentual cru sem explicação: "6 ou 7 de cada 10 vezes" comunica;
-"65%" não.
+**Regras:**
 
-## 16 · Atividade em casa ✓
+- **nenhum termo clínico nesta área**;
+- sem percentual cru: "6 ou 7 de cada 10 vezes" comunica, e "65%" não;
+- a família lê só os objetivos do plano **vigente**, já conferido pela
+  coordenação;
+- no cabeçalho, o papel é o parentesco com o filho escolhido;
+- "Atividades desta semana" só aparece no desenvolvimento.
+
+**Vazios:**
+
+- sem criança vinculada: *"Fale com a clínica para que o vínculo seja
+  registrado."*;
+- sem objetivos: *"A equipe ainda não registrou objetivos para {nome}."*;
+- sem acesso de escola, quem não é responsável legal lê *"Somente o
+  responsável legal pode autorizar."*
+
+## 16 · Atividade em casa · só no desenvolvimento
 `/app/familia/atividades/:id` · UC14
 
-Já existe e está adequada.
+**Conteúdo:**
 
-## 17 · Autorizar acesso da escola ✓
-`/app/familia/consentimento` · UC11, UC12, UC21
+- a atividade;
+- "Como foi hoje?": "Fez sozinho", "Fez com a minha ajuda" ou "Não quis fazer
+  hoje";
+- observação opcional;
+- o histórico do que a família registrou.
 
-Já existe, com confirmação em duas etapas para encerrar.
+## 17 · Autorizar o acesso da escola · no ar
+`/app/familia/consentimento` · Responsável · UC11, UC12, UC21
 
-**Regras que o código precisa honrar:** quem autoriza é o responsável · escopo e
-validade explícitos · convite de uso único com 72 h · revogação com efeito imediato
-e sem cache que sobreviva a ela · a lista do que a escola nunca verá aparece junto
-da autorização.
+**Regra 1:** só o **responsável legal** concede. **Qualquer responsável
+vinculado** encerra. Quem não é responsável legal lê: *"Somente o responsável
+legal pode autorizar uma escola. Você pode encerrar um acesso já autorizado."*
+
+**Conceder, em duas etapas:**
+
+1. **"Autorizar uma escola":**
+   - **Escola:** escolhida da lista, ou cadastrada pela família.
+     - Ao cadastrar (nome, rede de ensino, município), o sistema procura nomes
+       parecidos no mesmo município: *"É uma destas?"*.
+     - Escolher uma das parecidas mantém as autorizações todas na mesma escola.
+     - *"O acesso vale para esta escola. Outra escola precisa de uma
+       autorização própria."*
+   - **"O que a escola poderá acessar":** "Cartão de estratégias" e "Registrar o
+     que acontece na escola", os dois marcados.
+   - **"O que a escola nunca verá":** a mesma lista da tela 2, junto da
+     autorização.
+   - **"Autorizar até":** *"Depois dessa data o acesso se encerra sozinho, sem
+     você precisar fazer nada."*
+2. **"Leia antes de autorizar":**
+   - o termo inteiro, com os dados preenchidos;
+   - os botões "Autorizar" e "Voltar e corrigir".
+
+**Depois de conceder:**
+
+- aparece o convite, para entregar ao professor: *"vale para um único cadastro e
+  expira em {data}, às {hora}"* (72 horas);
+- **o link aparece uma vez**;
+- "Gerar novo convite" fica com o responsável legal, enquanto o acesso está
+  vigente e o professor não entrou. O anterior deixa de valer.
+
+**Autorizações deste filho:**
+
+- cada uma mostra escola, professor ("Ainda sem professor cadastrado"), turma,
+  data da autorização, validade e escopos;
+- **"Encerrar este acesso"**, em duas etapas: *"A partir de agora a escola
+  deixa de ver o cartão de estratégias e não consegue mais registrar
+  ocorrências."* **Vale na hora** (regra 5);
+- **"Ver o termo que aceitei"** reconstrói o texto e confere com o resumo
+  guardado:
+  - *"Conferido: nada mudou nesta autorização desde {data}."*;
+  - ou *"O texto não confere com o resumo registrado. Avise a clínica."*
+
+**Regras:**
+
+- a situação (vigente, encerrado, vencido, aguardando início) deriva das datas
+  a cada leitura (regra 5);
+- o termo não é guardado: guarda-se a versão e o resumo (`hashTermo`).
 
 ---
 
 # Área da escola
 
-## 18 · Cartão de estratégias ✓
-`/app/escola/:pacienteId` · UC15, UC21
+## 22 · Meus alunos · no ar
+`/app/escola` · Professor / AEE · UC15, UC21
 
-Já existe.
+É a entrada do professor.
 
-**Regras:** a verificação de consentimento acontece antes de qualquer leitura.
-Consentimento revogado ou expirado mostra a tela de acesso encerrado, não uma tela
-vazia. A consulta entra na auditoria.
+**Linhas:**
 
-## 19 · Registrar ocorrência ✓
-`/app/escola/:pacienteId/ocorrencia` · UC16
+- **acesso vigente:** o nome leva ao cartão, com turma, turno, escopos e "Acesso
+  autorizado até {data}";
+- **acesso encerrado ou vencido:** a linha fica, sem link, com "Acesso
+  encerrado pela família" e o que fazer: *"peça a ela um novo convite"*;
+- **aluno cuja família nunca autorizou não aparece, em hipótese alguma.**
 
-Já existe, com validação que nomeia o que falta.
+Manter a linha encerrada não vaza informação: o professor já sabia que aquele
+aluno está na sua turma. Sumir sem explicação o faria supor defeito, e o passo
+27 do diagrama de sequência manda informá-lo do encerramento.
 
-**Falta implementar:** a janela de 30 minutos para correção, prometida no texto de
-confirmação. Editar mantém a versão original na trilha de auditoria.
+**Vazio:** *"Nenhum aluno autorizado neste momento"*, com a explicação de que
+quem autoriza é a família.
+
+## 18 · Cartão de estratégias · no ar
+`/app/escola/:pacienteId` · Professor / AEE · UC15, UC21
+
+**Conteúdo:**
+
+- "{aluno} · {turma}", com *"Orientações práticas para o dia a dia em sala. Não
+  é diagnóstico nem laudo."*;
+- cada estratégia: título, "O que fazer", "O que evitar" e "Sinal de alerta";
+- no rodapé: *"Autorizado pela família até {data}. Sua consulta fica
+  registrada."* e "Registrar uma ocorrência".
+
+**Regras:**
+
+- **o consentimento é conferido antes de qualquer leitura** (regra 2), com o
+  escopo;
+- encerrado ou vencido, a tela diz isso, sem tela vazia:
+  - *"A família encerrou este acesso."*;
+  - ou *"A autorização venceu."*;
+- só aparecem os cartões dos objetivos do plano vigente;
+- a consulta entra na trilha.
+
+**Sem cartão:** *"Ainda não há estratégias para este aluno"*, e *"O profissional
+da clínica escreve o cartão a partir dos objetivos do plano."*
+
+## 19 · Registrar ocorrência · no ar
+`/app/escola/:pacienteId/ocorrencia` · Professor / AEE · UC16
+
+**Conteúdo:**
+
+- "O que você observou?";
+- *"Descreva o que aconteceu, não o que significa. A leitura clínica é do
+  profissional habilitado."*;
+- **só opções fechadas, sem texto livre:**
+  - "O que aconteceu": saiu da sala, tapou os ouvidos, recusou a tarefa, chorou,
+    agrediu-se, outro;
+  - "Intensidade": de 1 a 5, com *"1 = quase não atrapalhou · 5 = precisou
+    interromper a aula"*;
+  - "Em que momento": entrada, atividade em grupo, recreio, troca de atividade,
+    saída;
+- *"Leva cerca de 20 segundos: três toques e enviar."*
+
+**Validação:** diz o que falta: *"Falta escolher {…}. Toque em uma opção de cada
+bloco acima."*
+
+**Depois de registrar:**
+
+- *"O registro foi guardado para a leitura da equipe terapêutica. Você não
+  precisa fazer mais nada."*;
+- **a correção vale por 30 minutos**: *"Você pode corrigir este registro até às
+  {HH:MM}"*;
+- a versão anterior fica na trilha;
+- passado o prazo: *"Fale com a equipe terapêutica se precisar de ajuste."*
+
+**Regras:**
+
+- a ocorrência entra na clínica como evento comportamental **preliminar** até a
+  leitura clínica (telas 3 e 5);
+- o servidor confere o consentimento e o escopo de registro.
 
 ---
 
-# Transversal
+# Apoio
 
-## 20 · Central de acessibilidade e ajuda ✓
-`/app/ajuda`
+## 20 · Acessibilidade e ajuda · no ar
+`/app/ajuda` · todos
 
-Já existe. Muda: ganha as perguntas frequentes por perfil.
+**Conteúdo:**
 
-## 21 · Perfil e preferências ✗
-`/app/conta`
+- os ajustes da interface;
+- a navegação por teclado;
+- os princípios da WCAG 2.2;
+- as heurísticas aplicadas;
+- a conformidade declarada.
 
-**Conteúdo:** dados da conta · troca de perfil ativo, quando houver mais de um ·
-preferências sensoriais persistidas · sair.
+As perguntas frequentes por perfil ainda não existem.
 
-## 22 · Meus alunos ✗
-`/app/escola` · Professor / AEE · UC15 · UC21
+## 21 · Perfil e preferências · no ar
+`/app/conta` · todos
 
-Destino de entrada do professor. Sem ela, quem entra pelo perfil escolar não tem
-para onde ir.
+**Cartões:**
 
-**Conteúdo:** os alunos para os quais este professor recebeu autorização, com nome,
-turma e situação do acesso. Cada linha ativa leva ao cartão de estratégias.
-
-**Regras de visibilidade:**
-
-- Aparece o aluno cuja família já concedeu acesso a este professor, em algum
-  momento.
-- Consentimento vigente: linha ativa, leva ao cartão.
-- Consentimento revogado ou expirado: a linha permanece, marcada como "Acesso
-  encerrado pela família", sem caminho de entrada.
-- Aluno que nunca concedeu não aparece, em hipótese alguma.
-
-Manter a linha revogada não vaza informação: o professor já sabia que aquele aluno
-está na sua turma e já tivera acesso. Sumir sem explicação o faria supor defeito no
-sistema — e o passo 27 do diagrama de sequência determina que ele seja informado do
-encerramento.
-
-**Aceitação:** professor sem nenhuma autorização vê estado vazio explicando que o
-acesso depende da família · a consulta à lista entra na trilha de auditoria.
+1. **Dados da conta:** nome, e-mail e perfis, só para leitura.
+2. **Dados profissionais**, para a equipe: especialidade e registro no
+   conselho. Quem preenche é o próprio dono, nunca a administração. Sem o
+   registro, o relatório não é emitido.
+3. **Perfil ativo:** com mais de um perfil, a troca. Ela vale só para a aba,
+   que é a vaga dessa conta.
+4. **Preferências de leitura:** texto maior, alto contraste e reduzir animação.
+   Ficam neste aparelho e valem inclusive na entrada.
+5. **"Sair da conta":** encerra a sessão desta aba. As outras abas continuam
+   com as suas contas.
 
 ---
 
-## Ordem sugerida de construção
+## Divergências achadas nesta revisão
 
-Cada bloco depende do anterior.
+Para corrigir, no item 10:
 
-| Etapa | Telas | Por quê |
-|---|---|---|
-| 1 | 1, 21 e camada de dados | Sem sessão e sem serviços, nada mais se sustenta |
-| 2 | 4, 5 | Lista de pacientes destrava tudo da clínica |
-| 3 | 3, 6, 7, 8 refeitas | Passam a consumir serviços |
-| 4 | 11 | O painel da clínica é o que muda a percepção do sistema |
-| 5 | 9, 10, 12, 13, 14 | Completam clínica e coordenação |
-| 6 | 2, 15, 17 ajustes | Fecham a ponte com a escola |
+1. **Tela 6: "Adicionar objetivo" funciona com o plano vigente.** O servidor
+   confere o plano editável ao editar o objetivo e as datas, mas não ao
+   acrescentar. Um plano vigente ganha objetivo sem passar pela coordenação, o
+   que contradiz o UC17. A redação acessível desse objetivo chega à família na
+   hora, sem a conferência da tela 12.
+2. **Tela 5:** o texto do vazio dos eventos diz que eles *"entram por relato da
+   escola"*. O registro ABC na sessão também está no ar.
+3. **Tela 17:** a autorização que ainda não começou recebe a etiqueta "Prazo
+   terminado". Na ficha, ela é "Acesso ainda não começou".
+4. **Tela 6:** um erro ao enviar para validação aparece no aviso verde
+   "Pronto".
+5. **Tela 18:** "Registrar uma ocorrência" aparece mesmo sem o escopo de
+   registro. O servidor recusa, mas a tela não devia oferecer.
+6. **Tela 19:** *"A versão anterior continua no registro de acessos."* aparece
+   antes de qualquer correção.
+
+**Lacunas conhecidas, para depois:**
+
+- redefinir a senha do professor;
+- envio de e-mail;
+- as telas só no desenvolvimento, cada uma quando o seu serviço chegar ao
+  servidor (`docs/07`, seção 0);
+- revisar um plano vigente. A família e a escola leem só o plano vigente,
+  então devolver o vigente a rascunho as deixaria sem nada durante a revisão.
+  O caminho certo é uma versão nova em rascunho, enquanto a vigente continua
+  valendo até a coordenação aprovar a nova.
