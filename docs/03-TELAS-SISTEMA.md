@@ -1,7 +1,7 @@
 # 03 · Telas do sistema
 
 Revisão de 25/10/2026. A especificação de setembro dizia o que construir; esta
-diz o que existe, conferido no código até o item 9 (`bd2f026`). Os textos entre
+diz o que existe, conferido no código até o item 10 (`150b9b5`). Os textos entre
 aspas são os que a pessoa lê na tela.
 
 **Situação de cada tela:**
@@ -309,7 +309,9 @@ cadastrou. O plano vem depois, na tela 6.
    - cada um com intensidade;
    - "Aguardando leitura clínica", com o botão "Registrar a leitura clínica", ou
      "Leitura clínica em {data}";
-   - 5 por página.
+   - 5 por página;
+   - sem evento, o texto diz que eles entram pelo registro em sessão ou por
+     relato da escola.
 6. **Histórico resumido:** sessões encerradas e a data da última.
 7. **Histórico de sessões:** a evolução de cada sessão encerrada, da mais
    recente para a mais antiga, com quem conduziu ("Nome · Especialidade") e o
@@ -384,11 +386,12 @@ novo. A negativa entra na trilha (regra 6).
    - nada é preenchido a partir do objetivo;
    - sem cartão: *"Nenhum cartão ainda: a escola não lê nada sobre este
      objetivo."*
-5. **"Adicionar objetivo":**
+5. **"Adicionar objetivo"**, só com o plano em rascunho ou devolvido:
    - campos: domínio, descrição técnica, **descrição acessível** e critério
-     (percentual mínimo, 80 por padrão, e sessões consecutivas, 3 por padrão);
+     (percentual mínimo, 80 por padrão, e sessões consecutivas, 3 por padrão).
 6. **"Enviar para validação"**:
-   - *"Se devolver, a observação aparece no topo desta tela."*
+   - *"Se devolver, a observação aparece no topo desta tela."*;
+   - se der erro, aparece um aviso vermelho, "Não foi possível enviar".
 
 **Regras:**
 
@@ -397,9 +400,11 @@ novo. A negativa entra na trilha (regra 6).
   técnica.** O erro explica por que o campo existe: *"A descrição acessível é o
   que a família e a escola vão ler. Ela não é gerada a partir da técnica — quem
   escreve é você."*
-- **Datas e objetivos só se editam com o plano em rascunho ou devolvido.**
-  Vigente ou em validação, *"ele fica como está"*. Cada edição guarda a versão
-  anterior na trilha.
+- **Datas e objetivos, novos ou editados, só com o plano em rascunho ou
+  devolvido** (item 10). Vigente ou em validação, o servidor recusa: *"ele fica
+  como está"*. Assim, nenhuma redação acessível chega à família sem a
+  conferência da tela 12. Cada edição guarda a versão anterior na trilha.
+- Os cartões se escrevem e se editam em qualquer situação do plano.
 - **O cartão é o único conteúdo do plano que chega à escola**, e sem nada
   clínico (regra 3).
 
@@ -707,6 +712,8 @@ legal pode autorizar uma escola. Você pode encerrar um acesso já autorizado."*
 
 - cada uma mostra escola, professor ("Ainda sem professor cadastrado"), turma,
   data da autorização, validade e escopos;
+- a etiqueta é "Acesso ativo", "Acesso encerrado", "Prazo terminado" ou "Acesso
+  ainda não começou";
 - **"Encerrar este acesso"**, em duas etapas: *"A partir de agora a escola
   deixa de ver o cartão de estratégias e não consegue mais registrar
   ocorrências."* **Vale na hora** (regra 5);
@@ -754,7 +761,9 @@ quem autoriza é a família.
   é diagnóstico nem laudo."*;
 - cada estratégia: título, "O que fazer", "O que evitar" e "Sinal de alerta";
 - no rodapé: *"Autorizado pela família até {data}. Sua consulta fica
-  registrada."* e "Registrar uma ocorrência".
+  registrada."*;
+- "Registrar uma ocorrência", só quando a família autorizou o registro. A
+  resposta do cartão traz os escopos (item 10).
 
 **Regras:**
 
@@ -795,7 +804,8 @@ bloco acima."*
   precisa fazer mais nada."*;
 - **a correção vale por 30 minutos**: *"Você pode corrigir este registro até às
   {HH:MM}"*;
-- a versão anterior fica na trilha;
+- a versão anterior fica na trilha. Depois de uma correção, a tela diz: *"A
+  versão anterior continua no registro de acessos."*;
 - passado o prazo: *"Fale com a equipe terapêutica se precisar de ajuste."*
 
 **Regras:**
@@ -839,27 +849,10 @@ As perguntas frequentes por perfil ainda não existem.
 
 ---
 
-## Divergências achadas nesta revisão
+## Lacunas conhecidas
 
-Para corrigir, no item 10:
-
-1. **Tela 6: "Adicionar objetivo" funciona com o plano vigente.** O servidor
-   confere o plano editável ao editar o objetivo e as datas, mas não ao
-   acrescentar. Um plano vigente ganha objetivo sem passar pela coordenação, o
-   que contradiz o UC17. A redação acessível desse objetivo chega à família na
-   hora, sem a conferência da tela 12.
-2. **Tela 5:** o texto do vazio dos eventos diz que eles *"entram por relato da
-   escola"*. O registro ABC na sessão também está no ar.
-3. **Tela 17:** a autorização que ainda não começou recebe a etiqueta "Prazo
-   terminado". Na ficha, ela é "Acesso ainda não começou".
-4. **Tela 6:** um erro ao enviar para validação aparece no aviso verde
-   "Pronto".
-5. **Tela 18:** "Registrar uma ocorrência" aparece mesmo sem o escopo de
-   registro. O servidor recusa, mas a tela não devia oferecer.
-6. **Tela 19:** *"A versão anterior continua no registro de acessos."* aparece
-   antes de qualquer correção.
-
-**Lacunas conhecidas, para depois:**
+As seis divergências achadas na revisão de 25/10 foram corrigidas no item 10
+(`150b9b5`). Ficam para depois:
 
 - redefinir a senha do professor;
 - envio de e-mail;
@@ -868,4 +861,7 @@ Para corrigir, no item 10:
 - revisar um plano vigente. A família e a escola leem só o plano vigente,
   então devolver o vigente a rascunho as deixaria sem nada durante a revisão.
   O caminho certo é uma versão nova em rascunho, enquanto a vigente continua
-  valendo até a coordenação aprovar a nova.
+  valendo até a coordenação aprovar a nova;
+- a conferência da situação do plano e a gravação do objetivo novo não estão
+  na mesma trava. Se a coordenação aprovar no mesmo instante em que o objetivo
+  é gravado, ele entra (`docs/06`).
