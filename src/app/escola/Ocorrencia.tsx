@@ -195,6 +195,8 @@ export function Ocorrencia() {
     <Tela
       area="esc"
       nome="Registrar ocorrência"
+      // As iniciais sao do aluno de que a tela trata, e nao do titulo.
+      sigla={estado.tipo === 'pronto' ? estado.aluno.nome : null}
       papel={estado.tipo === 'pronto'
         ? `${estado.aluno.nome} · ${estado.aluno.turma}`
         : undefined}

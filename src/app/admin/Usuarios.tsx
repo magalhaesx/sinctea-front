@@ -74,6 +74,8 @@ export function Usuarios() {
   const [confirmandoDesativar, setConfirmandoDesativar] = useState(false)
   const [ocupado, setOcupado] = useState(false)
   const [erros, setErros] = useState<Record<string, string>>({})
+  /** De que formulario veio o erro: a criacao e a gestao da conta tem, as duas, o campo perfis. */
+  const [errosDe, setErrosDe] = useState<'convite' | 'gestao'>('convite')
   const [aviso, setAviso] = useState<string | null>(null)
   const [link, setLink] = useState<{ nome: string; link: LinkPrimeiroAcesso } | null>(null)
 
@@ -129,7 +131,11 @@ export function Usuarios() {
     setPerfisEditados(u.perfis)
   }
 
-  const comErro = (e: unknown) => {
+  const errosConvite = errosDe === 'convite' ? erros : {}
+  const errosGestao = errosDe === 'gestao' ? erros : {}
+
+  const comErro = (e: unknown, de: 'convite' | 'gestao') => {
+    setErrosDe(de)
     const erro = e as ErroServico
     setErros(erro instanceof ErroServico && Object.keys(erro.campos).length > 0
       ? erro.campos
@@ -152,7 +158,7 @@ export function Usuarios() {
       focarAviso.current = true
       recarregar()
     } catch (e) {
-      comErro(e)
+      comErro(e, 'convite')
     } finally {
       setOcupado(false)
     }
@@ -169,7 +175,7 @@ export function Usuarios() {
       setLink({ nome: u.nome, link: novo })
       focarAviso.current = true
     } catch (e) {
-      comErro(e)
+      comErro(e, 'gestao')
     } finally {
       setOcupado(false)
     }
@@ -188,7 +194,7 @@ export function Usuarios() {
       focarAviso.current = true
       recarregar()
     } catch (e) {
-      comErro(e)
+      comErro(e, 'gestao')
     } finally {
       setOcupado(false)
     }
@@ -252,12 +258,12 @@ export function Usuarios() {
               <Campo id="nome" rotulo="Nome">
                 <input id="nome" className={campo} value={convite.nome}
                   onChange={(e) => setConvite((c) => ({ ...c, nome: e.target.value }))}
-                  aria-invalid={erros.nome ? true : undefined} />
+                  aria-invalid={errosConvite.nome ? true : undefined} aria-describedby={errosConvite.nome ? 'nome-erro' : undefined} />
               </Campo>
               <Campo id="email" rotulo="E-mail">
                 <input id="email" type="email" className={campo} value={convite.email}
                   onChange={(e) => setConvite((c) => ({ ...c, email: e.target.value }))}
-                  aria-invalid={erros.email ? true : undefined} />
+                  aria-invalid={errosConvite.email ? true : undefined} aria-describedby={errosConvite.email ? 'email-erro' : undefined} />
               </Campo>
             {/* Opcionais: o administrador costuma ter os dois a mao, e quem
                 completa depois e a propria pessoa, em Perfil e preferencias.
@@ -269,8 +275,9 @@ export function Usuarios() {
                 dica={convite.perfis.includes('TERAPEUTA') ? 'Obrigatória para o profissional da clínica: Psicologia, Fonoaudiologia, Terapia Ocupacional.' : undefined}>
                 <input id="especialidade" className={campo} value={convite.especialidade}
                   onChange={(e) => setConvite((c) => ({ ...c, especialidade: e.target.value }))}
-                  aria-invalid={erros.especialidade ? true : undefined} />
-                {erros.especialidade && <p className="text-sm font-bold text-cr">{erros.especialidade}</p>}
+                  aria-invalid={errosConvite.especialidade ? true : undefined}
+                  aria-describedby={errosConvite.especialidade ? 'especialidade-erro' : undefined} />
+                {errosConvite.especialidade && <p id="especialidade-erro" className="text-sm font-bold text-cr">{errosConvite.especialidade}</p>}
               </Campo>
               <Campo id="registro" rotulo="Registro no conselho (opcional)"
                 dica="Sem ele, a pessoa completa em Perfil e preferências antes de emitir relatório.">
@@ -278,10 +285,13 @@ export function Usuarios() {
                   onChange={(e) => setConvite((c) => ({ ...c, registroConselho: e.target.value }))} />
               </Campo>
             </div>
-            {erros.nome && <p className="text-sm font-bold text-cr">{erros.nome}</p>}
-            {erros.email && <p className="text-sm font-bold text-cr">{erros.email}</p>}
+            {/* Depois dos quatro campos (item 11), cada erro continua ligado ao seu
+                campo pelo aria-describedby, e a mensagem diz de que campo e. */}
+            {errosConvite.nome && <p id="nome-erro" className="text-sm font-bold text-cr">{errosConvite.nome}</p>}
+            {errosConvite.email && <p id="email-erro" className="text-sm font-bold text-cr">{errosConvite.email}</p>}
 
-            <fieldset className="border-0 p-0">
+            <fieldset className="border-0 p-0" aria-invalid={errosConvite.perfis ? true : undefined}
+              aria-describedby={errosConvite.perfis ? 'perfis-erro' : undefined}>
               <legend className="text-sm font-bold">Perfis</legend>
               {/* Responsavel e professor nao aparecem: o responsavel nasce do
                   vinculo com o paciente, e o professor, do convite da familia. */}
@@ -306,7 +316,7 @@ export function Usuarios() {
                 ))}
               </div>
             </fieldset>
-            {erros.perfis && <p className="text-sm font-bold text-cr">{erros.perfis}</p>}
+            {errosConvite.perfis && <p id="perfis-erro" className="text-sm font-bold text-cr">{errosConvite.perfis}</p>}
 
             <div>
               <Botao area="cli" type="submit" disabled={ocupado}>
@@ -385,7 +395,8 @@ export function Usuarios() {
         <section aria-labelledby="h-gerenciar" className="flex flex-col gap-3">
           <h2 id="h-gerenciar" className="text-lg font-bold">{aberto.nome}</h2>
           <Cartao>
-            <fieldset className="border-0 p-0">
+            <fieldset className="border-0 p-0" aria-invalid={errosGestao.perfis ? true : undefined}
+              aria-describedby={errosGestao.perfis ? 'gestao-perfis-erro' : undefined}>
               <legend className="text-sm font-bold">Perfis</legend>
               {ehDaEquipe(aberto) ? (
                 <div className="mt-2 flex flex-wrap gap-2">
@@ -415,7 +426,7 @@ export function Usuarios() {
                 </p>
               )}
             </fieldset>
-            {erros.perfis && <p className="mt-2 text-sm font-bold text-cr">{erros.perfis}</p>}
+            {errosGestao.perfis && <p id="gestao-perfis-erro" className="mt-2 text-sm font-bold text-cr">{errosGestao.perfis}</p>}
 
             <div className="mt-4 flex flex-wrap gap-2">
               {ehDaEquipe(aberto) && (

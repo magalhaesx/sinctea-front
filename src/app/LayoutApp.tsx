@@ -6,6 +6,7 @@ import { RodapeAmbiente } from '../componentes/AvisoAmbiente'
 import { usarSessao } from '../contexto/Sessao'
 import type { Perfil } from '../servicos'
 import { SO_CAMINHO_PRINCIPAL } from './caminhoPrincipal'
+import { iniciaisDe } from './iniciais'
 import { papelNaTela } from './perfis'
 import { textoDoAvisoDeRedefinicao } from './textoDaRedefinicao'
 
@@ -207,11 +208,17 @@ function AvisoDeRedefinicao() {
 
 /** Moldura do produto: separa visualmente o cromo do prototipo da aplicacao. */
 export function Tela({
-  area, papel, nome, caminho, children, estreito = false,
+  area, papel, nome, sigla, caminho, children, estreito = false,
 }: {
   area: 'cli' | 'fam' | 'esc' | 'neutro'
   papel?: string
   nome?: string
+  /**
+   * De quem sao as iniciais do icone: por padrao, o `nome` do cabecalho. Tela
+   * que trata de uma crianca passa o nome dela; nulo, sem crianca escolhida,
+   * o icone nao aparece. "Acesso da escola" nao vira "Ad".
+   */
+  sigla?: string | null
   /**
    * A trilha ate esta tela. Item com `para` vira link: e o caminho de volta
    * visivel (item 7), alem do Voltar do navegador. O ultimo e a propria tela.
@@ -222,15 +229,17 @@ export function Tela({
 }) {
   const fundo = { cli: 'bg-cli-ink', fam: 'bg-fam-ink', esc: 'bg-esc-ink', neutro: 'bg-tinta2' }[area]
   const corDoLink = { cli: 'text-cli-ink', fam: 'text-fam-ink', esc: 'text-esc-ink', neutro: 'text-tinta' }[area]
-  const iniciais = nome ? nome.split(' ').map((p) => p[0]).slice(0, 2).join('') : ''
+  const iniciais = iniciaisDe(sigla === undefined ? nome : sigla)
   return (
     <div className={`rounded-2xl border border-cromo-linha bg-fundo text-tinta overflow-hidden ${estreito ? 'max-w-lg' : ''}`}>
       {nome && (
         <div className="flex flex-wrap items-center justify-between gap-2.5 border-b border-linha bg-sup px-5 py-3.5">
           <div className="flex items-center gap-2.5">
-            <span className={`grid h-9 w-9 flex-none place-items-center rounded-lg text-[13px] font-bold text-white ${fundo}`} aria-hidden="true">
-              {iniciais}
-            </span>
+            {iniciais && (
+              <span className={`grid h-9 w-9 flex-none place-items-center rounded-lg text-[13px] font-bold text-white ${fundo}`} aria-hidden="true">
+                {iniciais}
+              </span>
+            )}
             <span>
               <span className="block text-sm font-bold leading-tight">{nome}</span>
               {papel && <span className="block text-[11.5px] text-tinta2">{papel}</span>}

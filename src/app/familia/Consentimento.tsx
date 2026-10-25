@@ -318,6 +318,8 @@ export function Consentimento() {
     <Tela
       area="fam"
       nome="Acesso da escola"
+      // As iniciais sao da crianca de que a tela trata, e nao do titulo.
+      sigla={filho?.nome ?? null}
       papel={semAutoridadeLegal ? 'Quem autoriza é o responsável legal' : 'Quem autoriza é você'}
       caminho={[{ rotulo: 'Início', para: '/app/familia' }, 'Autorizar o acesso da escola']}
     >
