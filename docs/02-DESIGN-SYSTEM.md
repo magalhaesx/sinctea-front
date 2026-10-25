@@ -131,7 +131,8 @@ produto.
 | Nota | 11px | 400 | Rodapé de tabela |
 
 Entrelinha 1,55 no corpo, 1,25 em títulos. Linha de leitura em no máximo 65
-caracteres — no site comercial isso importa mais que no sistema.
+caracteres, no site comercial e no sistema. Com o conteúdo na largura da tela
+(seção 3), o limite vale também para subtítulo, dica de campo e aviso.
 
 Números em coluna recebem `font-variant-numeric: tabular-nums`. Sem exceção.
 
@@ -143,6 +144,27 @@ Espaçamento entre irmãos vem de `gap` em flex ou grid — nunca de margem
 individual, que colapsa e dobra sem avisar.
 
 Respiro lateral mínimo de 16px em qualquer largura, definido uma vez no invólucro.
+
+### Largura do conteúdo
+
+Revisão de 25/10/2026, item 11.
+
+- **No app, o cartão de cada tela ocupa toda a largura ao lado do menu.**
+  - O respiro é de 20px, e de 32px a partir de `xl`.
+  - O cartão para de crescer em 1800px, centralizado.
+  - A regra vive uma vez, na moldura (`LayoutApp`).
+- **Entrar, aceitar convite e definir senha continuam num cartão estreito,**
+  centralizado: são formulários curtos.
+- **A adaptação é pela largura da tela, nunca pelo tipo de aparelho.** Usa os
+  breakpoints do Tailwind. Tablet, celular deitado e janela pela metade se
+  comportam do mesmo jeito. Abaixo de `lg` (1024px), o menu vira uma faixa no
+  topo e os blocos ficam um embaixo do outro.
+- **O que ganha a largura:** tabelas, formulários com mais colunas e listas de
+  cartões em grade.
+  - O texto corrido continua em no máximo 65 caracteres por linha.
+  - Campo curto, como data, número ou telefone, não atravessa a tela.
+- **Conferência:** sem rolagem horizontal da página em 360, 768, 1366, 1920 e
+  2560px.
 
 ## 4. Componentes
 
@@ -208,8 +230,8 @@ use o formulário acima."
 
 ### Alvos de toque
 
-**44px de altura mínima.** A norma exige 24px; usamos o dobro porque terapeuta e
-professor operam com atenção dividida — um com a criança à frente, o outro com a
+**44px de altura mínima.** A norma exige 24px; usamos o dobro porque o profissional da
+clínica e o professor operam com atenção dividida — um com a criança à frente, o outro com a
 turma sob responsabilidade.
 
 ## 5. Gráficos
@@ -267,11 +289,11 @@ Escreva do lado do usuário, não do sistema.
 
 | Não escreva | Escreva |
 |---|---|
-| Sincronizar registros pendentes | 3 registros aguardando sincronização — nada se perde |
+| Erro de rede | Sem conexão · o toque não é gravado até a conexão voltar |
 | Consentimento revogado | O acesso foi encerrado pela família |
 | Erro ao salvar | Não foi possível salvar. Tente de novo em alguns segundos |
 | Nenhum registro | Nenhum paciente cadastrado ainda |
-| Submeter | Registrar e avisar a terapeuta |
+| Submeter | Registrar a ocorrência |
 
 O rótulo do botão nomeia exatamente o que acontece ao acioná-lo. Se o botão diz
 "Publicar", o aviso depois diz "Publicado".
