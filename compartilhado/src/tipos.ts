@@ -897,6 +897,12 @@ export interface CartaoEscola {
   turma: string
   turno: string
   validadeAte: DataCivil
+  /**
+   * O que a familia autorizou neste acesso (item 10): a tela so oferece
+   * "Registrar uma ocorrencia" com REGISTRO_OCORRENCIA. Quem recusa sem o
+   * escopo continua sendo o servidor.
+   */
+  escopos: EscopoAcesso[]
   estrategias: Array<{
     titulo: string
     /** Redacao acessivel do objetivo, escrita pelo terapeuta. */

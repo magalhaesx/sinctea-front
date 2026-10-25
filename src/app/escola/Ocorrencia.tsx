@@ -280,10 +280,13 @@ export function Ocorrencia() {
                     <Botao area="esc" variante="secundaria" onClick={abrirCorrecao}>Corrigir</Botao>
                   </p>
                 )}
-                {/* Nao se promete apagamento que nao acontece. */}
-                <p className="mt-2 text-sm text-tinta2">
-                  A versão anterior continua no registro de acessos.
-                </p>
+                {/* Nao se promete apagamento que nao acontece. So depois de uma
+                    correcao ha versao anterior (item 10). */}
+                {registrada.corrigidaEm && (
+                  <p className="mt-2 text-sm text-tinta2">
+                    A versão anterior continua no registro de acessos.
+                  </p>
+                )}
               </Aviso>
             )}
           </div>

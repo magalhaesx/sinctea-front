@@ -113,6 +113,7 @@ export class ServicoAreaEscola {
       turma: vinculo.turma,
       turno: vinculo.turno,
       validadeAte: paraDataCivil(vinculo.consentimento.validadeAte),
+      escopos: [...vinculo.consentimento.escopos],
       // Projecao explicita, campo a campo: do objetivo, so a redacao acessivel.
       estrategias: cartoes.map(({ c, o }) => ({
         titulo: c.tituloSimples, paraQue: o.descricaoAcessivel,

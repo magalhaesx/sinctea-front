@@ -247,7 +247,9 @@ describe('regras 2 e 3: a escola le so o cartao, so com consentimento vigente e 
   it('regra 3: o cartao chega projetado, sem nada clinico; a leitura fica na trilha', async () => {
     const r = await api.pedir('GET', `/escola/alunos/${p.miguel}/cartao`, { cookie: c.carla })
     expect(r.status).toBe(200)
-    expect(Object.keys(r.corpo).sort()).toEqual(['atualizadoEm', 'estrategias', 'nome', 'pacienteId', 'turma', 'turno', 'validadeAte'])
+    expect(Object.keys(r.corpo).sort()).toEqual(['atualizadoEm', 'escopos', 'estrategias', 'nome', 'pacienteId', 'turma', 'turno', 'validadeAte'])
+    // Item 10: o que a familia autorizou, para a tela nao oferecer o registro sem ele.
+    expect(r.corpo.escopos).toEqual(['CARTAO_ESTRATEGIA'])
     expect(r.corpo.estrategias).toEqual([{ titulo: 'Pedir ajuda', paraQue: ACESSIVEL, oQueFazer: ['Mostrar a figura'], oQueEvitar: ['Falar alto'], sinalAlerta: 'Tapa os ouvidos.' }])
     for (const proibido of [TECNICA, 'descricaoTecnica', 'percentual', 'criterio', 'nivelSuporte', 'Santana', 'registros']) {
       expect(JSON.stringify(r.corpo)).not.toContain(proibido)
@@ -267,6 +269,9 @@ describe('regras 2 e 3: a escola le so o cartao, so com consentimento vigente e 
   })
 
   it('a ocorrencia entra como evento preliminar; a correcao guarda a versao anterior; passada a janela, nao se corrige', async () => {
+    // Com o escopo de registro, o cartao diz isso, e a tela oferece o registro (item 10).
+    expect((await api.pedir('GET', `/escola/alunos/${p.sofia}/cartao`, { cookie: c.carla })).corpo.escopos)
+      .toEqual(expect.arrayContaining(['CARTAO_ESTRATEGIA', 'REGISTRO_OCORRENCIA']))
     const r = await api.pedir('POST', `/escola/alunos/${p.sofia}/ocorrencias`, { cookie: c.carla, corpo: { tipo: 'Tapou os ouvidos', intensidade: 2, contexto: 'Recreio' } })
     expect(r.status).toBe(201)
     const preliminar = await prisma.ocorrenciaComportamental.findFirstOrThrow({ where: { ocorrenciaEscolarId: r.corpo.id } })

@@ -146,10 +146,7 @@ function EventosComportamentais({ pacienteId, primeiroNome }: {
           // sessao" ja esta nas acoes desta tela (docs/02, secao 4).
           <p className="mt-3 text-tinta2">
             Nenhum evento comportamental de {primeiroNome} nos últimos {DIAS_RECENTES} dias.
-            {/* So no caminho principal, o registro de ocorrencia na sessao ainda nao existe. */}
-            {SO_CAMINHO_PRINCIPAL
-              ? ' Eventos entram por relato da escola.'
-              : ' Eventos entram pelo registro em sessão ou por relato da escola.'}
+            Eventos entram pelo registro em sessão ou por relato da escola.
           </p>
         ) : (
           <>

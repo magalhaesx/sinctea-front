@@ -51,6 +51,7 @@ function exigirAcessoEscola(pacienteId: string, escopo: EscopoAcesso, entidade: 
   sessao: SessaoServidor
   vinculo: VinculoEscolar
   validadeAte: string
+  escopos: EscopoAcesso[]
 } {
   const sessao = exigirPerfil(['PROFESSOR'], entidade, pacienteId)
   const agora = relogio.agora()
@@ -60,7 +61,7 @@ function exigirAcessoEscola(pacienteId: string, escopo: EscopoAcesso, entidade: 
   for (const vinculo of vinculos) {
     const consentimento = banco.consentimentos.find((c) => c.id === vinculo.consentimentoId)
     const resultado = verificarAcessoEscola(consentimento, escopo, agora)
-    if (resultado.permitido) return { sessao, vinculo, validadeAte: consentimento!.validadeAte }
+    if (resultado.permitido) return { sessao, vinculo, validadeAte: consentimento!.validadeAte, escopos: [...consentimento!.escopos] }
     motivo = resultado.motivo
   }
 
@@ -124,7 +125,7 @@ export const areaEscolaMock: ServicoAreaEscola = {
   }),
 
   obterCartao: (pacienteId) => responder(() => {
-    const { sessao, vinculo, validadeAte } = exigirAcessoEscola(pacienteId, 'CARTAO_ESTRATEGIA', 'CartaoEstrategia')
+    const { sessao, vinculo, validadeAte, escopos } = exigirAcessoEscola(pacienteId, 'CARTAO_ESTRATEGIA', 'CartaoEstrategia')
     const plano = banco.planos.find((p) => p.pacienteId === pacienteId && p.status === 'VIGENTE')
     const objetivos = plano?.objetivos ?? []
     // Rascunho em branco nao vai para a escola: so cartao com conteudo escrito.
@@ -139,6 +140,7 @@ export const areaEscolaMock: ServicoAreaEscola = {
       turma: vinculo.turma,
       turno: vinculo.turno,
       validadeAte,
+      escopos,
       estrategias: cartoes.map((c) => ({
         titulo: c.tituloSimples,
         paraQue: objetivos.find((o) => o.id === c.objetivoId)!.descricaoAcessivel,

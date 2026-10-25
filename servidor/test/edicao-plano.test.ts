@@ -32,6 +32,10 @@ const edicao = (mudanca: Partial<{ descricaoTecnica: string; descricaoAcessivel:
 })
 const editarObjetivo = (cookie: string, corpo: unknown) => api.pedir('PUT', `/objetivos/${p.objetivo}`, { cookie, corpo })
 const editarDatas = (cookie: string, corpo: unknown) => api.pedir('PUT', `/planos/${p.plano}/datas`, { cookie, corpo })
+const adicionarObjetivo = (cookie: string) => api.pedir('POST', `/planos/${p.plano}/objetivos`, {
+  cookie, corpo: { ...OBJETIVO, dominio: 'Autocuidado', descricaoTecnica: 'Lava as mãos com 2 dicas.', descricaoAcessivel: 'Lavar as mãos.' },
+})
+const quantosObjetivos = () => prisma.objetivo.count({ where: { planoId: p.plano } })
 const alteracoes = (idEntidade: string) => prisma.registroAuditoria.findMany({ where: { idEntidade, acao: 'ALTERACAO' }, orderBy: { ocorridoEm: 'asc' } })
 
 beforeAll(async () => {
@@ -116,9 +120,17 @@ describe('so em rascunho ou devolvido', () => {
     await api.pedir('POST', `/planos/${p.plano}/envio`, { cookie: c.ana })
     expect((await editarObjetivo(c.ana, edicao({ descricaoTecnica: 'Na fila.' }))).status).toBe(409)
     expect((await editarDatas(c.ana, { dataInicio: '2026-10-02', dataRevisao: '2027-05-01' })).status).toBe(409)
+    // Item 10: objetivo novo tambem nao entra com o plano na fila.
+    const naFila = await quantosObjetivos()
+    const recusado = await adicionarObjetivo(c.ana)
+    expect(recusado.status).toBe(409)
+    expect(recusado.corpo.mensagem).toMatch(/rascunho ou devolvido/)
+    expect(await quantosObjetivos()).toBe(naFila)
 
     await api.pedir('POST', `/planos/${p.plano}/devolucao`, { cookie: c.coord, corpo: { observacao: 'Detalhar o critério.' } })
     expect((await editarObjetivo(c.ana, edicao({ descricaoTecnica: 'Corrigida depois da devolução.', percentualMinimo: 90 }))).status).toBe(200)
+    // Devolvido, o objetivo novo entra, e vai junto para a coordenacao conferir.
+    expect((await adicionarObjetivo(c.ana)).status).toBe(201)
 
     await api.pedir('POST', `/planos/${p.plano}/envio`, { cookie: c.ana })
     // Item 7, parte 4: quem escreveu aparece pelo nome e pela especialidade.
@@ -129,6 +141,11 @@ describe('so em rascunho ou devolvido', () => {
     expect((await api.pedir('POST', `/planos/${p.plano}/aprovacao`, { cookie: c.coord })).corpo.status).toBe('VIGENTE')
     const vigente = await editarObjetivo(c.ana, edicao({ descricaoTecnica: 'Depois de vigente.' }))
     expect(vigente.status).toBe(409)
+    // Item 10: vigente, objetivo novo nao entra sem passar pela coordenacao (UC17).
+    const aprovados = await quantosObjetivos()
+    expect((await adicionarObjetivo(c.coord)).status).toBe(409)
+    expect((await adicionarObjetivo(c.ana)).status).toBe(409)
+    expect(await quantosObjetivos()).toBe(aprovados)
     expect((await editarDatas(c.ana, { dataInicio: '2026-10-02', dataRevisao: '2027-05-01' })).status).toBe(409)
     const plano = await api.pedir('GET', `/pacientes/${p.paciente}/plano`, { cookie: c.ana })
     expect(plano.corpo.objetivos[0].descricaoTecnica).toBe('Corrigida depois da devolução.')

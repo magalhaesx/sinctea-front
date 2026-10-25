@@ -600,9 +600,19 @@ describe('regras 2 e 3 — escola so le o cartao, com consentimento', () => {
 })
 
 describe('regra 4 — duas redacoes, a acessivel escrita pelo terapeuta', () => {
+  // Objetivo novo so em plano em rascunho ou devolvido (item 10): o terapeuta
+  // escreve num plano novo, de um paciente da equipe dele que ainda nao tinha.
+  let planoId: string
+  beforeAll(async () => {
+    await entrarComo('TERAPEUTA')
+    const semPlano = (await chamar(s.pacientes.listar({ situacaoPlano: 'SEM_PLANO', porPagina: 100 }))).itens[0]
+    expect(semPlano, 'o terapeuta da demonstracao precisa de um paciente ainda sem plano').toBeDefined()
+    planoId = (await chamar(s.planos.criar(semPlano.id, { dataInicio: '2026-10-01', dataRevisao: '2027-04-01' }))).id
+  })
+
   it('objetivo sem descricao acessivel e recusado', async () => {
     await entrarComo('TERAPEUTA')
-    const erro = await erroDe(s.planos.adicionarObjetivo('pl-001', {
+    const erro = await erroDe(s.planos.adicionarObjetivo(planoId, {
       dominio: 'Comunicação', descricaoTecnica: 'Emitir tato', descricaoAcessivel: '',
       criterio: { percentualMinimo: 80, sessoesConsecutivas: 3 },
     }))
@@ -612,11 +622,20 @@ describe('regra 4 — duas redacoes, a acessivel escrita pelo terapeuta', () => 
 
   it('a descricao acessivel e gravada como foi escrita', async () => {
     await entrarComo('TERAPEUTA')
-    const objetivo = await chamar(s.planos.adicionarObjetivo('pl-001', {
+    const objetivo = await chamar(s.planos.adicionarObjetivo(planoId, {
       dominio: 'Comunicação', descricaoTecnica: 'Emitir tato de 10 itens', descricaoAcessivel: 'Dizer o nome das coisas que vê.',
       criterio: { percentualMinimo: 80, sessoesConsecutivas: 3 },
     }))
     expect(objetivo.descricaoAcessivel).toBe('Dizer o nome das coisas que vê.')
+  })
+
+  it('no plano vigente, o objetivo novo nao entra sem passar pela coordenacao (item 10)', async () => {
+    await entrarComo('TERAPEUTA')
+    const erro = await erroDe(s.planos.adicionarObjetivo('pl-001', {
+      dominio: 'Comunicação', descricaoTecnica: 'Emitir tato', descricaoAcessivel: 'Dizer o nome das coisas.',
+      criterio: { percentualMinimo: 80, sessoesConsecutivas: 3 },
+    }))
+    expect(erro.codigo).toBe('CONFLITO')
   })
 })
 

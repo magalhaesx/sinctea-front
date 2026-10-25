@@ -59,6 +59,8 @@ export const planosMock: ServicoPlano = {
 
   adicionarObjetivo: (planoId, dados) => responder(() => {
     const { sessao, plano } = exigirPlanoEditavel(planoId)
+    // Item 10: como no servidor, objetivo novo so em rascunho ou devolvido.
+    if (!planoEditavel(plano.status)) throw new ErroServico('CONFLITO', 'O plano só se edita em rascunho ou devolvido pela coordenação. Vigente ou em validação, ele fica como está.')
     exigirValido(validarNovoObjetivo(dados))
     const objetivo: Objetivo = {
       id: gerarId('o'),

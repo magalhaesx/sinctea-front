@@ -73,6 +73,8 @@ export function Plano() {
   const [erros, setErros] = useState<Record<string, string>>({})
   const [salvando, setSalvando] = useState(false)
   const [aviso, setAviso] = useState<string | null>(null)
+  /** O envio para validacao que falhou (item 10): aviso de erro, e nao o "Pronto". */
+  const [falhaNoEnvio, setFalhaNoEnvio] = useState<string | null>(null)
   /** Item 7: o objetivo em edicao, e se as datas estao em edicao. */
   const [editandoObjetivo, setEditandoObjetivo] = useState<string | null>(null)
   const [editandoDatas, setEditandoDatas] = useState(false)
@@ -89,7 +91,7 @@ export function Plano() {
   // Aviso de sucesso e do plano que acabou de mudar: trocar de paciente o
   // apaga. So a troca de paciente, e nao toda recarga: gravar e recarregar em
   // seguida matava o recado com a recarga que ele mesmo pediu.
-  useEffect(() => { setAviso(null) }, [id])
+  useEffect(() => { setAviso(null); setFalhaNoEnvio(null) }, [id])
 
   useEffect(() => {
     let ativo = true
@@ -141,12 +143,14 @@ export function Plano() {
   }
 
   const enviarParaValidacao = async (planoId: string) => {
+    setAviso(null)
+    setFalhaNoEnvio(null)
     try {
       await servicos.planos.enviarParaValidacao(planoId)
       setAviso('Plano enviado para a coordenação validar.')
       recarregar()
     } catch (e) {
-      setAviso((e as Error).message)
+      setFalhaNoEnvio((e as Error).message ?? 'Não foi possível enviar agora.')
     }
   }
 
@@ -310,6 +314,9 @@ export function Plano() {
               </section>
             ))}
 
+            {/* Item 10: objetivo novo so em rascunho ou devolvido, como no servidor.
+                Vigente ou na fila, o plano fica como esta; os cartoes continuam. */}
+            {editavel && (
             <section aria-labelledby="h-novo" className="flex flex-col gap-3">
               <h2 id="h-novo" className="text-lg font-bold">Adicionar objetivo</h2>
 
@@ -385,6 +392,7 @@ export function Plano() {
                 </Cartao>
               )}
             </section>
+            )}
 
             {podeEnviar && (
               <section aria-labelledby="h-validacao" className="flex flex-col gap-2">
@@ -393,6 +401,9 @@ export function Plano() {
                   A coordenação confere os objetivos e o critério de cada um. Se devolver, a
                   observação aparece no topo desta tela.
                 </p>
+                <div role="alert">
+                  {falhaNoEnvio && <Aviso tom="cr" titulo="Não foi possível enviar">{falhaNoEnvio}</Aviso>}
+                </div>
                 <p><Botao area="cli" onClick={() => void enviarParaValidacao(plano.id)}>Enviar para validação</Botao></p>
               </section>
             )}

@@ -21,6 +21,7 @@ import { EstadoCarregando } from '../../ui/EstadoCarregando'
 import { EstadoErro } from '../../ui/EstadoErro'
 import { NUNCA_VISIVEL } from '../limites'
 import { CadastroDeEscola } from './CadastroDeEscola'
+import { ETIQUETA_DA_AUTORIZACAO } from './etiquetaDaAutorizacao'
 
 /**
  * Tela 17 · Autorizar o acesso da escola · /app/familia/consentimento
@@ -525,13 +526,9 @@ export function Consentimento() {
               <Cartao key={c.id}>
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <h3 className="text-base font-bold">{c.escola}</h3>
-                  {c.situacao === 'VIGENTE'
-                    ? <Etiqueta tom="ok" simbolo="✓">Acesso ativo</Etiqueta>
-                    : c.situacao === 'REVOGADO'
-                      // Sem "por você": qualquer responsavel vinculado encerra, e o
-                      // consentimento nao guarda quem foi. A trilha guarda.
-                      ? <Etiqueta simbolo="○">Acesso encerrado</Etiqueta>
-                      : <Etiqueta simbolo="○">Prazo terminado</Etiqueta>}
+                  <Etiqueta tom={ETIQUETA_DA_AUTORIZACAO[c.situacao].tom} simbolo={ETIQUETA_DA_AUTORIZACAO[c.situacao].simbolo}>
+                    {ETIQUETA_DA_AUTORIZACAO[c.situacao].rotulo}
+                  </Etiqueta>
                 </div>
 
                 <p className="mt-1 text-sm text-tinta2">

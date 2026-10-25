@@ -205,7 +205,7 @@ Atualizado em 18/10/2026, lendo o código — não a memória.
   simulada que aplica controle de acesso e auditoria; o cliente da API, que
   não aplica regra nenhuma. A versão publicada usa só a API, e o mock fica
   fora do pacote; no desenvolvimento, `VITE_API_URL` escolhe entre as duas
-- **440 testes em 34 arquivos, nos três pacotes**, rodados por um único
+- **443 testes em 35 arquivos, nos três pacotes**, rodados por um único
   `npm test` na raiz, sem passo manual. O principal ainda é
   `src/servicos/mock/regrasInviolaveis.test.ts`, que verifica as regras
   invioláveis na camada de dados, e não na tela. Os 212 do servidor rodam contra
@@ -392,6 +392,15 @@ em produção (o antigo passo B5) foi cancelada. No código, hoje:
   `sinctea_sessao`, é apagado onde aparecer. Na rede de apoio, quem não é da
   coordenação vê *✓ Já definiu a senha*. Testes em `servidor/test/vagas.test.ts`
   e `src/servicos/api/vaga.test.ts`
+- **Item 10 — as divergências do fim do `docs/03`.** Objetivo novo só com o
+  plano em rascunho ou devolvido, no servidor e no mock, com a recusa da
+  edição; na tela 6, "Adicionar objetivo" some do plano vigente e da fila, e
+  os cartões continuam. O cartão da escola traz os escopos que a família deu, e
+  a tela 18 só oferece o registro com o de registro. A tela 17 diz "Acesso
+  ainda não começou", como a ficha. O vazio dos eventos da ficha cita o registro
+  em sessão; o erro de "Enviar para validação" sai em aviso de erro; a tela 19
+  só fala da versão anterior depois de uma correção. Revisar o plano vigente
+  ficou como lacuna no `docs/03`: precisa de versão nova do plano
 - `npm run criar-administrador -w @sinctea/servidor -- .env.producao --nome
   "Nome Completo" --email voce@exemplo.com` cria o primeiro administrador:
   nome e e-mail vêm da linha de comando, e só a senha é pedida, escondida e duas

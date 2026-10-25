@@ -158,9 +158,12 @@ export function CartaoEstrategias() {
                 Autorizado pela família até {emDataCivil(estado.cartao.validadeAte)}.
                 <br />Sua consulta fica registrada.
               </span>
-              <BotaoLink para={`/app/escola/${pacienteId}/ocorrencia`} area="esc">
-                Registrar uma ocorrência
-              </BotaoLink>
+              {/* Item 10: so com o escopo de registro, que e a familia quem da. */}
+              {estado.cartao.escopos.includes('REGISTRO_OCORRENCIA') && (
+                <BotaoLink para={`/app/escola/${pacienteId}/ocorrencia`} area="esc">
+                  Registrar uma ocorrência
+                </BotaoLink>
+              )}
             </div>
           </>
         )

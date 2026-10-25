@@ -75,9 +75,15 @@ export class ServicoPlanos {
     return plano
   }
 
-  /** Rejeita objetivo sem descricao acessivel (regra 4). Nao existe geracao automatica. */
+  /**
+   * Rejeita objetivo sem descricao acessivel (regra 4). Nao existe geracao
+   * automatica. So em rascunho ou devolvido, como a edicao (item 10): no plano
+   * vigente ou na fila, o objetivo novo entraria sem passar pela coordenacao
+   * (UC17), e a familia leria a redacao acessivel dele na hora.
+   */
   async adicionarObjetivo(sessao: SessaoServidor, planoId: string, dados: Record<string, unknown>): Promise<DoPaciente<Objetivo>> {
     const plano = await this.planoAlcancado(sessao, planoId)
+    exigirPlanoEditavel(plano.status)
     const criterio = (dados.criterio ?? {}) as Record<string, unknown>
     const novo: NovoObjetivo = {
       dominio: textoOuVazio(dados.dominio),
