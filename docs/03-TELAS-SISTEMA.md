@@ -132,7 +132,8 @@ outra mostra uma faixa no alto, que recebe o foco:
 2. **"Contas abertas neste navegador"** (item 9). Só aparece se houver alguma.
    - Cada linha: nome, perfil ativo e o botão "Continuar como {nome}".
    - Embaixo: "Ou entre com outra conta abaixo. Cada aba fica com a sua."
-3. E-mail, senha e o botão "Entrar".
+3. E-mail, senha e o botão "Entrar". O campo da senha tem o botão de olho
+   (item 14, descrito na tela 23).
 4. **"Esqueci minha senha"**. Não leva a outra tela: abre um texto que diz a
    quem pedir.
    - Equipe da clínica: à administração, que gera um link para nova senha
@@ -185,7 +186,7 @@ de entrada da escola: **não existe autocadastro de professor.**
 4. O formulário.
    - *"Se você já tem conta no SINCTEA, use o mesmo e-mail e senha. O aluno
      novo entra na sua lista."*
-   - Campos: nome, e-mail e senha.
+   - Campos: nome, e-mail e senha, esta com o botão de olho (item 14).
    - Também pede turma, turno e "Como você atua com este aluno".
    - Botão "Aceitar o convite". Ao terminar, vai para a tela 22, já com a
      sessão aberta numa vaga da aba.
@@ -219,6 +220,17 @@ trilha:
 
 **Campos:** "Crie uma senha", com ao menos 8 caracteres, e "Repita a senha". Se
 as duas não forem iguais: "As duas senhas não conferem."
+
+**Botão de olho** (item 14). É o mesmo em todo campo de senha: aqui, nos dois
+campos, e nas telas 1 e 2.
+
+- Fica dentro do campo, à direita. O olho aberto mostra o que foi digitado; o
+  olho cortado esconde de novo.
+- É um botão de 44px, com o nome "Mostrar senha" para o leitor de tela e
+  `aria-pressed` dizendo se está mostrando. Funciona com Tab, Enter e Espaço.
+- O texto para antes do olho, também em 360px e com "Texto maior".
+- Ao enviar o formulário, a senha volta a ficar escondida, para o navegador não
+  a guardar como texto comum.
 
 **Estados:**
 
