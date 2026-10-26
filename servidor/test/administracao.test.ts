@@ -312,8 +312,10 @@ describe('item 13b: o que mudou na conta, e a escola sem o nome da familia', () 
     const id = await criarUsuario(prisma, { email: 'perfis@teste.example', perfis: ['COORDENADOR'] })
     expect((await api.pedir('PUT', `/usuarios/${id}/perfis`, { cookie: c.admin, corpo: { perfis: ['TERAPEUTA', 'COORDENADOR'] } })).status).toBe(200)
     expect((await ultimaDa(id)).valorAnterior).toBe('{"perfis":["COORDENADOR"]}')
+    // A mesma lista em outra ordem nao e mudanca: desde o item 13c, nem entra na trilha.
+    const antes = await prisma.registroAuditoria.count({ where: { idEntidade: id, acao: 'ALTERACAO' } })
     expect((await api.pedir('PUT', `/usuarios/${id}/perfis`, { cookie: c.admin, corpo: { perfis: ['COORDENADOR', 'TERAPEUTA'] } })).status).toBe(200)
-    expect((await ultimaDa(id)).valorAnterior).toBeNull()
+    expect(await prisma.registroAuditoria.count({ where: { idEntidade: id, acao: 'ALTERACAO' } })).toBe(antes)
     // E a trilha administrativa o mostra.
     const itens = (await trilha(c.admin, { acao: 'ALTERACAO' })).corpo.itens
     expect(itens.find((i: any) => i.idEntidade === id && i.valorAnterior)).toMatchObject({ valorAnterior: '{"perfis":["COORDENADOR"]}' })
@@ -335,12 +337,12 @@ describe('item 13b: o que mudou na conta, e a escola sem o nome da familia', () 
     expect((await ultimaDa(id)).valorAnterior).toBe('{"especialidade":"Fonoaudiologia"}')
     expect((await salvar({ especialidade: 'Psicologia', registroConselho: 'CRP 20/0000-FICT' })).status).toBe(200)
     expect((await ultimaDa(id)).valorAnterior).toBe('{"registroConselho":"CRFa 0000-FICT"}')
-    expect((await salvar({ especialidade: 'Psicologia', registroConselho: 'CRP 20/0000-FICT' })).status).toBe(200)
-    expect((await ultimaDa(id)).valorAnterior).toBeNull()
   })
 
   it('a versao anterior da conta so tem estes quatro campos: nunca a senha nem token', async () => {
-    const registros = await prisma.registroAuditoria.findMany({ where: { entidade: 'Usuario', valorAnterior: { not: null } } })
+    const registros = await prisma.registroAuditoria.findMany({
+      where: { entidade: { in: ['Usuario', 'Profissional'] }, valorAnterior: { not: null } },
+    })
     expect(registros.length).toBeGreaterThanOrEqual(5)
     for (const r of registros) {
       for (const campo of Object.keys(JSON.parse(r.valorAnterior!))) {
@@ -366,5 +368,49 @@ describe('item 13b: o que mudou na conta, e a escola sem o nome da familia', () 
     expect(daMae.itens.some((i: any) => i.entidade === 'Escola')).toBe(false)
     // O que nao e escola continua com o nome: a conta dela, a administracao ja ve na tela 14.
     expect(daMae.itens.every((i: any) => i.usuarioNome === 'Patrícia Ficticia')).toBe(true)
+  })
+})
+
+describe('item 13c: nomes de tela, o Profissional e nada sem mudanca', () => {
+  const alteracoes = (idEntidade: string) => prisma.registroAuditoria.findMany({
+    where: { idEntidade, acao: 'ALTERACAO' }, orderBy: [{ ocorridoEm: 'asc' }, { id: 'asc' }],
+  })
+
+  it('a troca de perfis grava os nomes de tela, e nao o nome interno', async () => {
+    const id = await criarUsuario(prisma, { email: 'nomes@teste.example', perfis: ['COORDENADOR'] })
+    expect((await api.pedir('PUT', `/usuarios/${id}/perfis`, { cookie: c.admin, corpo: { perfis: ['COORDENADOR', 'TERAPEUTA'] } })).status).toBe(200)
+    const [registro] = await alteracoes(id)
+    expect(registro.detalhe).toBe('Perfis: Coordenador clínico, Profissional da clínica')
+    expect(registro.detalhe).not.toMatch(/TERAPEUTA|COORDENADOR|ADMINISTRADOR/)
+    // A tela 25 recebe o detalhe como foi gravado.
+    const item = (await trilha(c.admin, { acao: 'ALTERACAO' })).corpo.itens.find((i: any) => i.id === registro.id)
+    expect(item.detalhe).toBe('Perfis: Coordenador clínico, Profissional da clínica')
+  })
+
+  it('os dados profissionais sao registrados no Profissional, que a trilha administrativa mostra', async () => {
+    const id = await criarUsuario(prisma, { email: 'profissional@teste.example', perfis: ['TERAPEUTA'] })
+    const cookie = await api.entrar('profissional@teste.example')
+    const r = await api.pedir('PUT', '/usuarios/eu/dados-profissionais', { cookie, corpo: { especialidade: 'Psicologia', registroConselho: 'CRFa 0000-FICT' } })
+    expect(r.status).toBe(200)
+    const [registro] = await alteracoes(id)
+    expect(registro).toMatchObject({ entidade: 'Profissional', idEntidade: id, pacienteId: null, valorAnterior: '{"especialidade":"Fonoaudiologia"}' })
+    const item = (await trilha(c.admin, { usuarioId: id })).corpo.itens.find((i: any) => i.id === registro.id)
+    expect(item).toMatchObject({ entidade: 'Profissional', valorAnterior: '{"especialidade":"Fonoaudiologia"}' })
+  })
+
+  it('salvar sem mudar nada nao escreve nem registra: nos perfis e nos dados profissionais', async () => {
+    const id = await criarUsuario(prisma, { email: 'igual@teste.example', perfis: ['TERAPEUTA', 'COORDENADOR'] })
+    const cookie = await api.entrar('igual@teste.example')
+    const antes = await prisma.usuario.findUniqueOrThrow({ where: { id }, include: { profissional: true } })
+
+    const perfis = await api.pedir('PUT', `/usuarios/${id}/perfis`, { cookie: c.admin, corpo: { perfis: ['COORDENADOR', 'TERAPEUTA'] } })
+    expect(perfis.status).toBe(200)
+    expect(perfis.corpo.perfis).toEqual(['TERAPEUTA', 'COORDENADOR'])
+    const dados = await api.pedir('PUT', '/usuarios/eu/dados-profissionais', { cookie, corpo: { especialidade: ' Fonoaudiologia ', registroConselho: 'CRFa 0000-FICT' } })
+    expect(dados.status).toBe(200)
+    expect(dados.corpo).toEqual({ especialidade: 'Fonoaudiologia', registroConselho: 'CRFa 0000-FICT' })
+
+    expect(await alteracoes(id)).toEqual([])
+    expect(await prisma.usuario.findUniqueOrThrow({ where: { id }, include: { profissional: true } })).toEqual(antes)
   })
 })

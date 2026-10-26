@@ -1,16 +1,12 @@
 import type { Perfil } from '../servicos'
+import { NOME_DO_PERFIL } from '@sinctea/compartilhado/dominio/perfis'
 import { SO_CAMINHO_PRINCIPAL } from './caminhoPrincipal'
 
-/** Como cada perfil aparece na interface, e para onde ele entra ao autenticar. */
-export const NOME_DO_PERFIL: Record<Perfil, string> = {
-  // Item 7: nenhuma tela diz "terapeuta". O enum continua TERAPEUTA no codigo
-  // e no banco; muda so o que a pessoa le.
-  TERAPEUTA: 'Profissional da clínica',
-  COORDENADOR: 'Coordenador clínico',
-  ADMINISTRADOR: 'Administrador',
-  RESPONSAVEL: 'Responsável',
-  PROFESSOR: 'Professor / AEE',
-}
+/**
+ * Como cada perfil aparece na interface: o nome mora no dominio desde o item
+ * 13c, porque o servidor tambem o grava na trilha.
+ */
+export { NOME_DO_PERFIL }
 
 /**
  * Painel inicial de cada perfil (mapa de rotas: docs/01, secao 2). So no

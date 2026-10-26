@@ -153,9 +153,12 @@ export class ServicoUsuarios {
     if (usuario.id === sessao.usuario.id && !unicos.includes('ADMINISTRADOR')) {
       throw new ErroServico('CONFLITO', 'Você não pode retirar o próprio perfil de administrador.')
     }
+    // Sem mudanca, nada se escreve nem se registra (item 13c), como nas edicoes da clinica.
+    const anteriores = perfisQueMudaram(usuario.perfis, unicos)
+    if (!anteriores) return { resultado: paraUsuario(usuario), valorAnterior: null }
     // Quem perdeu o perfil com que estava agindo cai na proxima chamada.
     const editado = await this.banco.usuario.update({ where: { id: usuario.id }, data: { perfis: unicos } })
-    return { resultado: paraUsuario(editado), valorAnterior: emJson(perfisQueMudaram(usuario.perfis, unicos)) }
+    return { resultado: paraUsuario(editado), valorAnterior: jsonCanonico(anteriores) }
   }
 
   async desativar(sessao: SessaoServidor, usuarioId: string): Promise<ComAnterior<Usuario>> {
@@ -194,14 +197,15 @@ export class ServicoUsuarios {
     if (!especialidade) erros.especialidade = 'Escreva a sua especialidade.'
     if (!registroConselho) erros.registroConselho = 'Escreva o seu registro no conselho.'
     exigirValido(erros)
-    await this.banco.profissional.update({
-      where: { usuarioId: sessao.usuario.id }, data: { especialidade, registroConselho },
-    })
     const antes = { especialidade: linha.especialidade, registroConselho: linha.registroConselho }
-    return {
-      resultado: { especialidade, registroConselho },
-      valorAnterior: emJson(anterioresQueMudaram(antes, { especialidade, registroConselho })),
+    const anteriores = anterioresQueMudaram(antes, { especialidade, registroConselho })
+    // Sem mudanca, nada se escreve nem se registra (item 13c).
+    if (anteriores) {
+      await this.banco.profissional.update({
+        where: { usuarioId: sessao.usuario.id }, data: { especialidade, registroConselho },
+      })
     }
+    return { resultado: { especialidade, registroConselho }, valorAnterior: emJson(anteriores) }
   }
 
   async listarProfissionais(filtro: { busca?: string; pagina?: number; porPagina?: number }): Promise<Pagina<Profissional>> {

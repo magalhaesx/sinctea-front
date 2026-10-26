@@ -9,6 +9,7 @@ import {
   anterioresQueMudaram, ENTIDADES_ADMINISTRATIVAS, perfisQueMudaram, semNomeNaTrilhaAdministrativa, versaoAnteriorEmTexto,
 } from '@sinctea/compartilhado/dominio/auditoria'
 import { jsonCanonico } from '@sinctea/compartilhado/dominio/hash'
+import { detalheDosPerfis } from '@sinctea/compartilhado/dominio/perfis'
 import { fimDaValidade, inicioDoDia } from '@sinctea/compartilhado/dominio/datas'
 import {
   auditar, banco, exigirPerfil, exigirSessao, exigirValido, gerarId, naoEncontrado, paginar,
@@ -251,10 +252,12 @@ export const usuariosMock: ServicoUsuario = {
       { especialidade: usuario.especialidade, registroConselho: usuario.registroConselho ?? null },
       { especialidade, registroConselho },
     )
+    // Item 13c: sem mudanca, nada se registra; e o registro e do Profissional.
+    if (!anteriores) return { especialidade, registroConselho }
     usuario.especialidade = especialidade
     usuario.registroConselho = registroConselho
     auditar(sessao, {
-      acao: 'ALTERACAO', entidade: 'Usuario', idEntidade: usuario.id,
+      acao: 'ALTERACAO', entidade: 'Profissional', idEntidade: usuario.id,
       detalhe: `Dados profissionais atualizados: ${especialidade}, ${registroConselho}.`,
       valorAnterior: anteriores && jsonCanonico(anteriores),
     })
@@ -276,10 +279,12 @@ export const usuariosMock: ServicoUsuario = {
       throw new ErroServico('CONFLITO', 'Você não pode retirar o próprio perfil de administrador.')
     }
     const anteriores = perfisQueMudaram(usuario.perfis, unicos)
+    // Item 13c: sem mudanca, nada se registra; o detalhe vai com os nomes de tela.
+    if (!anteriores) return publico(usuario)
     usuario.perfis = unicos
     auditar(sessao, {
-      acao: 'ALTERACAO', entidade: 'Usuario', idEntidade: usuario.id, detalhe: `Perfis: ${unicos.join(', ')}`,
-      valorAnterior: anteriores && jsonCanonico(anteriores),
+      acao: 'ALTERACAO', entidade: 'Usuario', idEntidade: usuario.id, detalhe: detalheDosPerfis(unicos),
+      valorAnterior: jsonCanonico(anteriores),
     })
     return publico(usuario)
   }),

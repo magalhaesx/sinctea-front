@@ -7,11 +7,16 @@ import { lerBooleano, lerPaginacao, lerTexto } from '../http/paginacao.js'
 import type { RequisicaoHttp, RespostaHttp } from '../http/tipos-http.js'
 import { textoOuVazio } from '../http/validacao.js'
 import { ServicoTrilhaAdministrativa } from './servico-trilha.js'
+import { detalheDosPerfis } from '@sinctea/compartilhado/dominio/perfis'
 import { ServicoUsuarios, type ComAnterior } from './servico-usuarios.js'
 
-/** Item 13b: a versao anterior do que mudou vai para a trilha, pelo interceptador. */
-function comAnterior<T>(req: RequisicaoHttp, { resultado, valorAnterior }: ComAnterior<T>): T {
+/**
+ * Item 13b: a versao anterior do que mudou vai para a trilha, pelo
+ * interceptador. Item 13c: na edicao, nada mudou e nada se registra.
+ */
+function comAnterior<T>(req: RequisicaoHttp, { resultado, valorAnterior }: ComAnterior<T>, edicao = false): T {
   if (valorAnterior !== null) req.sinctea!.valorAnterior = valorAnterior
+  else if (edicao) req.sinctea!.dispensarRegistro = true
   return resultado
 }
 
@@ -62,7 +67,8 @@ export class ControladorUsuarios {
 
   @Put('eu/dados-profissionais')
   @Auditar({
-    entidade: 'Usuario', acao: 'ALTERACAO',
+    // Item 13c: a especialidade e o registro sao do Profissional, e nao da conta.
+    entidade: 'Profissional', acao: 'ALTERACAO',
     idEntidade: (req) => req.sinctea?.sessao?.usuario.id ?? null,
     detalhe: (_req, r) => {
       const d = r as DadosProfissionais
@@ -70,17 +76,18 @@ export class ControladorUsuarios {
     },
   })
   async atualizarMeusDadosProfissionais(@Req() req: RequisicaoHttp, @Body() corpo: Record<string, unknown> | undefined) {
-    return comAnterior(req, await this.usuarios.atualizarMeusDadosProfissionais(req.sinctea!.sessao!, corpo ?? {}))
+    return comAnterior(req, await this.usuarios.atualizarMeusDadosProfissionais(req.sinctea!.sessao!, corpo ?? {}), true)
   }
 
   @Put(':id/perfis')
   @Perfis('ADMINISTRADOR')
   @Auditar({
     entidade: 'Usuario', acao: 'ALTERACAO', idEntidade: { parametro: 'id' },
-    detalhe: (_req, r) => `Perfis: ${(r as Usuario).perfis.join(', ')}`,
+    // Item 13c: com os nomes de tela; os registros antigos ficam com o nome interno.
+    detalhe: (_req, r) => detalheDosPerfis((r as Usuario).perfis),
   })
   async alterarPerfis(@Req() req: RequisicaoHttp, @Param('id') id: string, @Body() corpo: { perfis?: unknown } | undefined) {
-    return comAnterior(req, await this.usuarios.alterarPerfis(req.sinctea!.sessao!, id, corpo?.perfis))
+    return comAnterior(req, await this.usuarios.alterarPerfis(req.sinctea!.sessao!, id, corpo?.perfis), true)
   }
 
   @Post(':id/desativacao')

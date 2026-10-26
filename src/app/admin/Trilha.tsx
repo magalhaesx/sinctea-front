@@ -36,7 +36,7 @@ const ACOES: Record<AcaoAuditoria, { rotulo: string; tom: 'ok' | 'at' | 'cr' | '
 }
 
 const ENTIDADES: Record<string, string> = {
-  Usuario: 'Conta', Profissional: 'Profissionais', Escola: 'Escola', RegistroAuditoria: 'Trilha',
+  Usuario: 'Conta', Profissional: 'Profissional', Escola: 'Escola', RegistroAuditoria: 'Trilha',
 }
 
 /** Os perfis de antes, com nome de gente; o resto, como o dominio le. */

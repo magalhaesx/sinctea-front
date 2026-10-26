@@ -188,7 +188,7 @@ describe('dados profissionais: so o dono', () => {
     const r = await api.pedir('PUT', '/usuarios/eu/dados-profissionais', { cookie: cookies.terapeuta, corpo: { especialidade: ' Terapia Ocupacional ', registroConselho: 'CREFITO 1234-FICT' } })
     expect(r.corpo).toEqual({ especialidade: 'Terapia Ocupacional', registroConselho: 'CREFITO 1234-FICT' })
     expect(await prisma.registroAuditoria.findFirst({ where: { acao: 'ALTERACAO', idEntidade: ids.terapeuta, usuarioId: ids.terapeuta } }))
-      .toMatchObject({ detalhe: 'Dados profissionais atualizados: Terapia Ocupacional, CREFITO 1234-FICT.' })
+      .toMatchObject({ entidade: 'Profissional', detalhe: 'Dados profissionais atualizados: Terapia Ocupacional, CREFITO 1234-FICT.' })
   })
 
   it('o responsavel nao tem dados profissionais: leitura vazia, e alterar e recusado', async () => {

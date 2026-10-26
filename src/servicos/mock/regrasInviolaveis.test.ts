@@ -1023,6 +1023,29 @@ describe('outras regras de tela aplicadas no servico', () => {
     expect(daMae.itens.some((r) => r.idEntidade === escola.id)).toBe(false)
   })
 
+  it('item 13c: perfis com nome de tela, dados no Profissional, e nada sem mudanca', async () => {
+    await entrarComo('COORDENADOR')
+    await chamar(s.autenticacao.trocarPerfil('ADMINISTRADOR'))
+    const { usuario: alvo } = await chamar(s.usuarios.convidar({
+      nome: 'Otávio Reis Lima', email: 'otavio.lima@clinica.example', perfis: ['COORDENADOR'],
+    }))
+    const alteracoes = () => banco.auditoria.filter((r) => r.idEntidade === alvo.id && r.acao === 'ALTERACAO')
+    await chamar(s.usuarios.alterarPerfis(alvo.id, ['COORDENADOR', 'TERAPEUTA']))
+    expect(alteracoes().map((r) => r.detalhe)).toEqual(['Perfis: Coordenador clínico, Profissional da clínica'])
+    await chamar(s.usuarios.alterarPerfis(alvo.id, ['TERAPEUTA', 'COORDENADOR']))
+    expect(alteracoes()).toHaveLength(1)
+
+    await entrarComo('TERAPEUTA')
+    const eu = (await chamar(s.autenticacao.sessaoAtual()))!.usuario.id
+    const dados = await chamar(s.usuarios.meusDadosProfissionais())
+    const dosDados = () => banco.auditoria.filter((r) => r.idEntidade === eu && r.acao === 'ALTERACAO')
+    const antes = dosDados().length
+    await chamar(s.usuarios.atualizarMeusDadosProfissionais({ especialidade: 'Neuropsicologia', registroConselho: dados!.registroConselho }))
+    expect(dosDados().slice(antes)).toEqual([expect.objectContaining({ entidade: 'Profissional' })])
+    await chamar(s.usuarios.atualizarMeusDadosProfissionais({ especialidade: 'Neuropsicologia', registroConselho: dados!.registroConselho }))
+    expect(dosDados()).toHaveLength(antes + 1)
+  })
+
   it('encerrar tira a atividade da familia e guarda o historico', async () => {
     await entrarComo('TERAPEUTA')
     const ativas = await chamar(s.atividades.listarPorPaciente('p-001', { ativa: true, porPagina: 50 }))
@@ -1397,7 +1420,8 @@ describe('relatorio de evolucao — documento clinico (UC09)', () => {
       }))
       expect(atualizado.registroConselho).toBe('CRFa 4321-FICT')
       expect(await ultimaAuditoria()).toMatchObject({
-        acao: 'ALTERACAO', entidade: 'Usuario', idEntidade: autor.id,
+        // Item 13c: a especialidade e o registro sao do Profissional.
+        acao: 'ALTERACAO', entidade: 'Profissional', idEntidade: autor.id,
       })
 
       const relatorio = await chamar(s.relatorios.emitir('p-001', pedido))
