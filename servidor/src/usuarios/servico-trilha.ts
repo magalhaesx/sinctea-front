@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common'
 import {
   ErroServico, type AcaoAuditoria, type FiltroTrilhaAdministrativa, type Pagina, type RegistroAdministrativo,
 } from '@sinctea/compartilhado'
-import { ENTIDADES_ADMINISTRATIVAS } from '@sinctea/compartilhado/dominio/auditoria'
+import { ENTIDADES_ADMINISTRATIVAS, semNomeNaTrilhaAdministrativa } from '@sinctea/compartilhado/dominio/auditoria'
 import { fimDaValidade, inicioDoDia, partesDaDataCivil } from '@sinctea/compartilhado/dominio/datas'
 import { ServicoBanco } from '../banco/servico-banco.js'
 import { exigirUuid, exigirValido } from '../http/validacao.js'
@@ -20,6 +20,10 @@ const ACOES: AcaoAuditoria[] = ['CONCESSAO_ACESSO', 'REVOGACAO_ACESSO', 'LEITURA
  * lista que, noutra rota, leva paciente (o link do responsavel, item 8).
  *
  * O IP fica de fora da resposta. A projecao e explicita, campo a campo.
+ *
+ * O registro de escola feito por um responsavel sai sem o nome e sem o id de
+ * quem agiu, e o filtro por pessoa nao o alcanca (item 13b): pelo id, a tela
+ * 14 diria o nome.
  */
 @Injectable()
 export class ServicoTrilhaAdministrativa {
@@ -39,7 +43,7 @@ export class ServicoTrilhaAdministrativa {
     const where = {
       pacienteId: null,
       entidade: { in: [...ENTIDADES_ADMINISTRATIVAS] },
-      ...(usuarioId ? { usuarioId } : {}),
+      ...(usuarioId ? { usuarioId, NOT: { entidade: 'Escola', perfil: 'RESPONSAVEL' as const } } : {}),
       ...(filtro.acao ? { acao: filtro.acao } : {}),
       ...(filtro.desde || filtro.ate ? {
         ocorridoEm: {
@@ -67,7 +71,11 @@ export class ServicoTrilhaAdministrativa {
       throw new ErroServico('INDISPONIVEL', 'A trilha administrativa recusou um registro fora da lista.')
     }
     return {
-      itens: linhas.map((l) => ({ ...l, ocorridoEm: l.ocorridoEm.toISOString() })),
+      itens: linhas.map((l) => ({
+        ...l,
+        ocorridoEm: l.ocorridoEm.toISOString(),
+        ...(semNomeNaTrilhaAdministrativa(l) ? { usuarioId: null, usuarioNome: null } : {}),
+      })),
       total, pagina, porPagina: POR_PAGINA_DA_TRILHA,
     }
   }

@@ -31,6 +31,16 @@ export function origemDoPerfil(perfil: Perfil | null): RegistroAuditoria['origem
  */
 export const ENTIDADES_ADMINISTRATIVAS = ['Usuario', 'Profissional', 'Escola', 'RegistroAuditoria'] as const
 
+/**
+ * Item 13b: na trilha administrativa, o registro de escola feito por um
+ * responsavel sai sem quem agiu, so com o perfil. O administrador cuida do
+ * cadastro da escola, e nao precisa saber qual familia esta ligada a ela. O
+ * banco continua guardando o nome.
+ */
+export function semNomeNaTrilhaAdministrativa(registro: { entidade: string; perfil: Perfil | null }): boolean {
+  return registro.entidade === 'Escola' && registro.perfil === 'RESPONSAVEL'
+}
+
 /** Os campos que a trilha guarda hoje, com nome de gente. */
 export const NOME_DO_CAMPO: Record<string, string> = {
   tipo: 'O que aconteceu',
@@ -46,6 +56,10 @@ export const NOME_DO_CAMPO: Record<string, string> = {
   email: 'E-mail',
   telefone: 'Telefone',
   parentesco: 'Parentesco',
+  perfis: 'Perfis',
+  ativo: 'Conta ativa',
+  especialidade: 'Especialidade',
+  registroConselho: 'Registro no conselho',
 }
 
 /**
@@ -59,6 +73,20 @@ export function anterioresQueMudaram<T extends Record<string, unknown>>(antes: T
   return Object.fromEntries(mudaram.map((campo) => [campo, antes[campo]])) as Partial<T>
 }
 
+/** Item 13b: os perfis de antes, se o conjunto mudou. A ordem nao conta. */
+export function perfisQueMudaram(antes: readonly Perfil[], depois: readonly Perfil[]): { perfis: Perfil[] } | null {
+  const conjunto = (perfis: readonly Perfil[]) => [...new Set(perfis)].sort().join(',')
+  return conjunto(antes) === conjunto(depois) ? null : { perfis: [...antes] }
+}
+
+/** O valor guardado como se le: lista separada por virgula, sim ou nao, em branco. */
+function emTexto(valor: unknown): string {
+  if (Array.isArray(valor)) return valor.map(String).join(', ')
+  if (typeof valor === 'boolean') return valor ? 'Sim' : 'Não'
+  if (valor === null || valor === '') return 'Em branco'
+  return String(valor)
+}
+
 /**
  * Os pares do valor anterior, na ordem em que o JSON canonico os guardou.
  *
@@ -66,11 +94,15 @@ export function anterioresQueMudaram<T extends Record<string, unknown>>(antes: T
  * outras entidades, e esconder o que ainda nao se sabe nomear seria pior do
  * que mostrar a chave crua.
  */
-export function camposAnteriores(valorAnterior: string): Array<[string, string]> {
+export function camposAnteriores(
+  valorAnterior: string,
+  /** Quem le pode dar nome de gente a um valor (os perfis, na tela); sem nome, vale o texto. */
+  comoLer?: (campo: string, valor: unknown) => string | undefined,
+): Array<[string, string]> {
   try {
     const valor: unknown = JSON.parse(valorAnterior)
     if (valor && typeof valor === 'object' && !Array.isArray(valor)) {
-      return Object.entries(valor as Record<string, unknown>).map(([k, v]) => [k, String(v)])
+      return Object.entries(valor as Record<string, unknown>).map(([k, v]) => [k, comoLer?.(k, v) ?? emTexto(v)])
     }
   } catch { /* nao era JSON: cai no bruto, abaixo */ }
   return [['Valor anterior', valorAnterior]]

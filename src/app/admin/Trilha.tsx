@@ -13,16 +13,17 @@ import { EstadoVazio } from '../../ui/EstadoVazio'
 import { Paginacao } from '../../ui/Paginacao'
 import { Tabela, type Coluna } from '../../ui/Tabela'
 import { Titulo } from '../../ui/Titulo'
-import { servicos, type AcaoAuditoria, type Pagina, type RegistroAdministrativo } from '../../servicos'
+import { servicos, type AcaoAuditoria, type Pagina, type Perfil, type RegistroAdministrativo } from '../../servicos'
 
 /**
- * Tela 25 · Trilha administrativa · /app/admin/trilha (item 13)
+ * Tela 25 · Trilha administrativa · /app/admin/trilha (UC19, com o administrador como segundo ator; item 13)
  *
  * O que aconteceu nas contas, nos links de acesso, nas escolas e na propria
  * trilha. O administrador nunca alcanca dado clinico (regra 3): quem recorta e
  * o servidor, que so devolve registro sem paciente e de uma entidade da lista
  * fechada (ENTIDADES_ADMINISTRATIVAS). O IP nao vem. Sem editar, sem excluir e
- * sem exportar. Ler esta tela tambem entra na trilha.
+ * sem exportar. Ler esta tela tambem entra na trilha. A escola cadastrada por
+ * um responsavel aparece sem o nome dele (item 13b).
  */
 
 const ACOES: Record<AcaoAuditoria, { rotulo: string; tom: 'ok' | 'at' | 'cr' | 'neutro'; simbolo: string }> = {
@@ -38,6 +39,11 @@ const ENTIDADES: Record<string, string> = {
   Usuario: 'Conta', Profissional: 'Profissionais', Escola: 'Escola', RegistroAuditoria: 'Trilha',
 }
 
+/** Os perfis de antes, com nome de gente; o resto, como o dominio le. */
+const comoLer = (campo: string, valor: unknown) => (campo === 'perfis' && Array.isArray(valor)
+  ? valor.map((p) => NOME_DO_PERFIL[p as Perfil] ?? String(p)).join(', ')
+  : undefined)
+
 /** Data e hora de Manaus, a da instancia, qualquer que seja o fuso de quem le. */
 const quando = (iso: string) => {
   const instante = new Date(iso)
@@ -49,10 +55,12 @@ const colunas: Coluna<RegistroAdministrativo>[] = [
   { id: 'quando', titulo: 'Data e hora', celula: (r) => <span className="tabular-nums">{quando(r.ocorridoEm)}</span> },
   {
     id: 'quem', titulo: 'Quem agiu',
-    // Fotografia do momento: o nome e o perfil gravados no registro.
+    // Fotografia do momento: o nome e o perfil gravados no registro. Sem o
+    // nome e com o perfil, so o perfil: a escola cadastrada pela familia.
     celula: (r) => r.usuarioNome
       ? <>{r.usuarioNome}<span className="block text-sm text-tinta2">{r.perfil ? NOME_DO_PERFIL[r.perfil] : 'Sem perfil'}</span></>
-      : <span className="text-tinta2">Sem sessão</span>,
+      : r.perfil === 'RESPONSAVEL' ? 'Um responsável'
+        : <span className="text-tinta2">{r.perfil ? NOME_DO_PERFIL[r.perfil] : 'Sem sessão'}</span>,
   },
   {
     id: 'acao', titulo: 'Ação',
@@ -71,7 +79,7 @@ const colunas: Coluna<RegistroAdministrativo>[] = [
     id: 'antes', titulo: 'O que mudou', quebrar: true,
     celula: (r) => r.acao === 'ALTERACAO' && r.valorAnterior ? (
       <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
-        {camposAnteriores(r.valorAnterior).map(([campo, valor]) => (
+        {camposAnteriores(r.valorAnterior, comoLer).map(([campo, valor]) => (
           <Fragment key={campo}>
             <dt className="font-bold">{NOME_DO_CAMPO[campo] ?? campo}, antes</dt>
             <dd>{valor}</dd>

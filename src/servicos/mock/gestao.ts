@@ -5,7 +5,10 @@ import {
 } from '@sinctea/compartilhado'
 import { erroDoMotivoDaNovaSenha, podeDesativarUsuario } from '@sinctea/compartilhado/dominio/regras'
 import { montarCsv } from '@sinctea/compartilhado/dominio/csv'
-import { ENTIDADES_ADMINISTRATIVAS, versaoAnteriorEmTexto } from '@sinctea/compartilhado/dominio/auditoria'
+import {
+  anterioresQueMudaram, ENTIDADES_ADMINISTRATIVAS, perfisQueMudaram, semNomeNaTrilhaAdministrativa, versaoAnteriorEmTexto,
+} from '@sinctea/compartilhado/dominio/auditoria'
+import { jsonCanonico } from '@sinctea/compartilhado/dominio/hash'
 import { fimDaValidade, inicioDoDia } from '@sinctea/compartilhado/dominio/datas'
 import {
   auditar, banco, exigirPerfil, exigirSessao, exigirValido, gerarId, naoEncontrado, paginar,
@@ -61,9 +64,11 @@ export const auditoriaMock: ServicoAuditoria = {
     const itens = banco.auditoria
       .filter((r) => r.pacienteId === null && (ENTIDADES_ADMINISTRATIVAS as readonly string[]).includes(r.entidade))
       .filter((r) => (!desde || r.ocorridoEm >= desde) && (!ate || r.ocorridoEm < ate))
-      .filter((r) => (!filtro.usuarioId || r.usuarioId === filtro.usuarioId) && (!filtro.acao || r.acao === filtro.acao))
+      // O registro de escola feito por responsavel sai sem quem agiu, e o filtro por pessoa nao o alcanca (item 13b).
+      .filter((r) => !filtro.usuarioId || (r.usuarioId === filtro.usuarioId && !semNomeNaTrilhaAdministrativa(r)))
+      .filter((r) => !filtro.acao || r.acao === filtro.acao)
       .slice().reverse()
-      .map(({ ipOrigem: _ip, pacienteId: _p, ...r }) => r)
+      .map(({ ipOrigem: _ip, pacienteId: _p, ...r }) => (semNomeNaTrilhaAdministrativa(r) ? { ...r, usuarioId: null, usuarioNome: null } : r))
     const pagina = paginar(itens, { pagina: filtro.pagina, porPagina: 20 })
     auditar(sessao, {
       acao: 'LEITURA_AUTORIZADA', entidade: 'RegistroAuditoria', idEntidade: null,
@@ -241,11 +246,17 @@ export const usuariosMock: ServicoUsuario = {
     if (!registroConselho) erros.registroConselho = 'Escreva o seu registro no conselho.'
     exigirValido(erros)
 
+    // Item 13b: a versao anterior so do que mudou, como no servidor.
+    const anteriores = anterioresQueMudaram(
+      { especialidade: usuario.especialidade, registroConselho: usuario.registroConselho ?? null },
+      { especialidade, registroConselho },
+    )
     usuario.especialidade = especialidade
     usuario.registroConselho = registroConselho
     auditar(sessao, {
       acao: 'ALTERACAO', entidade: 'Usuario', idEntidade: usuario.id,
       detalhe: `Dados profissionais atualizados: ${especialidade}, ${registroConselho}.`,
+      valorAnterior: anteriores && jsonCanonico(anteriores),
     })
     return { especialidade, registroConselho }
   }),
@@ -264,8 +275,12 @@ export const usuariosMock: ServicoUsuario = {
     if (usuario.id === sessao.usuario.id && !unicos.includes('ADMINISTRADOR')) {
       throw new ErroServico('CONFLITO', 'Você não pode retirar o próprio perfil de administrador.')
     }
+    const anteriores = perfisQueMudaram(usuario.perfis, unicos)
     usuario.perfis = unicos
-    auditar(sessao, { acao: 'ALTERACAO', entidade: 'Usuario', idEntidade: usuario.id, detalhe: `Perfis: ${unicos.join(', ')}` })
+    auditar(sessao, {
+      acao: 'ALTERACAO', entidade: 'Usuario', idEntidade: usuario.id, detalhe: `Perfis: ${unicos.join(', ')}`,
+      valorAnterior: anteriores && jsonCanonico(anteriores),
+    })
     return publico(usuario)
   }),
 
@@ -275,16 +290,24 @@ export const usuariosMock: ServicoUsuario = {
       throw new ErroServico('CONFLITO', 'Você não pode desativar a própria conta.')
     }
     const usuario = buscarUsuario(usuarioId)
+    const anteriores = anterioresQueMudaram({ ativo: usuario.ativo }, { ativo: false })
     usuario.ativo = false
-    auditar(sessao, { acao: 'ALTERACAO', entidade: 'Usuario', idEntidade: usuario.id, detalhe: 'Usuário desativado.' })
+    auditar(sessao, {
+      acao: 'ALTERACAO', entidade: 'Usuario', idEntidade: usuario.id, detalhe: 'Usuário desativado.',
+      valorAnterior: anteriores && jsonCanonico(anteriores),
+    })
     return publico(usuario)
   }),
 
   reativar: (usuarioId) => responder(() => {
     const sessao = exigirPerfil(['ADMINISTRADOR'], 'Usuario')
     const usuario = buscarUsuario(usuarioId)
+    const anteriores = anterioresQueMudaram({ ativo: usuario.ativo }, { ativo: true })
     usuario.ativo = true
-    auditar(sessao, { acao: 'ALTERACAO', entidade: 'Usuario', idEntidade: usuario.id, detalhe: 'Usuário reativado.' })
+    auditar(sessao, {
+      acao: 'ALTERACAO', entidade: 'Usuario', idEntidade: usuario.id, detalhe: 'Usuário reativado.',
+      valorAnterior: anteriores && jsonCanonico(anteriores),
+    })
     return publico(usuario)
   }),
 }

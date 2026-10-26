@@ -302,3 +302,69 @@ describe('trilha administrativa', () => {
     }
   })
 })
+
+describe('item 13b: o que mudou na conta, e a escola sem o nome da familia', () => {
+  const ultimaDa = (idEntidade: string) => prisma.registroAuditoria.findFirstOrThrow({
+    where: { idEntidade, acao: 'ALTERACAO' }, orderBy: [{ ocorridoEm: 'desc' }, { id: 'desc' }],
+  })
+
+  it('perfis: a trilha guarda os de antes, se o conjunto mudou; a mesma lista em outra ordem nao e mudanca', async () => {
+    const id = await criarUsuario(prisma, { email: 'perfis@teste.example', perfis: ['COORDENADOR'] })
+    expect((await api.pedir('PUT', `/usuarios/${id}/perfis`, { cookie: c.admin, corpo: { perfis: ['TERAPEUTA', 'COORDENADOR'] } })).status).toBe(200)
+    expect((await ultimaDa(id)).valorAnterior).toBe('{"perfis":["COORDENADOR"]}')
+    expect((await api.pedir('PUT', `/usuarios/${id}/perfis`, { cookie: c.admin, corpo: { perfis: ['COORDENADOR', 'TERAPEUTA'] } })).status).toBe(200)
+    expect((await ultimaDa(id)).valorAnterior).toBeNull()
+    // E a trilha administrativa o mostra.
+    const itens = (await trilha(c.admin, { acao: 'ALTERACAO' })).corpo.itens
+    expect(itens.find((i: any) => i.idEntidade === id && i.valorAnterior)).toMatchObject({ valorAnterior: '{"perfis":["COORDENADOR"]}' })
+  })
+
+  it('situacao: desativar guarda que estava ativa; reativar, que estava desativada', async () => {
+    const id = await criarUsuario(prisma, { email: 'situacao@teste.example', perfis: ['TERAPEUTA'] })
+    expect((await api.pedir('POST', `/usuarios/${id}/desativacao`, { cookie: c.admin })).status).toBe(200)
+    expect((await ultimaDa(id)).valorAnterior).toBe('{"ativo":true}')
+    expect((await api.pedir('POST', `/usuarios/${id}/reativacao`, { cookie: c.admin })).status).toBe(200)
+    expect((await ultimaDa(id)).valorAnterior).toBe('{"ativo":false}')
+  })
+
+  it('dados profissionais: o dono muda, e a trilha guarda so o campo que mudou', async () => {
+    const id = await criarUsuario(prisma, { email: 'dados@teste.example', perfis: ['TERAPEUTA'] })
+    const cookie = await api.entrar('dados@teste.example')
+    const salvar = (corpo: Record<string, string>) => api.pedir('PUT', '/usuarios/eu/dados-profissionais', { cookie, corpo })
+    expect((await salvar({ especialidade: 'Psicologia', registroConselho: 'CRFa 0000-FICT' })).status).toBe(200)
+    expect((await ultimaDa(id)).valorAnterior).toBe('{"especialidade":"Fonoaudiologia"}')
+    expect((await salvar({ especialidade: 'Psicologia', registroConselho: 'CRP 20/0000-FICT' })).status).toBe(200)
+    expect((await ultimaDa(id)).valorAnterior).toBe('{"registroConselho":"CRFa 0000-FICT"}')
+    expect((await salvar({ especialidade: 'Psicologia', registroConselho: 'CRP 20/0000-FICT' })).status).toBe(200)
+    expect((await ultimaDa(id)).valorAnterior).toBeNull()
+  })
+
+  it('a versao anterior da conta so tem estes quatro campos: nunca a senha nem token', async () => {
+    const registros = await prisma.registroAuditoria.findMany({ where: { entidade: 'Usuario', valorAnterior: { not: null } } })
+    expect(registros.length).toBeGreaterThanOrEqual(5)
+    for (const r of registros) {
+      for (const campo of Object.keys(JSON.parse(r.valorAnterior!))) {
+        expect(['perfis', 'ativo', 'especialidade', 'registroConselho']).toContain(campo)
+      }
+      expect(r.valorAnterior).not.toMatch(/\$argon2|senha|token/i)
+    }
+  })
+
+  it('escola cadastrada por responsavel: na trilha administrativa, so "um responsavel"; o banco guarda o nome; o filtro por pessoa nao a traz', async () => {
+    const r = await api.pedir('POST', '/escolas', { cookie: c.mae, corpo: { nome: 'Escola Estadual Ficticia', rede: 'Estadual', municipio: 'Manaus' } })
+    expect(r.status, JSON.stringify(r.corpo)).toBe(201)
+    expect(await prisma.registroAuditoria.findFirstOrThrow({ where: { entidade: 'Escola', idEntidade: r.corpo.id } }))
+      .toMatchObject({ usuarioId: p.mae, usuarioNome: 'Patrícia Ficticia', perfil: 'RESPONSAVEL', acao: 'CRIACAO' })
+
+    const item = (await trilha(c.admin)).corpo.itens.find((i: any) => i.idEntidade === r.corpo.id)
+    expect(item).toMatchObject({ entidade: 'Escola', perfil: 'RESPONSAVEL', usuarioId: null, usuarioNome: null })
+    expect(JSON.stringify(item)).not.toContain('Patrícia')
+    expect(JSON.stringify(item)).not.toContain(p.mae)
+
+    const daMae = (await trilha(c.admin, { usuarioId: p.mae })).corpo
+    expect(daMae.total).toBeGreaterThan(0)
+    expect(daMae.itens.some((i: any) => i.entidade === 'Escola')).toBe(false)
+    // O que nao e escola continua com o nome: a conta dela, a administracao ja ve na tela 14.
+    expect(daMae.itens.every((i: any) => i.usuarioNome === 'Patrícia Ficticia')).toBe(true)
+  })
+})

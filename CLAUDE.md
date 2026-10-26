@@ -205,10 +205,10 @@ Atualizado em 18/10/2026, lendo o código — não a memória.
   simulada que aplica controle de acesso e auditoria; o cliente da API, que
   não aplica regra nenhuma. A versão publicada usa só a API, e o mock fica
   fora do pacote; no desenvolvimento, `VITE_API_URL` escolhe entre as duas
-- **465 testes em 38 arquivos, nos três pacotes**, rodados por um único
+- **475 testes em 38 arquivos, nos três pacotes**, rodados por um único
   `npm test` na raiz, sem passo manual. O principal ainda é
   `src/servicos/mock/regrasInviolaveis.test.ts`, que verifica as regras
-  invioláveis na camada de dados, e não na tela. Os 226 do servidor rodam contra
+  invioláveis na camada de dados, e não na tela. Os 231 do servidor rodam contra
   um PostgreSQL 17 de verdade
 - **As seis regras verificadas** em `docs/06`: para cada teste citado, a regra foi
   quebrada de propósito para confirmar que ele falha, e as quebras que não
@@ -431,6 +431,14 @@ em produção (o antigo passo B5) foi cancelada. No código, hoje:
   a própria trilha. Sem IP, vinte por página, com filtros de período, pessoa e
   ação; sem editar, apagar nem exportar; ler a trilha entra nela. Testes em
   `servidor/test/administracao.test.ts`
+- **Item 13b — as respostas do Cowork ao item 13.** A tela 25 é o UC19, com o
+  administrador como segundo ator, só com o recorte administrativo. A trilha
+  guarda o valor anterior só do que mudou nos perfis e na situação da conta e
+  nos dados profissionais da tela 21; os perfis comparam como conjunto, e nunca
+  entra senha nem token. Na trilha administrativa, a escola cadastrada por um
+  responsável sai como "Um responsável", sem o nome nem o id, e o filtro por
+  pessoa não a traz; o banco guarda o nome. A tela 1 diz à equipe que peça à
+  administração um link para nova senha
 - `npm run criar-administrador -w @sinctea/servidor -- .env.producao --nome
   "Nome Completo" --email voce@exemplo.com` cria o primeiro administrador:
   nome e e-mail vêm da linha de comando, e só a senha é pedida, escondida e duas
@@ -533,8 +541,9 @@ termo, e a família reabre o texto da versão registrada pela própria tela 17.
 - 11/10/2026 — `RegistroAuditoria` ganhou `valorAnterior : String`. Guarda o JSON
   canônico **apenas dos campos que mudaram**, na versão anterior — nunca o
   registro inteiro, por minimização. Hoje o preenchem a correção de ocorrência
-  escolar, a edição de objetivo e das datas do plano e a do responsável; nas
-  demais ações é nulo
+  escolar, a edição de objetivo e das datas do plano, a do responsável e,
+  desde o item 13b, a dos perfis e da situação da conta e a dos dados
+  profissionais; nas demais ações é nulo
 - 15/10/2026 — o diagrama alcançou o banco: `RegistroAuditoria` mostra
   `pacienteId : UUID [0..1]`, que é fotografia, sem chave estrangeira;
   `RelatorioEvolucao` ganhou `destinatario : Destinatario`, e `conteudoEmitido`

@@ -177,8 +177,8 @@ export function Entrar() {
             {mostrarAjudaSenha && (
               <p className="max-w-[65ch] text-sm text-tinta2">
                 Esta versão ainda não redefine senha sozinha, nem manda e-mail. Se você é da
-                equipe da clínica, peça à administração um novo link de acesso: com ele, você
-                define outra senha. Se você é responsável por um paciente, peça à clínica: a
+                equipe da clínica, peça à administração um link para nova senha: com ele, você
+                escolhe outra senha. Se você é responsável por um paciente, peça à clínica: a
                 coordenação gera um link para você escolher uma nova senha. Se você é da escola,
                 peça à clínica: a administração gera um link para você escolher uma nova senha.
               </p>

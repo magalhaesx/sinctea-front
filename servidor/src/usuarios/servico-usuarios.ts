@@ -6,6 +6,8 @@ import {
 import {
   emailValido, erroDoMotivoDaNovaSenha, normalizarEmail, paraBusca, podeDesativarUsuario,
 } from '@sinctea/compartilhado/dominio/regras'
+import { anterioresQueMudaram, perfisQueMudaram } from '@sinctea/compartilhado/dominio/auditoria'
+import { jsonCanonico } from '@sinctea/compartilhado/dominio/hash'
 import { Negacao } from '../acesso/negacao.js'
 import { ServicoAutenticacao } from '../autenticacao/servico-autenticacao.js'
 import { ServicoSessoes } from '../autenticacao/servico-sessoes.js'
@@ -15,6 +17,14 @@ import { paginar, porNome } from '../http/paginacao.js'
 import type { SessaoServidor } from '../http/tipos-http.js'
 import { exigirUuid, exigirValido, textoOuVazio } from '../http/validacao.js'
 import { paraProfissional, paraUsuario } from './mapeador.js'
+
+/**
+ * Item 13b: o resultado e, para a trilha, a versao anterior so dos campos que
+ * mudaram, em JSON canonico. Nada mudou: nulo. Nunca a senha nem token.
+ */
+export interface ComAnterior<T> { resultado: T; valorAnterior: string | null }
+
+const emJson = (anteriores: Record<string, unknown> | null) => (anteriores ? jsonCanonico(anteriores) : null)
 
 /** Perfis que a gestao de usuarios concede. Familia e escola nunca saem daqui. */
 const PERFIS_DE_EQUIPE: Perfil[] = ['TERAPEUTA', 'COORDENADOR', 'ADMINISTRADOR']
@@ -131,7 +141,7 @@ export class ServicoUsuarios {
     return { token: link.token, expiraEm: link.expiraEm.toISOString() }
   }
 
-  async alterarPerfis(sessao: SessaoServidor, usuarioId: string, perfis: unknown): Promise<Usuario> {
+  async alterarPerfis(sessao: SessaoServidor, usuarioId: string, perfis: unknown): Promise<ComAnterior<Usuario>> {
     const usuario = await this.buscar(usuarioId)
     // Perfis de familia e escola decorrem do tipo de cadastro, nao de uma escolha.
     const permitidos: Perfil[] = usuario.profissional ? PERFIS_DE_EQUIPE
@@ -144,24 +154,26 @@ export class ServicoUsuarios {
       throw new ErroServico('CONFLITO', 'Você não pode retirar o próprio perfil de administrador.')
     }
     // Quem perdeu o perfil com que estava agindo cai na proxima chamada.
-    return paraUsuario(await this.banco.usuario.update({ where: { id: usuario.id }, data: { perfis: unicos } }))
+    const editado = await this.banco.usuario.update({ where: { id: usuario.id }, data: { perfis: unicos } })
+    return { resultado: paraUsuario(editado), valorAnterior: emJson(perfisQueMudaram(usuario.perfis, unicos)) }
   }
 
-  async desativar(sessao: SessaoServidor, usuarioId: string): Promise<Usuario> {
+  async desativar(sessao: SessaoServidor, usuarioId: string): Promise<ComAnterior<Usuario>> {
     const id = exigirUuid(usuarioId, 'Usuário')
     if (!podeDesativarUsuario(sessao.usuario.id, id)) {
       throw new ErroServico('CONFLITO', 'Você não pode desativar a própria conta.')
     }
-    await this.buscar(id)
+    const antes = await this.buscar(id)
     const usuario = await this.banco.usuario.update({ where: { id }, data: { ativo: false } })
     // O acesso acaba na proxima acao desta pessoa — aqui mesmo, todas as sessoes saem.
     await this.sessoes.encerrarTodasDo(id)
-    return paraUsuario(usuario)
+    return { resultado: paraUsuario(usuario), valorAnterior: emJson(anterioresQueMudaram({ ativo: antes.ativo }, { ativo: false })) }
   }
 
-  async reativar(usuarioId: string): Promise<Usuario> {
-    const usuario = await this.buscar(usuarioId)
-    return paraUsuario(await this.banco.usuario.update({ where: { id: usuario.id }, data: { ativo: true } }))
+  async reativar(usuarioId: string): Promise<ComAnterior<Usuario>> {
+    const antes = await this.buscar(usuarioId)
+    const usuario = await this.banco.usuario.update({ where: { id: antes.id }, data: { ativo: true } })
+    return { resultado: paraUsuario(usuario), valorAnterior: emJson(anterioresQueMudaram({ ativo: antes.ativo }, { ativo: true })) }
   }
 
   async meusDadosProfissionais(sessao: SessaoServidor): Promise<DadosProfissionais | null> {
@@ -173,7 +185,7 @@ export class ServicoUsuarios {
    * O proprio dono, e nao o administrador: o registro no conselho responde por
    * quem assina o documento, e ninguem assina no lugar de outro.
    */
-  async atualizarMeusDadosProfissionais(sessao: SessaoServidor, dados: Record<string, unknown>): Promise<DadosProfissionais> {
+  async atualizarMeusDadosProfissionais(sessao: SessaoServidor, dados: Record<string, unknown>): Promise<ComAnterior<DadosProfissionais>> {
     const linha = await this.banco.profissional.findUnique({ where: { usuarioId: sessao.usuario.id } })
     if (!linha) throw new ErroServico('CONFLITO', 'Esta conta não tem dados profissionais.')
     const especialidade = textoOuVazio(dados.especialidade)
@@ -185,7 +197,11 @@ export class ServicoUsuarios {
     await this.banco.profissional.update({
       where: { usuarioId: sessao.usuario.id }, data: { especialidade, registroConselho },
     })
-    return { especialidade, registroConselho }
+    const antes = { especialidade: linha.especialidade, registroConselho: linha.registroConselho }
+    return {
+      resultado: { especialidade, registroConselho },
+      valorAnterior: emJson(anterioresQueMudaram(antes, { especialidade, registroConselho })),
+    }
   }
 
   async listarProfissionais(filtro: { busca?: string; pagina?: number; porPagina?: number }): Promise<Pagina<Profissional>> {

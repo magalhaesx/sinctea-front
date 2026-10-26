@@ -7,7 +7,13 @@ import { lerBooleano, lerPaginacao, lerTexto } from '../http/paginacao.js'
 import type { RequisicaoHttp, RespostaHttp } from '../http/tipos-http.js'
 import { textoOuVazio } from '../http/validacao.js'
 import { ServicoTrilhaAdministrativa } from './servico-trilha.js'
-import { ServicoUsuarios } from './servico-usuarios.js'
+import { ServicoUsuarios, type ComAnterior } from './servico-usuarios.js'
+
+/** Item 13b: a versao anterior do que mudou vai para a trilha, pelo interceptador. */
+function comAnterior<T>(req: RequisicaoHttp, { resultado, valorAnterior }: ComAnterior<T>): T {
+  if (valorAnterior !== null) req.sinctea!.valorAnterior = valorAnterior
+  return resultado
+}
 
 /**
  * /api/usuarios — o contrato ServicoUsuario. A gestao e do administrador; os
@@ -63,8 +69,8 @@ export class ControladorUsuarios {
       return `Dados profissionais atualizados: ${d.especialidade}, ${d.registroConselho}.`
     },
   })
-  atualizarMeusDadosProfissionais(@Req() req: RequisicaoHttp, @Body() corpo: Record<string, unknown> | undefined) {
-    return this.usuarios.atualizarMeusDadosProfissionais(req.sinctea!.sessao!, corpo ?? {})
+  async atualizarMeusDadosProfissionais(@Req() req: RequisicaoHttp, @Body() corpo: Record<string, unknown> | undefined) {
+    return comAnterior(req, await this.usuarios.atualizarMeusDadosProfissionais(req.sinctea!.sessao!, corpo ?? {}))
   }
 
   @Put(':id/perfis')
@@ -73,24 +79,24 @@ export class ControladorUsuarios {
     entidade: 'Usuario', acao: 'ALTERACAO', idEntidade: { parametro: 'id' },
     detalhe: (_req, r) => `Perfis: ${(r as Usuario).perfis.join(', ')}`,
   })
-  alterarPerfis(@Req() req: RequisicaoHttp, @Param('id') id: string, @Body() corpo: { perfis?: unknown } | undefined) {
-    return this.usuarios.alterarPerfis(req.sinctea!.sessao!, id, corpo?.perfis)
+  async alterarPerfis(@Req() req: RequisicaoHttp, @Param('id') id: string, @Body() corpo: { perfis?: unknown } | undefined) {
+    return comAnterior(req, await this.usuarios.alterarPerfis(req.sinctea!.sessao!, id, corpo?.perfis))
   }
 
   @Post(':id/desativacao')
   @HttpCode(200)
   @Perfis('ADMINISTRADOR')
   @Auditar({ entidade: 'Usuario', acao: 'ALTERACAO', idEntidade: { parametro: 'id' }, detalhe: 'Usuário desativado.' })
-  desativar(@Req() req: RequisicaoHttp, @Param('id') id: string) {
-    return this.usuarios.desativar(req.sinctea!.sessao!, id)
+  async desativar(@Req() req: RequisicaoHttp, @Param('id') id: string) {
+    return comAnterior(req, await this.usuarios.desativar(req.sinctea!.sessao!, id))
   }
 
   @Post(':id/reativacao')
   @HttpCode(200)
   @Perfis('ADMINISTRADOR')
   @Auditar({ entidade: 'Usuario', acao: 'ALTERACAO', idEntidade: { parametro: 'id' }, detalhe: 'Usuário reativado.' })
-  reativar(@Param('id') id: string) {
-    return this.usuarios.reativar(id)
+  async reativar(@Req() req: RequisicaoHttp, @Param('id') id: string) {
+    return comAnterior(req, await this.usuarios.reativar(id))
   }
 
   @Post(':id/acesso-inicial')

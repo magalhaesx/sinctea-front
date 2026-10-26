@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { anterioresQueMudaram, versaoAnteriorEmTexto } from './auditoria.js'
+import {
+  anterioresQueMudaram, camposAnteriores, perfisQueMudaram, semNomeNaTrilhaAdministrativa, versaoAnteriorEmTexto,
+} from './auditoria.js'
 import { jsonCanonico } from './hash.js'
 
 describe('versaoAnteriorEmTexto', () => {
@@ -39,5 +41,30 @@ describe('anterioresQueMudaram (item 7)', () => {
   it('os campos editados viram nomes de gente na trilha', () => {
     expect(versaoAnteriorEmTexto(jsonCanonico({ descricaoAcessivel: 'B', dataRevisao: '2027-04-01' })))
       .toBe('Revisão do plano: 2027-04-01 · Redação acessível: B')
+  })
+})
+
+describe('a conta na trilha (item 13b)', () => {
+  it('perfis: os de antes, se o conjunto mudou; a ordem nao conta', () => {
+    expect(perfisQueMudaram(['COORDENADOR'], ['TERAPEUTA', 'COORDENADOR'])).toEqual({ perfis: ['COORDENADOR'] })
+    expect(perfisQueMudaram(['TERAPEUTA', 'COORDENADOR'], ['COORDENADOR', 'TERAPEUTA'])).toBeNull()
+  })
+
+  it('lista, sim ou nao e em branco se leem como gente', () => {
+    expect(versaoAnteriorEmTexto(jsonCanonico({ ativo: true, perfis: ['COORDENADOR', 'TERAPEUTA'] })))
+      .toBe('Conta ativa: Sim · Perfis: COORDENADOR, TERAPEUTA')
+    expect(versaoAnteriorEmTexto(jsonCanonico({ registroConselho: null }))).toBe('Registro no conselho: Em branco')
+  })
+
+  it('quem le pode dar nome de gente a um valor, e o resto fica como o dominio le', () => {
+    const comoLer = (campo: string) => (campo === 'perfis' ? 'Coordenador clínico' : undefined)
+    expect(camposAnteriores(jsonCanonico({ ativo: false, perfis: ['COORDENADOR'] }), comoLer))
+      .toEqual([['ativo', 'Não'], ['perfis', 'Coordenador clínico']])
+  })
+
+  it('so a escola cadastrada por responsavel sai sem quem agiu', () => {
+    expect(semNomeNaTrilhaAdministrativa({ entidade: 'Escola', perfil: 'RESPONSAVEL' })).toBe(true)
+    expect(semNomeNaTrilhaAdministrativa({ entidade: 'Usuario', perfil: 'RESPONSAVEL' })).toBe(false)
+    expect(semNomeNaTrilhaAdministrativa({ entidade: 'Escola', perfil: 'ADMINISTRADOR' })).toBe(false)
   })
 })

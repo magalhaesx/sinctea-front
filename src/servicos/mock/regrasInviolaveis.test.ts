@@ -998,6 +998,31 @@ describe('outras regras de tela aplicadas no servico', () => {
     expect(await ultimaAuditoria()).toMatchObject({ entidade: 'RegistroAuditoria', acao: 'LEITURA_AUTORIZADA', pacienteId: null })
   })
 
+  it('item 13b: perfis e situacao com o valor anterior; a escola da familia sem o nome', async () => {
+    await entrarComo('COORDENADOR')
+    await chamar(s.autenticacao.trocarPerfil('ADMINISTRADOR'))
+    const { usuario: alvo } = await chamar(s.usuarios.convidar({
+      nome: 'Iara Moura Lins', email: 'iara.lins@clinica.example', perfis: ['TERAPEUTA'], especialidade: 'Psicologia',
+    }))
+    await chamar(s.usuarios.alterarPerfis(alvo.id, ['TERAPEUTA', 'COORDENADOR']))
+    await chamar(s.usuarios.desativar(alvo.id))
+    const daConta = (await chamar(s.auditoria.listarAdministrativa({ acao: 'ALTERACAO' }))).itens.filter((r) => r.idEntidade === alvo.id)
+    expect(daConta.map((r) => r.valorAnterior)).toEqual(['{"ativo":true}', '{"perfis":["TERAPEUTA"]}'])
+
+    await entrarComo('RESPONSAVEL')
+    const escola = await chamar(s.escolas.cadastrar({ nome: 'Escola Municipal Ficticia do 13b', rede: 'Municipal', municipio: 'Manaus' }))
+    const daFamilia = await ultimaAuditoria()
+    expect(daFamilia).toMatchObject({ entidade: 'Escola', idEntidade: escola.id, perfil: 'RESPONSAVEL' })
+    expect(daFamilia.usuarioNome).toBeTruthy()
+
+    await entrarComo('COORDENADOR')
+    await chamar(s.autenticacao.trocarPerfil('ADMINISTRADOR'))
+    const itens = (await chamar(s.auditoria.listarAdministrativa())).itens
+    expect(itens.find((r) => r.idEntidade === escola.id)).toMatchObject({ usuarioId: null, usuarioNome: null, perfil: 'RESPONSAVEL' })
+    const daMae = await chamar(s.auditoria.listarAdministrativa({ usuarioId: daFamilia.usuarioId! }))
+    expect(daMae.itens.some((r) => r.idEntidade === escola.id)).toBe(false)
+  })
+
   it('encerrar tira a atividade da familia e guarda o historico', async () => {
     await entrarComo('TERAPEUTA')
     const ativas = await chamar(s.atividades.listarPorPaciente('p-001', { ativa: true, porPagina: 50 }))
