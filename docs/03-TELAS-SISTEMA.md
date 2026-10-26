@@ -703,6 +703,10 @@ mais antigo.
 - não se edita, não se apaga e não se exporta;
 - ler a trilha também entra na trilha;
 - senha e tokens nunca aparecem: nem resumo, nem valor anterior;
+- salvar sem mudar nada não gera registro;
+- o detalhe usa os nomes de tela dos perfis ("Profissional da clínica"). Os
+  registros gravados antes de 26/10 podem trazer o nome interno, como
+  "TERAPEUTA": a trilha é imutável, e eles ficam como foram gravados;
 - **a escola cadastrada por uma família aparece sem o nome de quem
   cadastrou**: "Um responsável". O administrador precisa da escola para cuidar
   do cadastro, e não de saber qual família está ligada a ela. O nome continua
