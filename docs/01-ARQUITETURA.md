@@ -323,6 +323,7 @@ São muitos, e não um: uma lista com um item não exercita paginação, busca,
 filtro, ordenação nem estado vazio. Os e-mails ficam no domínio reservado
 `.example`.
 
-**Nenhum dado de paciente real, em nenhuma hipótese.** A tela de entrada e o
-rodapé dizem: *"Ambiente acadêmico do TCC SINCTEA. Não cadastre dados de
-pacientes reais."*
+**Nenhum dado de paciente real, em nenhuma hipótese.** O rodapé do app diz:
+*"Ambiente acadêmico do TCC SINCTEA. Não cadastre dados de pacientes reais."*
+Desde 25/10/2026, por decisão do Lucas, o aviso não aparece nas telas de acesso
+(entrar, aceitar convite e definir senha): dado se cadastra dentro do app.

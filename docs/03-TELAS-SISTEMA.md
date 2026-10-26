@@ -92,8 +92,13 @@ telas do perfil **ativo**. Esconder item de menu não é segurança: quem autori
 - enquanto o nome do paciente carrega, a trilha diz "Paciente".
 
 **Rodapé:** *"Ambiente acadêmico do TCC SINCTEA. Não cadastre dados de
-pacientes reais."* Tirar o aviso é decisão do Lucas com a orientadora
-(`docs/01`, seção 8).
+pacientes reais."*
+
+- Aparece em todas as telas do app.
+- As telas de acesso (entrar, aceitar convite e definir senha) não o mostram
+  desde 25/10/2026, por decisão do Lucas.
+- Tirá-lo do rodapé é decisão do Lucas com a orientadora (`docs/01`,
+  seção 8).
 
 **Aviso de senha redefinida** (item 8). Aparece acima de qualquer tela depois
 que a pessoa usa um link de nova senha:
@@ -124,12 +129,11 @@ outra mostra uma faixa no alto, que recebe o foco:
 
 1. "Entrar no SINCTEA", com o subtítulo "A informação acompanha a pessoa, não
    a instituição".
-2. O aviso do ambiente, em destaque. Por isso esta tela não tem rodapé.
-3. **"Contas abertas neste navegador"** (item 9). Só aparece se houver alguma.
+2. **"Contas abertas neste navegador"** (item 9). Só aparece se houver alguma.
    - Cada linha: nome, perfil ativo e o botão "Continuar como {nome}".
    - Embaixo: "Ou entre com outra conta abaixo. Cada aba fica com a sua."
-4. E-mail, senha e o botão "Entrar".
-5. **"Esqueci minha senha"**. Não leva a outra tela: abre um texto que diz a
+3. E-mail, senha e o botão "Entrar".
+4. **"Esqueci minha senha"**. Não leva a outra tela: abre um texto que diz a
    quem pedir.
    - Equipe da clínica: à administração, que gera um link para nova senha
      (tela 14).
@@ -137,7 +141,7 @@ outra mostra uma faixa no alto, que recebe o foco:
    - Escola: *"Se você é da escola, peça à clínica: a administração gera um
      link para você escolher uma nova senha."* (tela 14).
    - Não há envio de e-mail.
-6. "Conhecer o SINCTEA", que leva a `/sobre`.
+5. "Conhecer o SINCTEA", que leva a `/sobre`.
 
 O bloco "Entrar para demonstração" só existe no desenvolvimento, com a
 implementação simulada. Ele nem entra no pacote publicado (`docs/07`, D6).

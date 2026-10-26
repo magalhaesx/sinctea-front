@@ -25,8 +25,11 @@ backend precisam estar prontos em **19/10**. Decidido com o Lucas em 16/10:
 
 Os testes continuam com dados fictícios próprios: dado de teste não é dado do site.
 
-**O aviso que entra no lugar.** Na tela de entrada e no rodapé, uma linha:
-*"Ambiente acadêmico do TCC SINCTEA. Não cadastre dados de pacientes reais."*
+**O aviso que entra no lugar.** No rodapé do app, uma linha: *"Ambiente
+acadêmico do TCC SINCTEA. Não cadastre dados de pacientes reais."* Até
+25/10/2026 ela aparecia também na tela de entrada. Saiu das telas de acesso
+(entrar, aceitar convite e definir senha) por decisão do Lucas, porque é
+dentro do app que os dados se cadastram.
 
 Não é aviso de demonstração. É o que impede que dado de saúde de criança de verdade
 entre num sistema acadêmico sem as bases que a lei pede:
@@ -35,7 +38,7 @@ entre num sistema acadêmico sem as bases que a lei pede:
 - hospedagem nos Estados Unidos (art. 33);
 - nenhum comitê de ética aprovou pesquisa com esses dados.
 
-Tirar essa linha é decisão do Lucas com a orientadora, registrada aqui.
+Tirá-la do rodapé é decisão do Lucas com a orientadora, registrada aqui.
 
 **Como o sistema nasce.** Um comando único, rodado uma vez pela máquina do Lucas
 contra o Neon, cria a conta do primeiro administrador. O nome, o e-mail e a senha
