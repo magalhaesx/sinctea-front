@@ -1,8 +1,8 @@
 # 03 · Telas do sistema
 
-Revisão de 25/10/2026. A especificação de setembro dizia o que construir; esta
-diz o que existe, conferido no código até o item 10 (`150b9b5`). Os textos entre
-aspas são os que a pessoa lê na tela.
+Revisão de 25/10/2026, atualizada em 26/10. A especificação de setembro dizia o
+que construir; esta diz o que existe, conferido no código até o item 13. Os
+textos entre aspas são os que a pessoa lê na tela.
 
 **Situação de cada tela:**
 
@@ -11,8 +11,11 @@ aspas são os que a pessoa lê na tela.
   0). A rota nem existe na versão publicada, até o serviço dela chegar ao
   servidor. Nunca aparece com dado simulado (`src/app/caminhoPrincipal.ts`).
 
-A numeração de setembro continua. Duas telas nasceram depois: a 23, para
-definir a senha, e a 24, para cadastrar o paciente.
+A numeração de setembro continua. Três telas nasceram depois:
+
+- a 23, para definir a senha;
+- a 24, para cadastrar o paciente;
+- a 25, a trilha administrativa.
 
 ---
 
@@ -26,7 +29,7 @@ Nenhuma tela diz "terapeuta". Quem atende aparece pela especialidade:
 |---|---|---|
 | Profissional da clínica | 3, 4, 24, 5, 6, 7 | 8, 9, 10 |
 | Coordenador clínico | as da clínica, e 12 | 11, 13 |
-| Administrador | 14 | — |
+| Administrador | 14, 25 | — |
 | Responsável | 15, 17 | 16 |
 | Professor / AEE | 22, 18, 19 | — |
 | Todos | 20, 21 | — |
@@ -75,7 +78,7 @@ telas do perfil **ativo**. Esconder item de menu não é segurança: quem autori
 |---|---|
 | Profissional da clínica | Painel do profissional · Pacientes |
 | Coordenador clínico | Painel do profissional · Pacientes · Validar planos |
-| Administrador | Usuários e perfis |
+| Administrador | Usuários e perfis · Trilha administrativa |
 | Responsável | Painel da família · Autorizar a escola |
 | Professor / AEE | Meus alunos |
 | Todos | Perfil e preferências · Acessibilidade e ajuda |
@@ -128,9 +131,11 @@ outra mostra uma faixa no alto, que recebe o foco:
 4. E-mail, senha e o botão "Entrar".
 5. **"Esqueci minha senha"**. Não leva a outra tela: abre um texto que diz a
    quem pedir.
-   - Equipe da clínica: à administração, que gera um link novo (tela 14).
+   - Equipe da clínica: à administração, que gera um link para nova senha
+     (tela 14).
    - Responsável: à coordenação, que gera um link para nova senha (tela 5).
-   - Escola: *"a redefinição ainda não existe"*.
+   - Escola: *"Se você é da escola, peça à clínica: a administração gera um
+     link para você escolher uma nova senha."* (tela 14).
    - Não há envio de e-mail.
 6. "Conhecer o SINCTEA", que leva a `/sobre`.
 
@@ -196,7 +201,11 @@ errar a senha de uma conta que já existe conta no limite de tentativas.
 
 Ninguém conhece a senha de outra pessoa (`docs/07`, seção 0). Quem cadastra
 entrega um link de uso único, e a própria pessoa escolhe a senha. O mesmo link
-serve à nova senha do responsável, que só a coordenação gera (item 8).
+serve à nova senha de quem já tinha senha, sempre com motivo, que vai para a
+trilha:
+
+- o do responsável, só a coordenação gera (item 8, tela 5);
+- o da equipe e o do professor, só a administração gera (item 13, tela 14).
 
 | | Primeiro acesso | Nova senha |
 |---|---|---|
@@ -628,11 +637,26 @@ A trilha já é gravada no ar. O que falta é a tela que a mostra.
 
 **Gerenciar uma conta:**
 
-- **Equipe:** editar perfis e "Gerar novo link de acesso". *"O anterior deixou
-  de valer; a senha atual vale até o novo ser usado."*
-- **Responsável ou professor:** aparece na lista, mas o perfil é só leitura. O
-  link de nova senha do responsável é da coordenação (tela 5).
+- **Equipe:**
+  - editar perfis;
+  - enquanto a pessoa não definiu a senha: "Gerar novo link de acesso", sem
+    motivo. O anterior deixa de valer;
+  - depois que ela definiu a senha: **"Gerar link para nova senha"**, com motivo
+    obrigatório, de até 500 caracteres, que vai para a trilha com o nome de
+    quem gerou (item 13). O servidor recusa o link sem motivo para quem já tem
+    senha.
+- **Professor:** o perfil é só leitura, e há "Gerar link para nova senha", com
+  motivo, como na equipe. Era a lacuna da escola: antes do item 13, o professor
+  não tinha como recuperar a senha.
+- **Responsável:** o perfil é só leitura, com a nota de que o link dele é da
+  coordenação (tela 5). O servidor recusa o administrador, e a recusa fica na
+  trilha.
 - **Desativar, em duas etapas, e reativar.**
+
+O link de nova senha funciona como o do item 8: ao ser usado, a senha anterior
+deixa de valer e as sessões se encerram. No acesso seguinte, a pessoa vê o
+aviso da moldura com o nome de quem gerou. O formulário do motivo recebe o foco
+ao abrir e no erro, e o devolve ao botão ao cancelar.
 
 **Regras:**
 
@@ -642,6 +666,47 @@ A trilha já é gravada no ar. O que falta é a tela que a mostra.
 
 **Para testar a tela 5 com a coordenação:** cadastre aqui uma conta com o perfil
 Coordenador clínico, ou marque esse perfil numa conta da equipe.
+
+## 25 · Trilha administrativa · no ar
+`/app/admin/trilha` · Administrador · UC19 (o administrador como segundo ator,
+só com o recorte administrativo)
+
+O administrador também é auditado (LGPD, art. 37), mas a trilha que ele lê não
+tem dado clínico (regra 3). A coordenação lê a trilha clínica na tela 13, que
+ainda está só no desenvolvimento.
+
+**O que aparece:** só registros que, ao mesmo tempo, **não têm paciente** e são
+de uma entidade da lista: `Usuario`, `Profissional`, `Escola` e
+`RegistroAuditoria`. As duas condições são necessárias:
+
+- há registro clínico sem paciente, como a leitura da lista de pacientes, que a
+  lista de entidades barra;
+- há registro de conta com paciente, como o link do responsável, que a falta de
+  paciente barra.
+
+**Colunas:**
+
+- data e hora, no fuso de Manaus;
+- quem agiu, com o nome e o perfil como eram;
+- a ação;
+- a entidade e o detalhe;
+- o que mudou (o valor anterior). Na conta, ele aparece para os perfis e a
+  situação; no profissional, para a especialidade e o registro no conselho.
+
+O IP não aparece na tela.
+
+**Filtros:** período, pessoa e ação. São 20 por página, do mais recente para o
+mais antigo.
+
+**Regras:**
+
+- não se edita, não se apaga e não se exporta;
+- ler a trilha também entra na trilha;
+- senha e tokens nunca aparecem: nem resumo, nem valor anterior;
+- **a escola cadastrada por uma família aparece sem o nome de quem
+  cadastrou**: "Um responsável". O administrador precisa da escola para cuidar
+  do cadastro, e não de saber qual família está ligada a ela. O nome continua
+  guardado no banco, e o filtro por pessoa não traz esses registros.
 
 ---
 
@@ -869,7 +934,6 @@ As perguntas frequentes por perfil ainda não existem.
 As seis divergências achadas na revisão de 25/10 foram corrigidas no item 10
 (`150b9b5`). Ficam para depois:
 
-- redefinir a senha do professor;
 - envio de e-mail;
 - as telas só no desenvolvimento, cada uma quando o seu serviço chegar ao
   servidor (`docs/07`, seção 0);

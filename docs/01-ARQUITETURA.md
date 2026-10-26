@@ -92,12 +92,13 @@ em 17/10/2026.
 /app/coordenacao/auditoria        Registro de auditoria
 
 /app/admin/usuarios               Gerenciar usuários e perfis
+/app/admin/trilha                 Trilha administrativa (tela 25)
 
 /app/familia                      Painel da família
 /app/familia/atividades/:id       Atividade em casa
 /app/familia/consentimento        Autorizar e revogar acesso da escola
 
-/app/escola                       Meus alunos (UC22)
+/app/escola                       Meus alunos (tela 22)
 /app/escola/:pacienteId           Cartão de estratégias
 /app/escola/:pacienteId/ocorrencia  Registrar ocorrência
 
