@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Botao } from '../ui/Botao'
 import { Campo } from '../ui/Campo'
+import { CampoSenha } from '../ui/CampoSenha'
 import { Titulo } from '../ui/Titulo'
 import { usarSessao } from '../contexto/Sessao'
 import { ErroServico, servicos, usandoApi, type ContaAberta, type Perfil } from '../servicos'
@@ -149,9 +150,8 @@ export function Entrar() {
           </Campo>
 
           <Campo id="senha" rotulo="Senha">
-            <input
+            <CampoSenha
               id="senha"
-              type="password"
               autoComplete="current-password"
               className={campo}
               value={senha}

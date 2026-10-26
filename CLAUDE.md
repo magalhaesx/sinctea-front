@@ -206,7 +206,7 @@ Atualizado em 18/10/2026, lendo o código — não a memória.
   simulada que aplica controle de acesso e auditoria; o cliente da API, que
   não aplica regra nenhuma. A versão publicada usa só a API, e o mock fica
   fora do pacote; no desenvolvimento, `VITE_API_URL` escolhe entre as duas
-- **481 testes em 39 arquivos, nos três pacotes**, rodados por um único
+- **488 testes em 40 arquivos, nos três pacotes**, rodados por um único
   `npm test` na raiz, sem passo manual. O principal ainda é
   `src/servicos/mock/regrasInviolaveis.test.ts`, que verifica as regras
   invioláveis na camada de dados, e não na tela. Os 234 do servidor rodam contra
@@ -448,6 +448,14 @@ em produção (o antigo passo B5) foi cancelada. No código, hoje:
   são registrados no `Profissional`. Salvar os perfis ou os dados
   profissionais sem mudar nada não escreve nem registra, como nas edições da
   clínica
+- **Item 14 — o botão de olho nos campos de senha.** Um componente só,
+  `CampoSenha` (`src/ui/CampoSenha.tsx`), na entrada, no convite e nos dois
+  campos do definir senha: `<button type="button">` com "Mostrar senha" e
+  `aria-pressed`, alvo de 44 px, ícone em SVG com `currentColor`. O olho aberto
+  mostra; o cortado esconde. Ao enviar o formulário, a senha volta a ficar
+  escondida já no evento de envio (`src/ui/olhoDaSenha.ts`). O campo mantém o
+  rótulo, o `aria-describedby` e o `autocomplete` de antes. Nada mudou no
+  servidor
 - `npm run criar-administrador -w @sinctea/servidor -- .env.producao --nome
   "Nome Completo" --email voce@exemplo.com` cria o primeiro administrador:
   nome e e-mail vêm da linha de comando, e só a senha é pedida, escondida e duas

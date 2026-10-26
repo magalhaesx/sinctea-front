@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Botao } from '../ui/Botao'
 import { Campo } from '../ui/Campo'
+import { CampoSenha } from '../ui/CampoSenha'
 import { Titulo } from '../ui/Titulo'
 import { usarSessao } from '../contexto/Sessao'
 import { ErroServico, servicos, type PrimeiroAcessoPublico } from '../servicos'
@@ -130,14 +131,14 @@ export function PrimeiroAcesso() {
               <input type="email" autoComplete="username" value={estado.acesso.email ?? ''} readOnly hidden />
 
               <Campo id="senha" rotulo="Crie uma senha" dica="Ao menos 8 caracteres. Só você vai conhecê-la.">
-                <input id="senha" type="password" autoComplete="new-password" className={campo}
+                <CampoSenha id="senha" autoComplete="new-password" className={campo}
                   value={senha} onChange={(e) => setSenha(e.target.value)}
                   aria-describedby={erros.senha ? 'erro-senha' : undefined} />
                 {erros.senha && <p id="erro-senha" className="text-sm font-bold text-cr">{erros.senha}</p>}
               </Campo>
 
               <Campo id="confirmacao" rotulo="Repita a senha">
-                <input id="confirmacao" type="password" autoComplete="new-password" className={campo}
+                <CampoSenha id="confirmacao" autoComplete="new-password" className={campo}
                   value={confirmacao} onChange={(e) => setConfirmacao(e.target.value)}
                   aria-describedby={erros.confirmacao ? 'erro-confirmacao' : undefined} />
                 {erros.confirmacao && <p id="erro-confirmacao" className="text-sm font-bold text-cr">{erros.confirmacao}</p>}

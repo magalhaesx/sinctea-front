@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Botao } from '../ui/Botao'
 import { Campo } from '../ui/Campo'
+import { CampoSenha } from '../ui/CampoSenha'
 import { Cartao } from '../ui/Cartao'
 import { Etiqueta } from '../ui/Etiqueta'
 import { Titulo } from '../ui/Titulo'
@@ -179,7 +180,7 @@ export function Convite() {
               </Campo>
 
               <Campo id="senha" rotulo="Senha" dica="Conta nova: crie uma senha de ao menos 8 caracteres. Conta que já existe: a senha dela.">
-                <input type="password" autoComplete="new-password" aria-describedby="senha-dica" {...campo('senha')} />
+                <CampoSenha autoComplete="new-password" aria-describedby="senha-dica" {...campo('senha')} />
                 {erros.senha && <p className="text-sm font-bold text-cr">{erros.senha}</p>}
               </Campo>
 
