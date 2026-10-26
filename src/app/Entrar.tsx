@@ -4,7 +4,6 @@ import { Botao } from '../ui/Botao'
 import { Campo } from '../ui/Campo'
 import { Titulo } from '../ui/Titulo'
 import { usarSessao } from '../contexto/Sessao'
-import { AVISO_AMBIENTE } from '../componentes/AvisoAmbiente'
 import { ErroServico, servicos, usandoApi, type ContaAberta, type Perfil } from '../servicos'
 import { LayoutAcesso } from './LayoutAcesso'
 import { NOME_DO_PERFIL } from './perfis'
@@ -99,13 +98,9 @@ export function Entrar() {
   const campo = 'min-h-11 rounded-lg border border-linha bg-sup px-3 text-[15px]'
 
   return (
-    <LayoutAcesso rodape={false}>
+    <LayoutAcesso>
       <div className="flex flex-col gap-4 rounded-2xl border border-cromo-linha bg-fundo p-5 text-tinta sm:p-6">
         <Titulo sub="A informação acompanha a pessoa, não a instituição">Entrar no SINCTEA</Titulo>
-
-        <p className="rounded-xl border border-linha border-l-4 border-l-at bg-at-sup p-3 text-sm font-bold">
-          {AVISO_AMBIENTE}
-        </p>
 
         {abertas.length > 0 && (
           <section aria-labelledby="contas-abertas" className="flex flex-col gap-2 border-b border-linha pb-4">
