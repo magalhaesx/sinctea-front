@@ -483,6 +483,8 @@ model ExecucaoAtividadeCasa {
   atividade   AtividadeCasa @relation(fields: [atividadeId], references: [id])
   responsavel Responsavel   @relation(fields: [responsavelId], references: [usuarioId])
 
+  // Um registro por atividade por dia (item 15): a adesao da tela 9 conta dias.
+  @@unique([atividadeId, dataRealizacao])
   @@index([atividadeId])
   @@map("execucao_atividade_casa")
 }

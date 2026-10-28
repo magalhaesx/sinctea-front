@@ -1,9 +1,10 @@
 import type {
-  CartaoEstrategia, Consentimento, Intensidade, NivelSuporte, Objetivo, OcorrenciaComportamental, PlanoTerapeutico,
-  RegistroAtividade, ResponsavelNaFicha, Sessao,
+  AtividadeCasa, CartaoEstrategia, Consentimento, ExecucaoAtividadeCasa, Intensidade, NivelSuporte, Objetivo,
+  OcorrenciaComportamental, PlanoTerapeutico, RegistroAtividade, ResponsavelNaFicha, Sessao,
 } from '@sinctea/compartilhado'
 import type {
-  CartaoEstrategia as LinhaCartao, Consentimento as LinhaConsentimento, Objetivo as LinhaObjetivo,
+  AtividadeCasa as LinhaAtividade, CartaoEstrategia as LinhaCartao, Consentimento as LinhaConsentimento,
+  ExecucaoAtividadeCasa as LinhaExecucao, Objetivo as LinhaObjetivo,
   OcorrenciaComportamental as LinhaOcorrencia, PlanoTerapeutico as LinhaPlano, RegistroAtividade as LinhaRegistro,
   Sessao as LinhaSessao, Usuario as LinhaUsuario, VinculoFamiliar as LinhaVinculo,
 } from '../gerado/client.js'
@@ -85,5 +86,21 @@ export function paraOcorrencia(o: LinhaOcorrencia): OcorrenciaComportamental {
     antecedente: o.antecedente, comportamento: o.comportamento, consequencia: o.consequencia,
     intensidade: o.intensidade as Intensidade, leituraClinicaEm: instante(o.leituraClinicaEm),
     sessaoId: o.sessaoId, ocorrenciaEscolarId: o.ocorrenciaEscolarId,
+  }
+}
+
+/** A atividade leva o id do objetivo, e nao o objetivo: nada clinico sai para a familia (item 15). */
+export function paraAtividade(a: LinhaAtividade): AtividadeCasa {
+  return {
+    id: a.id, pacienteId: a.pacienteId, objetivoId: a.objetivoId, titulo: a.titulo, descricao: a.descricao,
+    passos: a.passos, dicas: a.dicas, frequenciaSemanal: a.frequenciaSemanal, urlVideo: a.urlVideo, ativa: a.ativa,
+    prescritaEm: a.prescritaEm.toISOString(),
+  }
+}
+
+export function paraExecucao(e: LinhaExecucao): ExecucaoAtividadeCasa {
+  return {
+    id: e.id, atividadeId: e.atividadeId, responsavelId: e.responsavelId, dataRealizacao: paraDataCivil(e.dataRealizacao),
+    desempenho: e.desempenho, observacao: e.observacao,
   }
 }
