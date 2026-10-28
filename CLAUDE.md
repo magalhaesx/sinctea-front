@@ -206,10 +206,10 @@ Atualizado em 18/10/2026, lendo o código — não a memória.
   simulada que aplica controle de acesso e auditoria; o cliente da API, que
   não aplica regra nenhuma. A versão publicada usa só a API, e o mock fica
   fora do pacote; no desenvolvimento, `VITE_API_URL` escolhe entre as duas
-- **488 testes em 40 arquivos, nos três pacotes**, rodados por um único
+- **518 testes em 42 arquivos, nos três pacotes**, rodados por um único
   `npm test` na raiz, sem passo manual. O principal ainda é
   `src/servicos/mock/regrasInviolaveis.test.ts`, que verifica as regras
-  invioláveis na camada de dados, e não na tela. Os 234 do servidor rodam contra
+  invioláveis na camada de dados, e não na tela. Os 253 do servidor rodam contra
   um PostgreSQL 17 de verdade
 - **As seis regras verificadas** em `docs/06`: para cada teste citado, a regra foi
   quebrada de propósito para confirmar que ele falha, e as quebras que não
@@ -456,6 +456,23 @@ em produção (o antigo passo B5) foi cancelada. No código, hoje:
   escondida já no evento de envio (`src/ui/olhoDaSenha.ts`). O campo mantém o
   rótulo, o `aria-describedby` e o `autocomplete` de antes. Nada mudou no
   servidor
+- **Item 15 — atividades de casa no servidor** (decisões do Cowork de 28/10).
+  As telas 9 e 16, o bloco "Atividades desta semana" da tela 15 e a ação
+  "Atividades" da ficha falam com a API (`servidor/src/atividades/`). Prescrever
+  e encerrar são da equipe do paciente e da coordenação; ver e registrar como
+  foi, de qualquer responsável vinculado, legal ou não; professor e
+  administrador nunca. O objetivo tem de ser do plano vigente. A validação é
+  `validarNovaAtividadeCasa`, do compartilhado, no front, no mock e no
+  servidor; o vídeo, só `https://`, e a tela 16 o mostra no link "Ver o vídeo",
+  em nova aba. Um registro por atividade por dia, no dia civil de Manaus: índice
+  único da migração `execucao_uma_por_dia`, e o segundo ouve *"Hoje já foi
+  registrado por {nome}."*; a conferência de que a atividade está ativa e a
+  gravação vão na mesma transação. Encerrada, sai da lista da família com
+  qualquer filtro, e a tela 16 diz *"Esta atividade foi encerrada pela
+  equipe."*, com o histórico. A trilha registra as leituras, a prescrição, o
+  registro da família e o encerramento; o mock, como antes, não registra a
+  família (achado 2). Testes em `servidor/test/atividades.test.ts`, quebras no
+  `docs/06`
 - `npm run criar-administrador -w @sinctea/servidor -- .env.producao --nome
   "Nome Completo" --email voce@exemplo.com` cria o primeiro administrador:
   nome e e-mail vêm da linha de comando, e só a senha é pedida, escondida e duas
@@ -496,7 +513,7 @@ Não se corta, nem com pressa: as regras 1, 2, 3, 5 e 6 provadas por teste contr
 a API no caminho principal, o *trigger* da auditoria, o papel que não é dono e o
 argon2id.
 
-Depois de 19/10, sem data: indicadores, relatórios, atividades de casa, a
+Depois de 19/10, sem data: indicadores, relatórios, a
 evolução por objetivo (tela 8), a tela de auditoria e a agenda; o
 envio de e-mail, com a recuperação de senha sem passar pela clínica; a remoção completa de `servicos/mock`; o offline reduzido ao registro de
 sessão (`docs/07`, seção 3A); e a Etapa 13, de 16/11 a 23/11 — artigo, slides,
