@@ -1,7 +1,7 @@
 import { diaCivilEm, fimDaValidade, inicioDoDia, partesDaDataCivil } from './datas.js'
 import type {
-  Consentimento, ConviteEscolar, CriterioDominio, DataCivil, DataIso, Destinatario, EscopoAcesso, NivelSuporte,
-  NovoConsentimento, NovoObjetivo, OcorrenciaComportamental, Origem, PlanoTerapeutico,
+  Consentimento, ConviteEscolar, CriterioDominio, DataCivil, DataIso, Desempenho, Destinatario, EscopoAcesso,
+  NivelSuporte, NovaAtividadeCasa, NovoConsentimento, NovoObjetivo, OcorrenciaComportamental, Origem, PlanoTerapeutico,
   RegistroAtividade, Sessao, SituacaoConsentimento, SituacaoConvite, SituacaoPlano, SituacaoPrimeiroAcesso, StatusObjetivo,
 } from '../tipos.js'
 
@@ -353,6 +353,91 @@ export function erroDaEvolucao(evolucao: string): string | null {
   if (evolucao.length > EVOLUCAO_MAXIMO) return `A evolução pode ter no máximo ${EVOLUCAO_MAXIMO.toLocaleString('pt-BR')} caracteres.`
   return null
 }
+
+// ---------------------------------------------------------------- Atividades em casa
+
+/** Limites da atividade de casa (item 15): o que a familia le cabe na tela do celular. */
+export const LIMITES_ATIVIDADE_CASA = {
+  titulo: 120, descricao: 1000, dicas: 1000, passos: 10, passo: 300, urlVideo: 500, observacao: 500,
+} as const
+
+/** O que o profissional escreve na atividade. O objetivo se confere contra o plano, fora daqui. */
+export type AtividadeCasaEscrita = Pick<NovaAtividadeCasa, 'titulo' | 'descricao' | 'passos' | 'dicas' | 'frequenciaSemanal' | 'urlVideo'>
+
+/** Sem espacos nas pontas, sem passo vazio, e o video vazio vira nulo: e assim que se grava. */
+export function atividadeCasaPreenchida<T extends AtividadeCasaEscrita>(dados: T): T {
+  return {
+    ...dados,
+    titulo: dados.titulo.trim(),
+    descricao: dados.descricao.trim(),
+    passos: itensPreenchidos(dados.passos),
+    dicas: dados.dicas.trim(),
+    urlVideo: dados.urlVideo?.trim() || null,
+  }
+}
+
+/**
+ * Endereco de video que pode virar link: so https://. Um "javascript:" no
+ * href executaria codigo na tela de quem tocasse nele — a da familia, ou a do
+ * profissional, na previa da tela 9.
+ */
+export function ehEnderecoDeVideo(url: string): boolean {
+  if (url.length > LIMITES_ATIVIDADE_CASA.urlVideo || !/^https:\/\/[^\s/]\S*$/i.test(url)) return false
+  try {
+    const endereco = new URL(url)
+    return endereco.protocol === 'https:' && endereco.hostname !== ''
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Validacao da atividade de casa (tela 9), a mesma no front, no mock e no
+ * servidor. Confere o texto como sera gravado, depois de atividadeCasaPreenchida.
+ */
+export function validarNovaAtividadeCasa(dados: AtividadeCasaEscrita): Record<string, string> {
+  const d = atividadeCasaPreenchida(dados)
+  const L = LIMITES_ATIVIDADE_CASA
+  const ate = (n: number) => n.toLocaleString('pt-BR')
+  const erros: Record<string, string> = {}
+  if (!d.titulo) erros.titulo = 'Dê um título que a família reconheça.'
+  else if (d.titulo.length > L.titulo) erros.titulo = `O título pode ter no máximo ${ate(L.titulo)} caracteres.`
+  if (d.descricao.length > L.descricao) erros.descricao = `A descrição pode ter no máximo ${ate(L.descricao)} caracteres.`
+  if (d.passos.length === 0) erros.passos = 'Descreva ao menos um passo.'
+  else if (d.passos.length > L.passos) erros.passos = `São no máximo ${L.passos} passos. Junte os que puder.`
+  else if (d.passos.some((p) => p.length > L.passo)) erros.passos = `Cada passo pode ter no máximo ${ate(L.passo)} caracteres.`
+  if (d.dicas.length > L.dicas) erros.dicas = `As dicas podem ter no máximo ${ate(L.dicas)} caracteres.`
+  if (!Number.isInteger(d.frequenciaSemanal) || d.frequenciaSemanal < 1 || d.frequenciaSemanal > 7) {
+    erros.frequenciaSemanal = 'A frequência semanal vai de 1 a 7 vezes.'
+  }
+  if (d.urlVideo !== null && !ehEnderecoDeVideo(d.urlVideo)) {
+    erros.urlVideo = `O vídeo precisa de um endereço que comece com https://, com até ${ate(L.urlVideo)} caracteres.`
+  }
+  return erros
+}
+
+const DESEMPENHOS: readonly Desempenho[] = ['SOZINHO', 'COM_AJUDA', 'NAO_QUIS']
+
+export function ehDesempenho(valor: unknown): valor is Desempenho {
+  return DESEMPENHOS.includes(valor as Desempenho)
+}
+
+/** O que a familia conta ao registrar (tela 16): opcional, curto. Erro em palavras, ou nulo. */
+export function erroDaObservacaoDaFamilia(observacao: string): string | null {
+  if (observacao.trim().length > LIMITES_ATIVIDADE_CASA.observacao) {
+    return `Escreva em até ${LIMITES_ATIVIDADE_CASA.observacao} caracteres.`
+  }
+  return null
+}
+
+/** Atividade encerrada nao recebe registro, e a tela 16 diz isso com estas palavras. */
+export const ATIVIDADE_ENCERRADA = 'Esta atividade foi encerrada pela equipe.'
+
+/**
+ * Um registro por atividade por dia, no dia civil de Manaus: com dois
+ * responsaveis, quem toca depois fica sabendo quem ja registrou.
+ */
+export const textoDoRegistroRepetido = (nome: string) => `Hoje já foi registrado por ${nome}.`
 
 // ---------------------------------------------------------------- Conta e senha
 

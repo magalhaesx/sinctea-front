@@ -11,6 +11,8 @@ import {
   validarDevolucaoPlano, validarNovoConsentimento, validarNovoObjetivo, verificarAcessoEscola,
   calcularExpiracaoPrimeiroAcesso, emailValido, erroDaSenhaNova, normalizarEmail, situacaoPrimeiroAcesso,
   escolaParecida,
+  atividadeCasaPreenchida, ehDesempenho, ehEnderecoDeVideo, erroDaObservacaoDaFamilia, textoDoRegistroRepetido,
+  validarNovaAtividadeCasa, type AtividadeCasaEscrita,
 } from './regras.js'
 import { diaCivilEm } from './datas.js'
 
@@ -420,5 +422,64 @@ describe('escolaParecida (lacuna 4)', () => {
 
   it('nome vazio nao parece nada', () => {
     expect(escolaParecida('   ', 'Manaus', vitoria)).toBe(false)
+  })
+})
+
+describe('atividade de casa (item 15)', () => {
+  const atividade = (parcial: Partial<AtividadeCasaEscrita> = {}): AtividadeCasaEscrita => ({
+    titulo: 'Escolher o lanche apontando', descricao: '', passos: ['Mostre duas opções.'], dicas: '',
+    frequenciaSemanal: 3, urlVideo: null, ...parcial,
+  })
+  const x = (n: number) => 'x'.repeat(n)
+
+  it('a atividade escrita dentro dos limites passa, e os limites contam o texto sem espacos nas pontas', () => {
+    expect(validarNovaAtividadeCasa(atividade())).toEqual({})
+    expect(validarNovaAtividadeCasa(atividade({
+      titulo: ` ${x(120)} `, descricao: x(1000), dicas: x(1000),
+      passos: [...Array.from({ length: 10 }, () => x(300)), '  ', ''],
+      frequenciaSemanal: 7, urlVideo: ` https://videos.exemplo.org/${x(470)} `,
+    }))).toEqual({})
+  })
+
+  it('cada limite, um caractere ou um item acima, e recusado no proprio campo', () => {
+    expect(Object.keys(validarNovaAtividadeCasa(atividade({ titulo: '   ' })))).toEqual(['titulo'])
+    expect(Object.keys(validarNovaAtividadeCasa(atividade({ titulo: x(121) })))).toEqual(['titulo'])
+    expect(Object.keys(validarNovaAtividadeCasa(atividade({ descricao: x(1001) })))).toEqual(['descricao'])
+    expect(Object.keys(validarNovaAtividadeCasa(atividade({ dicas: x(1001) })))).toEqual(['dicas'])
+    expect(Object.keys(validarNovaAtividadeCasa(atividade({ passos: [' ', ''] })))).toEqual(['passos'])
+    expect(Object.keys(validarNovaAtividadeCasa(atividade({ passos: Array.from({ length: 11 }, () => 'passo') })))).toEqual(['passos'])
+    expect(Object.keys(validarNovaAtividadeCasa(atividade({ passos: ['ok', x(301)] })))).toEqual(['passos'])
+    for (const frequenciaSemanal of [0, 8, 2.5, Number.NaN]) {
+      expect(Object.keys(validarNovaAtividadeCasa(atividade({ frequenciaSemanal }))), String(frequenciaSemanal)).toEqual(['frequenciaSemanal'])
+    }
+    expect(Object.keys(validarNovaAtividadeCasa(atividade({ urlVideo: `https://v.exemplo.org/${x(479)}` })))).toEqual(['urlVideo'])
+  })
+
+  it('o video so com https://: javascript:, data:, http: e endereco sem servidor sao recusados', () => {
+    for (const url of [
+      'javascript:alert(1)', 'JavaScript:alert(1)', ' javascript:alert(1)', 'data:text/html,<script>alert(1)</script>',
+      'http://videos.exemplo.org/a', '//videos.exemplo.org/a', 'videos.exemplo.org/a', 'https://', 'https:///caminho',
+      'https://exemplo.org/a b', 'https://exemplo.org/\njavascript:alert(1)',
+    ]) {
+      expect(ehEnderecoDeVideo(url), url).toBe(false)
+      expect(validarNovaAtividadeCasa(atividade({ urlVideo: url })).urlVideo, url).toBeTruthy()
+    }
+    expect(ehEnderecoDeVideo('https://videos.exemplo.org/lavar-as-maos?t=10')).toBe(true)
+    // Vazio e sem video: nao e erro.
+    expect(validarNovaAtividadeCasa(atividade({ urlVideo: '   ' }))).toEqual({})
+  })
+
+  it('preenchida: sem espacos nas pontas, sem passo vazio, e video vazio vira nulo', () => {
+    expect(atividadeCasaPreenchida(atividade({ titulo: ' Lanche ', passos: [' Um ', '', '  ', 'Dois'], urlVideo: ' ' })))
+      .toMatchObject({ titulo: 'Lanche', passos: ['Um', 'Dois'], urlVideo: null })
+  })
+
+  it('o registro da familia: os tres desempenhos e a observacao de ate 500 caracteres', () => {
+    for (const d of ['SOZINHO', 'COM_AJUDA', 'NAO_QUIS']) expect(ehDesempenho(d), d).toBe(true)
+    for (const d of ['sozinho', 'INDEPENDENTE', '', null, undefined, 1]) expect(ehDesempenho(d), String(d)).toBe(false)
+    expect(erroDaObservacaoDaFamilia('')).toBeNull()
+    expect(erroDaObservacaoDaFamilia(` ${x(500)} `)).toBeNull()
+    expect(erroDaObservacaoDaFamilia(x(501))).toBeTruthy()
+    expect(textoDoRegistroRepetido('Patrícia Ficticia')).toBe('Hoje já foi registrado por Patrícia Ficticia.')
   })
 })
