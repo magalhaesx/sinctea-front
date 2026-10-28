@@ -11,6 +11,7 @@ import { EstadoCarregando } from '../../ui/EstadoCarregando'
 import { EstadoErro } from '../../ui/EstadoErro'
 import { CartaoAtividadeFamilia } from '../../componentes/CartaoAtividadeFamilia'
 import { emDataCivil } from '@sinctea/compartilhado/dominio/datas'
+import { ATIVIDADE_ENCERRADA, erroDaObservacaoDaFamilia } from '@sinctea/compartilhado/dominio/regras'
 import {
   ErroServico, servicos, type AtividadeCasa, type Desempenho, type ExecucaoAtividadeCasa,
 } from '../../servicos'
@@ -23,6 +24,10 @@ import {
  *
  * "Nao quis" nao e falha: a familia tentou, e isso e informacao clinica. As
  * tres opcoes tem o mesmo peso visual, e nenhuma delas e tratada como erro.
+ *
+ * Um registro por dia (item 15): o segundo toque do dia ouve do servico quem
+ * ja registrou. Encerrada pela equipe, a atividade ainda se abre pelo
+ * endereco, sem o "Como foi hoje?" e com o que a familia ja registrou.
  */
 
 const OPCOES: { valor: Desempenho; rotulo: string }[] = [
@@ -86,6 +91,12 @@ export function Atividade() {
       setSalvo(null)
       return
     }
+    const erroDaObservacao = erroDaObservacaoDaFamilia(observacao)
+    if (erroDaObservacao) {
+      setErro(erroDaObservacao)
+      setSalvo(null)
+      return
+    }
     setErro(null)
     setSalvando(true)
     try {
@@ -97,6 +108,10 @@ export function Atividade() {
       setTentativa((t) => t + 1)
     } catch (e) {
       setErro(e instanceof ErroServico ? e.message : 'Não foi possível salvar agora. Tente de novo em alguns segundos.')
+      // O "Registro salvo" de antes nao fica ao lado do erro de agora.
+      setSalvo(null)
+      // Ja registrado hoje, ou encerrada nesse meio-tempo: a tela se refaz com o que vale agora.
+      if (e instanceof ErroServico && e.codigo === 'CONFLITO') setTentativa((t) => t + 1)
     } finally {
       setSalvando(false)
     }
@@ -134,7 +149,7 @@ export function Atividade() {
             area="fam"
             titulo={naoEncontrada ? 'Não encontramos esta atividade' : undefined}
             texto={naoEncontrada
-              ? 'O endereço pode estar incompleto, ou a equipe encerrou esta atividade.'
+              ? 'O endereço pode estar incompleto. Volte ao início e abra a atividade por lá.'
               : undefined}
             aoTentarDeNovo={naoEncontrada ? undefined : () => setTentativa((t) => t + 1)}
           />
@@ -155,8 +170,8 @@ export function Atividade() {
           <CartaoAtividadeFamilia atividade={estado.atividade} />
 
           {!estado.atividade.ativa && (
-            <Aviso tom="neutro" titulo="Esta atividade foi encerrada">
-              A equipe encerrou esta atividade. O que você registrou continua guardado.
+            <Aviso tom="neutro" titulo={ATIVIDADE_ENCERRADA}>
+              O que você registrou continua guardado, logo abaixo.
             </Aviso>
           )}
 

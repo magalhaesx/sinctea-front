@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Tela } from '../LayoutApp'
-import { SO_CAMINHO_PRINCIPAL } from '../caminhoPrincipal'
 import { Aviso } from '../../ui/Aviso'
 import { BotaoLink } from '../../ui/Botao'
 import { Campo } from '../../ui/Campo'
@@ -111,10 +110,8 @@ export function PainelFamilia() {
     setDados({ tipo: 'carregando' })
     Promise.all([
       servicos.familia.listarObjetivos(pacienteId, { porPagina: 20 }),
-      // Atividades de casa: fora do caminho principal ate o servico chegar ao servidor.
-      SO_CAMINHO_PRINCIPAL
-        ? Promise.resolve({ itens: [] as AtividadeCasa[] })
-        : servicos.atividades.listarPorPaciente(pacienteId, { ativa: true, porPagina: 20 }),
+      // So as ativas: a encerrada sai da lista da familia, e o servidor garante (item 15).
+      servicos.atividades.listarPorPaciente(pacienteId, { ativa: true, porPagina: 20 }),
       servicos.consentimentos.listarPorPaciente(pacienteId, { porPagina: 20 }),
     ])
       .then(([objetivos, atividades, consentimentos]) => {
@@ -164,9 +161,7 @@ export function PainelFamilia() {
 
       {filho && (
         <>
-          <Titulo sub={SO_CAMINHO_PRINCIPAL
-            ? 'Veja como está indo e quem tem acesso.'
-            : 'Veja como está indo, o que fazer em casa nesta semana e quem tem acesso.'}>
+          <Titulo sub="Veja como está indo, o que fazer em casa nesta semana e quem tem acesso.">
             Como {primeiroNome} está indo
           </Titulo>
 
@@ -233,7 +228,6 @@ export function PainelFamilia() {
                 )}
               </section>
 
-              {!SO_CAMINHO_PRINCIPAL && (
               <section aria-labelledby="h-atividades" className="flex flex-col gap-3">
                 <h2 id="h-atividades" className="text-lg font-bold">Atividades desta semana</h2>
 
@@ -264,7 +258,6 @@ export function PainelFamilia() {
                   </ul>
                 )}
               </section>
-              )}
 
               <section aria-labelledby="h-escola" className="flex flex-col gap-3">
                 <h2 id="h-escola" className="text-lg font-bold">Acesso da escola</h2>

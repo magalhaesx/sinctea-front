@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
-import { ErroServico, type OcorrenciaComportamental, type Sessao } from '@sinctea/compartilhado'
+import { ErroServico, type NovaAtividadeCasa, type OcorrenciaComportamental, type Sessao } from '@sinctea/compartilhado'
 import { servicosMock as s } from '.'
 import { banco, relogio } from './infra'
 import { diaCivilEm } from '@sinctea/compartilhado/dominio/datas'
@@ -1085,6 +1085,45 @@ describe('outras regras de tela aplicadas no servico', () => {
       frequenciaSemanal: 2, urlVideo: null,
     }))
     expect(erro.campos.objetivoId).toBeTruthy()
+  })
+})
+
+describe('atividades de casa (item 15): as decisoes do Cowork valem sobre o mock', () => {
+  const nova = (mudanca: Partial<NovaAtividadeCasa> = {}): NovaAtividadeCasa => ({
+    pacienteId: 'p-001', objetivoId: 'o-001', titulo: 'Atividade do item 15', descricao: '', passos: ['Um passo.'],
+    dicas: '', frequenciaSemanal: 2, urlVideo: null, ...mudanca,
+  })
+
+  it('so objetivo do plano vigente do paciente; e a validacao do compartilhado', async () => {
+    await entrarComo('COORDENADOR')
+    // pl-002 aguarda validacao; o-006 e do plano vigente de outro paciente.
+    expect((await erroDe(s.atividades.prescrever(nova({ pacienteId: 'p-002', objetivoId: 'o-004' })))).campos.objetivoId).toBeTruthy()
+    expect((await erroDe(s.atividades.prescrever(nova({ objetivoId: 'o-006' })))).campos.objetivoId).toBeTruthy()
+    expect((await erroDe(s.atividades.prescrever(nova({ urlVideo: 'javascript:alert(1)' })))).campos.urlVideo).toBeTruthy()
+    expect((await erroDe(s.atividades.prescrever(nova({ passos: Array.from({ length: 11 }, () => 'passo') })))).campos.passos).toBeTruthy()
+  })
+
+  it('um registro por dia, e o segundo diz quem ja registrou', async () => {
+    await entrarComo('TERAPEUTA')
+    const atividade = await chamar(s.atividades.prescrever(nova()))
+    await entrarComo('RESPONSAVEL')
+    await chamar(s.atividades.registrarExecucao(atividade.id, 'SOZINHO'))
+    const repetido = await erroDe(s.atividades.registrarExecucao(atividade.id, 'NAO_QUIS'))
+    expect(repetido.codigo).toBe('CONFLITO')
+    expect(repetido.message).toMatch(/^Hoje já foi registrado por .+\.$/)
+    expect((await chamar(s.atividades.listarExecucoes(atividade.id))).total).toBe(1)
+    expect((await erroDe(s.atividades.registrarExecucao(atividade.id, 'SOZINHO', 'x'.repeat(501)))).campos.observacao).toBeTruthy()
+  })
+
+  it('encerrada, sai da lista da familia mesmo pedindo as encerradas, e o registro ouve as palavras da tela 16', async () => {
+    await entrarComo('TERAPEUTA')
+    const atividade = await chamar(s.atividades.prescrever(nova({ titulo: 'Para encerrar' })))
+    await chamar(s.atividades.encerrar(atividade.id))
+    expect((await chamar(s.atividades.listarPorPaciente('p-001', { ativa: false, porPagina: 50 }))).itens.map((a) => a.id)).toContain(atividade.id)
+    await entrarComo('RESPONSAVEL')
+    expect((await chamar(s.atividades.listarPorPaciente('p-001', { ativa: false, porPagina: 50 }))).itens.map((a) => a.id)).not.toContain(atividade.id)
+    expect((await chamar(s.atividades.obter(atividade.id))).ativa).toBe(false)
+    expect((await erroDe(s.atividades.registrarExecucao(atividade.id, 'SOZINHO'))).message).toBe('Esta atividade foi encerrada pela equipe.')
   })
 })
 

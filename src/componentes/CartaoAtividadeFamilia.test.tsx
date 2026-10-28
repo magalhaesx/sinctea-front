@@ -1,0 +1,34 @@
+import { renderToStaticMarkup } from 'react-dom/server'
+import { describe, expect, it } from 'vitest'
+import { CartaoAtividadeFamilia, type AtividadeParaFamilia } from './CartaoAtividadeFamilia'
+
+/**
+ * O cartao da atividade, o mesmo nas telas 9 e 16 (item 15): o video vira o
+ * link "Ver o video", em nova aba, e so com endereco https://.
+ */
+
+const cartao = (urlVideo: string | null) => {
+  const atividade: AtividadeParaFamilia = {
+    titulo: 'Lavar as mãos', descricao: '', passos: ['Molhe as mãos.'], dicas: '', frequenciaSemanal: 5, urlVideo,
+  }
+  return renderToStaticMarkup(<CartaoAtividadeFamilia atividade={atividade} />)
+}
+
+describe('o video da atividade de casa (item 15)', () => {
+  it('com https://, o link abre em nova aba, sem dar acesso a tela de origem, e diz isso ao leitor de tela', () => {
+    const html = cartao('https://videos.exemplo.org/maos')
+    const link = html.match(/<a [^>]*>/)![0]
+    expect(link).toContain('href="https://videos.exemplo.org/maos"')
+    expect(link).toContain('target="_blank"')
+    expect(link).toContain('rel="noopener noreferrer"')
+    expect(html).toContain('Ver o vídeo<span class="sr-only"> (abre em nova aba)</span>')
+  })
+
+  it('sem video, ou com endereco que nao e https://, nao ha link nenhum', () => {
+    for (const url of [null, '', 'javascript:alert(1)', 'http://videos.exemplo.org/maos', 'data:text/html,oi']) {
+      const html = cartao(url)
+      expect(html, String(url)).not.toContain('<a ')
+      expect(html, String(url)).not.toContain('Ver o vídeo')
+    }
+  })
+})

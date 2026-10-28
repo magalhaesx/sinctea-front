@@ -6,8 +6,9 @@ import {
   type ConviteEscolar, type ExecucaoAtividadeCasa, type ProfessorAEE, type VinculoEscolar,
 } from '@sinctea/compartilhado'
 import {
-  calcularExpiracaoConvite, consentimentoVigente, idadeEmAnos, situacaoConsentimento,
-  situacaoConvite, validarNovoConsentimento,
+  ATIVIDADE_ENCERRADA, atividadeCasaPreenchida, calcularExpiracaoConvite, consentimentoVigente, ehDesempenho,
+  erroDaObservacaoDaFamilia, idadeEmAnos, situacaoConsentimento, situacaoConvite, textoDoRegistroRepetido,
+  validarNovaAtividadeCasa, validarNovoConsentimento,
 } from '@sinctea/compartilhado/dominio/regras'
 import { diaCivilEm } from '@sinctea/compartilhado/dominio/datas'
 import { resumoDoTermo, VERSAO_CORRENTE_DO_TERMO } from '@sinctea/compartilhado/dominio/termo'
@@ -28,9 +29,11 @@ function buscarAtividade(id: string): AtividadeCasa {
 
 export const atividadesMock: ServicoAtividadeCasa = {
   listarPorPaciente: (pacienteId, filtro = {}) => responder(() => {
-    exigirPacienteClinicoOuFamilia(pacienteId, 'AtividadeCasa')
+    const { sessao } = exigirPacienteClinicoOuFamilia(pacienteId, 'AtividadeCasa')
+    // Encerrada, a atividade sai da lista da familia, qualquer que seja o filtro pedido (item 15).
+    const ativa = sessao.perfilAtivo === 'RESPONSAVEL' ? true : filtro.ativa
     const itens = banco.atividades
-      .filter((a) => a.pacienteId === pacienteId && (filtro.ativa === undefined || a.ativa === filtro.ativa))
+      .filter((a) => a.pacienteId === pacienteId && (ativa === undefined || a.ativa === ativa))
       .sort((a, b) => b.prescritaEm.localeCompare(a.prescritaEm))
     return paginar(itens, filtro)
   }),
@@ -43,24 +46,17 @@ export const atividadesMock: ServicoAtividadeCasa = {
 
   prescrever: (dados) => responder(() => {
     const { sessao } = exigirPacienteClinico(dados.pacienteId, 'AtividadeCasa')
-    const plano = banco.planos.find((p) => p.pacienteId === dados.pacienteId)
-    const erros: Record<string, string> = {}
-    // Atividade solta nao existe: precisa de um objetivo do plano do paciente.
+    // Atividade solta nao existe: precisa de um objetivo do plano VIGENTE do
+    // paciente, o mesmo recorte que a familia le na tela 15 (item 15).
+    const plano = banco.planos.find((p) => p.pacienteId === dados.pacienteId && p.status === 'VIGENTE')
+    const erros = validarNovaAtividadeCasa(dados)
     if (!plano?.objetivos.some((o) => o.id === dados.objetivoId)) {
-      erros.objetivoId = 'Escolha o objetivo do plano a que esta atividade serve.'
-    }
-    if (!dados.titulo.trim()) erros.titulo = 'Dê um título que a família reconheça.'
-    if (dados.passos.filter((p) => p.trim()).length === 0) erros.passos = 'Descreva ao menos um passo.'
-    if (!Number.isInteger(dados.frequenciaSemanal) || dados.frequenciaSemanal < 1 || dados.frequenciaSemanal > 7) {
-      erros.frequenciaSemanal = 'A frequência semanal vai de 1 a 7 vezes.'
+      erros.objetivoId = 'Escolha um objetivo do plano vigente deste paciente.'
     }
     exigirValido(erros)
     const atividade: AtividadeCasa = {
-      ...dados,
+      ...atividadeCasaPreenchida(dados),
       id: gerarId('a'),
-      titulo: dados.titulo.trim(),
-      descricao: dados.descricao.trim(),
-      passos: dados.passos.map((p) => p.trim()).filter(Boolean),
       ativa: true,
       prescritaEm: relogio.agora().toISOString(),
     }
@@ -91,13 +87,25 @@ export const atividadesMock: ServicoAtividadeCasa = {
   registrarExecucao: (atividadeId, desempenho, observacao) => responder(() => {
     const atividade = buscarAtividade(atividadeId)
     const { sessao } = exigirPacienteDaFamilia(atividade.pacienteId, 'ExecucaoAtividadeCasa')
-    if (!atividade.ativa) throw new ErroServico('CONFLITO', 'Esta atividade foi encerrada pela terapeuta.')
+    const erros: Record<string, string> = {}
+    if (!ehDesempenho(desempenho)) erros.desempenho = 'Escolha como foi hoje.'
+    const erroDaObservacao = erroDaObservacaoDaFamilia(observacao ?? '')
+    if (erroDaObservacao) erros.observacao = erroDaObservacao
+    exigirValido(erros)
+    if (!atividade.ativa) throw new ErroServico('CONFLITO', ATIVIDADE_ENCERRADA)
+    // O dia em que a familia fez, no calendario da instancia: e data civil.
+    const dataRealizacao = diaCivilEm(relogio.agora())
+    // Um registro por atividade por dia (item 15): no servidor, o indice unico.
+    const doDia = banco.execucoes.find((e) => e.atividadeId === atividadeId && e.dataRealizacao === dataRealizacao)
+    if (doDia) {
+      const quem = banco.responsaveis.find((r) => r.id === doDia.responsavelId)?.nome ?? 'outro responsável'
+      throw new ErroServico('CONFLITO', textoDoRegistroRepetido(quem))
+    }
     const execucao: ExecucaoAtividadeCasa = {
       id: gerarId('ex'),
       atividadeId,
       responsavelId: sessao.usuario.id,
-      // O dia em que a familia fez, no calendario da instancia: e data civil.
-      dataRealizacao: diaCivilEm(relogio.agora()),
+      dataRealizacao,
       desempenho,
       observacao: observacao?.trim() || null,
     }

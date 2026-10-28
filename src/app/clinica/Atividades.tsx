@@ -12,8 +12,8 @@ import { EstadoCarregando } from '../../ui/EstadoCarregando'
 import { EstadoErro } from '../../ui/EstadoErro'
 import { Paginacao } from '../../ui/Paginacao'
 import { CartaoAtividadeFamilia } from '../../componentes/CartaoAtividadeFamilia'
-import { frequenciaSemanalEmPalavras } from '@sinctea/compartilhado/dominio/regras'
-import { diaIso, emData, emDataCivil } from '@sinctea/compartilhado/dominio/datas'
+import { frequenciaSemanalEmPalavras, validarNovaAtividadeCasa } from '@sinctea/compartilhado/dominio/regras'
+import { diaCivilEm, emData, emDataCivil } from '@sinctea/compartilhado/dominio/datas'
 import {
   ErroServico, servicos, type AtividadeCasa, type Desempenho, type ExecucaoAtividadeCasa,
   type NovaAtividadeCasa, type Objetivo, type Pagina, type PlanoTerapeutico,
@@ -31,6 +31,9 @@ import {
  * O cartao "Como a familia vai ver" acompanha quem escreve, e e o mesmo
  * componente que a tela da familia usa. Nao ha botao que simplifique o texto:
  * a redacao acessivel e escrita por quem prescreve (regra 4 do CLAUDE.md).
+ *
+ * Item 15: so objetivo do plano vigente, e a validacao e a do compartilhado,
+ * a mesma do servidor. A familia registra uma vez por dia, no dia de Manaus.
  */
 
 const POR_PAGINA = 5
@@ -52,13 +55,8 @@ type Estado<T> =
 
 const plural = (n: number, um: string, muitos: string) => `${n} ${n === 1 ? um : muitos}`
 
-/** Zero hora do primeiro dos ultimos sete dias, contando hoje. */
-function inicioDaJanela(agora: Date): number {
-  const d = new Date(agora)
-  d.setHours(0, 0, 0, 0)
-  d.setDate(d.getDate() - (JANELA_DIAS - 1))
-  return d.getTime()
-}
+/** O primeiro dos ultimos sete dias, contando hoje, no calendario de Manaus, o mesmo do registro. */
+const inicioDaJanela = (agora: Date) => diaCivilEm(new Date(agora.getTime() - (JANELA_DIAS - 1) * 86_400_000))
 
 const emLinhas = (texto: string) => texto.split('\n').map((l) => l.trim()).filter(Boolean)
 
@@ -99,7 +97,7 @@ function Adesao({ atividade }: { atividade: AtividadeCasa }) {
 
   const desde = inicioDaJanela(new Date())
   // A execucao guarda o dia, sem hora: compara-se dia com dia.
-  const daJanela = estado.dados.filter((e) => e.dataRealizacao >= diaIso(new Date(desde)))
+  const daJanela = estado.dados.filter((e) => e.dataRealizacao >= desde)
   const conta = (d: Desempenho) => daJanela.filter((e) => e.desempenho === d).length
 
   return (
@@ -370,6 +368,13 @@ export function Atividades() {
       frequenciaSemanal: Number(formulario.frequenciaSemanal),
       urlVideo: formulario.urlVideo.trim() || null,
     }
+    // A mesma validacao do servidor, antes de ir: o erro aparece no campo, sem esperar a rede.
+    const invalidos = validarNovaAtividadeCasa(dados)
+    if (Object.keys(invalidos).length > 0) {
+      setErros(invalidos)
+      setSalvando(false)
+      return
+    }
     try {
       const atividade = await servicos.atividades.prescrever(dados)
       setFormulario(VAZIO)
@@ -518,10 +523,12 @@ export function Atividades() {
 
                 <Campo id="descricao" rotulo="Descrição" dica="Uma frase sobre o que fazer e quando.">
                   <textarea id="descricao" rows={2} className={area} value={formulario.descricao}
-                    onChange={(e) => setFormulario((f) => ({ ...f, descricao: e.target.value }))} />
+                    onChange={(e) => setFormulario((f) => ({ ...f, descricao: e.target.value }))}
+                    {...atributosDeErro('descricao')} />
                 </Campo>
+                <Erro chave="descricao" />
 
-                <Campo id="passos" rotulo="Passos" dica="Um passo por linha, na ordem de fazer.">
+                <Campo id="passos" rotulo="Passos" dica="Um passo por linha, na ordem de fazer. No máximo 10.">
                   <textarea id="passos" rows={5} className={area} value={formulario.passos}
                     onChange={(e) => setFormulario((f) => ({ ...f, passos: e.target.value }))}
                     {...atributosDeErro('passos')} />
@@ -530,8 +537,10 @@ export function Atividades() {
 
                 <Campo id="dicas" rotulo="Dicas" dica="O que ajuda quando não sai de primeira.">
                   <textarea id="dicas" rows={2} className={area} value={formulario.dicas}
-                    onChange={(e) => setFormulario((f) => ({ ...f, dicas: e.target.value }))} />
+                    onChange={(e) => setFormulario((f) => ({ ...f, dicas: e.target.value }))}
+                    {...atributosDeErro('dicas')} />
                 </Campo>
+                <Erro chave="dicas" />
 
                 <Campo id="frequencia" rotulo="Frequência semanal">
                   <select id="frequencia" className={campo} value={formulario.frequenciaSemanal}
@@ -544,10 +553,12 @@ export function Atividades() {
                 </Campo>
                 <Erro chave="frequenciaSemanal" />
 
-                <Campo id="video" rotulo="Vídeo (opcional)" dica="Endereço de um vídeo curto mostrando como fazer.">
-                  <input id="video" type="url" className={campo} value={formulario.urlVideo}
-                    onChange={(e) => setFormulario((f) => ({ ...f, urlVideo: e.target.value }))} />
+                <Campo id="video" rotulo="Vídeo (opcional)" dica="Endereço de um vídeo curto mostrando como fazer, começando com https://.">
+                  <input id="video" type="url" inputMode="url" className={campo} value={formulario.urlVideo}
+                    onChange={(e) => setFormulario((f) => ({ ...f, urlVideo: e.target.value }))}
+                    {...atributosDeErro('urlVideo')} />
                 </Campo>
+                <Erro chave="urlVideo" />
 
                 <div>
                   <Botao area="cli" type="submit" disabled={salvando}>

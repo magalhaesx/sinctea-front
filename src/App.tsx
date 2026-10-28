@@ -61,6 +61,8 @@ const titulos: [padrao: string, titulo: string][] = [
   ['/app/admin/trilha', 'Trilha administrativa'],
   ['/app/familia', 'Painel da família'],
   ['/app/familia/consentimento', 'Autorizar o acesso da escola'],
+  ['/app/clinica/pacientes/:id/atividades', 'Atividades para casa'],
+  ['/app/familia/atividades/:id', 'Atividade em casa'],
   ['/app/escola', 'Meus alunos'],
   ['/app/escola/:pacienteId', 'Cartão de estratégias'],
   ['/app/escola/:pacienteId/ocorrencia', 'Registrar ocorrência'],
@@ -69,12 +71,10 @@ const titulos: [padrao: string, titulo: string][] = [
   // Fora do caminho principal: so com o mock (app/caminhoPrincipal.ts).
   ...(SO_CAMINHO_PRINCIPAL ? [] : [
     ['/app/clinica/pacientes/:id/evolucao', 'Evolução por objetivo'],
-    ['/app/clinica/pacientes/:id/atividades', 'Atividades para casa'],
     ['/app/clinica/pacientes/:id/relatorio', 'Relatório de evolução'],
     ['/app/clinica/pacientes/:id/relatorio/:relatorioId', 'Relatório emitido'],
     ['/app/coordenacao', 'Indicadores da clínica'],
     ['/app/coordenacao/auditoria', 'Registro de auditoria'],
-    ['/app/familia/atividades/:id', 'Atividade em casa'],
     ['/dev/estados', 'Vitrine de estados'],
   ] as [string, string][]),
 ]
@@ -129,6 +129,7 @@ export function App() {
         <Route path="clinica/pacientes/:id" element={protegida(CLINICA, <Ficha />)} />
         <Route path="clinica/pacientes/:id/plano" element={protegida(CLINICA, <Plano />)} />
         <Route path="clinica/pacientes/:id/sessao" element={protegida(CLINICA, <RegistroSessao />)} />
+        <Route path="clinica/pacientes/:id/atividades" element={protegida(CLINICA, <Atividades />)} />
 
         <Route path="coordenacao/planos" element={protegida(['COORDENADOR'], <Planos />)} />
 
@@ -137,6 +138,7 @@ export function App() {
 
         <Route path="familia" element={protegida(['RESPONSAVEL'], <PainelFamilia />)} />
         <Route path="familia/consentimento" element={protegida(['RESPONSAVEL'], <Consentimento />)} />
+        <Route path="familia/atividades/:id" element={protegida(['RESPONSAVEL'], <Atividade />)} />
 
         <Route path="escola" element={protegida(['PROFESSOR'], <Alunos />)} />
         <Route path="escola/:pacienteId" element={protegida(['PROFESSOR'], <CartaoEstrategias />)} />
@@ -151,12 +153,10 @@ export function App() {
         {!SO_CAMINHO_PRINCIPAL && (
           <>
             <Route path="clinica/pacientes/:id/evolucao" element={protegida(CLINICA, <Evolucao />)} />
-            <Route path="clinica/pacientes/:id/atividades" element={protegida(CLINICA, <Atividades />)} />
             <Route path="clinica/pacientes/:id/relatorio" element={protegida(CLINICA, <Relatorio />)} />
             <Route path="clinica/pacientes/:id/relatorio/:relatorioId" element={protegida(CLINICA, <RelatorioEmitido />)} />
             <Route path="coordenacao" element={protegida(['COORDENADOR'], <PainelCoordenacao />)} />
             <Route path="coordenacao/auditoria" element={protegida(['COORDENADOR'], <Auditoria />)} />
-            <Route path="familia/atividades/:id" element={protegida(['RESPONSAVEL'], <Atividade />)} />
           </>
         )}
       </Route>
