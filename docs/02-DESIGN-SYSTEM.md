@@ -221,6 +221,7 @@ use o formulário acima."
 |---|---|---|
 | `Botao` | primária, secundária, grande, destrutiva | Altura mínima 44px sempre |
 | `Campo` | texto, área, data, seleção, marcação | Rótulo associado é obrigatório |
+| `CampoSenha` | entrada (`current-password`), criação de senha (`new-password`) | Botão de olho de 44px, `type="button"`, com `aria-pressed`; a senha volta a ficar escondida ao enviar |
 | `Cartao` | com e sem faixa lateral de área | |
 | `Etiqueta` | ok, atenção, crítico, neutro | Sempre símbolo + texto |
 | `Aviso` | os mesmos quatro tons | Faixa lateral de 4px |
