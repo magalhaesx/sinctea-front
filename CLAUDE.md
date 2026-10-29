@@ -206,10 +206,10 @@ Atualizado em 18/10/2026, lendo o código — não a memória.
   simulada que aplica controle de acesso e auditoria; o cliente da API, que
   não aplica regra nenhuma. A versão publicada usa só a API, e o mock fica
   fora do pacote; no desenvolvimento, `VITE_API_URL` escolhe entre as duas
-- **586 testes em 50 arquivos, nos três pacotes**, rodados por um único
+- **613 testes em 52 arquivos, nos três pacotes**, rodados por um único
   `npm test` na raiz, sem passo manual. O principal ainda é
   `src/servicos/mock/regrasInviolaveis.test.ts`, que verifica as regras
-  invioláveis na camada de dados, e não na tela. Os 283 do servidor rodam contra
+  invioláveis na camada de dados, e não na tela. Os 299 do servidor rodam contra
   um PostgreSQL 17 de verdade
 - **As seis regras verificadas** em `docs/06`: para cada teste citado, a regra foi
   quebrada de propósito para confirmar que ele falha, e as quebras que não
@@ -536,6 +536,26 @@ em produção (o antigo passo B5) foi cancelada. No código, hoje:
   e o nome do escolhido vem da leitura da ficha. O CSV abre com "Data e hora
   (Manaus)" e fecha com "Instante (UTC)". A migração `auditoria_ordem` dá à
   trilha o índice `(ocorridoEm DESC, id DESC)`
+- **Item 18 — o relatório de evolução (telas 10 e 10b) no ar.** Só a equipe
+  do paciente e a coordenação: `POST /api/pacientes/:id/relatorios/previa`,
+  `POST /api/pacientes/:id/relatorios`, `GET /api/pacientes/:id/relatorios` e
+  `GET /api/relatorios/:id` (`servidor/src/relatorios/`); nenhuma rota de editar
+  nem de excluir, e o *trigger* recusa UPDATE e DELETE. O pedido é
+  `validarPedidoRelatorio` e o conteúdo, `montarConteudoRelatorio`
+  (`compartilhado/src/dominio/relatorio.ts`), os mesmos no mock, no servidor e
+  na semente: só os objetivos do plano vigente (*"Para emitir, o paciente
+  precisa de um plano vigente."*); a sessão conta no dia de Manaus em que
+  começou; o fim do período não vem antes do início nem passa de hoje; a
+  família lê a redação acessível e números em palavras, e a equipe, a técnica e
+  o percentual. As considerações são obrigatórias ao emitir, até 4.000
+  caracteres, e nunca geradas. Sem registro no conselho, não se emite. O
+  `conteudoEmitido` é o `jsonCanonico` do conteúdo, gravado como texto, e o
+  `hashConteudo`, o sha256 desse texto; `obter` devolve o que foi gravado, e a
+  tela 10b confere o resumo no navegador. A prévia, a emissão, a lista e a
+  abertura deixam uma linha cada, com o paciente; o mock não registra a
+  prévia. Na impressão, o cabeçalho da folha (paciente, período e
+  destinatário) sumia com a barra do topo; corrigido em `src/index.css`. Testes
+  em `servidor/test/relatorios.test.ts`, quebras no `docs/06`
 - `npm run criar-administrador -w @sinctea/servidor -- .env.producao --nome
   "Nome Completo" --email voce@exemplo.com` cria o primeiro administrador:
   nome e e-mail vêm da linha de comando, e só a senha é pedida, escondida e duas
@@ -576,7 +596,7 @@ Não se corta, nem com pressa: as regras 1, 2, 3, 5 e 6 provadas por teste contr
 a API no caminho principal, o *trigger* da auditoria, o papel que não é dono e o
 argon2id.
 
-Depois de 19/10, sem data: indicadores, relatórios e a agenda; o
+Depois de 19/10, sem data: indicadores e a agenda; o
 envio de e-mail, com a recuperação de senha sem passar pela clínica; a remoção completa de `servicos/mock`; o offline reduzido ao registro de
 sessão (`docs/07`, seção 3A); e a Etapa 13, de 16/11 a 23/11 — artigo, slides,
 vídeo e ensaio.
