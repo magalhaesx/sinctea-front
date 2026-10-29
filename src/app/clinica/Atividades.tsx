@@ -34,6 +34,8 @@ import {
  *
  * Item 15: so objetivo do plano vigente, e a validacao e a do compartilhado,
  * a mesma do servidor. A familia registra uma vez por dia, no dia de Manaus.
+ * Item 15b: o historico sempre diz quem registrou, e a previa traz o "para
+ * que serve", a redacao acessivel do objetivo escolhido.
  */
 
 const POR_PAGINA = 5
@@ -159,6 +161,7 @@ function Historico({ atividadeId }: { atividadeId: string }) {
                   <span className="flex flex-wrap items-center gap-2">
                     <b>{emDataCivil(e.dataRealizacao)}</b>
                     <Etiqueta simbolo="○">{NOME_DO_DESEMPENHO[e.desempenho]}</Etiqueta>
+                    <span className="text-sm text-tinta2">Registrado por {e.responsavelNome}</span>
                   </span>
                   {e.observacao && <p className="mt-1 text-tinta2">“{e.observacao}”</p>}
                 </li>
@@ -582,6 +585,7 @@ export function Atividades() {
                   dicas: formulario.dicas,
                   frequenciaSemanal: Number(formulario.frequenciaSemanal),
                   urlVideo: formulario.urlVideo.trim() || null,
+                  paraQue: objetivos.find((o) => o.id === formulario.objetivoId)?.descricaoAcessivel ?? '',
                 }}
               />
             </div>

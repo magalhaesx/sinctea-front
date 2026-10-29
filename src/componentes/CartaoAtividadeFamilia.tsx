@@ -11,6 +11,9 @@ import { ehEnderecoDeVideo, frequenciaSemanalEmPalavras } from '@sinctea/compart
  * O video e um link que abre em nova aba (item 15), e so com endereco
  * https:// (ehEnderecoDeVideo): na previa da tela 9, o que ainda nao vale nao
  * vira link, e o que a familia toca nunca e um "javascript:".
+ *
+ * "Para que serve" (item 15b) e a redacao acessivel do objetivo, logo abaixo
+ * do titulo. Na previa da tela 9, a do objetivo escolhido no formulario.
  */
 
 /** So o que a familia ve. O registro do dia nao e deste cartao. */
@@ -21,6 +24,7 @@ export interface AtividadeParaFamilia {
   dicas: string
   frequenciaSemanal: number
   urlVideo: string | null
+  paraQue: string
 }
 
 export function CartaoAtividadeFamilia({ atividade }: { atividade: AtividadeParaFamilia }) {
@@ -29,19 +33,27 @@ export function CartaoAtividadeFamilia({ atividade }: { atividade: AtividadePara
   const descricao = atividade.descricao.trim()
   const dicas = atividade.dicas.trim()
   const video = atividade.urlVideo?.trim() ?? ''
+  const paraQue = atividade.paraQue.trim()
 
   return (
     <div className="flex flex-col gap-4 rounded-xl border border-fam bg-fam-sup p-4 sm:p-5">
+      <h3 className="text-lg font-bold leading-tight">
+        {titulo || <span className="text-tinta2">Sem título ainda</span>}
+      </h3>
+
+      {paraQue && (
+        <div>
+          <h4 className="text-base font-bold">Para que serve</h4>
+          <p className="mt-1 text-[15px]">{paraQue}</p>
+        </div>
+      )}
+
       <div>
-        <h3 className="text-lg font-bold leading-tight">
-          {titulo || <span className="text-tinta2">Sem título ainda</span>}
-        </h3>
-        <p className="mt-1 text-sm text-tinta2">
+        <p className="text-sm text-tinta2">
           {frequenciaSemanalEmPalavras(atividade.frequenciaSemanal)}
         </p>
+        {descricao && <p className="mt-1 text-[15px]">{descricao}</p>}
       </div>
-
-      {descricao && <p className="text-[15px]">{descricao}</p>}
 
       {ehEnderecoDeVideo(video) && (
         <a href={video} target="_blank" rel="noopener noreferrer"

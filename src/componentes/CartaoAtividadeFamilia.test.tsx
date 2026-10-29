@@ -7,9 +7,10 @@ import { CartaoAtividadeFamilia, type AtividadeParaFamilia } from './CartaoAtivi
  * link "Ver o video", em nova aba, e so com endereco https://.
  */
 
-const cartao = (urlVideo: string | null) => {
+const cartao = (urlVideo: string | null, paraQue = '') => {
   const atividade: AtividadeParaFamilia = {
-    titulo: 'Lavar as mãos', descricao: '', passos: ['Molhe as mãos.'], dicas: '', frequenciaSemanal: 5, urlVideo,
+    titulo: 'Lavar as mãos', descricao: 'Antes do almoço.', passos: ['Molhe as mãos.'], dicas: '', frequenciaSemanal: 5,
+    urlVideo, paraQue,
   }
   return renderToStaticMarkup(<CartaoAtividadeFamilia atividade={atividade} />)
 }
@@ -30,5 +31,20 @@ describe('o video da atividade de casa (item 15)', () => {
       expect(html, String(url)).not.toContain('<a ')
       expect(html, String(url)).not.toContain('Ver o vídeo')
     }
+  })
+})
+
+describe('para que serve (item 15b)', () => {
+  it('logo abaixo do titulo, antes da frequencia e da descricao', () => {
+    const html = cartao(null, 'Cuidar de si com menos ajuda.')
+    const posicao = (trecho: string) => html.indexOf(trecho)
+    expect(html).toContain('<h4 class="text-base font-bold">Para que serve</h4><p class="mt-1 text-[15px]">Cuidar de si com menos ajuda.</p>')
+    expect(posicao('Lavar as mãos')).toBeLessThan(posicao('Para que serve'))
+    expect(posicao('Para que serve')).toBeLessThan(posicao('cinco vezes por semana'))
+    expect(posicao('Para que serve')).toBeLessThan(posicao('Antes do almoço.'))
+  })
+
+  it('sem redacao acessivel, como na previa antes de escolher o objetivo, o bloco nao aparece', () => {
+    expect(cartao(null, '  ')).not.toContain('Para que serve')
   })
 })

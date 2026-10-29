@@ -10,6 +10,8 @@ import { Titulo } from '../../ui/Titulo'
 import { EstadoCarregando } from '../../ui/EstadoCarregando'
 import { EstadoErro } from '../../ui/EstadoErro'
 import { CartaoAtividadeFamilia } from '../../componentes/CartaoAtividadeFamilia'
+import { usarSessao } from '../../contexto/Sessao'
+import { AMANHA_DA_PARA_REGISTRAR, lugarDoRegistro, quemRegistrou } from './registroDeHoje'
 import { emDataCivil } from '@sinctea/compartilhado/dominio/datas'
 import { ATIVIDADE_ENCERRADA, erroDaObservacaoDaFamilia } from '@sinctea/compartilhado/dominio/regras'
 import {
@@ -28,6 +30,10 @@ import {
  * Um registro por dia (item 15): o segundo toque do dia ouve do servico quem
  * ja registrou. Encerrada pela equipe, a atividade ainda se abre pelo
  * endereco, sem o "Como foi hoje?" e com o que a familia ja registrou.
+ *
+ * Item 15b: "Para que serve" vem no cartao. Com registro de hoje, no dia de
+ * Manaus, o "Como foi hoje?" da lugar a quem ja registrou (lugarDoRegistro);
+ * no historico, o nome so aparece quando foi outro responsavel.
  */
 
 const OPCOES: { valor: Desempenho; rotulo: string }[] = [
@@ -52,6 +58,7 @@ type Estado =
 
 export function Atividade() {
   const { id = '' } = useParams()
+  const { usuario: eu } = usarSessao()
   const [estado, setEstado] = useState<Estado>({ tipo: 'carregando' })
   const [tentativa, setTentativa] = useState(0)
   const [desempenho, setDesempenho] = useState<Desempenho | null>(null)
@@ -62,11 +69,22 @@ export function Atividade() {
 
   const regiaoViva = useRef<HTMLDivElement>(null)
   const focarAviso = useRef(false)
+  // Depois de uma recusa, a recarga troca o "Como foi hoje?" pelo aviso do
+  // dia: o erro some com o formulario, e o foco leva o leitor de tela ao aviso.
+  const situacao = useRef<HTMLDivElement>(null)
+  const focarSituacao = useRef(false)
 
   useEffect(() => {
     if (!focarAviso.current) return
     focarAviso.current = false
     regiaoViva.current?.focus()
+  })
+
+  // So quando o aviso ja esta na tela: a recarga passa pelo "carregando".
+  useEffect(() => {
+    if (!focarSituacao.current || !situacao.current) return
+    focarSituacao.current = false
+    situacao.current.focus()
   })
 
   useEffect(() => {
@@ -86,6 +104,7 @@ export function Atividade() {
   }, [id, tentativa])
 
   const salvar = async () => {
+    focarSituacao.current = false
     if (!desempenho) {
       setErro('Falta escolher como foi hoje. Toque em uma das três opções acima.')
       setSalvo(null)
@@ -111,7 +130,10 @@ export function Atividade() {
       // O "Registro salvo" de antes nao fica ao lado do erro de agora.
       setSalvo(null)
       // Ja registrado hoje, ou encerrada nesse meio-tempo: a tela se refaz com o que vale agora.
-      if (e instanceof ErroServico && e.codigo === 'CONFLITO') setTentativa((t) => t + 1)
+      if (e instanceof ErroServico && e.codigo === 'CONFLITO') {
+        focarSituacao.current = true
+        setTentativa((t) => t + 1)
+      }
     } finally {
       setSalvando(false)
     }
@@ -119,6 +141,7 @@ export function Atividade() {
 
   const naoEncontrada = estado.tipo === 'erro' && estado.erro instanceof ErroServico
     && estado.erro.codigo === 'NAO_ENCONTRADO'
+  const lugar = estado.tipo === 'pronto' ? lugarDoRegistro(estado.atividade.ativa, estado.execucoes, eu?.id) : null
 
   return (
     <Tela
@@ -169,13 +192,21 @@ export function Atividade() {
               forma que ele espera. */}
           <CartaoAtividadeFamilia atividade={estado.atividade} />
 
-          {!estado.atividade.ativa && (
-            <Aviso tom="neutro" titulo={ATIVIDADE_ENCERRADA}>
-              O que você registrou continua guardado, logo abaixo.
-            </Aviso>
+          {lugar?.tipo === 'encerrada' && (
+            <div ref={situacao} tabIndex={-1}>
+              <Aviso tom="neutro" titulo={ATIVIDADE_ENCERRADA}>
+                O que você registrou continua guardado, logo abaixo.
+              </Aviso>
+            </div>
           )}
 
-          {estado.atividade.ativa && (
+          {lugar?.tipo === 'registrado' && (
+            <div ref={situacao} tabIndex={-1}>
+              <Aviso tom="neutro" titulo={lugar.titulo}>{AMANHA_DA_PARA_REGISTRAR}</Aviso>
+            </div>
+          )}
+
+          {lugar?.tipo === 'formulario' && (
             <Cartao>
               <fieldset className="border-0 p-0">
                 <legend className="text-base font-bold">Como foi hoje?</legend>
@@ -231,16 +262,20 @@ export function Atividade() {
               </Cartao>
             ) : (
               <ul className="flex flex-col gap-2">
-                {estado.execucoes.map((e) => (
-                  <li key={e.id} className="rounded-lg border border-linha bg-sup px-3 py-2.5">
-                    <span className="flex flex-wrap items-center gap-2">
-                      <b>{emDataCivil(e.dataRealizacao)}</b>
-                      {/* "Nao quis" tem o mesmo peso das outras: e informacao. */}
-                      <Etiqueta simbolo="○">{NOME_DO_DESEMPENHO[e.desempenho]}</Etiqueta>
-                    </span>
-                    {e.observacao && <p className="mt-1 text-sm text-tinta2">“{e.observacao}”</p>}
-                  </li>
-                ))}
+                {estado.execucoes.map((e) => {
+                  const quem = quemRegistrou(e, eu?.id)
+                  return (
+                    <li key={e.id} className="rounded-lg border border-linha bg-sup px-3 py-2.5">
+                      <span className="flex flex-wrap items-center gap-2">
+                        <b>{emDataCivil(e.dataRealizacao)}</b>
+                        {/* "Nao quis" tem o mesmo peso das outras: e informacao. */}
+                        <Etiqueta simbolo="○">{NOME_DO_DESEMPENHO[e.desempenho]}</Etiqueta>
+                        {quem && <span className="text-sm text-tinta2">{quem}</span>}
+                      </span>
+                      {e.observacao && <p className="mt-1 text-sm text-tinta2">“{e.observacao}”</p>}
+                    </li>
+                  )
+                })}
               </ul>
             )}
           </section>

@@ -64,6 +64,11 @@ describe('a versao publicada', () => {
     expect(pacote).toContain('Como foi hoje?')
     expect(pacote).toContain('Ver o vídeo')
     expect(pacote).toContain('noopener noreferrer')
+    // Item 15b: para que serve, quem registrou e o registro de hoje.
+    expect(pacote).toContain('Para que serve')
+    expect(pacote).toContain('Registrado por')
+    expect(pacote).toContain('Você já registrou hoje.')
+    expect(pacote).toContain('Amanhã dá para registrar de novo.')
   })
 
   it('leva o ciclo clinica–escola do item 6: os avisos da escola e os eventos da ficha', () => {
