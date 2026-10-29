@@ -206,10 +206,10 @@ Atualizado em 18/10/2026, lendo o código — não a memória.
   simulada que aplica controle de acesso e auditoria; o cliente da API, que
   não aplica regra nenhuma. A versão publicada usa só a API, e o mock fica
   fora do pacote; no desenvolvimento, `VITE_API_URL` escolhe entre as duas
-- **534 testes em 43 arquivos, nos três pacotes**, rodados por um único
+- **557 testes em 47 arquivos, nos três pacotes**, rodados por um único
   `npm test` na raiz, sem passo manual. O principal ainda é
   `src/servicos/mock/regrasInviolaveis.test.ts`, que verifica as regras
-  invioláveis na camada de dados, e não na tela. Os 261 do servidor rodam contra
+  invioláveis na camada de dados, e não na tela. Os 269 do servidor rodam contra
   um PostgreSQL 17 de verdade
 - **As seis regras verificadas** em `docs/06`: para cada teste citado, a regra foi
   quebrada de propósito para confirmar que ele falha, e as quebras que não
@@ -493,6 +493,24 @@ em produção (o antigo passo B5) foi cancelada. No código, hoje:
   `HTTPS://` em maiúsculas, como o CHECK. Testes em
   `servidor/test/atividades.test.ts` e, por INSERT em SQL, em
   `servidor/test/checks.test.ts`; quebras no `docs/06`
+- **Item 16 — a evolução por objetivo (tela 8) no ar.** A tela lê o plano,
+  para o seletor, e `GET /api/objetivos/:id/evolucao` (`planos.obterEvolucao`),
+  inteira, sem paginação. A resposta é montada por `montarEvolucao`
+  (`compartilhado/src/dominio/evolucao.ts`), a mesma no mock e no servidor: na
+  clínica, uma entrada por sessão encerrada em que o objetivo foi trabalhado, em
+  ordem de número; em casa, as execuções das atividades do objetivo, ativas e
+  encerradas; na escola, as ocorrências de origem escola do paciente; e
+  `atingiuCriterio`. Só datas e medidas: nem a observação da família, nem o
+  relato da escola, nem a evolução da sessão. Só a equipe do paciente e a
+  coordenação; uma linha `LEITURA_AUTORIZADA` por abertura, com o objetivo e o
+  paciente. Na `suficienciaComparacao`, a semana conta no calendário de Manaus.
+  O domínio só se confirma no plano vigente (*"O domínio se confirma no plano
+  vigente."*), e a gravação é condicional: de duas confirmações ao mesmo tempo,
+  uma grava e uma vai para a trilha. Fora do plano vigente, a tela mostra o
+  critério sem o botão (`src/app/clinica/blocoDoDominio.ts`). O botão
+  "Ver evolução por objetivo" da ficha voltou; o relatório (tela 10) continua
+  só no desenvolvimento. Testes em `servidor/test/evolucao.test.ts`, quebras no
+  `docs/06`
 - `npm run criar-administrador -w @sinctea/servidor -- .env.producao --nome
   "Nome Completo" --email voce@exemplo.com` cria o primeiro administrador:
   nome e e-mail vêm da linha de comando, e só a senha é pedida, escondida e duas
@@ -533,8 +551,8 @@ Não se corta, nem com pressa: as regras 1, 2, 3, 5 e 6 provadas por teste contr
 a API no caminho principal, o *trigger* da auditoria, o papel que não é dono e o
 argon2id.
 
-Depois de 19/10, sem data: indicadores, relatórios, a
-evolução por objetivo (tela 8), a tela de auditoria e a agenda; o
+Depois de 19/10, sem data: indicadores, relatórios, a tela de auditoria e a
+agenda; o
 envio de e-mail, com a recuperação de senha sem passar pela clínica; a remoção completa de `servicos/mock`; o offline reduzido ao registro de
 sessão (`docs/07`, seção 3A); e a Etapa 13, de 16/11 a 23/11 — artigo, slides,
 vídeo e ensaio.
