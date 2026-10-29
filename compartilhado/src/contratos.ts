@@ -7,8 +7,8 @@ import type {
   NovaOcorrenciaComportamental, NovaOcorrenciaEscolar, NovoConsentimento, NovoObjetivo, EdicaoObjetivo,
   NovoPaciente, NovoPlano, NovoResponsavel, EdicaoResponsavel, ResponsavelCadastrado, ResponsavelNaFicha, DadosCartao, NovaEscola, Objetivo, ObjetivoAcessivel, OcorrenciaComportamental, OcorrenciaEscolar,
   ConteudoRelatorio, DadosProfissionais, MotivoAtencao, Pagina, PacienteDetalhe, PacienteResumo, PedidoRelatorio,
-  Perfil, PlanoParaValidacao, PlanoTerapeutico, PonteEscola, PrimeiroAcessoPublico, Profissional, RegistroAtividade,
-  RegistroAuditoria, RegistroAdministrativo, FiltroTrilhaAdministrativa, RelatorioEvolucao, ResumoClinica, Resultado, Sessao, SessaoUsuario,
+  Perfil, PessoaDaTrilha, PlanoParaValidacao, PlanoTerapeutico, PonteEscola, PrimeiroAcessoPublico, Profissional, RegistroAtividade,
+  RegistroAdministrativo, RegistroDaTrilha, FiltroTrilhaAdministrativa, RelatorioEvolucao, ResumoClinica, Resultado, Sessao, SessaoUsuario,
   SessoesPorProfissional, Usuario,
 } from './tipos.js'
 
@@ -209,14 +209,20 @@ export interface ServicoAreaEscola {
 
 /** Somente leitura. O registro de auditoria e escrito pelo servidor e e imutavel. */
 export interface ServicoAuditoria {
-  listar(filtro?: FiltroAuditoria): Promise<Pagina<RegistroAuditoria>>
+  /** A trilha da tela 13, so da coordenacao, 20 por pagina, sem o IP. Ler a trilha entra nela (item 17). */
+  listar(filtro?: FiltroAuditoria): Promise<Pagina<RegistroDaTrilha>>
+  /** As pessoas que aparecem na trilha, com o nome mais recente, em ordem alfabetica (item 17). */
+  listarPessoas(): Promise<PessoaDaTrilha[]>
   /**
    * A trilha administrativa (item 13, tela 25), so do administrador: contas,
    * links de acesso, escolas e a propria trilha, sem nenhum registro de
    * paciente. Ler a trilha tambem entra na trilha.
    */
   listarAdministrativa(filtro?: FiltroTrilhaAdministrativa): Promise<Pagina<RegistroAdministrativo>>
-  /** CSV de todos os registros do filtro. A exportacao e auditada. */
+  /**
+   * CSV de todos os registros do filtro, ate LIMITE_DA_EXPORTACAO, sem o IP.
+   * A exportacao e auditada uma vez.
+   */
   exportar(filtro?: FiltroAuditoria): Promise<string>
 }
 

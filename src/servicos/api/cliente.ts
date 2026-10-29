@@ -108,6 +108,11 @@ export async function requisitar<T>(metodo: 'GET' | 'POST' | 'PUT' | 'PATCH' | '
   }
   // 204, ou corpo vazio: a operacao nao devolve nada (sessao anonima, conta
   // sem dados profissionais). Quem chama decide se isso e nulo.
+  // A exportacao da trilha (item 17) vem em CSV, e nao em JSON. O BOM fica:
+  // e ele que faz o Excel em portugues ler os acentos, e text() o descartaria.
+  if (resposta.headers.get('Content-Type')?.startsWith('text/csv')) {
+    return new TextDecoder('utf-8', { ignoreBOM: true }).decode(await resposta.arrayBuffer()) as T
+  }
   const texto = resposta.status === 204 ? '' : await resposta.text()
   return (texto ? JSON.parse(texto) : undefined) as T
 }

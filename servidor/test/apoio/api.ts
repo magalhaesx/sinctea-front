@@ -14,7 +14,7 @@ import type { PrismaClient } from '../../src/gerado/client.js'
 
 export const SENHA_DE_TESTE = 'senha-de-teste-123'
 
-export interface Resposta { status: number; corpo: any; cookies: string[] }
+export interface Resposta { status: number; corpo: any; cookies: string[]; cabecalhos: Headers }
 
 /**
  * A aba que o pedido diz ser (item 9). Sem `aba`, e a da unica vaga que o
@@ -53,7 +53,12 @@ export async function subirApi(urlDoBanco: string): Promise<Api> {
       body: opcoes.corpo === undefined ? undefined : JSON.stringify(opcoes.corpo),
     })
     const texto = await r.text()
-    return { status: r.status, corpo: texto ? JSON.parse(texto) : undefined, cookies: r.headers.getSetCookie() }
+    // O CSV da trilha (item 17) vem como texto; o resto, em JSON.
+    const json = (r.headers.get('content-type') ?? 'application/json').includes('json')
+    return {
+      status: r.status, corpo: texto ? (json ? JSON.parse(texto) : texto) : undefined,
+      cookies: r.headers.getSetCookie(), cabecalhos: r.headers,
+    }
   }
 
   const entrar: Api['entrar'] = async (email, senha = SENHA_DE_TESTE) => {

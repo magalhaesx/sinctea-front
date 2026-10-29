@@ -1,12 +1,12 @@
 import type { ServicoAuditoria, ServicoUsuario } from '@sinctea/compartilhado'
 import {
-  ErroServico, type FiltroAuditoria, type Perfil, type Profissional, type RegistroAuditoria,
-  type Usuario, type UsuarioQualquer,
+  ErroServico, type FiltroAuditoria, type Perfil, type PessoaDaTrilha, type Profissional, type RegistroAuditoria,
+  type RegistroDaTrilha, type Usuario, type UsuarioQualquer,
 } from '@sinctea/compartilhado'
 import { erroDoMotivoDaNovaSenha, podeDesativarUsuario } from '@sinctea/compartilhado/dominio/regras'
-import { montarCsv } from '@sinctea/compartilhado/dominio/csv'
 import {
-  anterioresQueMudaram, ENTIDADES_ADMINISTRATIVAS, perfisQueMudaram, semNomeNaTrilhaAdministrativa, versaoAnteriorEmTexto,
+  anterioresQueMudaram, csvDaAuditoria, descreverFiltroAuditoria, ENTIDADES_ADMINISTRATIVAS, LIMITE_DA_EXPORTACAO,
+  perfisQueMudaram, RECORTE_GRANDE_DEMAIS, semNomeNaTrilhaAdministrativa, validarFiltroAuditoria,
 } from '@sinctea/compartilhado/dominio/auditoria'
 import { jsonCanonico } from '@sinctea/compartilhado/dominio/hash'
 import { detalheDosPerfis } from '@sinctea/compartilhado/dominio/perfis'
@@ -19,42 +19,48 @@ import {
 // ---------------------------------------------------------------- Auditoria
 
 /** Somente leitura. Nao existe operacao de editar ou excluir registro. */
-/** O recorte do filtro, do mais recente para o mais antigo. */
-function filtrarAuditoria(filtro: FiltroAuditoria): RegistroAuditoria[] {
+/**
+ * O recorte do filtro, do mais recente para o mais antigo, sem o IP (item 17).
+ * O filtro e o de validarFiltroAuditoria, o mesmo do servidor; os ids do mock
+ * sao legiveis, e nao UUID.
+ */
+function filtrarAuditoria(filtro: FiltroAuditoria): RegistroDaTrilha[] {
+  exigirValido(validarFiltroAuditoria(filtro, (id) => id.trim() !== ''))
+  const desde = filtro.desde ? inicioDoDia(filtro.desde).toISOString() : null
+  const ate = filtro.ate ? fimDaValidade(filtro.ate).toISOString() : null
   return banco.auditoria
-    .filter((r) => !filtro.desde || r.ocorridoEm >= filtro.desde)
-    .filter((r) => !filtro.ate || r.ocorridoEm <= filtro.ate)
+    .filter((r) => (!desde || r.ocorridoEm >= desde) && (!ate || r.ocorridoEm < ate))
     .filter((r) => !filtro.usuarioId || r.usuarioId === filtro.usuarioId)
     .filter((r) => !filtro.acao || r.acao === filtro.acao)
     .filter((r) => !filtro.pacienteId || r.pacienteId === filtro.pacienteId)
     .filter((r) => !filtro.entidade || r.entidade === filtro.entidade)
     .slice()
     .reverse()
+    .map(semIp)
 }
 
-/** O filtro em uma linha, para caber no detalhe do registro da exportacao. */
-function descreverFiltro(filtro: FiltroAuditoria): string {
-  const partes = [
-    filtro.desde && `desde ${filtro.desde.slice(0, 10)}`,
-    filtro.ate && `ate ${filtro.ate.slice(0, 10)}`,
-    filtro.usuarioId && `usuario ${filtro.usuarioId}`,
-    filtro.acao && `acao ${filtro.acao}`,
-    filtro.pacienteId && `paciente ${filtro.pacienteId}`,
-    filtro.entidade && `entidade ${filtro.entidade}`,
-  ].filter(Boolean)
-  return partes.length === 0 ? 'sem filtro' : partes.join(', ')
-}
+const semIp = ({ ipOrigem: _ip, ...r }: RegistroAuditoria): RegistroDaTrilha => r
 
 export const auditoriaMock: ServicoAuditoria = {
   /**
-   * Listar NAO e auditado, de proposito. Ler a trilha e o trabalho deste
-   * perfil, e registrar cada abertura da tela encheria a trilha com registros
-   * da propria leitura dela — o ruido acabaria escondendo o que importa.
-   * Exportar e outra coisa: ali o dado sai do sistema.
+   * No servidor, cada consulta entra na trilha (item 17). Aqui, nao: os testes
+   * do mock leem a trilha por esta operacao, e a propria leitura esconderia o
+   * registro que eles procuram.
    */
   listar: (filtro = {}) => responder(() => {
     exigirPerfil(['COORDENADOR'], 'RegistroAuditoria')
     return paginar(filtrarAuditoria(filtro), filtro)
+  }),
+
+  listarPessoas: () => responder(() => {
+    exigirPerfil(['COORDENADOR'], 'RegistroAuditoria')
+    // Do mais recente para o mais antigo: o primeiro nome de cada pessoa e o mais recente.
+    const porId = new Map<string, string>()
+    for (const r of [...banco.auditoria].reverse()) {
+      if (r.usuarioId && r.usuarioNome && !porId.has(r.usuarioId)) porId.set(r.usuarioId, r.usuarioNome)
+    }
+    return [...porId].map(([usuarioId, nome]): PessoaDaTrilha => ({ usuarioId, nome }))
+      .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
   }),
 
   // Item 13: as mesmas regras do servidor (servidor/src/usuarios/servico-trilha.ts).
@@ -83,23 +89,14 @@ export const auditoriaMock: ServicoAuditoria = {
     // Todos os registros do filtro, e nao a pagina visivel: quem exporta quer
     // o recorte inteiro, e uma planilha com um pedaco dele engana.
     const itens = filtrarAuditoria(filtro)
-    const csv = montarCsv(
-      ['Data e hora', 'Usuário', 'Perfil', 'Ação', 'Entidade', 'Identificador',
-        'Paciente', 'Origem', 'Detalhe', 'Versão anterior'],
-      itens.map((r) => [
-        r.ocorridoEm, r.usuarioNome ?? '', r.perfil ?? '', r.acao, r.entidade,
-        r.idEntidade ?? '', r.pacienteId ?? '', r.origem, r.detalhe,
-        // Em texto legivel, nao em JSON: quem abre a planilha quer ler. A
-        // protecao contra formula e do celulaCsv, como em qualquer celula.
-        versaoAnteriorEmTexto(r.valorAnterior),
-      ]),
-    )
+    if (itens.length > LIMITE_DA_EXPORTACAO) throw new ErroServico('VALIDACAO', RECORTE_GRANDE_DEMAIS)
+    const csv = csvDaAuditoria(itens)
     auditar(sessao, {
       acao: 'LEITURA_AUTORIZADA', entidade: 'RegistroAuditoria', idEntidade: null,
       // O recorte por paciente leva o paciente: sem ele, o id iria para a
       // trilha administrativa pelo texto (item 13).
       pacienteId: filtro.pacienteId ?? null,
-      detalhe: `Exportação da trilha: ${itens.length} ${itens.length === 1 ? 'registro' : 'registros'} (${descreverFiltro(filtro)}).`,
+      detalhe: `Exportação da trilha: ${itens.length} ${itens.length === 1 ? 'registro' : 'registros'} (${descreverFiltroAuditoria(filtro)}).`,
     })
     return csv
   }),

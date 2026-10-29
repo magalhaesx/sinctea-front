@@ -862,20 +862,33 @@ describe('regra 6 — auditoria imutavel', () => {
     const registro = await ultimaAuditoria()
     expect(registro).toMatchObject({ acao: 'LEITURA_AUTORIZADA', entidade: 'RegistroAuditoria' })
     expect(registro.detalhe).toContain('Exportação da trilha')
-    expect(registro.detalhe).toContain('acao ACESSO_NEGADO')
+    expect(registro.detalhe).toContain('ação ACESSO_NEGADO')
 
-    // Listar, ao contrario, nao deixa rastro: seria a trilha registrando a
-    // propria leitura, e o ruido esconderia o que importa.
+    // No mock, listar nao deixa rastro: os testes leem a trilha por ele. No
+    // servidor, cada consulta entra na trilha (item 17).
     const depois = await chamar(s.auditoria.listar({ porPagina: 1 }))
     expect(depois.total).toBe(antes.total + 1)
   })
 
 
   it('o contrato de auditoria so tem leitura', () => {
-    // As tres leem: uma pagina na tela, a trilha administrativa (item 13) e o
-    // recorte inteiro num arquivo. Nenhuma escreve no registro, e nao ha
-    // editar nem excluir para existir.
-    expect(Object.keys(s.auditoria)).toEqual(['listar', 'listarAdministrativa', 'exportar'])
+    // As quatro leem: uma pagina na tela, as pessoas do filtro (item 17), a
+    // trilha administrativa (item 13) e o recorte inteiro num arquivo. Nenhuma
+    // escreve no registro, e nao ha editar nem excluir para existir.
+    expect(Object.keys(s.auditoria)).toEqual(['listar', 'listarPessoas', 'listarAdministrativa', 'exportar'])
+  })
+
+  it('item 17: o filtro e o do dominio, em dias; o IP nao sai; as pessoas sao de toda a trilha, sem repetir', async () => {
+    await entrarComo('COORDENADOR')
+    expect((await erroDe(s.auditoria.listar({ desde: '2026-10-01T00:00:00.000Z' }))).campos.desde).toBeTruthy()
+    expect((await erroDe(s.auditoria.listar({ desde: '2026-10-02', ate: '2026-10-01' }))).campos.ate).toBeTruthy()
+    const pagina = await chamar(s.auditoria.listar({ porPagina: 5 }))
+    expect(pagina.itens.every((r) => !('ipOrigem' in r))).toBe(true)
+    const pessoas = await chamar(s.auditoria.listarPessoas())
+    expect(new Set(pessoas.map((p) => p.usuarioId)).size).toBe(pessoas.length)
+    expect(pessoas.map((p) => p.nome)).toEqual([...pessoas.map((p) => p.nome)].sort((a, b) => a.localeCompare(b, 'pt-BR')))
+    await entrarComo('TERAPEUTA')
+    expect((await erroDe(s.auditoria.listarPessoas())).codigo).toBe('ACESSO_NEGADO')
   })
 
   it('registros sao congelados', async () => {

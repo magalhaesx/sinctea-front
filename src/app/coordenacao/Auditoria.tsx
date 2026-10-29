@@ -12,13 +12,16 @@ import { EstadoVazio } from '../../ui/EstadoVazio'
 import { Paginacao } from '../../ui/Paginacao'
 import { Tabela, type Coluna } from '../../ui/Tabela'
 import { NOME_DO_PERFIL } from '../perfis'
-import { dataIsoParaLocal, diaIso } from '@sinctea/compartilhado/dominio/datas'
+import { diaCivilEm, emDataCivil, FUSO_DA_INSTANCIA } from '@sinctea/compartilhado/dominio/datas'
 // A leitura do valorAnterior mora no dominio: a tela e o CSV exportado dizem
 // a mesma coisa porque leem do mesmo lugar.
-import { camposAnteriores, NOME_DO_CAMPO } from '@sinctea/compartilhado/dominio/auditoria'
 import {
-  servicos, type AcaoAuditoria, type FiltroAuditoria, type OrigemAuditoria, type Pagina,
-  type PacienteResumo, type RegistroAuditoria,
+  camposAnteriores, ENTIDADES_AUDITADAS, NOME_DO_CAMPO, nomeDoArquivoDaAuditoria, POR_PAGINA_DA_AUDITORIA,
+  validarFiltroAuditoria,
+} from '@sinctea/compartilhado/dominio/auditoria'
+import {
+  ehIdentificador, servicos, type AcaoAuditoria, type DataCivil, type FiltroAuditoria, type OrigemAuditoria,
+  type Pagina, type PacienteResumo, type RegistroDaTrilha,
 } from '../../servicos'
 
 /**
@@ -37,9 +40,11 @@ import {
  *
  * Todo filtro vive na query string, como na tela 4: o botao voltar funciona e o
  * recorte pode ser enviado a outra pessoa.
+ *
+ * Item 17: o periodo e em dias de Manaus, como na tela 25, e o filtro passa
+ * por validarFiltroAuditoria antes de ir, a mesma conferencia do servidor. O
+ * IP nao chega aqui. Cada consulta e cada exportacao entram na trilha.
  */
-
-const POR_PAGINA = 20
 
 const ACOES: Record<AcaoAuditoria, { rotulo: string; tom: 'ok' | 'at' | 'cr' | 'neutro'; simbolo: string }> = {
   CONCESSAO_ACESSO: { rotulo: 'Concessão de acesso', tom: 'ok', simbolo: '✓' },
@@ -54,25 +59,20 @@ const ORIGENS: Record<OrigemAuditoria, string> = {
   CLINICA: 'Clínica', FAMILIA: 'Família', ESCOLA: 'Escola', SISTEMA: 'Sistema',
 }
 
-/** As entidades que o sistema audita hoje. Lista fechada: o filtro é por nome. */
-const ENTIDADES = [
-  'Paciente', 'PlanoTerapeutico', 'Objetivo', 'Sessao', 'OcorrenciaComportamental',
-  'OcorrenciaEscolar', 'AtividadeCasa', 'CartaoEstrategia', 'Consentimento', 'ConviteEscolar',
-  'VinculoEscolar', 'RelatorioEvolucao', 'RegistroAuditoria', 'Indicadores', 'Usuario',
-]
-
 type Estado =
   | { tipo: 'carregando' }
   | { tipo: 'erro'; erro: unknown }
-  | { tipo: 'pronto'; dados: Pagina<RegistroAuditoria>; atualizando: boolean }
+  | { tipo: 'pronto'; dados: Pagina<RegistroDaTrilha>; atualizando: boolean }
 
-const dataEHora = (iso: string) => {
-  const d = dataIsoParaLocal(iso)
-  return `${d.toLocaleDateString('pt-BR')} ${d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
+/** Data e hora de Manaus, como o periodo do filtro, qualquer que seja o fuso de quem le. */
+const quando = (iso: string) => {
+  const instante = new Date(iso)
+  const hora = new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: FUSO_DA_INSTANCIA }).format(instante)
+  return `${emDataCivil(diaCivilEm(instante))} ${hora}`
 }
 
-const colunas: Coluna<RegistroAuditoria>[] = [
-  { id: 'quando', titulo: 'Data e hora', celula: (r) => dataEHora(r.ocorridoEm) },
+const colunas: Coluna<RegistroDaTrilha>[] = [
+  { id: 'quando', titulo: 'Data e hora', celula: (r) => <span className="tabular-nums">{quando(r.ocorridoEm)}</span> },
   {
     id: 'quem', titulo: 'Usuário',
     // Fotografia do momento: o nome gravado no registro, nao o nome de hoje.
@@ -150,45 +150,41 @@ export function Auditoria() {
     setParams(proximos)
   }
 
-  /** O periodo vem em dia inteiro: do comeco de "desde" ao fim de "ate". */
+  /** O periodo vai em dias de Manaus; o servico o le do comeco de "desde" ao fim de "ate". */
   const filtroDoServico = (comPaginacao: boolean): FiltroAuditoria => ({
-    desde: desde ? `${desde}T00:00:00.000Z` : undefined,
-    ate: ate ? `${ate}T23:59:59.999Z` : undefined,
+    desde: (desde as DataCivil) || undefined,
+    ate: (ate as DataCivil) || undefined,
     usuarioId: usuarioId || undefined,
     acao: (acao as AcaoAuditoria) || undefined,
     pacienteId: pacienteId || undefined,
     entidade: entidade || undefined,
-    ...(comPaginacao ? { pagina, porPagina: POR_PAGINA } : {}),
+    ...(comPaginacao ? { pagina, porPagina: POR_PAGINA_DA_AUDITORIA } : {}),
   })
+  // A mesma conferencia do servidor, antes de pedir: um endereco com filtro
+  // errado diz o que esta errado, e nao vai ao servidor.
+  const errosDoFiltro = validarFiltroAuditoria(filtroDoServico(false), ehIdentificador)
+  const filtroInvalido = Object.keys(errosDoFiltro).length > 0
 
   useEffect(() => {
+    if (filtroInvalido) return
     let ativo = true
     setEstado((e) => (e.tipo === 'pronto' ? { ...e, atualizando: true } : { tipo: 'carregando' }))
     servicos.auditoria.listar(filtroDoServico(true))
       .then((dados) => { if (ativo) setEstado({ tipo: 'pronto', dados, atualizando: false }) })
       .catch((erro) => { if (ativo) setEstado({ tipo: 'erro', erro }) })
     return () => { ativo = false }
-  }, [desde, ate, usuarioId, acao, pacienteId, entidade, pagina, tentativa])
+  }, [desde, ate, usuarioId, acao, pacienteId, entidade, pagina, tentativa, filtroInvalido])
 
   /**
    * As opcoes de usuario saem da propria trilha, e nao de servicos.usuarios:
    * listar usuarios e operacao de administracao, e chama-la daqui gravaria uma
-   * tentativa negada a cada abertura desta tela — a trilha se sujaria com o
-   * ruido da tela que existe para le-la. O nome vem do registro, que e onde
-   * ele e fotografia do momento de qualquer forma.
+   * tentativa negada a cada abertura desta tela. Item 17: de toda a trilha, e
+   * nao so das ultimas paginas, com o nome do registro mais recente.
    */
   useEffect(() => {
     let ativo = true
-    servicos.auditoria.listar({ porPagina: 100 })
-      .then((p) => {
-        if (!ativo) return
-        const porId = new Map<string, string>()
-        for (const r of p.itens) {
-          if (r.usuarioId && r.usuarioNome) porId.set(r.usuarioId, r.usuarioNome)
-        }
-        setUsuarios([...porId].map(([id, nome]) => ({ id, nome }))
-          .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')))
-      })
+    servicos.auditoria.listarPessoas()
+      .then((pessoas) => { if (ativo) setUsuarios(pessoas.map((p) => ({ id: p.usuarioId, nome: p.nome }))) })
       .catch(() => { if (ativo) setUsuarios([]) })
     servicos.pacientes.listar({ porPagina: 100 })
       .then((p) => { if (ativo) setPacientes(p.itens) })
@@ -207,7 +203,7 @@ export function Auditoria() {
       const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }))
       const a = document.createElement('a')
       a.href = url
-      a.download = `auditoria-${diaIso(new Date())}.csv`
+      a.download = nomeDoArquivoDaAuditoria(new Date())
       a.click()
       URL.revokeObjectURL(url)
       setAviso('Arquivo gerado com todos os registros do filtro. A exportação ficou registrada na própria trilha.')
@@ -261,12 +257,14 @@ export function Auditoria() {
 
         <div className="grid gap-3 [&>*]:min-w-0 sm:grid-cols-2 lg:grid-cols-3">
           <Campo id="desde" rotulo="De">
-            <input id="desde" type="date" className={campo} value={desde}
+            <input id="desde" type="date" className={campo} value={desde} max={ate || undefined}
+              aria-invalid={Boolean(errosDoFiltro.desde)}
               onChange={(e) => atualizar({ desde: e.target.value || null })} />
           </Campo>
 
           <Campo id="ate" rotulo="Até">
-            <input id="ate" type="date" className={campo} value={ate}
+            <input id="ate" type="date" className={campo} value={ate} min={desde || undefined}
+              aria-invalid={Boolean(errosDoFiltro.ate)}
               onChange={(e) => atualizar({ ate: e.target.value || null })} />
           </Campo>
 
@@ -300,10 +298,18 @@ export function Auditoria() {
             <select id="entidade" className={campo} value={entidade}
               onChange={(e) => atualizar({ entidade: e.target.value || null })}>
               <option value="">Todas</option>
-              {ENTIDADES.map((e) => <option key={e} value={e}>{e}</option>)}
+              {ENTIDADES_AUDITADAS.map((e) => <option key={e} value={e}>{e}</option>)}
             </select>
           </Campo>
         </div>
+
+        {filtroInvalido && (
+          <Aviso tom="cr" titulo="Confira o filtro">
+            <ul className="flex list-disc flex-col gap-1 pl-5">
+              {Object.values(errosDoFiltro).map((erro) => <li key={erro}>{erro}</li>)}
+            </ul>
+          </Aviso>
+        )}
       </section>
 
       <div aria-live="polite">
@@ -313,13 +319,13 @@ export function Auditoria() {
         )}
       </div>
 
-      <p role="status" aria-live="polite" className="text-sm text-tinta2">{resultado}</p>
+      <p role="status" aria-live="polite" className="text-sm text-tinta2">{filtroInvalido ? '' : resultado}</p>
 
-      {estado.tipo === 'carregando' && (
+      {!filtroInvalido && estado.tipo === 'carregando' && (
         <EstadoCarregando forma="tabela" colunas={7} linhas={8} rotulo="Carregando o registro de auditoria" />
       )}
 
-      {estado.tipo === 'erro' && (
+      {!filtroInvalido && estado.tipo === 'erro' && (
         <EstadoErro
           erro={estado.erro}
           oQue="o registro de auditoria"
@@ -327,7 +333,7 @@ export function Auditoria() {
         />
       )}
 
-      {estado.tipo === 'pronto' && estado.dados.total === 0 && (
+      {!filtroInvalido && estado.tipo === 'pronto' && estado.dados.total === 0 && (
         temFiltro ? (
           <EstadoVazio
             titulo="Nenhum registro com esses filtros"
@@ -343,7 +349,7 @@ export function Auditoria() {
         )
       )}
 
-      {estado.tipo === 'pronto' && estado.dados.total > 0 && (
+      {!filtroInvalido && estado.tipo === 'pronto' && estado.dados.total > 0 && (
         <>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-[15px] font-bold">

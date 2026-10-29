@@ -1,6 +1,7 @@
 import type { Servicos } from '@sinctea/compartilhado'
 import { servicosApi } from './api'
 import { servicosMock } from './mock'
+import { ehUuid } from '@sinctea/compartilhado/dominio/auditoria'
 
 /**
  * Ponto unico de acesso a dados. Componentes importam daqui — nunca de
@@ -15,6 +16,13 @@ import { servicosMock } from './mock'
 export const usandoApi: boolean = import.meta.env.PROD || Boolean(import.meta.env.VITE_API_URL)
 
 export const servicos: Servicos = usandoApi ? servicosApi : servicosMock
+
+/**
+ * O que e um identificador para a camada ativa, para a tela conferir um filtro
+ * antes de pedir (item 17): a API so conhece UUID; o mock, ate a Etapa 12,
+ * usa ids legiveis ("p-001").
+ */
+export const ehIdentificador = (valor: string): boolean => (usandoApi ? ehUuid(valor) : valor.trim() !== '')
 
 // A negativa da API avisa o contexto da sessao (item 7). Com o mock, nunca chama.
 export { aoNegarAcesso } from './api/cliente'

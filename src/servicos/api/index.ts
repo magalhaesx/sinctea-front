@@ -144,8 +144,10 @@ export const servicosApi: Servicos = {
 
   auditoria: {
     listar: (filtro) => r('GET', q('/auditoria', filtro)),
+    listarPessoas: () => r('GET', '/auditoria/pessoas'),
     listarAdministrativa: (filtro) => r('GET', q('/admin/trilha', filtro)),
-    exportar: (filtro) => r('GET', q('/auditoria/csv', filtro)),
+    // O servidor responde text/csv: o cliente devolve o texto como veio.
+    exportar: (filtro) => r('GET', q('/auditoria/exportacao', filtro)),
   },
 
   relatorios: {

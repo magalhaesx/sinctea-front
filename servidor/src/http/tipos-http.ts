@@ -48,6 +48,11 @@ export interface ContextoSinctea {
   /** A versao anterior dos campos que mudaram (a correcao de ocorrencia escolar). */
   valorAnterior?: string
   /**
+   * O detalhe do registro, quando so o servico sabe escreve-lo (a exportacao
+   * da trilha, com o filtro e o total). O interceptador o prefere ao da rota.
+   */
+  detalhe?: string
+  /**
    * A operacao nao mudou nem revelou nada — o convite que nao vale mais, a
    * revogacao repetida —, e nao ha o que registrar. A negativa nunca usa isto.
    */
@@ -67,4 +72,5 @@ export interface RespostaHttp {
   clearCookie(nome: string, opcoes: OpcoesCookie): unknown
   status(codigo: number): RespostaHttp
   json(corpo: unknown): unknown
+  setHeader(nome: string, valor: string): unknown
 }

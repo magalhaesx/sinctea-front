@@ -26,7 +26,7 @@ export class InterceptadorAuditoria implements NestInterceptor {
           entidade: declaracao.entidade,
           idEntidade: ctx.idEntidade ?? textoOuNulo(resolver(declaracao.idEntidade, requisicao, resposta)),
           pacienteId: ctx.pacienteId ?? textoOuNulo(resolver(declaracao.pacienteId, requisicao, resposta)),
-          detalhe: textoOuNulo(resolver(declaracao.detalhe, requisicao, resposta)) ?? declaracao.entidade,
+          detalhe: ctx.detalhe ?? textoOuNulo(resolver(declaracao.detalhe, requisicao, resposta)) ?? declaracao.entidade,
           ipOrigem: requisicao.ip ?? null,
           valorAnterior: ctx.valorAnterior ?? null,
         })
