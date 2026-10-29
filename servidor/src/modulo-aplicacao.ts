@@ -11,13 +11,17 @@ import { ModuloUsuarios } from './usuarios/modulo-usuarios.js'
 import { ModuloClinica } from './clinica/modulo-clinica.js'
 import { ModuloEscola } from './escola/modulo-escola.js'
 import { ModuloAtividades } from './atividades/modulo-atividades.js'
+import { ModuloRelatorios } from './relatorios/modulo-relatorios.js'
 
 /**
  * A guarda, o interceptador e o filtro valem para toda rota, sem excecao
  * (docs/07, D7): nenhuma rota escolhe ficar fora deles.
  */
 @Module({
-  imports: [ModuloBanco, ModuloAuditoria, ModuloAutenticacao, ModuloUsuarios, ModuloClinica, ModuloEscola, ModuloAtividades],
+  imports: [
+    ModuloBanco, ModuloAuditoria, ModuloAutenticacao, ModuloUsuarios, ModuloClinica, ModuloEscola, ModuloAtividades,
+    ModuloRelatorios,
+  ],
   controllers: [ControladorSaude],
   providers: [
     { provide: APP_GUARD, useClass: GuardaAcesso },
