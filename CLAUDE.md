@@ -206,10 +206,10 @@ Atualizado em 18/10/2026, lendo o código — não a memória.
   simulada que aplica controle de acesso e auditoria; o cliente da API, que
   não aplica regra nenhuma. A versão publicada usa só a API, e o mock fica
   fora do pacote; no desenvolvimento, `VITE_API_URL` escolhe entre as duas
-- **578 testes em 49 arquivos, nos três pacotes**, rodados por um único
+- **586 testes em 50 arquivos, nos três pacotes**, rodados por um único
   `npm test` na raiz, sem passo manual. O principal ainda é
   `src/servicos/mock/regrasInviolaveis.test.ts`, que verifica as regras
-  invioláveis na camada de dados, e não na tela. Os 281 do servidor rodam contra
+  invioláveis na camada de dados, e não na tela. Os 283 do servidor rodam contra
   um PostgreSQL 17 de verdade
 - **As seis regras verificadas** em `docs/06`: para cada teste citado, a regra foi
   quebrada de propósito para confirmar que ele falha, e as quebras que não
@@ -529,6 +529,13 @@ em produção (o antigo passo B5) foi cancelada. No código, hoje:
   a proteção contra fórmula) leva o recorte inteiro, até 10.000 linhas, e se
   chama `auditoria-AAAA-MM-DD.csv`, no dia de Manaus. Testes em
   `servidor/test/auditoria.test.ts`, quebras no `docs/06`
+- **Item 17b — a tela 13 por extenso.** A entidade aparece com nome de gente
+  (`NOME_DA_ENTIDADE`) no filtro, na tabela e no CSV; o endereço e a API ficam
+  com o nome técnico. O filtro "Paciente" é uma busca pelo nome, a partir de
+  duas letras e com até 20 sugestões (`src/app/coordenacao/BuscaDePaciente.tsx`),
+  e o nome do escolhido vem da leitura da ficha. O CSV abre com "Data e hora
+  (Manaus)" e fecha com "Instante (UTC)". A migração `auditoria_ordem` dá à
+  trilha o índice `(ocorridoEm DESC, id DESC)`
 - `npm run criar-administrador -w @sinctea/servidor -- .env.producao --nome
   "Nome Completo" --email voce@exemplo.com` cria o primeiro administrador:
   nome e e-mail vêm da linha de comando, e só a senha é pedida, escondida e duas
