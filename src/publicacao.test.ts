@@ -71,6 +71,13 @@ describe('a versao publicada', () => {
     expect(pacote).toContain('Amanhã dá para registrar de novo.')
   })
 
+  it('leva o registro de auditoria do item 17: a tela 13, o menu e a exportacao', () => {
+    expect(pacote).toContain('Registro de auditoria')
+    expect(pacote).toContain('Só tentativas negadas')
+    expect(pacote).toContain('/auditoria/exportacao')
+    expect(pacote).toContain('/auditoria/pessoas')
+  })
+
   it('leva a evolucao por objetivo do item 16: a tela 8 e o botao da ficha', () => {
     expect(pacote).toContain('Ver evolução por objetivo')
     expect(pacote).toContain('Comparação entre os três contextos')

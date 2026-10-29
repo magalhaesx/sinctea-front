@@ -57,6 +57,7 @@ const titulos: [padrao: string, titulo: string][] = [
   ['/app/clinica/pacientes/:id/plano', 'Plano Terapêutico Individual'],
   ['/app/clinica/pacientes/:id/sessao', 'Registro de sessão'],
   ['/app/coordenacao/planos', 'Validar planos terapêuticos'],
+  ['/app/coordenacao/auditoria', 'Registro de auditoria'],
   ['/app/admin/usuarios', 'Usuários e perfis'],
   ['/app/admin/trilha', 'Trilha administrativa'],
   ['/app/familia', 'Painel da família'],
@@ -74,7 +75,6 @@ const titulos: [padrao: string, titulo: string][] = [
     ['/app/clinica/pacientes/:id/relatorio', 'Relatório de evolução'],
     ['/app/clinica/pacientes/:id/relatorio/:relatorioId', 'Relatório emitido'],
     ['/app/coordenacao', 'Indicadores da clínica'],
-    ['/app/coordenacao/auditoria', 'Registro de auditoria'],
     ['/dev/estados', 'Vitrine de estados'],
   ] as [string, string][]),
 ]
@@ -133,6 +133,7 @@ export function App() {
         <Route path="clinica/pacientes/:id/evolucao" element={protegida(CLINICA, <Evolucao />)} />
 
         <Route path="coordenacao/planos" element={protegida(['COORDENADOR'], <Planos />)} />
+        <Route path="coordenacao/auditoria" element={protegida(['COORDENADOR'], <Auditoria />)} />
 
         <Route path="admin/usuarios" element={protegida(['ADMINISTRADOR'], <Usuarios />)} />
         <Route path="admin/trilha" element={protegida(['ADMINISTRADOR'], <TrilhaAdministrativa />)} />
@@ -156,7 +157,6 @@ export function App() {
             <Route path="clinica/pacientes/:id/relatorio" element={protegida(CLINICA, <Relatorio />)} />
             <Route path="clinica/pacientes/:id/relatorio/:relatorioId" element={protegida(CLINICA, <RelatorioEmitido />)} />
             <Route path="coordenacao" element={protegida(['COORDENADOR'], <PainelCoordenacao />)} />
-            <Route path="coordenacao/auditoria" element={protegida(['COORDENADOR'], <Auditoria />)} />
           </>
         )}
       </Route>
