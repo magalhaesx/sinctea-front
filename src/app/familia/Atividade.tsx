@@ -34,6 +34,11 @@ import {
  * Item 15b: "Para que serve" vem no cartao. Com registro de hoje, no dia de
  * Manaus, o "Como foi hoje?" da lugar a quem ja registrou (lugarDoRegistro);
  * no historico, o nome so aparece quando foi outro responsavel.
+ *
+ * Item 20: a tela ocupa a largura, como as outras (so entrar, convite e definir
+ * senha sao estreitas). A partir de lg, a atividade fica a esquerda e o
+ * registro — "Como foi hoje?" ou o aviso do dia — e o historico, a direita;
+ * abaixo, uma coluna, na mesma ordem.
  */
 
 const OPCOES: { valor: Desempenho; rotulo: string }[] = [
@@ -151,7 +156,6 @@ export function Atividade() {
         ? `Sugerida pela equipe em ${porExtenso(estado.atividade.prescritaEm)}`
         : undefined}
       caminho={[{ rotulo: 'Início', para: '/app/familia' }, estado.tipo === 'pronto' ? estado.atividade.titulo : 'Atividade']}
-      estreito
     >
       {/* Fora do bloco "pronto": salvar recarrega a tela, e a regiao viva
           precisa sobreviver a recarga que o proprio salvar provocou — senao o
@@ -188,97 +192,101 @@ export function Atividade() {
         <>
           <Titulo>{estado.atividade.titulo}</Titulo>
 
-          {/* O mesmo cartao da tela 9, sem adaptador: AtividadeCasa ja tem a
-              forma que ele espera. */}
-          <CartaoAtividadeFamilia atividade={estado.atividade} />
+          <div className="grid items-start gap-6 [&>*]:min-w-0 lg:grid-cols-2">
+            {/* O mesmo cartao da tela 9, sem adaptador: AtividadeCasa ja tem a
+                forma que ele espera. */}
+            <CartaoAtividadeFamilia atividade={estado.atividade} />
 
-          {lugar?.tipo === 'encerrada' && (
-            <div ref={situacao} tabIndex={-1}>
-              <Aviso tom="neutro" titulo={ATIVIDADE_ENCERRADA}>
-                O que você registrou continua guardado, logo abaixo.
-              </Aviso>
-            </div>
-          )}
-
-          {lugar?.tipo === 'registrado' && (
-            <div ref={situacao} tabIndex={-1}>
-              <Aviso tom="neutro" titulo={lugar.titulo}>{AMANHA_DA_PARA_REGISTRAR}</Aviso>
-            </div>
-          )}
-
-          {lugar?.tipo === 'formulario' && (
-            <Cartao>
-              <fieldset className="border-0 p-0">
-                <legend className="text-base font-bold">Como foi hoje?</legend>
-                <div className="mt-3 flex flex-col gap-2.5">
-                  {OPCOES.map((o) => (
-                    <button
-                      key={o.valor}
-                      type="button"
-                      onClick={() => { setDesempenho(o.valor); setErro(null) }}
-                      aria-pressed={desempenho === o.valor}
-                      className={`min-h-14 cursor-pointer rounded-lg border-2 px-4 py-4 text-left font-bold ${
-                        desempenho === o.valor ? 'border-fam bg-fam-sup' : 'border-linha bg-sup hover:border-fam'
-                      }`}
-                    >
-                      {desempenho === o.valor && <span aria-hidden="true">✓ </span>}
-                      {o.rotulo}
-                    </button>
-                  ))}
+            <div className="flex flex-col gap-4">
+              {lugar?.tipo === 'encerrada' && (
+                <div ref={situacao} tabIndex={-1}>
+                  <Aviso tom="neutro" titulo={ATIVIDADE_ENCERRADA}>
+                    O que você registrou continua guardado, logo abaixo.
+                  </Aviso>
                 </div>
-              </fieldset>
+              )}
 
-              <div className="mt-4">
-                <Campo id="obs" rotulo="Quer contar alguma coisa? (opcional)" dica="Escreva com as suas palavras. Não precisa usar termo técnico.">
-                  <textarea
-                    id="obs"
-                    rows={3}
-                    aria-describedby="obs-dica"
-                    value={observacao}
-                    onChange={(e) => setObservacao(e.target.value)}
-                    placeholder="Ex.: ele tapou os ouvidos antes de apontar o cartão"
-                    className="min-h-11 w-full rounded-lg border-2 border-linha bg-sup px-3 py-2.5 text-tinta"
-                  />
-                </Campo>
-              </div>
+              {lugar?.tipo === 'registrado' && (
+                <div ref={situacao} tabIndex={-1}>
+                  <Aviso tom="neutro" titulo={lugar.titulo}>{AMANHA_DA_PARA_REGISTRAR}</Aviso>
+                </div>
+              )}
 
-              {erro && <p className="mt-3 font-bold text-cr" role="alert">{erro}</p>}
+              {lugar?.tipo === 'formulario' && (
+                <Cartao>
+                  <fieldset className="border-0 p-0">
+                    <legend className="text-base font-bold">Como foi hoje?</legend>
+                    <div className="mt-3 flex flex-col gap-2.5">
+                      {OPCOES.map((o) => (
+                        <button
+                          key={o.valor}
+                          type="button"
+                          onClick={() => { setDesempenho(o.valor); setErro(null) }}
+                          aria-pressed={desempenho === o.valor}
+                          className={`min-h-14 cursor-pointer rounded-lg border-2 px-4 py-4 text-left font-bold ${
+                            desempenho === o.valor ? 'border-fam bg-fam-sup' : 'border-linha bg-sup hover:border-fam'
+                          }`}
+                        >
+                          {desempenho === o.valor && <span aria-hidden="true">✓ </span>}
+                          {o.rotulo}
+                        </button>
+                      ))}
+                    </div>
+                  </fieldset>
 
-              <div className="mt-4">
-                <Botao area="fam" className="w-full" disabled={salvando} onClick={() => void salvar()}>
-                  {salvando ? 'Salvando…' : 'Salvar'}
-                </Botao>
-              </div>
-            </Cartao>
-          )}
+                  <div className="mt-4">
+                    <Campo id="obs" rotulo="Quer contar alguma coisa? (opcional)" dica="Escreva com as suas palavras. Não precisa usar termo técnico.">
+                      <textarea
+                        id="obs"
+                        rows={3}
+                        aria-describedby="obs-dica"
+                        value={observacao}
+                        onChange={(e) => setObservacao(e.target.value)}
+                        placeholder="Ex.: ele tapou os ouvidos antes de apontar o cartão"
+                        className="min-h-11 w-full rounded-lg border-2 border-linha bg-sup px-3 py-2.5 text-tinta"
+                      />
+                    </Campo>
+                  </div>
 
-          <section aria-labelledby="h-historico" className="flex flex-col gap-3">
-            <h2 id="h-historico" className="text-lg font-bold">O que você já registrou</h2>
-            {estado.execucoes.length === 0 ? (
-              <Cartao>
-                <p className="text-tinta2">
-                  Nada registrado ainda. O primeiro registro aparece aqui assim que você salvar.
-                </p>
-              </Cartao>
-            ) : (
-              <ul className="flex flex-col gap-2">
-                {estado.execucoes.map((e) => {
-                  const quem = quemRegistrou(e, eu?.id)
-                  return (
-                    <li key={e.id} className="rounded-lg border border-linha bg-sup px-3 py-2.5">
-                      <span className="flex flex-wrap items-center gap-2">
-                        <b>{emDataCivil(e.dataRealizacao)}</b>
-                        {/* "Nao quis" tem o mesmo peso das outras: e informacao. */}
-                        <Etiqueta simbolo="○">{NOME_DO_DESEMPENHO[e.desempenho]}</Etiqueta>
-                        {quem && <span className="text-sm text-tinta2">{quem}</span>}
-                      </span>
-                      {e.observacao && <p className="mt-1 text-sm text-tinta2">“{e.observacao}”</p>}
-                    </li>
-                  )
-                })}
-              </ul>
-            )}
-          </section>
+                  {erro && <p className="mt-3 font-bold text-cr" role="alert">{erro}</p>}
+
+                  <div className="mt-4">
+                    <Botao area="fam" className="w-full" disabled={salvando} onClick={() => void salvar()}>
+                      {salvando ? 'Salvando…' : 'Salvar'}
+                    </Botao>
+                  </div>
+                </Cartao>
+              )}
+
+              <section aria-labelledby="h-historico" className="flex flex-col gap-3">
+                <h2 id="h-historico" className="text-lg font-bold">O que você já registrou</h2>
+                {estado.execucoes.length === 0 ? (
+                  <Cartao>
+                    <p className="text-tinta2">
+                      Nada registrado ainda. O primeiro registro aparece aqui assim que você salvar.
+                    </p>
+                  </Cartao>
+                ) : (
+                  <ul className="flex flex-col gap-2">
+                    {estado.execucoes.map((e) => {
+                      const quem = quemRegistrou(e, eu?.id)
+                      return (
+                        <li key={e.id} className="rounded-lg border border-linha bg-sup px-3 py-2.5">
+                          <span className="flex flex-wrap items-center gap-2">
+                            <b>{emDataCivil(e.dataRealizacao)}</b>
+                            {/* "Nao quis" tem o mesmo peso das outras: e informacao. */}
+                            <Etiqueta simbolo="○">{NOME_DO_DESEMPENHO[e.desempenho]}</Etiqueta>
+                            {quem && <span className="text-sm text-tinta2">{quem}</span>}
+                          </span>
+                          {e.observacao && <p className="texto-corrido mt-1 text-sm text-tinta2">“{e.observacao}”</p>}
+                        </li>
+                      )
+                    })}
+                  </ul>
+                )}
+              </section>
+            </div>
+          </div>
         </>
       )}
     </Tela>

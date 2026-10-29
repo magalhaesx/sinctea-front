@@ -321,7 +321,7 @@ function AvisoDeRedefinicao() {
 
 /** Moldura do produto: separa visualmente o cromo do prototipo da aplicacao. */
 export function Tela({
-  area, papel, nome, sigla, caminho, children, estreito = false,
+  area, papel, nome, sigla, caminho, children,
 }: {
   area: 'cli' | 'fam' | 'esc' | 'neutro'
   papel?: string
@@ -338,13 +338,12 @@ export function Tela({
    */
   caminho: Array<string | ItemDoCaminho>
   children: React.ReactNode
-  estreito?: boolean
 }) {
   const fundo = { cli: 'bg-cli-ink', fam: 'bg-fam-ink', esc: 'bg-esc-ink', neutro: 'bg-tinta2' }[area]
   const corDoLink = { cli: 'text-cli-ink', fam: 'text-fam-ink', esc: 'text-esc-ink', neutro: 'text-tinta' }[area]
   const iniciais = iniciaisDe(sigla === undefined ? nome : sigla)
   return (
-    <div className={`rounded-2xl border border-cromo-linha bg-fundo text-tinta overflow-hidden ${estreito ? 'max-w-lg' : ''}`}>
+    <div className="rounded-2xl border border-cromo-linha bg-fundo text-tinta overflow-hidden">
       {nome && (
         <div className="flex flex-wrap items-center justify-between gap-2.5 border-b border-linha bg-sup px-5 py-3.5">
           <div className="flex items-center gap-2.5">
