@@ -20,6 +20,12 @@ import { EstadoVazio } from '../../ui/EstadoVazio'
  * Acesso revogado ou vencido nao e falha: e a decisao da familia, ou o prazo
  * que ela deu. A tela diz isso e leva de volta, sem "Tentar de novo" — tentar
  * de novo daria o mesmo resultado, e sugeriria defeito onde nao ha.
+ *
+ * Item 20: h1 o aluno e a turma; h2 cada estrategia; h3 "Para que serve", "O
+ * que fazer", "O que evitar" e "Sinal de alerta". O texto e corrido e
+ * justificado, em 15px. Os tres blocos ficam em tres colunas da mesma altura a
+ * partir de lg; entre md e lg, fazer e evitar lado a lado e o alerta embaixo,
+ * na largura toda; no celular, um embaixo do outro, na mesma ordem.
  */
 
 type Encerramento = 'REVOGADO' | 'EXPIRADO'
@@ -120,40 +126,47 @@ export function CartaoEstrategias() {
           />
         ) : (
           <>
-            {estado.cartao.estrategias.map((e) => (
-              <article key={e.titulo} className="flex flex-col gap-3">
-                <h2 className="text-lg font-bold">{e.titulo}</h2>
-                <p className="max-w-[65ch] text-tinta2">{e.paraQue}</p>
+            {/* Com mais de uma estrategia, cada uma no seu bloco, com uma linha
+                entre elas. */}
+            <div className="flex flex-col gap-6">
+              {estado.cartao.estrategias.map((e) => (
+                <article key={e.titulo} className="flex flex-col gap-4 border-linha not-first:border-t not-first:pt-6">
+                  <h2 className="text-lg font-bold">{e.titulo}</h2>
 
-                {/* Item 11: em tela larga, os tres blocos lado a lado. */}
-                <div className="grid items-start gap-3 [&>*]:min-w-0 lg:grid-cols-3">
-                <section className="rounded-xl border border-linha border-l-4 border-l-ok bg-ok-sup p-4">
-                  <h3 className="flex items-center gap-2 text-base font-bold">
-                    <span aria-hidden="true">✓</span> O que fazer
-                  </h3>
-                  <ul className="mt-2 list-disc pl-5 text-tinta2">
-                    {e.oQueFazer.map((i) => <li key={i} className="mb-1">{i}</li>)}
-                  </ul>
-                </section>
+                  <div>
+                    <h3 className="text-base font-bold">Para que serve</h3>
+                    <p className="texto-corrido mt-1 text-[15px]">{e.paraQue}</p>
+                  </div>
 
-                <section className="rounded-xl border border-linha border-l-4 border-l-cr bg-cr-sup p-4">
-                  <h3 className="flex items-center gap-2 text-base font-bold">
-                    <span aria-hidden="true">✕</span> O que evitar
-                  </h3>
-                  <ul className="mt-2 list-disc pl-5 text-tinta2">
-                    {e.oQueEvitar.map((i) => <li key={i} className="mb-1">{i}</li>)}
-                  </ul>
-                </section>
+                  <div className="grid gap-3 [&>*]:min-w-0 md:grid-cols-2 lg:grid-cols-3">
+                    <section className="rounded-xl border border-linha border-l-4 border-l-ok bg-ok-sup p-4">
+                      <h3 className="flex items-center gap-2 text-base font-bold">
+                        <span aria-hidden="true">✓</span> O que fazer
+                      </h3>
+                      <ul className="mt-2 grid list-disc gap-2 pl-5 text-[15px] text-tinta2">
+                        {e.oQueFazer.map((i) => <li key={i} className="texto-corrido">{i}</li>)}
+                      </ul>
+                    </section>
 
-                <section className="rounded-xl border border-linha border-l-4 border-l-at bg-at-sup p-4">
-                  <h3 className="flex items-center gap-2 text-base font-bold">
-                    <span aria-hidden="true">▲</span> Sinal de alerta
-                  </h3>
-                  <p className="mt-2 text-tinta2">{e.sinalAlerta}</p>
-                </section>
-                </div>
-              </article>
-            ))}
+                    <section className="rounded-xl border border-linha border-l-4 border-l-cr bg-cr-sup p-4">
+                      <h3 className="flex items-center gap-2 text-base font-bold">
+                        <span aria-hidden="true">✕</span> O que evitar
+                      </h3>
+                      <ul className="mt-2 grid list-disc gap-2 pl-5 text-[15px] text-tinta2">
+                        {e.oQueEvitar.map((i) => <li key={i} className="texto-corrido">{i}</li>)}
+                      </ul>
+                    </section>
+
+                    <section className="rounded-xl border border-linha border-l-4 border-l-at bg-at-sup p-4 md:col-span-2 lg:col-span-1">
+                      <h3 className="flex items-center gap-2 text-base font-bold">
+                        <span aria-hidden="true">▲</span> Sinal de alerta
+                      </h3>
+                      <p className="texto-corrido mt-2 text-[15px] text-tinta2">{e.sinalAlerta}</p>
+                    </section>
+                  </div>
+                </article>
+              ))}
+            </div>
 
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-linha pt-3">
               <span className="text-sm text-tinta2">
@@ -162,7 +175,7 @@ export function CartaoEstrategias() {
               </span>
               {/* Item 10: so com o escopo de registro, que e a familia quem da. */}
               {estado.cartao.escopos.includes('REGISTRO_OCORRENCIA') && (
-                <BotaoLink para={`/app/escola/${pacienteId}/ocorrencia`} area="esc">
+                <BotaoLink para={`/app/escola/${pacienteId}/ocorrencia`} area="esc" className="w-full sm:w-auto">
                   Registrar uma ocorrência
                 </BotaoLink>
               )}
