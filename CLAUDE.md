@@ -206,10 +206,10 @@ Atualizado em 18/10/2026, lendo o código — não a memória.
   simulada que aplica controle de acesso e auditoria; o cliente da API, que
   não aplica regra nenhuma. A versão publicada usa só a API, e o mock fica
   fora do pacote; no desenvolvimento, `VITE_API_URL` escolhe entre as duas
-- **518 testes em 42 arquivos, nos três pacotes**, rodados por um único
+- **534 testes em 43 arquivos, nos três pacotes**, rodados por um único
   `npm test` na raiz, sem passo manual. O principal ainda é
   `src/servicos/mock/regrasInviolaveis.test.ts`, que verifica as regras
-  invioláveis na camada de dados, e não na tela. Os 253 do servidor rodam contra
+  invioláveis na camada de dados, e não na tela. Os 261 do servidor rodam contra
   um PostgreSQL 17 de verdade
 - **As seis regras verificadas** em `docs/06`: para cada teste citado, a regra foi
   quebrada de propósito para confirmar que ele falha, e as quebras que não
@@ -265,7 +265,7 @@ em produção (o antigo passo B5) foi cancelada. No código, hoje:
   dependências de produção, sem o Prisma CLI); o Nest servindo o build do front
   na raiz quando `PASTA_DO_FRONT` aponta para ele, com a API em `/api` e 404 em
   JSON para o resto; e o papel `sinctea_app`, que não é dono de nada
-  (`servidor/prisma/papel-aplicacao.exemplo.sql`). O Neon tem as sete
+  (`servidor/prisma/papel-aplicacao.exemplo.sql`). O Neon tem as nove
   migrações, aplicadas pelo job `migrar`; o `sinctea_app` foi conferido nele.
   O Render publica em https://sinctea.onrender.com
 - Os três pacotes são ESM. O front compila o fonte do compartilhado pela
@@ -473,6 +473,26 @@ em produção (o antigo passo B5) foi cancelada. No código, hoje:
   registro da família e o encerramento; o mock, como antes, não registra a
   família (achado 2). Testes em `servidor/test/atividades.test.ts`, quebras no
   `docs/06`
+- **Item 15b — as respostas do Cowork ao item 15** (28/10). A atividade traz
+  `paraQue`, a redação acessível do objetivo, preenchida pelo mapeador em toda
+  rota, no servidor e no mock; a redação técnica nunca vai na resposta, e o
+  diagrama não muda, porque é campo derivado. A execução traz
+  `responsavelNome`, lido do usuário a cada leitura, e não copiado nela. A
+  tela 16 mostra "Para que serve" logo abaixo do título, no cartão que é o mesmo
+  da prévia da tela 9. Com registro de hoje, no dia de Manaus, o "Como foi
+  hoje?" dá lugar a *"Você já registrou hoje. Amanhã dá para registrar de
+  novo."* ou a *"Hoje já foi registrado por {nome}. Amanhã dá para registrar de
+  novo."* (`src/app/familia/registroDeHoje.ts`); quem decide continua sendo o
+  índice único. No histórico, a tela 16 só dá o nome quando foi outro
+  responsável, e a tela 9 sempre. A migração `atividade_limites` põe no banco os
+  limites de `LIMITES_ATIVIDADE_CASA`: frequência de 1 a 7, de 1 a 10 passos (no
+  lugar do "pelo menos um"), vídeo nulo ou começando com `https://` e com até 500
+  caracteres, título de 1 a 120, descrição e dicas até 1.000 e a observação da
+  família até 500; os 300 de cada passo ficam só no domínio. Ela também tira o
+  índice só de `atividadeId`, que o único já cobre. O domínio passou a recusar
+  `HTTPS://` em maiúsculas, como o CHECK. Testes em
+  `servidor/test/atividades.test.ts` e, por INSERT em SQL, em
+  `servidor/test/checks.test.ts`; quebras no `docs/06`
 - `npm run criar-administrador -w @sinctea/servidor -- .env.producao --nome
   "Nome Completo" --email voce@exemplo.com` cria o primeiro administrador:
   nome e e-mail vêm da linha de comando, e só a senha é pedida, escondida e duas
@@ -604,8 +624,7 @@ viaja dentro do próprio `hashTermo`.
   passa a valer sobre `lower(email)`
 - `percentualMinimo`: o domínio aceita de 1 a 100 (`validarNovoObjetivo`), mas o
   CHECK do banco aceita de 0 a 100. Alinhar numa migração
-- `frequenciaSemanal`, `sessoesConsecutivas`, `numero` e `ordem` não têm CHECK
-  de no mínimo 1
+- `sessoesConsecutivas`, `numero` e `ordem` não têm CHECK de no mínimo 1
 - O `sinctea_app` só precisa ler `_prisma_migrations`: revogar o INSERT, o
   UPDATE e o DELETE dele nessa tabela
 
