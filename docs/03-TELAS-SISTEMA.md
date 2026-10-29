@@ -1,7 +1,7 @@
 # 03 · Telas do sistema
 
 Revisão de 25/10/2026, atualizada em 29/10. A especificação de setembro dizia o
-que construir; esta diz o que existe, conferido no código até o item 15b. Os
+que construir; esta diz o que existe, conferido no código até o item 16. Os
 textos entre aspas são os que a pessoa lê na tela.
 
 **Situação de cada tela:**
@@ -27,7 +27,7 @@ Nenhuma tela diz "terapeuta". Quem atende aparece pela especialidade:
 
 | Perfil, como aparece | No ar | Só no desenvolvimento |
 |---|---|---|
-| Profissional da clínica | 3, 4, 24, 5, 6, 7, 9 | 8, 10 |
+| Profissional da clínica | 3, 4, 24, 5, 6, 7, 8, 9 | 10 |
 | Coordenador clínico | as da clínica, e 12 | 11, 13 |
 | Administrador | 14, 25 | — |
 | Responsável | 15, 16, 17 | — |
@@ -356,8 +356,9 @@ cadastrou. O plano vem depois, na tela 6.
 7. **Histórico de sessões:** a evolução de cada sessão encerrada, da mais
    recente para a mais antiga, com quem conduziu ("Nome · Especialidade") e o
    número de registros. 5 por página.
-8. **Ações:** "Abrir o plano terapêutico", "Iniciar sessão" e "Atividades
-   para casa". Evolução e relatório só aparecem no desenvolvimento.
+8. **Ações:** "Abrir o plano terapêutico", "Iniciar sessão", "Atividades
+   para casa" e "Ver evolução por objetivo". "Emitir relatório" só aparece no
+   desenvolvimento.
 
 **Rede de apoio:**
 
@@ -490,25 +491,68 @@ novo. A negativa entra na trilha (regra 6).
 **Aceitação:** desfazer devolve o contador ao valor anterior · trocar de
 objetivo não perde registros · encerrar sem evolução não é possível.
 
-## 8 · Evolução por objetivo · só no desenvolvimento
-`/app/clinica/pacientes/:id/evolucao` · UC08
+## 8 · Evolução por objetivo · no ar
+`/app/clinica/pacientes/:id/evolucao` · Profissional da clínica da equipe,
+Coordenador clínico · UC08 (item 16)
 
-**Conteúdo:**
+A tela faz duas leituras: o plano, para o seletor, e a evolução do objetivo
+escolhido, `GET /api/objetivos/:id/evolucao`. A evolução chega montada pelo
+`montarEvolucao`, a mesma função no servidor e no mock, e traz só datas e
+medidas, nenhum texto livre de ninguém. Cada abertura deixa uma linha na trilha.
 
-- seletor de objetivo;
-- gráfico de linha por sessão, com a referência do critério, e a alternativa
-  em tabela;
-- situação da promoção a dominado;
-- **comparação entre os três contextos** (clínica, casa, escola).
+**Conteúdo, nesta ordem:**
+
+1. **O título**, com *"{n} sessões registradas com este objetivo"*, e o seletor
+   "Objetivo". O endereço aceita `?objetivo=`, para abrir num objetivo certo.
+2. **"Na clínica, sessão a sessão"**: o gráfico "Tentativas independentes por
+   sessão", com a linha "critério de domínio · {n}%" e o botão para ver como
+   tabela. Um ponto por sessão encerrada em que o objetivo foi trabalhado; a
+   sessão em andamento não entra.
+3. **O bloco do domínio:**
+   - *"O critério é {n}% em {n} sessões consecutivas."* e a etiqueta "Não
+     iniciado", "Em aquisição" ou "Dominado";
+   - critério atingido, no plano vigente: *"A promoção a dominado não é
+     automática: depende da sua confirmação."* e o botão "Confirmar o domínio";
+   - a confirmação é em duas etapas: *"Confirmar o domínio deste objetivo?"*,
+     *"O objetivo passa a dominado e isso fica registrado com o seu nome. Não há
+     como desfazer pela tela."*, com "Confirmar o domínio" e "Cancelar";
+   - confirmado: *"Domínio confirmado. O objetivo passa a constar como dominado
+     no plano."* Depois, o bloco diz "Objetivo dominado" e *"Domínio confirmado
+     em {data}."*;
+   - critério não atingido: *"O status atual do objetivo é definido por você,
+     no plano."*, sem botão;
+   - plano fora de vigência: a situação do critério, sem botão, e *"O domínio se
+     confirma no plano vigente."*
+4. **"Comparação entre os três contextos"**: três faixas paralelas, clínica,
+   casa e escola, na mesma linha do tempo, cada uma com a sua escala.
 
 **As três medidas têm naturezas diferentes:** percentual de tentativas na
 clínica, escolha em três opções em casa e intensidade de 1 a 5 na escola.
 
 - Nunca vão para a mesma escala, e não se calcula média entre elas.
-- Aparecem como três faixas paralelas de tendência, cada uma com a sua escala
-  rotulada, na mesma linha do tempo.
-- A comparação só aparece com ao menos cinco registros e três semanas em cada
-  contexto. Abaixo disso: "dados insuficientes para comparar", e o que falta.
+- Em casa, contam os registros das atividades **deste** objetivo, inclusive as
+  encerradas. Na escola, as ocorrências do **aluno**: a ocorrência escolar não
+  tem objetivo.
+- A comparação só aparece com ao menos cinco registros, em três semanas
+  distintas, em cada contexto. As semanas são as do calendário de Manaus.
+- Abaixo disso: "Dados insuficientes para comparar", *"A comparação só aparece
+  com pelo menos 5 registros distribuídos em 3 semanas em cada contexto. Abaixo
+  disso, a leitura seria enganosa."*, e o que falta em cada contexto, como
+  *"Faltam 2 registros e 1 semana na escola."*
+
+**Regras:**
+
+- quem promove a dominado é o profissional, nunca o sistema. O servidor
+  reconfere o plano e o critério antes de gravar, e grava uma vez só: de duas
+  confirmações ao mesmo tempo, uma grava, e a outra ouve *"Este objetivo já está
+  marcado como dominado."*;
+- só a equipe do paciente e a coordenação abrem. Fora do alcance: *"Esta
+  evolução não é do seu alcance"*, *"O paciente não está entre os que você
+  acompanha. Se precisar consultar, fale com a coordenação da clínica."*, e a
+  negativa entra na trilha (regra 6);
+- sem plano: *"Este paciente ainda não tem plano terapêutico, então não há
+  objetivo para acompanhar."* Plano sem objetivos: *"O plano deste paciente
+  ainda não tem objetivos."*
 
 ## 9 · Prescrever atividade para casa · no ar
 `/app/clinica/pacientes/:id/atividades` · Profissional da clínica da equipe,
