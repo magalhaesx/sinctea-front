@@ -260,12 +260,14 @@ describe('cartao de estrategias (lacuna 5) e regra 4', () => {
 
 describe('sessao, registro e dominio', () => {
   let p1: string
+  let planoId: string
   let objetivoId: string
   let outroObjetivo: string
 
   beforeAll(async () => {
     p1 = await novoPaciente(c.ana, 'Enzo Ficticio', u.ana)
     const plano = await api.pedir('POST', `/pacientes/${p1}/plano`, { cookie: c.ana, corpo: { dataInicio: '2026-10-16', dataRevisao: '2027-04-16' } })
+    planoId = plano.corpo.id
     objetivoId = (await api.pedir('POST', `/planos/${plano.corpo.id}/objetivos`, { cookie: c.ana, corpo: OBJETIVO })).corpo.id
     const p2 = await novoPaciente(c.ana, 'Outro Ficticio', u.ana)
     const plano2 = await api.pedir('POST', `/pacientes/${p2}/plano`, { cookie: c.ana, corpo: { dataInicio: '2026-10-16', dataRevisao: '2027-04-16' } })
@@ -313,7 +315,13 @@ describe('sessao, registro e dominio', () => {
   })
 
   it('dominio so com o criterio atingido nas sessoes encerradas; uma vez so', async () => {
-    expect((await api.pedir('POST', `/objetivos/${objetivoId}/dominio`, { cookie: c.ana })).status).toBe(409)
+    // Desde o item 16, o dominio so se confirma no plano vigente.
+    expect((await api.pedir('POST', `/objetivos/${objetivoId}/dominio`, { cookie: c.ana })).corpo.mensagem).toBe('O domínio se confirma no plano vigente.')
+    await api.pedir('POST', `/planos/${planoId}/envio`, { cookie: c.ana })
+    expect((await api.pedir('POST', `/planos/${planoId}/aprovacao`, { cookie: c.duda })).corpo.status).toBe('VIGENTE')
+    const antes = await api.pedir('POST', `/objetivos/${objetivoId}/dominio`, { cookie: c.ana })
+    expect(antes.status).toBe(409)
+    expect(antes.corpo.mensagem).toMatch(/^O critério ainda não foi atingido/)
     for (let i = 0; i < 2; i++) {
       await api.pedir('POST', `/sessoes/${await sessaoCom(['INDEPENDENTE', 'INDEPENDENTE', 'INDEPENDENTE', 'INDEPENDENTE', 'AJUDA_GESTUAL'])}/encerramento`, { cookie: c.ana, corpo: { evolucao: 'Evolução de teste.' } })
     }

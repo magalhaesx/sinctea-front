@@ -214,6 +214,28 @@ describe('camada simulada', () => {
     }
   })
 
+  it('item 16: o dominio so se confirma no plano vigente', async () => {
+    await entrarComo('COORDENADOR')
+    // pl-002 aguarda a validacao da coordenacao.
+    const recusa = await erroDe(s.planos.confirmarDominio('o-004'))
+    expect(recusa.codigo).toBe('CONFLITO')
+    expect(recusa.message).toBe('O domínio se confirma no plano vigente.')
+  })
+
+  it('item 16: a evolucao do objetivo e a de montarEvolucao, com uma linha na trilha; familia e escola sao negadas', async () => {
+    await entrarComo('TERAPEUTA')
+    const evolucao = await chamar(s.planos.obterEvolucao('o-002'))
+    expect(Object.keys(evolucao).sort()).toEqual(['atingiuCriterio', 'casa', 'clinica', 'escola'])
+    expect(evolucao.clinica.map((p) => p.numero)).toEqual([...evolucao.clinica.map((p) => p.numero)].sort((a, b) => a - b))
+    expect(evolucao.casa.length).toBeGreaterThan(0)
+    expect(JSON.stringify(evolucao)).not.toContain('Estava um dia agitado')
+    expect(await ultimaAuditoria()).toMatchObject({ acao: 'LEITURA_AUTORIZADA', entidade: 'Objetivo', idEntidade: 'o-002', pacienteId: 'p-001' })
+    for (const perfil of ['RESPONSAVEL', 'PROFESSOR'] as const) {
+      await entrarComo(perfil)
+      expect((await erroDe(s.planos.obterEvolucao('o-002'))).codigo, perfil).toBe('ACESSO_NEGADO')
+    }
+  })
+
   it('a leitura clinica do evento da escola e registrada uma vez so', async () => {
     await entrarComo('TERAPEUTA')
     const daEscola = (await chamar(s.ocorrencias.listarPorPaciente('p-001', { origem: 'ESCOLA', porPagina: 100 }))).itens

@@ -2,7 +2,7 @@ import type {
   AceiteConvite, AlertaAtencao, ContaAberta, AlunoEscola, AtividadeCasa, AvisoOcorrenciaEscolar, CartaoEscola,
   CartaoEstrategia,
   ConsentimentoConcedido, ConsentimentoDetalhe, ContaCriada, ConvitePublico, Desempenho, Escola,
-  ExecucaoAtividadeCasa, FiltroAgenda, FiltroAuditoria, FiltroOcorrencia, FiltroPaciente,
+  EvolucaoObjetivo, ExecucaoAtividadeCasa, FiltroAgenda, FiltroAuditoria, FiltroOcorrencia, FiltroPaciente,
   FiltroPaginacao, FiltroSessao, FiltroUsuario, FilhoResumo, ItemAgenda, LinkPrimeiroAcesso, NovaAtividadeCasa,
   NovaOcorrenciaComportamental, NovaOcorrenciaEscolar, NovoConsentimento, NovoObjetivo, EdicaoObjetivo,
   NovoPaciente, NovoPlano, NovoResponsavel, EdicaoResponsavel, ResponsavelCadastrado, ResponsavelNaFicha, DadosCartao, NovaEscola, Objetivo, ObjetivoAcessivel, OcorrenciaComportamental, OcorrenciaEscolar,
@@ -112,6 +112,11 @@ export interface ServicoPlano {
    * E o unico caminho para status === 'DOMINADO'.
    */
   confirmarDominio(objetivoId: string): Promise<Objetivo>
+  /**
+   * A evolucao do objetivo na clinica, em casa e na escola (tela 8, item 16),
+   * inteira, sem paginacao. So a equipe do paciente e a coordenacao.
+   */
+  obterEvolucao(objetivoId: string): Promise<EvolucaoObjetivo>
   /** Os cartoes de estrategias de um objetivo, o que a escola le. */
   listarCartoes(objetivoId: string): Promise<CartaoEstrategia[]>
   /**

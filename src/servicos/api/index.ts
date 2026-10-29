@@ -82,6 +82,7 @@ export const servicosApi: Servicos = {
     aprovar: (planoId) => r('POST', `/planos/${id(planoId)}/aprovacao`),
     devolver: (planoId, observacao) => r('POST', `/planos/${id(planoId)}/devolucao`, { observacao }),
     confirmarDominio: (objetivoId) => r('POST', `/objetivos/${id(objetivoId)}/dominio`),
+    obterEvolucao: (objetivoId) => r('GET', `/objetivos/${id(objetivoId)}/evolucao`),
     listarCartoes: (objetivoId) => r('GET', `/objetivos/${id(objetivoId)}/cartoes`),
     criarCartao: (objetivoId, dados) => r('POST', `/objetivos/${id(objetivoId)}/cartoes`, dados),
     editarCartao: (cartaoId, dados) => r('PUT', `/cartoes/${id(cartaoId)}`, dados),

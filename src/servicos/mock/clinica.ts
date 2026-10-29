@@ -4,9 +4,10 @@ import {
   type PlanoTerapeutico, type Sessao,
 } from '@sinctea/compartilhado'
 import {
-  ehPreliminar, erroDaEvolucao, itensPreenchidos, objetivoAtingiuCriterio, planoEditavel, validarCartao, validarDevolucaoPlano,
-  validarNovoObjetivo, validarNovoPlano,
+  DOMINIO_SO_NO_VIGENTE, ehPreliminar, erroDaEvolucao, itensPreenchidos, JA_DOMINADO, objetivoAtingiuCriterio, planoEditavel,
+  validarCartao, validarDevolucaoPlano, validarNovoObjetivo, validarNovoPlano,
 } from '@sinctea/compartilhado/dominio/regras'
+import { montarEvolucao } from '@sinctea/compartilhado/dominio/evolucao'
 import { inicioDoDia } from '@sinctea/compartilhado/dominio/datas'
 import { anterioresQueMudaram } from '@sinctea/compartilhado/dominio/auditoria'
 import { jsonCanonico } from '@sinctea/compartilhado/dominio/hash'
@@ -182,9 +183,9 @@ export const planosMock: ServicoPlano = {
     const { sessao } = exigirPacienteClinico(plano.pacienteId, 'Objetivo')
     const objetivo = plano.objetivos.find((o) => o.id === objetivoId)!
 
-    if (objetivo.status === 'DOMINADO') {
-      throw new ErroServico('CONFLITO', 'Este objetivo já está marcado como dominado.')
-    }
+    // Item 16: so no plano vigente.
+    if (plano.status !== 'VIGENTE') throw new ErroServico('CONFLITO', DOMINIO_SO_NO_VIGENTE)
+    if (objetivo.status === 'DOMINADO') throw new ErroServico('CONFLITO', JA_DOMINADO)
     const sessoes = banco.sessoes.filter((s) => s.pacienteId === plano.pacienteId)
     if (!objetivoAtingiuCriterio(sessoes, objetivoId, objetivo.criterio)) {
       throw new ErroServico(
@@ -201,6 +202,28 @@ export const planosMock: ServicoPlano = {
       pacienteId: plano.pacienteId, detalhe: 'Domínio confirmado.',
     })
     return objetivo
+  }),
+
+  /** Item 16: a mesma montagem do servidor (montarEvolucao), sobre os dados do paciente. */
+  obterEvolucao: (objetivoId) => responder(() => {
+    const plano = banco.planos.find((p) => p.objetivos.some((o) => o.id === objetivoId))
+    if (!plano) naoEncontrado('Objetivo')
+    const { sessao } = exigirPacienteClinico(plano.pacienteId, 'Objetivo')
+    const objetivo = plano.objetivos.find((o) => o.id === objetivoId)!
+    const atividades = banco.atividades.filter((a) => a.pacienteId === plano.pacienteId)
+    const daCasa = new Set(atividades.map((a) => a.id))
+    const evolucao = montarEvolucao({
+      objetivo,
+      sessoes: banco.sessoes.filter((s) => s.pacienteId === plano.pacienteId),
+      atividades,
+      execucoes: banco.execucoes.filter((e) => daCasa.has(e.atividadeId)),
+      ocorrencias: banco.ocorrenciasComportamentais.filter((o) => o.pacienteId === plano.pacienteId),
+    })
+    auditar(sessao, {
+      acao: 'LEITURA_AUTORIZADA', entidade: 'Objetivo', idEntidade: objetivo.id,
+      pacienteId: plano.pacienteId, detalhe: 'Evolução do objetivo.',
+    })
+    return evolucao
   }),
 
   criar: (pacienteId, dados) => responder(() => {

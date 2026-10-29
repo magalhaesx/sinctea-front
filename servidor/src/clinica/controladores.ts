@@ -258,6 +258,13 @@ export class ControladorPlanos {
     return doPaciente(req, await this.planos.confirmarDominio(sessaoDe(req), id))
   }
 
+  /** Tela 8 (item 16): uma linha por abertura, com o objetivo e o paciente. */
+  @Get('objetivos/:id/evolucao')
+  @Auditar({ entidade: 'Objetivo', acao: 'LEITURA_AUTORIZADA', idEntidade: deParametro, detalhe: 'Evolução do objetivo.' })
+  async obterEvolucao(@Req() req: RequisicaoHttp, @Param('id') id: string) {
+    return doPaciente(req, await this.planos.obterEvolucao(sessaoDe(req), id))
+  }
+
   @Get('objetivos/:id/cartoes')
   @Auditar({ entidade: 'CartaoEstrategia', acao: 'LEITURA_AUTORIZADA', detalhe: 'Cartões de estratégias do objetivo.' })
   async listarCartoes(@Req() req: RequisicaoHttp, @Param('id') id: string) {

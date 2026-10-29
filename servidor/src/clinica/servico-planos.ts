@@ -1,13 +1,14 @@
 import { Injectable } from '@nestjs/common'
 import {
-  ErroServico, type CartaoEstrategia, type NovoObjetivo, type Objetivo, type Pagina, type FiltroPaginacao,
-  type PlanoParaValidacao, type PlanoTerapeutico,
+  ErroServico, type CartaoEstrategia, type EvolucaoObjetivo, type NovoObjetivo, type Objetivo, type Pagina,
+  type FiltroPaginacao, type Intensidade, type PlanoParaValidacao, type PlanoTerapeutico,
 } from '@sinctea/compartilhado'
 import { inicioDoDia } from '@sinctea/compartilhado/dominio/datas'
 import { anterioresQueMudaram } from '@sinctea/compartilhado/dominio/auditoria'
+import { montarEvolucao } from '@sinctea/compartilhado/dominio/evolucao'
 import { jsonCanonico } from '@sinctea/compartilhado/dominio/hash'
 import {
-  itensPreenchidos, objetivoAtingiuCriterio, planoEditavel, validarCartao, validarDevolucaoPlano, validarNovoObjetivo,
+  DOMINIO_SO_NO_VIGENTE, itensPreenchidos, JA_DOMINADO, objetivoAtingiuCriterio, planoEditavel, validarCartao, validarDevolucaoPlano, validarNovoObjetivo,
   validarNovoPlano,
 } from '@sinctea/compartilhado/dominio/regras'
 import { ServicoBanco } from '../banco/servico-banco.js'
@@ -226,21 +227,64 @@ export class ServicoPlanos {
   }
 
   /**
-   * Unico caminho para DOMINADO. Status e dominadoEm mudam juntos, e so com o
-   * criterio atingido nas sessoes do paciente.
+   * Unico caminho para DOMINADO. Status e dominadoEm mudam juntos, so no plano
+   * VIGENTE e so com o criterio atingido nas sessoes do paciente, reconferido
+   * aqui (item 16). A gravacao e condicional: de duas confirmacoes ao mesmo
+   * tempo, so uma grava, e so ela vai para a trilha.
    */
   async confirmarDominio(sessao: SessaoServidor, objetivoId: string): Promise<DoPaciente<Objetivo>> {
     const objetivo = await this.objetivoAlcancado(sessao, objetivoId)
     const pacienteId = objetivo.plano.pacienteId
-    if (objetivo.status === 'DOMINADO') throw new ErroServico('CONFLITO', 'Este objetivo já está marcado como dominado.')
+    if (objetivo.plano.status !== 'VIGENTE') throw new ErroServico('CONFLITO', DOMINIO_SO_NO_VIGENTE)
+    if (objetivo.status === 'DOMINADO') throw new ErroServico('CONFLITO', JA_DOMINADO)
     const sessoes = (await this.banco.sessao.findMany({ where: { pacienteId }, include: { registros: true } })).map(paraSessao)
     const criterio = { percentualMinimo: objetivo.percentualMinimo, sessoesConsecutivas: objetivo.sessoesConsecutivas }
     if (!objetivoAtingiuCriterio(sessoes, objetivo.id, criterio)) {
       throw new ErroServico('CONFLITO',
         `O critério ainda não foi atingido: ${criterio.percentualMinimo}% em ${criterio.sessoesConsecutivas} sessões consecutivas.`)
     }
-    const atualizado = await this.banco.objetivo.update({ where: { id: objetivo.id }, data: { status: 'DOMINADO', dominadoEm: new Date() } })
-    return { resultado: paraObjetivo(atualizado), pacienteId }
+    const gravado = await this.banco.objetivo.updateMany({
+      where: { id: objetivo.id, status: { not: 'DOMINADO' } }, data: { status: 'DOMINADO', dominadoEm: new Date() },
+    })
+    if (gravado.count !== 1) throw new ErroServico('CONFLITO', JA_DOMINADO)
+    return { resultado: paraObjetivo(await this.banco.objetivo.findUniqueOrThrow({ where: { id: objetivo.id } })), pacienteId }
+  }
+
+  /**
+   * A evolucao do objetivo nos tres contextos (tela 8, item 16), montada por
+   * montarEvolucao, a mesma do mock. Do banco saem so datas e medidas: nem a
+   * evolucao da sessao, nem a observacao da familia, nem o relato da escola.
+   */
+  async obterEvolucao(sessao: SessaoServidor, objetivoId: string): Promise<DoPaciente<EvolucaoObjetivo>> {
+    const objetivo = await this.objetivoAlcancado(sessao, objetivoId)
+    const pacienteId = objetivo.plano.pacienteId
+    const [sessoes, atividades, ocorrencias] = await Promise.all([
+      this.banco.sessao.findMany({
+        where: { pacienteId },
+        select: {
+          id: true, numero: true, situacao: true, inicio: true, inicioPrevistoEm: true,
+          registros: { select: { id: true, objetivoId: true, ordem: true, resultado: true, ocorridoEm: true } },
+        },
+      }),
+      this.banco.atividadeCasa.findMany({
+        where: { pacienteId },
+        select: { id: true, objetivoId: true, execucoes: { select: { atividadeId: true, dataRealizacao: true, desempenho: true } } },
+      }),
+      this.banco.ocorrenciaComportamental.findMany({
+        where: { pacienteId }, select: { origem: true, ocorridaEm: true, intensidade: true },
+      }),
+    ])
+    const resultado = montarEvolucao({
+      objetivo: { id: objetivo.id, criterio: { percentualMinimo: objetivo.percentualMinimo, sessoesConsecutivas: objetivo.sessoesConsecutivas } },
+      sessoes: sessoes.map((s) => ({
+        ...s, inicio: s.inicio?.toISOString() ?? null, inicioPrevistoEm: s.inicioPrevistoEm.toISOString(),
+        registros: s.registros.map((r) => ({ ...r, ocorridoEm: r.ocorridoEm.toISOString() })),
+      })),
+      atividades,
+      execucoes: atividades.flatMap((a) => a.execucoes.map((e) => ({ ...e, dataRealizacao: paraDataCivil(e.dataRealizacao) }))),
+      ocorrencias: ocorrencias.map((o) => ({ ...o, ocorridaEm: o.ocorridaEm.toISOString(), intensidade: o.intensidade as Intensidade })),
+    })
+    return { resultado, pacienteId }
   }
 
   // ------------------------------------------------------------ Cartao de estrategias
