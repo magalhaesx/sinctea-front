@@ -206,10 +206,10 @@ Atualizado em 18/10/2026, lendo o código — não a memória.
   simulada que aplica controle de acesso e auditoria; o cliente da API, que
   não aplica regra nenhuma. A versão publicada usa só a API, e o mock fica
   fora do pacote; no desenvolvimento, `VITE_API_URL` escolhe entre as duas
-- **557 testes em 47 arquivos, nos três pacotes**, rodados por um único
+- **578 testes em 49 arquivos, nos três pacotes**, rodados por um único
   `npm test` na raiz, sem passo manual. O principal ainda é
   `src/servicos/mock/regrasInviolaveis.test.ts`, que verifica as regras
-  invioláveis na camada de dados, e não na tela. Os 269 do servidor rodam contra
+  invioláveis na camada de dados, e não na tela. Os 281 do servidor rodam contra
   um PostgreSQL 17 de verdade
 - **As seis regras verificadas** em `docs/06`: para cada teste citado, a regra foi
   quebrada de propósito para confirmar que ele falha, e as quebras que não
@@ -511,6 +511,24 @@ em produção (o antigo passo B5) foi cancelada. No código, hoje:
   "Ver evolução por objetivo" da ficha voltou; o relatório (tela 10) continua
   só no desenvolvimento. Testes em `servidor/test/evolucao.test.ts`, quebras no
   `docs/06`
+- **Item 17 — o registro de auditoria (tela 13) no ar.** Só a coordenação:
+  `GET /api/auditoria`, `/api/auditoria/exportacao` e `/api/auditoria/pessoas`
+  (`servidor/src/auditoria/controlador-auditoria.ts`); nenhuma rota de editar
+  nem de excluir. O filtro é `validarFiltroAuditoria`
+  (`compartilhado/src/dominio/auditoria.ts`), a mesma na tela e no servidor:
+  `desde` e `ate` em dias de Manaus, de `inicioDoDia` a `fimDaValidade`,
+  identificadores UUID, ação e entidade de listas fechadas
+  (`ENTIDADES_AUDITADAS`; um teste do servidor confere que toda entidade
+  declarada nas rotas está nela). A página é contada e cortada no banco, 20 por
+  página, do mais recente. A projeção é campo a campo, e o `ipOrigem` fica no
+  banco. A lista de pessoas do filtro vem de toda a trilha, com o nome mais
+  recente. Cada consulta e cada exportação deixam uma linha
+  `LEITURA_AUTORIZADA` em `RegistroAuditoria`, com o filtro descrito e o
+  paciente quando o filtro tem um; o mock continua sem registrar a consulta,
+  porque os testes leem a trilha por ela. O CSV (`csvDaAuditoria`, com o BOM e
+  a proteção contra fórmula) leva o recorte inteiro, até 10.000 linhas, e se
+  chama `auditoria-AAAA-MM-DD.csv`, no dia de Manaus. Testes em
+  `servidor/test/auditoria.test.ts`, quebras no `docs/06`
 - `npm run criar-administrador -w @sinctea/servidor -- .env.producao --nome
   "Nome Completo" --email voce@exemplo.com` cria o primeiro administrador:
   nome e e-mail vêm da linha de comando, e só a senha é pedida, escondida e duas
@@ -551,8 +569,7 @@ Não se corta, nem com pressa: as regras 1, 2, 3, 5 e 6 provadas por teste contr
 a API no caminho principal, o *trigger* da auditoria, o papel que não é dono e o
 argon2id.
 
-Depois de 19/10, sem data: indicadores, relatórios, a tela de auditoria e a
-agenda; o
+Depois de 19/10, sem data: indicadores, relatórios e a agenda; o
 envio de e-mail, com a recuperação de senha sem passar pela clínica; a remoção completa de `servicos/mock`; o offline reduzido ao registro de
 sessão (`docs/07`, seção 3A); e a Etapa 13, de 16/11 a 23/11 — artigo, slides,
 vídeo e ensaio.
