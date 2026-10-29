@@ -1,7 +1,7 @@
 # 03 · Telas do sistema
 
-Revisão de 25/10/2026, atualizada em 26/10. A especificação de setembro dizia o
-que construir; esta diz o que existe, conferido no código até o item 13. Os
+Revisão de 25/10/2026, atualizada em 29/10. A especificação de setembro dizia o
+que construir; esta diz o que existe, conferido no código até o item 15b. Os
 textos entre aspas são os que a pessoa lê na tela.
 
 **Situação de cada tela:**
@@ -27,10 +27,10 @@ Nenhuma tela diz "terapeuta". Quem atende aparece pela especialidade:
 
 | Perfil, como aparece | No ar | Só no desenvolvimento |
 |---|---|---|
-| Profissional da clínica | 3, 4, 24, 5, 6, 7 | 8, 9, 10 |
+| Profissional da clínica | 3, 4, 24, 5, 6, 7, 9 | 8, 10 |
 | Coordenador clínico | as da clínica, e 12 | 11, 13 |
 | Administrador | 14, 25 | — |
-| Responsável | 15, 17 | 16 |
+| Responsável | 15, 16, 17 | — |
 | Professor / AEE | 22, 18, 19 | — |
 | Todos | 20, 21 | — |
 | Sem conta | 1, 2, 23 | — |
@@ -356,8 +356,8 @@ cadastrou. O plano vem depois, na tela 6.
 7. **Histórico de sessões:** a evolução de cada sessão encerrada, da mais
    recente para a mais antiga, com quem conduziu ("Nome · Especialidade") e o
    número de registros. 5 por página.
-8. **Ações:** "Abrir o plano terapêutico" e "Iniciar sessão". Evolução,
-   atividades e relatório só aparecem no desenvolvimento.
+8. **Ações:** "Abrir o plano terapêutico", "Iniciar sessão" e "Atividades
+   para casa". Evolução e relatório só aparecem no desenvolvimento.
 
 **Rede de apoio:**
 
@@ -510,18 +510,57 @@ clínica, escolha em três opções em casa e intensidade de 1 a 5 na escola.
 - A comparação só aparece com ao menos cinco registros e três semanas em cada
   contexto. Abaixo disso: "dados insuficientes para comparar", e o que falta.
 
-## 9 · Prescrever atividade para casa · só no desenvolvimento
-`/app/clinica/pacientes/:id/atividades` · UC07
+## 9 · Prescrever atividade para casa · no ar
+`/app/clinica/pacientes/:id/atividades` · Profissional da clínica da equipe,
+Coordenador clínico · UC07 (item 15)
 
-**Conteúdo:**
+"O que a família faz entre uma sessão e outra, escrito na linguagem de quem vai
+ler".
 
-- atividades ativas, com frequência e adesão;
-- formulário com título, descrição, passos, frequência, vídeo e objetivo
-  vinculado;
-- histórico das execuções registradas pela família.
+**Atividades ativas**, cada uma com:
 
-**Regras:** a escrita é em linguagem cotidiana. Toda atividade se vincula a um
-objetivo do plano.
+- o título, o objetivo e a data da prescrição. Se o objetivo saiu do plano
+  vigente: *"Objetivo fora do plano vigente."*;
+- **a adesão em contagem, nunca em percentual**: *"{n} registros nos últimos 7
+  dias · prescrita {n} vezes por semana"*, e embaixo "sozinho · com ajuda · não
+  quis". "Não quis" conta como registro: a família tentou. Os 7 dias são os do
+  calendário de Manaus, o mesmo do registro;
+- "Ver o histórico": o que a família registrou, do mais recente para o mais
+  antigo, com a data, como foi, quem registrou e a observação;
+- "Encerrar atividade": *"“{título}” foi encerrada. A família não vê mais esta
+  atividade."* O histórico continua.
+
+**Prescrever nova:**
+
+| Campo | Regra |
+|---|---|
+| Objetivo do plano | Só do plano **vigente**. *"Atividade sem objetivo não existe: a família precisa saber para que serve."* |
+| Título | Obrigatório, até 120 caracteres. *"Como a família vai chamar esta atividade."* |
+| Descrição | Até 1.000. *"Uma frase sobre o que fazer e quando."* |
+| Passos | De 1 a 10, um por linha, cada um até 300 |
+| Dicas | Até 1.000 |
+| Frequência semanal | De uma a sete vezes, escrita em palavras: "três vezes por semana" |
+| Vídeo | Opcional. Só endereço que comece com `https://`, até 500 caracteres |
+
+- Ao lado, "Como a família vai ver": a prévia do cartão da tela 16, com o link
+  "Ver o vídeo" quando houver.
+- Prescrita: *"“{título}” foi prescrita. A família já pode ver a atividade."*
+- Sem plano vigente: *"Para prescrever, o paciente precisa de um plano
+  vigente."*
+
+**Regras:**
+
+- a escrita é em linguagem cotidiana, e é do profissional: o sistema não
+  reescreve o texto nem gera versão simplificada;
+- a validação é a mesma na tela e no servidor (`validarNovaAtividadeCasa`, no
+  `compartilhado`), e o banco confere de novo a frequência, os passos e o
+  vídeo;
+- **o vídeo só vale com `https://`.** Um endereço `javascript:` no link
+  executaria código na tela de quem tocasse nele: a da família, ou a do
+  profissional, na prévia;
+- prescrever e encerrar são da equipe do paciente e da coordenação. Fora do
+  alcance: *"Estas atividades não são do seu alcance"*, e a negativa entra na
+  trilha (regra 6).
 
 ## 10 · Emitir relatório de evolução · só no desenvolvimento
 `/app/clinica/pacientes/:id/relatorio` · UC09
@@ -743,6 +782,10 @@ mais antigo.
   - cada objetivo só na redação acessível;
   - um medidor de frequência em palavras;
   - "Já consegue sozinho" quando o objetivo foi dominado;
+- **"Atividades desta semana"** (item 15): as atividades ativas, cada uma com
+  o título, a frequência em palavras e o botão "Abrir e registrar". Sem
+  atividade: *"Nenhuma atividade para fazer em casa agora. Quando a equipe
+  sugerir uma, ela aparece aqui."*;
 - **"Acesso da escola"**: uma linha por autorização, com a situação em palavras
   e quem acessa.
 
@@ -753,7 +796,8 @@ mais antigo.
 - a família lê só os objetivos do plano **vigente**, já conferido pela
   coordenação;
 - no cabeçalho, o papel é o parentesco com o filho escolhido;
-- "Atividades desta semana" só aparece no desenvolvimento.
+- a atividade encerrada pela equipe sai da lista. Quem decide é o servidor, e
+  não a tela.
 
 **Vazios:**
 
@@ -763,16 +807,55 @@ mais antigo.
 - sem acesso de escola, quem não é responsável legal lê *"Somente o
   responsável legal pode autorizar."*
 
-## 16 · Atividade em casa · só no desenvolvimento
-`/app/familia/atividades/:id` · UC14
+## 16 · Atividade em casa · no ar
+`/app/familia/atividades/:id` · Responsável · UC14 (itens 15 e 15b)
 
-**Conteúdo:**
+**Conteúdo, nesta ordem:**
 
-- a atividade;
-- "Como foi hoje?": "Fez sozinho", "Fez com a minha ajuda" ou "Não quis fazer
-  hoje";
-- observação opcional;
-- o histórico do que a família registrou.
+1. **A atividade:**
+   - o título e *"Sugerida pela equipe em {data}"*;
+   - **"Para que serve"**: o objetivo, só na redação acessível (item 15b);
+   - a frequência em palavras e a descrição;
+   - "Ver o vídeo", quando houver: abre em outra aba;
+   - "Como fazer", com os passos numerados, e as dicas.
+2. **"Como foi hoje?"**:
+   - "Fez sozinho", "Fez com a minha ajuda" ou "Não quis fazer hoje";
+   - "Quer contar alguma coisa? (opcional)", até 500 caracteres;
+   - sem escolha: *"Falta escolher como foi hoje. Toque em uma das três
+     opções acima."*;
+   - salvo: "Registro salvo", *"O profissional vai ver isso antes da próxima
+     sessão. Obrigado por registrar."*
+3. **"O que você já registrou"**: a data e como foi. Quando quem registrou foi
+   outro responsável, o nome dele aparece (item 15b).
+
+**Um registro por dia** (item 15):
+
+- vale por atividade, no dia do calendário de Manaus, e é o banco que garante,
+  com um índice único;
+- **já registrado hoje** (item 15b), o "Como foi hoje?" dá lugar a *"Você já
+  registrou hoje. Amanhã dá para registrar de novo."*, ou a *"Hoje já foi
+  registrado por {nome}. Amanhã dá para registrar de novo."*;
+- se dois responsáveis tocarem ao mesmo tempo, o servidor grava um e recusa o
+  outro com *"Hoje já foi registrado por {nome}."* Depois da recusa, o aviso de
+  registro salvo some, para não aparecer ao lado do erro.
+
+**Atividade encerrada pela equipe:**
+
+- sai do painel da família (tela 15);
+- aberta pelo endereço, mostra *"Esta atividade foi encerrada pela equipe."* e
+  *"O que você registrou continua guardado, logo abaixo."*, sem o "Como foi
+  hoje?";
+- quem tocar "Salvar" no instante em que ela é encerrada ouve a mesma frase: o
+  servidor confere e grava na mesma transação.
+
+**Regras:**
+
+- qualquer responsável vinculado vê e registra, legal ou não;
+- **nenhum termo clínico**: do objetivo, só a redação acessível;
+- o que a família escreve fica no registro, e não na trilha. A trilha diz só
+  que ela registrou (regra 6);
+- não encontrada: *"Não encontramos esta atividade"*, *"O endereço pode estar
+  incompleto. Volte ao início e abra a atividade por lá."*
 
 ## 17 · Autorizar o acesso da escola · no ar
 `/app/familia/consentimento` · Responsável · UC11, UC12, UC21
