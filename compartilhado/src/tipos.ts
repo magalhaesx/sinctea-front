@@ -1008,6 +1008,18 @@ export interface RegistroAuditoria {
  */
 export type RegistroAdministrativo = Omit<RegistroAuditoria, 'ipOrigem' | 'pacienteId'>
 
+/**
+ * Um registro como a tela 13 o le (item 17): tudo, menos o IP, que fica no
+ * banco, por minimizacao. Nem a tela nem o CSV o mostram.
+ */
+export type RegistroDaTrilha = Omit<RegistroAuditoria, 'ipOrigem'>
+
+/** Quem aparece na trilha, com o nome do registro mais recente: as opcoes do filtro por pessoa. */
+export interface PessoaDaTrilha {
+  usuarioId: string
+  nome: string
+}
+
 /** O periodo e em dias civis de Manaus: do comeco de `desde` ao fim de `ate`. */
 export interface FiltroTrilhaAdministrativa extends FiltroPaginacao {
   desde?: DataCivil
@@ -1016,9 +1028,14 @@ export interface FiltroTrilhaAdministrativa extends FiltroPaginacao {
   acao?: AcaoAuditoria
 }
 
+/**
+ * O filtro da tela 13 (item 17). O periodo e em dias civis de Manaus, como na
+ * tela 25: do comeco de `desde` ao fim de `ate`. Quem confere e
+ * validarFiltroAuditoria, no dominio, a mesma na tela e no servidor.
+ */
 export interface FiltroAuditoria extends FiltroPaginacao {
-  desde?: DataIso
-  ate?: DataIso
+  desde?: DataCivil
+  ate?: DataCivil
   usuarioId?: string
   acao?: AcaoAuditoria
   pacienteId?: string

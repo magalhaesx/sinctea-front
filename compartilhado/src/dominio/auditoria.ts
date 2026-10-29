@@ -7,7 +7,9 @@
  * dominio para que as duas digam a mesma coisa.
  */
 
-import type { Perfil, RegistroAuditoria } from '../tipos.js'
+import type { AcaoAuditoria, FiltroAuditoria, Perfil, RegistroAuditoria, RegistroDaTrilha } from '../tipos.js'
+import { montarCsv } from './csv.js'
+import { diaCivilEm, partesDaDataCivil } from './datas.js'
 
 /**
  * De que area veio o registro, pelo perfil com que a pessoa agia. Sem perfil
@@ -115,3 +117,87 @@ export function versaoAnteriorEmTexto(valorAnterior: string | null): string {
     .map(([campo, valor]) => `${NOME_DO_CAMPO[campo] ?? campo}: ${valor}`)
     .join(' · ')
 }
+
+// ---------------------------------------------------------------- Tela 13 (item 17)
+
+/**
+ * As entidades que o codigo audita hoje, no servidor e no mock: o filtro da
+ * tela 13 e a validacao do servidor usam esta lista. Lista fechada: entidade
+ * nova na trilha entra aqui, e o teste do servidor que le as declaracoes das
+ * rotas acusa a que faltar. O link de acesso e gravado como `Usuario`.
+ */
+export const ENTIDADES_AUDITADAS = [
+  'Paciente', 'VinculoFamiliar', 'Responsavel', 'PlanoTerapeutico', 'Objetivo', 'CartaoEstrategia', 'Sessao',
+  'RegistroAtividade', 'OcorrenciaComportamental', 'OcorrenciaEscolar', 'AtividadeCasa', 'ExecucaoAtividadeCasa',
+  'Consentimento', 'ConviteEscolar', 'VinculoEscolar', 'Escola', 'RelatorioEvolucao', 'Indicadores', 'Usuario',
+  'Profissional', 'RegistroAuditoria',
+] as const
+
+export const ACOES_AUDITADAS: readonly AcaoAuditoria[] = [
+  'CONCESSAO_ACESSO', 'REVOGACAO_ACESSO', 'LEITURA_AUTORIZADA', 'ACESSO_NEGADO', 'CRIACAO', 'ALTERACAO',
+]
+
+/** A pagina da tela 13, contada no banco. */
+export const POR_PAGINA_DA_AUDITORIA = 20
+
+/** O CSV leva o recorte inteiro, mas nao sem fim. */
+export const LIMITE_DA_EXPORTACAO = 10_000
+export const RECORTE_GRANDE_DEMAIS = 'O recorte tem mais de 10.000 registros. Reduza o período ou use outro filtro.'
+
+const FORMATO_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+export const ehUuid = (valor: string): boolean => FORMATO_UUID.test(valor)
+
+/**
+ * O filtro da tela 13, conferido igual na tela e no servidor. O periodo e em
+ * dias civis de Manaus: de inicioDoDia(desde) a fimDaValidade(ate), e ate nao
+ * vem antes de desde. Quem chama diz o que e um identificador: a API so
+ * conhece UUID; o mock, ate a Etapa 12, usa ids legiveis.
+ */
+export function validarFiltroAuditoria(
+  filtro: FiltroAuditoria, ehIdentificador: (valor: string) => boolean = ehUuid,
+): Record<string, string> {
+  const erros: Record<string, string> = {}
+  if (filtro.desde && !partesDaDataCivil(filtro.desde)) erros.desde = 'Escreva a data de início do período.'
+  if (filtro.ate && !partesDaDataCivil(filtro.ate)) erros.ate = 'Escreva a data de fim do período.'
+  if (filtro.desde && filtro.ate && !erros.desde && !erros.ate && filtro.ate < filtro.desde) {
+    erros.ate = 'O fim do período não pode vir antes do início.'
+  }
+  if (filtro.usuarioId && !ehIdentificador(filtro.usuarioId)) erros.usuarioId = 'Escolha uma pessoa da lista.'
+  if (filtro.pacienteId && !ehIdentificador(filtro.pacienteId)) erros.pacienteId = 'Escolha um paciente da lista.'
+  if (filtro.acao && !ACOES_AUDITADAS.includes(filtro.acao)) erros.acao = 'Escolha uma ação da lista.'
+  if (filtro.entidade && !(ENTIDADES_AUDITADAS as readonly string[]).includes(filtro.entidade)) {
+    erros.entidade = 'Escolha uma entidade da lista.'
+  }
+  return erros
+}
+
+/** O filtro em uma linha, para o detalhe do registro da exportacao e da consulta. */
+export function descreverFiltroAuditoria(filtro: FiltroAuditoria): string {
+  const partes = [
+    filtro.desde && `desde ${filtro.desde}`,
+    filtro.ate && `até ${filtro.ate}`,
+    filtro.usuarioId && `usuário ${filtro.usuarioId}`,
+    filtro.acao && `ação ${filtro.acao}`,
+    filtro.pacienteId && `paciente ${filtro.pacienteId}`,
+    filtro.entidade && `entidade ${filtro.entidade}`,
+  ].filter(Boolean)
+  return partes.length === 0 ? 'sem filtro' : partes.join(', ')
+}
+
+/**
+ * O CSV da trilha, o mesmo no mock e no servidor, sem a coluna do IP. A
+ * protecao contra formula e do celulaCsv, como em qualquer celula. A versao
+ * anterior sai em texto legivel, e nao em JSON: quem abre a planilha quer ler.
+ */
+export function csvDaAuditoria(registros: RegistroDaTrilha[]): string {
+  return montarCsv(
+    ['Data e hora', 'Usuário', 'Perfil', 'Ação', 'Entidade', 'Identificador', 'Paciente', 'Origem', 'Detalhe', 'Versão anterior'],
+    registros.map((r) => [
+      r.ocorridoEm, r.usuarioNome ?? '', r.perfil ?? '', r.acao, r.entidade,
+      r.idEntidade ?? '', r.pacienteId ?? '', r.origem, r.detalhe, versaoAnteriorEmTexto(r.valorAnterior),
+    ]),
+  )
+}
+
+/** "auditoria-2026-10-29.csv", no dia de Manaus. */
+export const nomeDoArquivoDaAuditoria = (agora: Date): string => `auditoria-${diaCivilEm(agora)}.csv`
