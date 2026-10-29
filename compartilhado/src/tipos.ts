@@ -719,6 +719,25 @@ export interface ExecucaoAtividadeCasa {
   observacao: string | null
 }
 
+// ---------------------------------------------------------------- Evolucao por objetivo (tela 8)
+
+/**
+ * A evolucao de um objetivo nos tres contextos (item 16), lida so pela
+ * clinica. Montada por montarEvolucao (dominio/evolucao.ts), a mesma no mock e
+ * no servidor. Nenhum texto livre: nem a observacao da familia, nem o relato
+ * da escola, nem a evolucao da sessao.
+ */
+export interface EvolucaoObjetivo {
+  /** Uma entrada por sessao ENCERRADA em que o objetivo foi trabalhado, em ordem de numero. */
+  clinica: Array<{ sessaoId: string; numero: number; data: DataIso; percentual: number }>
+  /** As execucoes das atividades deste objetivo, ativas e encerradas, por dia. */
+  casa: Array<{ data: DataCivil; desempenho: Desempenho }>
+  /** As ocorrencias de origem ESCOLA do paciente: a escola nao registra por objetivo. */
+  escola: Array<{ data: DataIso; intensidade: Intensidade }>
+  /** objetivoAtingiuCriterio, a mesma conta da confirmacao do dominio. */
+  atingiuCriterio: boolean
+}
+
 // ---------------------------------------------------------------- Familia (projecoes)
 
 export interface FilhoResumo {

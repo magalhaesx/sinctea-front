@@ -91,7 +91,7 @@ export function percentualIndependente(registros: RegistroAtividade[], objetivoI
  * completa a sequencia.
  */
 export function objetivoAtingiuCriterio(
-  sessoes: Sessao[],
+  sessoes: Array<Pick<Sessao, 'situacao' | 'numero' | 'registros'>>,
   objetivoId: string,
   criterio: CriterioDominio,
 ): boolean {
@@ -107,6 +107,10 @@ export function objetivoAtingiuCriterio(
     .slice(-criterio.sessoesConsecutivas)
     .every((p) => p >= criterio.percentualMinimo)
 }
+
+/** O dominio so se confirma no plano VIGENTE (item 16): o que esta em rascunho ou em validacao ainda pode mudar. */
+export const DOMINIO_SO_NO_VIGENTE = 'O domínio se confirma no plano vigente.'
+export const JA_DOMINADO = 'Este objetivo já está marcado como dominado.'
 
 /**
  * Em aquisicao, com ao menos 9 sessoes registradas, e o melhor percentual das
@@ -523,12 +527,18 @@ export function podeCorrigirOcorrencia(registradaEm: DataIso, agora: Date): bool
 
 // ---------------------------------------------------------------- Comparacao entre contextos (tela 8)
 
-/** Chave da semana (segunda-feira, UTC) em que a data cai. */
-function chaveSemana(data: DataIso): string {
-  const d = new Date(ms(data))
+/**
+ * Chave da semana (a segunda-feira) em que a data cai, no calendario de
+ * Manaus (item 16): uma ocorrencia de domingo as 22h e daquele domingo, e nao
+ * da segunda-feira em UTC. O instante vira o dia civil de Manaus; o dia civil
+ * (a execucao da casa) ja e o dia.
+ */
+function chaveSemana(data: DataIso | DataCivil): string {
+  const dia = partesDaDataCivil(data) ?? partesDaDataCivil(diaCivilEm(new Date(ms(data))))!
+  // Aritmetica em UTC sobre o dia civil: nenhum fuso entra aqui.
+  const d = new Date(Date.UTC(dia.ano, dia.mes - 1, dia.dia))
   const diasDesdeSegunda = (d.getUTCDay() + 6) % 7
-  const segunda = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - diasDesdeSegunda))
-  return segunda.toISOString().slice(0, 10)
+  return new Date(Date.UTC(dia.ano, dia.mes - 1, dia.dia - diasDesdeSegunda)).toISOString().slice(0, 10)
 }
 
 export interface FaltaSuficiencia {
@@ -545,7 +555,7 @@ export interface FaltaSuficiencia {
  * clinica, casa e escola tem escalas de natureza diferente e nunca sao
  * colocadas na mesma escala nem somadas em media.
  */
-export function suficienciaComparacao(datasPorContexto: Record<Origem, DataIso[]>): {
+export function suficienciaComparacao(datasPorContexto: Record<Origem, Array<DataIso | DataCivil>>): {
   suficiente: boolean
   faltas: FaltaSuficiencia[]
 } {

@@ -340,6 +340,20 @@ describe('suficienciaComparacao', () => {
     expect(suficienciaComparacao({ CLINICA: datas, CASA: datas, ESCOLA: datas })).toEqual({ suficiente: true, faltas: [] })
   })
 
+  it('a semana e a de Manaus (item 16): domingo as 22h fica no domingo, e nao na segunda em UTC', () => {
+    // Domingo, 25/10/2026, 22h em Manaus = segunda, 26/10, 02h em UTC.
+    const domingoANoite = '2026-10-26T02:00:00.000Z'
+    const segundaAntes = '2026-10-19T14:00:00.000Z'
+    const segundaDepois = '2026-10-26T14:00:00.000Z'
+    const semanas = (datas: string[]) => 3 - (suficienciaComparacao({ CLINICA: datas, CASA: datas, ESCOLA: datas })
+      .faltas.find((f) => f.contexto === 'ESCOLA')?.semanasFaltando ?? 3)
+    expect(semanas([segundaAntes, domingoANoite])).toBe(1)
+    expect(semanas([domingoANoite, segundaDepois])).toBe(2)
+    // O dia civil da casa ja e o dia: o domingo e da semana que comecou na segunda anterior.
+    expect(semanas(['2026-10-19', '2026-10-25'])).toBe(1)
+    expect(semanas(['2026-10-25', '2026-10-26'])).toBe(2)
+  })
+
   it('diz o que falta em cada contexto', () => {
     const ok = semanal(5)
     const mesmaSemana = [dias(0), dias(0), dias(0), dias(0), dias(0)]
