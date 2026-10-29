@@ -1,11 +1,10 @@
 import type { ServicoRelatorio } from '@sinctea/compartilhado'
-import {
-  ErroServico, type ConteudoRelatorio, type ObjetivoNoRelatorio, type PedidoRelatorio,
-  type RelatorioEvolucao, type Sessao,
-} from '@sinctea/compartilhado'
-import { percentualIndependente, textoDoCriterio, textoDoPeriodo } from '@sinctea/compartilhado/dominio/regras'
+import { ErroServico, type ConteudoRelatorio, type PedidoRelatorio, type RelatorioEvolucao } from '@sinctea/compartilhado'
 import { diaCivilEm } from '@sinctea/compartilhado/dominio/datas'
 import { resumoSha256 } from '@sinctea/compartilhado/dominio/hash'
+import {
+  montarConteudoRelatorio, SEM_REGISTRO_NO_CONSELHO, validarPedidoRelatorio,
+} from '@sinctea/compartilhado/dominio/relatorio'
 import { exigirPacienteClinico } from './acesso'
 import { auditar, banco, exigirValido, gerarId, naoEncontrado, paginar, relogio, responder } from './infra'
 
@@ -20,94 +19,34 @@ import { auditar, banco, exigirValido, gerarId, naoEncontrado, paginar, relogio,
  * Sem autorId: quem emitiu fica na auditoria, como em confirmarDominio. O nome
  * e o registro no conselho vao impressos no documento, fixos na data em que
  * saiu — se o profissional mudar de nome depois, o documento nao muda.
+ *
+ * Item 18: a validacao do pedido e a montagem sao as do compartilhado
+ * (dominio/relatorio.ts), as mesmas do servidor e da semente. No servidor, a
+ * previa entra na trilha; aqui, como antes, nao.
  */
 
-/* O dia da sessao em Manaus, e nao em UTC: a sessao das 21h ja e o dia
-   seguinte em UTC, e cairia fora de um periodo que termina naquele dia. */
-const soODia = (iso: string) => diaCivilEm(new Date(iso))
-
-/** Sessoes encerradas do paciente dentro do periodo, em ordem de numero. */
-function sessoesDoPeriodo(pacienteId: string, inicio: string, fim: string): Sessao[] {
-  return banco.sessoes
-    .filter((s) => s.pacienteId === pacienteId && s.situacao === 'ENCERRADA' && s.inicio)
-    .filter((s) => soODia(s.inicio!) >= inicio && soODia(s.inicio!) <= fim)
-    .sort((a, b) => a.numero - b.numero)
-}
-
-function montarConteudo(pacienteId: string, pedido: PedidoRelatorio): ConteudoRelatorio {
+function montarConteudo(pacienteId: string, pedido: PedidoRelatorio, emitir: boolean): ConteudoRelatorio {
+  exigirValido(validarPedidoRelatorio(pedido, diaCivilEm(relogio.agora()), { emitir }))
   const paciente = banco.pacientes.find((p) => p.id === pacienteId) ?? naoEncontrado('Paciente')
-  const plano = banco.planos.find((p) => p.pacienteId === pacienteId)
-  const sessoes = sessoesDoPeriodo(pacienteId, pedido.periodoInicio, pedido.periodoFim)
-
-  const objetivos: ObjetivoNoRelatorio[] = pedido.objetivoIds.map((objetivoId) => {
-    const objetivo = plano?.objetivos.find((o) => o.id === objetivoId)
-    if (!objetivo) {
-      throw new ErroServico('VALIDACAO', 'Um dos objetivos escolhidos não é do plano deste paciente.', {
-        objetivoIds: 'Um dos objetivos escolhidos não é do plano deste paciente.',
-      })
-    }
-    const percentuais = sessoes
-      .map((s) => percentualIndependente(s.registros, objetivoId))
-      .filter((p): p is number => p !== null)
-
-    return {
-      objetivoId,
-      dominio: objetivo.dominio,
-      // Regra 4: a equipe le a tecnica, a familia le a acessivel. As duas
-      // redacoes existem gravadas separadamente justamente para isto.
-      redacao: pedido.destinatario === 'FAMILIA'
-        ? objetivo.descricaoAcessivel
-        : objetivo.descricaoTecnica,
-      // Os numeros tambem mudam de lingua com o destinatario, pela mesma razao
-      // das duas redacoes: quem le em casa nao conta em porcentagem.
-      criterioTexto: textoDoCriterio(objetivo.criterio, pedido.destinatario),
-      sessoesNoPeriodo: percentuais.length,
-      periodoTexto: textoDoPeriodo(percentuais, pedido.destinatario),
-      status: objetivo.status,
-      dominadoEm: objetivo.dominadoEm,
-    }
-  })
-
-  return {
+  const plano = banco.planos.find((p) => p.pacienteId === pacienteId) ?? null
+  return montarConteudoRelatorio({
     paciente: { id: paciente.id, nome: paciente.nome, dataNascimento: paciente.dataNascimento },
-    periodoInicio: pedido.periodoInicio,
-    periodoFim: pedido.periodoFim,
-    destinatario: pedido.destinatario,
-    consideracoes: pedido.consideracoes.trim(),
-    objetivos,
-    sessoesNoPeriodo: sessoes.length,
-  }
-}
-
-/** Validacoes do pedido, comuns a previa e a emissao. */
-function validarPedido(pedido: PedidoRelatorio): Record<string, string> {
-  const erros: Record<string, string> = {}
-  if (!pedido.periodoInicio || !pedido.periodoFim) {
-    erros.periodo = 'Escolha o período do relatório.'
-  } else if (pedido.periodoFim < pedido.periodoInicio) {
-    erros.periodo = 'O fim do período não pode ser anterior ao início.'
-  }
-  if (pedido.objetivoIds.length === 0) {
-    erros.objetivoIds = 'Escolha ao menos um objetivo para o relatório.'
-  }
-  return erros
+    plano,
+    sessoes: banco.sessoes.filter((s) => s.pacienteId === pacienteId),
+    pedido,
+  })
 }
 
 export const relatoriosMock: ServicoRelatorio = {
   previsualizar: (pacienteId, pedido) => responder(() => {
     exigirPacienteClinico(pacienteId, 'RelatorioEvolucao')
     // A previa aceita consideracoes ainda vazias: elas sao exigidas ao emitir.
-    exigirValido(validarPedido(pedido))
-    return montarConteudo(pacienteId, pedido)
+    return montarConteudo(pacienteId, pedido, false)
   }),
 
   emitir: (pacienteId, pedido) => responder(async () => {
     const { sessao } = exigirPacienteClinico(pacienteId, 'RelatorioEvolucao')
-    const erros = validarPedido(pedido)
-    if (!pedido.consideracoes.trim()) {
-      erros.consideracoes = 'O relatório é a sua leitura clínica, não só os números. Escreva as suas considerações — elas não são geradas pelo sistema.'
-    }
-    exigirValido(erros)
+    exigirValido(validarPedidoRelatorio(pedido, diaCivilEm(relogio.agora()), { emitir: true }))
 
     /*
      * O documento clinico carrega o nome e o registro no conselho de quem
@@ -116,13 +55,8 @@ export const relatoriosMock: ServicoRelatorio = {
      * profissional aquilo que so ele pode responder.
      */
     const autor = banco.profissionais.find((p) => p.id === sessao.usuario.id)
-    if (!autor?.registroConselho.trim()) {
-      throw new ErroServico(
-        'CONFLITO',
-        'Complete o seu registro no conselho em Perfil e preferências antes de emitir um relatório.',
-      )
-    }
-    const conteudoEmitido = montarConteudo(pacienteId, pedido)
+    if (!autor?.registroConselho.trim()) throw new ErroServico('CONFLITO', SEM_REGISTRO_NO_CONSELHO)
+    const conteudoEmitido = montarConteudo(pacienteId, pedido, true)
     const relatorio: RelatorioEvolucao = {
       id: gerarId('rel'),
       pacienteId,

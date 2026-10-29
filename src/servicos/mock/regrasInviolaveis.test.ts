@@ -1369,9 +1369,10 @@ describe('painel da coordenacao — conta e aponta', () => {
 
 
 describe('relatorio de evolucao — documento clinico (UC09)', () => {
+  // Item 18: o fim do periodo nao passa de hoje, no dia de Manaus.
   const pedido = {
     periodoInicio: '2026-01-01',
-    periodoFim: '2030-12-31',
+    periodoFim: diaCivilEm(new Date()),
     objetivoIds: ['o-001', 'o-002'],
     destinatario: 'PROFISSIONAIS' as const,
     consideracoes: 'Avanço consistente na comunicação funcional; a regulação sensorial segue exigindo apoio.',

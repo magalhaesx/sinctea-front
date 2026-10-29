@@ -16,14 +16,11 @@ import { existsSync } from 'node:fs'
 import { pathToFileURL } from 'node:url'
 import argon2 from 'argon2'
 import { PrismaPg } from '@prisma/adapter-pg'
-import type {
-  ConteudoRelatorio, Destinatario, ObjetivoNoRelatorio, RegistroAuditoria,
-} from '@sinctea/compartilhado'
+import type { ConteudoRelatorio, Destinatario, RegistroAuditoria } from '@sinctea/compartilhado'
 import { diaCivilEm } from '@sinctea/compartilhado/dominio/datas'
 import { jsonCanonico, resumoSha256 } from '@sinctea/compartilhado/dominio/hash'
-import {
-  percentualIndependente, situacaoConvite, textoDoCriterio, textoDoPeriodo,
-} from '@sinctea/compartilhado/dominio/regras'
+import { situacaoConvite } from '@sinctea/compartilhado/dominio/regras'
+import { montarConteudoRelatorio } from '@sinctea/compartilhado/dominio/relatorio'
 import { resumoDoTermo } from '@sinctea/compartilhado/dominio/termo'
 import { resumoDoToken } from '../src/autenticacao/tokens.js'
 import { PrismaClient } from '../src/gerado/client.js'
@@ -55,7 +52,7 @@ interface PedidoDaSemente {
  * Os dois relatorios ja emitidos da demonstracao, um para cada destinatario.
  * O mock nao tinha nenhum. As consideracoes sao texto da demonstracao, escrito
  * aqui; o resto do documento e montado pelo mesmo calculo que o mock usa ao
- * emitir (src/servicos/mock/relatorios.ts, copiado abaixo), e o hash e do
+ * emitir (montarConteudoRelatorio, do compartilhado), e o hash e do
  * conteudo, e nao copiado de lugar nenhum.
  */
 export const PEDIDOS_DE_RELATORIO: PedidoDaSemente[] = [
@@ -78,44 +75,23 @@ export const PEDIDOS_DE_RELATORIO: PedidoDaSemente[] = [
   },
 ]
 
-/** Copiado de montarConteudo (mock/relatorios.ts), com o dia contado em Manaus. */
+/**
+ * O documento pela mesma montagem do mock e do servidor (item 18): a do
+ * compartilhado, com o dia da sessao contado em Manaus.
+ */
 function montarConteudo(
   dados: BancoDemonstracao, pedido: PedidoDaSemente, periodoInicio: string, periodoFim: string,
 ): ConteudoRelatorio {
   const paciente = dados.pacientes.find((p) => p.id === pedido.pacienteId)!
-  const plano = dados.planos.find((p) => p.pacienteId === pedido.pacienteId)!
-  const sessoes = dados.sessoes
-    .filter((s) => s.pacienteId === pedido.pacienteId && s.situacao === 'ENCERRADA' && s.inicio)
-    .filter((s) => diaCivilEm(new Date(s.inicio!)) >= periodoInicio && diaCivilEm(new Date(s.inicio!)) <= periodoFim)
-    .sort((a, b) => a.numero - b.numero)
-
-  const objetivos: ObjetivoNoRelatorio[] = pedido.objetivoIds.map((objetivoId) => {
-    const objetivo = plano.objetivos.find((o) => o.id === objetivoId)!
-    const percentuais = sessoes
-      .map((s) => percentualIndependente(s.registros, objetivoId))
-      .filter((p): p is number => p !== null)
-    return {
-      objetivoId,
-      dominio: objetivo.dominio,
-      // Regra 4: a equipe le a tecnica, a familia le a acessivel.
-      redacao: pedido.destinatario === 'FAMILIA' ? objetivo.descricaoAcessivel : objetivo.descricaoTecnica,
-      criterioTexto: textoDoCriterio(objetivo.criterio, pedido.destinatario),
-      sessoesNoPeriodo: percentuais.length,
-      periodoTexto: textoDoPeriodo(percentuais, pedido.destinatario),
-      status: objetivo.status,
-      dominadoEm: objetivo.dominadoEm,
-    }
-  })
-
-  return {
+  return montarConteudoRelatorio({
     paciente: { id: paciente.id, nome: paciente.nome, dataNascimento: paciente.dataNascimento },
-    periodoInicio,
-    periodoFim,
-    destinatario: pedido.destinatario,
-    consideracoes: pedido.consideracoes.trim(),
-    objetivos,
-    sessoesNoPeriodo: sessoes.length,
-  }
+    plano: dados.planos.find((p) => p.pacienteId === pedido.pacienteId) ?? null,
+    sessoes: dados.sessoes.filter((s) => s.pacienteId === pedido.pacienteId),
+    pedido: {
+      periodoInicio, periodoFim, objetivoIds: pedido.objetivoIds, destinatario: pedido.destinatario,
+      consideracoes: pedido.consideracoes,
+    },
+  })
 }
 
 // ---------------------------------------------------------------- Ids
