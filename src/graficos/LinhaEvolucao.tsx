@@ -99,9 +99,11 @@ export function LinhaEvolucao({ titulo, pontos, criterio }: {
               fill="#0a6c75" stroke="#fff" strokeWidth="2" />
           ))}
 
-          {/* Rotulo direto so onde importa: o ultimo ponto. */}
+          {/* Rotulo direto so onde importa: o ultimo ponto. Perto do topo, vai
+              abaixo do ponto: acima, sairia do grafico (100% fica em y = T). */}
           {ultimo && (
-            <text x={Math.min(x(pontos.length - 1), R - 30)} y={y(ultimo.percentual) - 12}
+            <text x={Math.min(x(pontos.length - 1), R - 30)}
+              y={y(ultimo.percentual) - 12 < T + 4 ? y(ultimo.percentual) + 24 : y(ultimo.percentual) - 12}
               textAnchor="middle" fontSize="13" fontWeight="700" fill="#0a6c75">
               {ultimo.percentual}%
             </text>

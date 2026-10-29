@@ -421,15 +421,13 @@ export function Ficha() {
                 <BotaoLink para={`/app/clinica/pacientes/${p.id}/atividades`} area="cli" variante="secundaria">
                   Atividades para casa
                 </BotaoLink>
+                <BotaoLink para={`/app/clinica/pacientes/${p.id}/evolucao`} area="cli" variante="secundaria">
+                  Ver evolução por objetivo
+                </BotaoLink>
                 {!SO_CAMINHO_PRINCIPAL && (
-                  <>
-                    <BotaoLink para={`/app/clinica/pacientes/${p.id}/evolucao`} area="cli" variante="secundaria">
-                      Ver evolução por objetivo
-                    </BotaoLink>
-                    <BotaoLink para={`/app/clinica/pacientes/${p.id}/relatorio`} area="cli" variante="secundaria">
-                      Emitir relatório
-                    </BotaoLink>
-                  </>
+                  <BotaoLink para={`/app/clinica/pacientes/${p.id}/relatorio`} area="cli" variante="secundaria">
+                    Emitir relatório
+                  </BotaoLink>
                 )}
               </div>
             </section>

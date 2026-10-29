@@ -71,6 +71,13 @@ describe('a versao publicada', () => {
     expect(pacote).toContain('Amanhã dá para registrar de novo.')
   })
 
+  it('leva a evolucao por objetivo do item 16: a tela 8 e o botao da ficha', () => {
+    expect(pacote).toContain('Ver evolução por objetivo')
+    expect(pacote).toContain('Comparação entre os três contextos')
+    expect(pacote).toContain('/evolucao')
+    expect(pacote).toContain('O domínio se confirma no plano vigente.')
+  })
+
   it('leva o ciclo clinica–escola do item 6: os avisos da escola e os eventos da ficha', () => {
     expect(pacote).toContain('Avisos da escola')
     expect(pacote).toContain('Eventos comportamentais recentes')

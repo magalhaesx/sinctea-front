@@ -12,25 +12,28 @@ import { EstadoCarregando } from '../../ui/EstadoCarregando'
 import { EstadoErro } from '../../ui/EstadoErro'
 import { FaixasContexto } from '../../graficos/FaixasContexto'
 import { LinhaEvolucao, type PontoSessao } from '../../graficos/LinhaEvolucao'
+import { suficienciaComparacao, SUFICIENCIA_MINIMA } from '@sinctea/compartilhado/dominio/regras'
+import { dataIsoParaLocal } from '@sinctea/compartilhado/dominio/datas'
+import { blocoDoDominio } from './blocoDoDominio'
 import {
-  objetivoAtingiuCriterio, percentualIndependente, suficienciaComparacao, SUFICIENCIA_MINIMA,
-} from '@sinctea/compartilhado/dominio/regras'
-import { dataIsoParaLocal, emData } from '@sinctea/compartilhado/dominio/datas'
-import {
-  ErroServico, servicos, type AtividadeCasa, type Desempenho, type ExecucaoAtividadeCasa,
-  type Objetivo, type OcorrenciaComportamental, type Origem, type Sessao,
+  ErroServico, servicos, type EvolucaoObjetivo, type Origem, type PlanoTerapeutico,
 } from '../../servicos'
 
 /**
  * Tela 8 · Evolucao por objetivo · /app/clinica/pacientes/:id/evolucao (UC08)
  *
+ * Duas leituras (item 16): o plano, para o seletor, e a evolucao do objetivo
+ * escolhido, que o servico ja entrega montada (montarEvolucao, no
+ * compartilhado) — so datas e medidas, sem texto livre de ninguem.
+ *
  * A comparacao entre contextos so aparece com dados suficientes, e nunca em
  * versao parcial: abaixo do minimo, a tela diz o que falta, contexto por
- * contexto. A regra vive em dominio/regras.ts, nao aqui.
+ * contexto. A regra vive em dominio/regras.ts, nao aqui, e a semana e a do
+ * calendario de Manaus.
  *
  * A promocao a dominado tambem e daqui, e nao e automatica: atingir o criterio
- * habilita o botao, quem promove e o profissional. O servico reconfere o
- * criterio antes de gravar.
+ * habilita o botao, quem promove e o profissional, e so no plano vigente. O
+ * servico reconfere o plano e o criterio antes de gravar.
  *
  * E decisao clinica, auditada e sem desfazer pela tela — num tablet, no meio
  * da sessao, um toque errado promoveria o objetivo com o nome de quem tocou.
@@ -42,18 +45,13 @@ const NOME_DO_CONTEXTO: Record<Origem, string> = {
   CLINICA: 'na clínica', CASA: 'em casa', ESCOLA: 'na escola',
 }
 
-type Dados = {
-  objetivos: Objetivo[]
-  sessoes: Sessao[]
-  atividades: AtividadeCasa[]
-  execucoes: ExecucaoAtividadeCasa[]
-  ocorrencias: OcorrenciaComportamental[]
-}
-
-type Estado =
+type Estado<T> =
   | { tipo: 'carregando' }
   | { tipo: 'erro'; erro: unknown }
-  | { tipo: 'pronto'; dados: Dados }
+  | { tipo: 'pronto'; dados: T }
+
+/** A evolucao vem com o objetivo a que responde: trocar de objetivo nao mostra a do anterior. */
+type EstadoEvolucao = Estado<{ objetivoId: string; evolucao: EvolucaoObjetivo }>
 
 /** "Faltam 2 registros e 1 semana na escola." */
 function frase(falta: { contexto: Origem; registrosFaltando: number; semanasFaltando: number }): string {
@@ -74,7 +72,8 @@ export function Evolucao() {
   // objetivo. Sem isto o link cairia sempre no primeiro do plano.
   const [params] = useSearchParams()
   const objetivoPedido = params.get('objetivo') ?? ''
-  const [estado, setEstado] = useState<Estado>({ tipo: 'carregando' })
+  const [estado, setEstado] = useState<Estado<PlanoTerapeutico>>({ tipo: 'carregando' })
+  const [evolucao, setEvolucao] = useState<EstadoEvolucao>({ tipo: 'carregando' })
   const [tentativa, setTentativa] = useState(0)
   const [objetivoId, setObjetivoId] = useState(objetivoPedido)
   const [confirmacaoAberta, setConfirmacaoAberta] = useState(false)
@@ -106,36 +105,29 @@ export function Evolucao() {
     setAviso(null)
     setErroAcao(null)
     setConfirmacaoAberta(false)
-    const carregar = async (): Promise<Dados> => {
-      const [plano, sessoes, atividades, ocorrencias] = await Promise.all([
-        servicos.planos.obterPorPaciente(id),
-        servicos.sessoes.listarPorPaciente(id, { situacao: 'ENCERRADA', porPagina: 100 }),
-        servicos.atividades.listarPorPaciente(id, { porPagina: 100 }),
-        servicos.ocorrencias.listarPorPaciente(id, { origem: 'ESCOLA', porPagina: 100 }),
-      ])
-      const execucoes = (await Promise.all(
-        atividades.itens.map((a) => servicos.atividades.listarExecucoes(a.id, { porPagina: 100 })),
-      )).flatMap((p) => p.itens)
-      return {
-        objetivos: plano.objetivos,
-        sessoes: sessoes.itens,
-        atividades: atividades.itens,
-        execucoes,
-        ocorrencias: ocorrencias.itens,
-      }
-    }
-    carregar()
-      .then((dados) => {
+    servicos.planos.obterPorPaciente(id)
+      .then((plano) => {
         if (!ativo) return
-        const existe = (objetivoId: string) => dados.objetivos.some((o) => o.id === objetivoId)
+        const existe = (objetivoId: string) => plano.objetivos.some((o) => o.id === objetivoId)
         setObjetivoId((atual) => existe(atual)
           ? atual
-          : existe(objetivoPedido) ? objetivoPedido : dados.objetivos[0]?.id ?? '')
-        setEstado({ tipo: 'pronto', dados })
+          : existe(objetivoPedido) ? objetivoPedido : plano.objetivos[0]?.id ?? '')
+        setEstado({ tipo: 'pronto', dados: plano })
       })
       .catch((erro) => { if (ativo) setEstado({ tipo: 'erro', erro }) })
     return () => { ativo = false }
   }, [id, tentativa, objetivoPedido])
+
+  // A evolucao do objetivo escolhido: uma leitura, inteira, e uma linha na trilha.
+  useEffect(() => {
+    if (!objetivoId) return
+    let ativo = true
+    setEvolucao({ tipo: 'carregando' })
+    servicos.planos.obterEvolucao(objetivoId)
+      .then((dados) => { if (ativo) setEvolucao({ tipo: 'pronto', dados: { objetivoId, evolucao: dados } }) })
+      .catch((erro) => { if (ativo) setEvolucao({ tipo: 'erro', erro }) })
+    return () => { ativo = false }
+  }, [objetivoId, tentativa])
 
   const trocarObjetivo = (id: string) => {
     setObjetivoId(id)
@@ -166,10 +158,7 @@ export function Evolucao() {
       setEstado((atual) => atual.tipo === 'pronto'
         ? {
           ...atual,
-          dados: {
-            ...atual.dados,
-            objetivos: atual.dados.objetivos.map((o) => o.id === atualizado.id ? atualizado : o),
-          },
+          dados: { ...atual.dados, objetivos: atual.dados.objetivos.map((o) => o.id === atualizado.id ? atualizado : o) },
         }
         : atual)
       setAviso('Domínio confirmado. O objetivo passa a constar como dominado no plano.')
@@ -185,38 +174,27 @@ export function Evolucao() {
     }
   }
 
+  // Na tela, so a evolucao do objetivo escolhido.
   const series = useMemo(() => {
-    if (estado.tipo !== 'pronto' || !objetivoId) return null
-    const { sessoes, atividades, execucoes, ocorrencias } = estado.dados
-
-    // Clinica: percentual de tentativas independentes do objetivo, por sessao.
-    const clinica = sessoes
-      .slice()
-      .sort((a, b) => a.numero - b.numero)
-      .map((s) => ({ sessao: s, percentual: percentualIndependente(s.registros, objetivoId) }))
-      .filter((p): p is { sessao: Sessao; percentual: number } => p.percentual !== null)
-      .map(({ sessao, percentual }) => ({
-        rotulo: `S${sessao.numero}`,
-        data: sessao.inicio ?? sessao.inicioPrevistoEm,
-        percentual,
-      }))
-
-    // Casa: execucoes das atividades ligadas a ESTE objetivo.
-    const doObjetivo = new Set(atividades.filter((a) => a.objetivoId === objetivoId).map((a) => a.id))
-    const casa = execucoes
-      .filter((e) => doObjetivo.has(e.atividadeId))
-      // A execucao guarda o dia, sem hora; na linha do tempo, o ponto vai ao
-      // meio-dia daquele dia, longe das duas bordas.
-      .map((e) => ({ data: dataIsoParaLocal(e.dataRealizacao).toISOString(), desempenho: e.desempenho as Desempenho }))
-      .sort((a, b) => a.data.localeCompare(b.data))
-
-    // Escola: ocorrencias do ALUNO. Nao ha objetivo em OcorrenciaEscolar.
-    const escola = ocorrencias
-      .map((o) => ({ data: o.ocorridaEm, intensidade: o.intensidade as number }))
-      .sort((a, b) => a.data.localeCompare(b.data))
-
-    return { clinica, casa, escola }
-  }, [estado, objetivoId])
+    if (evolucao.tipo !== 'pronto' || evolucao.dados.objetivoId !== objetivoId) return null
+    const { clinica, casa, escola, atingiuCriterio } = evolucao.dados.evolucao
+    return {
+      // Clinica: percentual de tentativas independentes do objetivo, por sessao.
+      clinica: clinica.map((s): PontoSessao => ({ rotulo: `S${s.numero}`, data: s.data, percentual: s.percentual })),
+      // Casa: a execucao guarda o dia, sem hora; na linha do tempo, o ponto vai
+      // ao meio-dia daquele dia, longe das duas bordas.
+      casa: casa.map((e) => ({ data: dataIsoParaLocal(e.data).toISOString(), desempenho: e.desempenho })),
+      // Escola: ocorrencias do ALUNO. Nao ha objetivo em OcorrenciaEscolar.
+      escola,
+      // A semana conta no calendario de Manaus; o dia da casa vai como dia.
+      suficiencia: suficienciaComparacao({
+        CLINICA: clinica.map((s) => s.data),
+        CASA: casa.map((e) => e.data),
+        ESCOLA: escola.map((o) => o.data),
+      }),
+      atingiuCriterio,
+    }
+  }, [evolucao, objetivoId])
 
   const negado = estado.tipo === 'erro' && estado.erro instanceof ErroServico
     && estado.erro.codigo === 'ACESSO_NEGADO'
@@ -251,8 +229,9 @@ export function Evolucao() {
         </>
       )}
 
-      {estado.tipo === 'pronto' && series && (() => {
-        const objetivo = estado.dados.objetivos.find((o) => o.id === objetivoId)
+      {estado.tipo === 'pronto' && (() => {
+        const plano = estado.dados
+        const objetivo = plano.objetivos.find((o) => o.id === objetivoId)
         if (!objetivo) {
           return (
             <>
@@ -262,18 +241,17 @@ export function Evolucao() {
           )
         }
 
-        const pontos: PontoSessao[] = series.clinica
-        const atingiu = objetivoAtingiuCriterio(estado.dados.sessoes, objetivo.id, objetivo.criterio)
         const dominado = objetivo.status === 'DOMINADO'
-        const suficiencia = suficienciaComparacao({
-          CLINICA: series.clinica.map((p) => p.data),
-          CASA: series.casa.map((p) => p.data),
-          ESCOLA: series.escola.map((p) => p.data),
+        // Fora do plano vigente, a tela mostra o criterio, sem o botao (item 16).
+        const bloco = series && blocoDoDominio({
+          dominadoEm: objetivo.dominadoEm, vigente: plano.status === 'VIGENTE', atingiu: series.atingiuCriterio,
         })
 
         return (
           <>
-            <Titulo sub={`${pontos.length} ${pontos.length === 1 ? 'sessão registrada' : 'sessões registradas'} com este objetivo`}>
+            <Titulo sub={series
+              ? `${series.clinica.length} ${series.clinica.length === 1 ? 'sessão registrada' : 'sessões registradas'} com este objetivo`
+              : undefined}>
               Evolução por objetivo
             </Titulo>
 
@@ -285,7 +263,7 @@ export function Evolucao() {
                   value={objetivo.id}
                   onChange={(e) => trocarObjetivo(e.target.value)}
                 >
-                  {estado.dados.objetivos.map((o) => <option key={o.id} value={o.id}>{o.dominio}</option>)}
+                  {plano.objetivos.map((o) => <option key={o.id} value={o.id}>{o.dominio}</option>)}
                 </select>
               </Campo>
               <p className="mt-2 max-w-[65ch] text-sm text-tinta2">{objetivo.descricaoTecnica}</p>
@@ -298,105 +276,114 @@ export function Evolucao() {
               )}
             </div>
 
-            <section aria-labelledby="h-clinica" className="flex flex-col gap-3">
-              <h2 id="h-clinica" className="text-lg font-bold">Na clínica, sessão a sessão</h2>
-              <Cartao>
-                {pontos.length === 0 ? (
-                  <p className="text-tinta2">
-                    Nenhuma sessão encerrada registrou tentativas deste objetivo ainda.
-                  </p>
-                ) : (
-                  <LinhaEvolucao
-                    titulo="Tentativas independentes por sessão"
-                    pontos={pontos}
-                    criterio={objetivo.criterio.percentualMinimo}
-                  />
-                )}
-              </Cartao>
+            {evolucao.tipo === 'erro' && (
+              <EstadoErro
+                erro={evolucao.erro}
+                oQue="a evolução deste objetivo"
+                nivel={3}
+                aoTentarDeNovo={() => setTentativa((t) => t + 1)}
+              />
+            )}
 
-              <div ref={blocoDominio} tabIndex={-1}>
-                <Aviso tom={dominado || atingiu ? 'ok' : 'neutro'} titulo={dominado
-                  ? 'Objetivo dominado'
-                  : atingiu
-                    ? 'Critério de domínio atingido'
-                    : 'Ainda não atingiu o critério de domínio'}>
-                  <p className="text-[15px] text-tinta">
-                    O critério é {objetivo.criterio.percentualMinimo}% em{' '}
-                    {objetivo.criterio.sessoesConsecutivas}{' '}
-                    {objetivo.criterio.sessoesConsecutivas === 1 ? 'sessão consecutiva' : 'sessões consecutivas'}.{' '}
-                    {dominado && objetivo.dominadoEm
-                      ? `Domínio confirmado em ${emData(objetivo.dominadoEm)}.`
-                      : atingiu
-                        ? 'A promoção a dominado não é automática: depende da sua confirmação.'
-                        : 'O status atual do objetivo é definido por você, no plano.'}
-                  </p>
-                  <p className="mt-2">
-                    <Etiqueta tom={dominado ? 'ok' : 'neutro'} simbolo={dominado ? '✓' : '○'}>
-                      {dominado ? 'Dominado' : objetivo.status === 'EM_AQUISICAO' ? 'Em aquisição' : 'Não iniciado'}
-                    </Etiqueta>
-                  </p>
-                  {atingiu && !dominado && (
-                    // Duas etapas: o primeiro clique mostra o que vai acontecer.
-                    confirmacaoAberta ? (
-                      <div
-                        ref={caixaConfirmacao}
-                        tabIndex={-1}
-                        role="group"
-                        aria-labelledby="confirmar-dominio"
-                        className="mt-3 rounded-lg border border-at bg-at-sup p-3.5"
-                      >
-                        <p id="confirmar-dominio" className="font-bold text-tinta">
-                          Confirmar o domínio deste objetivo?
-                        </p>
-                        <p className="mt-1 text-sm text-tinta2">
-                          O objetivo passa a dominado e isso fica registrado com o seu nome. Não há
-                          como desfazer pela tela.
-                        </p>
-                        <div className="mt-3 flex flex-wrap gap-2">
-                          <Botao area="cli" onClick={() => void confirmarDominio(objetivo.id)}
-                            disabled={salvando}>
-                            {salvando ? 'Confirmando…' : 'Confirmar o domínio'}
-                          </Botao>
-                          <Botao area="cli" variante="secundaria" onClick={cancelarConfirmacao}
-                            disabled={salvando}>
-                            Cancelar
-                          </Botao>
-                        </div>
-                      </div>
-                    ) : (
-                      <p className="mt-3">
-                        <Botao area="cli" ref={botaoConfirmar} onClick={abrirConfirmacao}>
-                          Confirmar o domínio
-                        </Botao>
+            {evolucao.tipo !== 'erro' && !series && (
+              <EstadoCarregando forma="cartoes" quantidade={2} rotulo="Carregando a evolução do objetivo" />
+            )}
+
+            {series && bloco && (
+              <>
+                <section aria-labelledby="h-clinica" className="flex flex-col gap-3">
+                  <h2 id="h-clinica" className="text-lg font-bold">Na clínica, sessão a sessão</h2>
+                  <Cartao>
+                    {series.clinica.length === 0 ? (
+                      <p className="text-tinta2">
+                        Nenhuma sessão encerrada registrou tentativas deste objetivo ainda.
                       </p>
-                    )
+                    ) : (
+                      <LinhaEvolucao
+                        titulo="Tentativas independentes por sessão"
+                        pontos={series.clinica}
+                        criterio={objetivo.criterio.percentualMinimo}
+                      />
+                    )}
+                  </Cartao>
+
+                  <div ref={blocoDominio} tabIndex={-1}>
+                    <Aviso tom={dominado || series.atingiuCriterio ? 'ok' : 'neutro'} titulo={bloco.titulo}>
+                      <p className="text-[15px] text-tinta">
+                        O critério é {objetivo.criterio.percentualMinimo}% em{' '}
+                        {objetivo.criterio.sessoesConsecutivas}{' '}
+                        {objetivo.criterio.sessoesConsecutivas === 1 ? 'sessão consecutiva' : 'sessões consecutivas'}.{' '}
+                        {bloco.frase}
+                      </p>
+                      <p className="mt-2">
+                        <Etiqueta tom={dominado ? 'ok' : 'neutro'} simbolo={dominado ? '✓' : '○'}>
+                          {dominado ? 'Dominado' : objetivo.status === 'EM_AQUISICAO' ? 'Em aquisição' : 'Não iniciado'}
+                        </Etiqueta>
+                      </p>
+                      {bloco.botao && (
+                        // Duas etapas: o primeiro clique mostra o que vai acontecer.
+                        confirmacaoAberta ? (
+                          <div
+                            ref={caixaConfirmacao}
+                            tabIndex={-1}
+                            role="group"
+                            aria-labelledby="confirmar-dominio"
+                            className="mt-3 rounded-lg border border-at bg-at-sup p-3.5"
+                          >
+                            <p id="confirmar-dominio" className="font-bold text-tinta">
+                              Confirmar o domínio deste objetivo?
+                            </p>
+                            <p className="mt-1 text-sm text-tinta2">
+                              O objetivo passa a dominado e isso fica registrado com o seu nome. Não há
+                              como desfazer pela tela.
+                            </p>
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              <Botao area="cli" onClick={() => void confirmarDominio(objetivo.id)}
+                                disabled={salvando}>
+                                {salvando ? 'Confirmando…' : 'Confirmar o domínio'}
+                              </Botao>
+                              <Botao area="cli" variante="secundaria" onClick={cancelarConfirmacao}
+                                disabled={salvando}>
+                                Cancelar
+                              </Botao>
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="mt-3">
+                            <Botao area="cli" ref={botaoConfirmar} onClick={abrirConfirmacao}>
+                              Confirmar o domínio
+                            </Botao>
+                          </p>
+                        )
+                      )}
+                    </Aviso>
+                  </div>
+                </section>
+
+                <section aria-labelledby="h-contextos" className="flex flex-col gap-3">
+                  <h2 id="h-contextos" className="text-lg font-bold">Comparação entre os três contextos</h2>
+
+                  {series.suficiencia.suficiente ? (
+                    <Cartao>
+                      <FaixasContexto clinica={series.clinica} casa={series.casa} escola={series.escola} />
+                    </Cartao>
+                  ) : (
+                    // Nada de versao parcial nem esmaecida: abaixo do minimo, a
+                    // tela diz o que falta, contexto por contexto.
+                    <Aviso tom="at" titulo="Dados insuficientes para comparar">
+                      <p className="max-w-[65ch] text-[15px] text-tinta">
+                        A comparação só aparece com pelo menos {SUFICIENCIA_MINIMA.registros} registros
+                        distribuídos em {SUFICIENCIA_MINIMA.semanas} semanas em cada contexto. Abaixo
+                        disso, a leitura seria enganosa.
+                      </p>
+                      <ul className="mt-2 flex list-disc flex-col gap-1 pl-5 text-[15px] text-tinta">
+                        {series.suficiencia.faltas.map((f) => <li key={f.contexto}>{frase(f)}</li>)}
+                      </ul>
+                    </Aviso>
                   )}
-                </Aviso>
-              </div>
-            </section>
-
-            <section aria-labelledby="h-contextos" className="flex flex-col gap-3">
-              <h2 id="h-contextos" className="text-lg font-bold">Comparação entre os três contextos</h2>
-
-              {suficiencia.suficiente ? (
-                <Cartao>
-                  <FaixasContexto clinica={series.clinica} casa={series.casa} escola={series.escola} />
-                </Cartao>
-              ) : (
-                // Nada de versao parcial nem esmaecida: abaixo do minimo, a
-                // tela diz o que falta, contexto por contexto.
-                <Aviso tom="at" titulo="Dados insuficientes para comparar">
-                  <p className="max-w-[65ch] text-[15px] text-tinta">
-                    A comparação só aparece com pelo menos {SUFICIENCIA_MINIMA.registros} registros
-                    distribuídos em {SUFICIENCIA_MINIMA.semanas} semanas em cada contexto. Abaixo
-                    disso, a leitura seria enganosa.
-                  </p>
-                  <ul className="mt-2 flex list-disc flex-col gap-1 pl-5 text-[15px] text-tinta">
-                    {suficiencia.faltas.map((f) => <li key={f.contexto}>{frase(f)}</li>)}
-                  </ul>
-                </Aviso>
-              )}
-            </section>
+                </section>
+              </>
+            )}
           </>
         )
       })()}
