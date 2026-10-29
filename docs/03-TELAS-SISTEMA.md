@@ -542,8 +542,8 @@ ler".
 | Frequência semanal | De uma a sete vezes, escrita em palavras: "três vezes por semana" |
 | Vídeo | Opcional. Só endereço que comece com `https://`, até 500 caracteres |
 
-- Ao lado, "Como a família vai ver": a prévia do cartão da tela 16, com o link
-  "Ver o vídeo" quando houver.
+- Ao lado, "Como a família vai ver": a prévia do cartão da tela 16, com o
+  "Para que serve" do objetivo escolhido e o link "Ver o vídeo" quando houver.
 - Prescrita: *"“{título}” foi prescrita. A família já pode ver a atividade."*
 - Sem plano vigente: *"Para prescrever, o paciente precisa de um plano
   vigente."*
@@ -553,8 +553,9 @@ ler".
 - a escrita é em linguagem cotidiana, e é do profissional: o sistema não
   reescreve o texto nem gera versão simplificada;
 - a validação é a mesma na tela e no servidor (`validarNovaAtividadeCasa`, no
-  `compartilhado`), e o banco confere de novo a frequência, os passos e o
-  vídeo;
+  `compartilhado`). O banco confere de novo o título, a descrição, as dicas, a
+  quantidade de passos, a frequência, o vídeo e a observação da família. Os 300
+  caracteres de cada passo, só a validação confere;
 - **o vídeo só vale com `https://`.** Um endereço `javascript:` no link
   executaria código na tela de quem tocasse nele: a da família, ou a do
   profissional, na prévia;
@@ -825,8 +826,8 @@ mais antigo.
      opções acima."*;
    - salvo: "Registro salvo", *"O profissional vai ver isso antes da próxima
      sessão. Obrigado por registrar."*
-3. **"O que você já registrou"**: a data e como foi. Quando quem registrou foi
-   outro responsável, o nome dele aparece (item 15b).
+3. **"O que você já registrou"**: a data, como foi e a observação. Quando quem
+   registrou foi outro responsável, o nome dele aparece (item 15b).
 
 **Um registro por dia** (item 15):
 
@@ -836,8 +837,9 @@ mais antigo.
   registrou hoje. Amanhã dá para registrar de novo."*, ou a *"Hoje já foi
   registrado por {nome}. Amanhã dá para registrar de novo."*;
 - se dois responsáveis tocarem ao mesmo tempo, o servidor grava um e recusa o
-  outro com *"Hoje já foi registrado por {nome}."* Depois da recusa, o aviso de
-  registro salvo some, para não aparecer ao lado do erro.
+  outro. A tela de quem foi recusado se refaz: o formulário dá lugar a *"Hoje
+  já foi registrado por {nome}. Amanhã dá para registrar de novo."*, e o foco
+  vai para esse aviso.
 
 **Atividade encerrada pela equipe:**
 
@@ -845,8 +847,8 @@ mais antigo.
 - aberta pelo endereço, mostra *"Esta atividade foi encerrada pela equipe."* e
   *"O que você registrou continua guardado, logo abaixo."*, sem o "Como foi
   hoje?";
-- quem tocar "Salvar" no instante em que ela é encerrada ouve a mesma frase: o
-  servidor confere e grava na mesma transação.
+- quem tocar "Salvar" no instante em que ela é encerrada vê a tela se refazer
+  com o aviso de encerrada: o servidor confere e grava na mesma transação.
 
 **Regras:**
 

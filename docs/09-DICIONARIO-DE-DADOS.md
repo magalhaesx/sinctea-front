@@ -1,6 +1,6 @@
 # 09 · Dicionário de dados
 
-Gerado em 19/10/2026 do catálogo do PostgreSQL 17, depois das 7 migrações do repositório (`20261015022852_inicial`, `20261015031253_caminhos_coerentes`, `20261015034333_chaves_compostas_sem_cascata`, `20261016004020_sessao_e_acesso_inicial`, `20261016022012_convite_token_resumo`, `20261017213654_evolucao_da_sessao`, `20261018231000_link_de_nova_senha`). **Não se edita à mão:** muda o esquema, gera de novo.
+Gerado em 29/10/2026 do catálogo do PostgreSQL 17, depois das 9 migrações do repositório (`20261015022852_inicial`, `20261015031253_caminhos_coerentes`, `20261015034333_chaves_compostas_sem_cascata`, `20261016004020_sessao_e_acesso_inicial`, `20261016022012_convite_token_resumo`, `20261017213654_evolucao_da_sessao`, `20261018231000_link_de_nova_senha`, `20261028203000_execucao_uma_por_dia`, `20261028230000_atividade_limites`). **Não se edita à mão:** muda o esquema, gera de novo.
 
 O significado de cada coluna está escrito a partir de `compartilhado/src/tipos.ts`, do `schema.prisma` e das regras do `CLAUDE.md`. O tipo, a nulidade, as chaves, as restrições, os índices e os gatilhos saem do próprio banco. O DER está em `docs/uml/SINCTEA_DER.svg` (todas as colunas) e `docs/uml/SINCTEA_DER_chaves.svg` (só as chaves).
 
@@ -13,7 +13,7 @@ O significado de cada coluna está escrito a partir de `compartilhado/src/tipos.
 - **Chave composta:** quando o mesmo paciente é alcançável por dois caminhos, uma chave estrangeira composta obriga os dois a concordarem; quando o caminho tem mais de um passo, um gatilho faz o mesmo.
 - Ações de chave estrangeira: *restringe* recusa a operação enquanto houver quem aponte; *cascata* propaga a mudança.
 
-**Totais:** 24 tabelas, 174 colunas, 39 chaves estrangeiras (5 compostas), 20 CHECKs, 10 gatilhos, 14 enumerações.
+**Totais:** 24 tabelas, 174 colunas, 39 chaves estrangeiras (5 compostas), 26 CHECKs, 10 gatilhos, 14 enumerações.
 
 ## 2. Enumerações
 
@@ -351,10 +351,10 @@ Atividade prescrita para casa, sempre ligada a um objetivo do plano do mesmo pac
 | `objetivoId` | uuid | não | FK | O objetivo a que a atividade serve. Tem de ser do mesmo paciente. |
 | `titulo` | text | não |  | Título, em linguagem da família. |
 | `descricao` | text | não |  | O que fazer. |
-| `passos` | text[] | não (CHECK) |  | Passo a passo, na ordem. Ao menos um. |
+| `passos` | text[] | não (CHECK) |  | Passo a passo, na ordem. De 1 a 10. |
 | `dicas` | text | não |  | O que ajuda quando não sai de primeira. |
 | `frequenciaSemanal` | integer | não |  | Quantas vezes por semana. |
-| `urlVideo` | text | sim |  | Vídeo de demonstração, quando houver. |
+| `urlVideo` | text | sim |  | Vídeo de demonstração, quando houver. Só endereço https://. |
 | `ativa` | boolean | não |  | Falso quando a prescrição foi encerrada. |
 | `prescritaEm` | timestamptz(3) | não |  | Quando foi prescrita. |
 
@@ -363,7 +363,12 @@ Atividade prescrita para casa, sempre ligada a um objetivo do plano do mesmo pac
 - Chave primária: (id)
 - Chave estrangeira: (objetivoId) → objetivo(id); ao apagar: restringe; ao atualizar: cascata
 - Chave estrangeira: (pacienteId) → paciente(id); ao apagar: restringe; ao atualizar: cascata
-- CHECK: passos com ao menos um elemento
+- CHECK: descricao com até 1000 caracteres
+- CHECK: dicas com até 1000 caracteres
+- CHECK: frequenciaSemanal entre 1 e 7
+- CHECK: passos com 1 a 10 elementos
+- CHECK: titulo com 1 a 120 caracteres
+- CHECK: urlVideo, quando houver, começa com https:// e tem até 500 caracteres
 - Gatilho: atividade_casa_mesmo_paciente — Recusa atividade cujo objetivo é de outro paciente.
 - Índice: (pacienteId)
 
@@ -378,7 +383,7 @@ O registro da família de que a atividade foi feita, e como foi.
 | `id` | uuid | não | PK | Identificador. |
 | `atividadeId` | uuid | não | FK | A atividade feita. |
 | `responsavelId` | uuid | não | FK | O familiar que registrou. |
-| `dataRealizacao` | date | não |  | O dia em que foi feita, data civil. |
+| `dataRealizacao` | date | não |  | O dia em que foi feita, data civil. Um registro por atividade por dia. |
 | `desempenho` | desempenho | não |  | Como foi: sozinho, com ajuda, ou não quis. |
 | `observacao` | text | sim |  | Comentário livre da família. |
 
@@ -387,7 +392,8 @@ O registro da família de que a atividade foi feita, e como foi.
 - Chave primária: (id)
 - Chave estrangeira: (atividadeId) → atividade_casa(id); ao apagar: restringe; ao atualizar: cascata
 - Chave estrangeira: (responsavelId) → responsavel(usuarioId); ao apagar: restringe; ao atualizar: cascata
-- Índice: (atividadeId)
+- Única: (atividadeId, dataRealizacao)
+- CHECK: observacao, quando houver, com até 500 caracteres
 
 ### 3.16 `escola`
 
