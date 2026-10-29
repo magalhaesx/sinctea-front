@@ -459,6 +459,7 @@ model AtividadeCasa {
   descricao         String
   passos            String[]
   dicas             String
+  /// CHECK 1..7 na migracao, como os demais limites da atividade (item 15b).
   frequenciaSemanal Int
   urlVideo          String?
   ativa             Boolean
@@ -484,8 +485,9 @@ model ExecucaoAtividadeCasa {
   responsavel Responsavel   @relation(fields: [responsavelId], references: [usuarioId])
 
   // Um registro por atividade por dia (item 15): a adesao da tela 9 conta dias.
+  // O indice unico comeca pela atividade e serve tambem a busca por ela: o
+  // indice so de atividadeId saiu na migracao atividade_limites (item 15b).
   @@unique([atividadeId, dataRealizacao])
-  @@index([atividadeId])
   @@map("execucao_atividade_casa")
 }
 

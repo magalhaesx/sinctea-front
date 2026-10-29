@@ -460,6 +460,8 @@ describe('atividade de casa (item 15)', () => {
       'javascript:alert(1)', 'JavaScript:alert(1)', ' javascript:alert(1)', 'data:text/html,<script>alert(1)</script>',
       'http://videos.exemplo.org/a', '//videos.exemplo.org/a', 'videos.exemplo.org/a', 'https://', 'https:///caminho',
       'https://exemplo.org/a b', 'https://exemplo.org/\njavascript:alert(1)',
+      // Em maiusculas, o banco recusaria (item 15b): o dominio recusa antes.
+      'HTTPS://videos.exemplo.org/a', 'Https://videos.exemplo.org/a',
     ]) {
       expect(ehEnderecoDeVideo(url), url).toBe(false)
       expect(validarNovaAtividadeCasa(atividade({ urlVideo: url })).urlVideo, url).toBeTruthy()

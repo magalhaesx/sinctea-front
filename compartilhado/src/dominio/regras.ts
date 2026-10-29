@@ -379,10 +379,11 @@ export function atividadeCasaPreenchida<T extends AtividadeCasaEscrita>(dados: T
 /**
  * Endereco de video que pode virar link: so https://. Um "javascript:" no
  * href executaria codigo na tela de quem tocasse nele — a da familia, ou a do
- * profissional, na previa da tela 9.
+ * profissional, na previa da tela 9. Em minusculas, como o CHECK
+ * atividade_casa_url_video_https confere no banco (item 15b).
  */
 export function ehEnderecoDeVideo(url: string): boolean {
-  if (url.length > LIMITES_ATIVIDADE_CASA.urlVideo || !/^https:\/\/[^\s/]\S*$/i.test(url)) return false
+  if (url.length > LIMITES_ATIVIDADE_CASA.urlVideo || !/^https:\/\/[^\s/]\S*$/.test(url)) return false
   try {
     const endereco = new URL(url)
     return endereco.protocol === 'https:' && endereco.hostname !== ''
