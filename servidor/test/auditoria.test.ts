@@ -225,6 +225,30 @@ describe('a exportacao', () => {
   }, 60_000)
 })
 
+describe('o item 17b', () => {
+  it('o CSV abre com a data e hora de Manaus, fecha com o instante em UTC e traz a entidade por extenso', async () => {
+    // 05/05/2025 23h30 em Manaus = 06/05 03h30 em UTC.
+    await prisma.registroAuditoria.create({ data: registro('2025-05-06T03:30:00.000Z', { entidade: 'PlanoTerapeutico', detalhe: 'Por extenso.' }) })
+    const csv = await exportar(c.coord, '?desde=2025-05-05&ate=2025-05-05')
+    const [cabecalho, linha] = csv.corpo.trim().split('\r\n')
+    expect(cabecalho.split(';')[0]).toBe('"Data e hora (Manaus)"')
+    expect(cabecalho.split(';').at(-1)).toBe('"Instante (UTC)"')
+    expect(linha.split(';')[0]).toBe('"05/05/2025 23:30:00"')
+    expect(linha.split(';').at(-1)).toBe('"2025-05-06T03:30:00.000Z"')
+    expect(linha).toContain('"Plano terapêutico"')
+    expect(linha).not.toContain('"PlanoTerapeutico"')
+    // A API continua com o nome tecnico.
+    const lista = await consultar(c.coord, '?desde=2025-05-05&ate=2025-05-05&entidade=PlanoTerapeutico')
+    expect(lista.corpo.itens.map((x: { entidade: string }) => x.entidade)).toEqual(['PlanoTerapeutico'])
+  })
+
+  it('a ordem da tela 13 tem indice proprio: ocorridoEm e id, do mais recente', async () => {
+    const [indice] = await prisma.$queryRaw<Array<{ indexdef: string }>>`
+      SELECT indexdef FROM pg_indexes WHERE tablename = 'registro_auditoria' AND indexname = 'registro_auditoria_ocorridoEm_id_idx'`
+    expect(indice?.indexdef).toMatch(/\("ocorridoEm" DESC, id DESC\)/)
+  })
+})
+
 describe('as pessoas do filtro', () => {
   it('de toda a trilha, com o nome do registro mais recente, em ordem alfabetica; sem linha na trilha', async () => {
     // A Ana, num registro antigo, com outro nome; e, agora, renomeada.

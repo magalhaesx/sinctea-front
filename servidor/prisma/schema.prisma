@@ -640,5 +640,7 @@ model RegistroAuditoria {
 
   @@index([pacienteId, ocorridoEm])
   @@index([usuarioId])
+  // A ordem da tela 13 (item 17b): a pagina sai do indice, sem ordenar a trilha inteira.
+  @@index([ocorridoEm(sort: Desc), id(sort: Desc)])
   @@map("registro_auditoria")
 }
