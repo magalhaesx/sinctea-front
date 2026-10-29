@@ -1125,6 +1125,25 @@ describe('atividades de casa (item 15): as decisoes do Cowork valem sobre o mock
     expect((await chamar(s.atividades.obter(atividade.id))).ativa).toBe(false)
     expect((await erroDe(s.atividades.registrarExecucao(atividade.id, 'SOZINHO'))).message).toBe('Esta atividade foi encerrada pela equipe.')
   })
+
+  it('item 15b: para que serve e a redacao acessivel do objetivo, a tecnica nunca; a execucao diz quem registrou', async () => {
+    const objetivo = banco.planos.flatMap((p) => p.objetivos).find((o) => o.id === 'o-001')!
+    await entrarComo('TERAPEUTA')
+    const atividade = await chamar(s.atividades.prescrever(nova({ titulo: 'Para que serve' })))
+    expect(atividade.paraQue).toBe(objetivo.descricaoAcessivel)
+    await entrarComo('RESPONSAVEL')
+    const eu = (await chamar(s.autenticacao.sessaoAtual()))!.usuario
+    const lista = await chamar(s.atividades.listarPorPaciente('p-001', { porPagina: 50 }))
+    const uma = await chamar(s.atividades.obter(atividade.id))
+    expect(uma.paraQue).toBe(objetivo.descricaoAcessivel)
+    const registro = await chamar(s.atividades.registrarExecucao(atividade.id, 'COM_AJUDA'))
+    expect(registro).toMatchObject({ responsavelId: eu.id, responsavelNome: eu.nome })
+    const historico = await chamar(s.atividades.listarExecucoes(atividade.id))
+    expect(historico.itens.map((e) => e.responsavelNome)).toEqual([eu.nome])
+    for (const resposta of [lista, uma, registro, historico]) {
+      expect(JSON.stringify(resposta)).not.toContain(objetivo.descricaoTecnica)
+    }
+  })
 })
 
 

@@ -16,6 +16,7 @@ import {
   ehResponsavelDe, exigirPacienteClinico, exigirPacienteClinicoOuFamilia, exigirPacienteDaFamilia,
   exigirResponsavelLegal,
 } from './acesso'
+import type { AtividadeGuardada, ExecucaoGuardada } from './dados'
 import {
   auditar, banco, exigirPerfil, exigirValido, gerarId, gravarSessao, naoEncontrado, paginar,
   paraSessaoUsuario, relogio, responder, todosUsuarios,
@@ -23,8 +24,19 @@ import {
 
 // ---------------------------------------------------------------- Atividades em casa
 
-function buscarAtividade(id: string): AtividadeCasa {
+function buscarAtividade(id: string): AtividadeGuardada {
   return banco.atividades.find((a) => a.id === id) ?? naoEncontrado('Atividade')
+}
+
+/** Como o mapeador do servidor (item 15b): do objetivo, so a redacao acessivel. */
+function comParaQue(a: AtividadeGuardada): AtividadeCasa {
+  const objetivo = banco.planos.flatMap((p) => p.objetivos).find((o) => o.id === a.objetivoId)
+  return { ...a, paraQue: objetivo?.descricaoAcessivel ?? '' }
+}
+
+/** O nome de quem registrou, lido na hora, e nao copiado na execucao. */
+function comQuemRegistrou(e: ExecucaoGuardada): ExecucaoAtividadeCasa {
+  return { ...e, responsavelNome: banco.responsaveis.find((r) => r.id === e.responsavelId)?.nome ?? '' }
 }
 
 export const atividadesMock: ServicoAtividadeCasa = {
@@ -35,13 +47,14 @@ export const atividadesMock: ServicoAtividadeCasa = {
     const itens = banco.atividades
       .filter((a) => a.pacienteId === pacienteId && (ativa === undefined || a.ativa === ativa))
       .sort((a, b) => b.prescritaEm.localeCompare(a.prescritaEm))
+      .map(comParaQue)
     return paginar(itens, filtro)
   }),
 
   obter: (id) => responder(() => {
     const atividade = buscarAtividade(id)
     exigirPacienteClinicoOuFamilia(atividade.pacienteId, 'AtividadeCasa')
-    return atividade
+    return comParaQue(atividade)
   }),
 
   prescrever: (dados) => responder(() => {
@@ -54,7 +67,7 @@ export const atividadesMock: ServicoAtividadeCasa = {
       erros.objetivoId = 'Escolha um objetivo do plano vigente deste paciente.'
     }
     exigirValido(erros)
-    const atividade: AtividadeCasa = {
+    const atividade: AtividadeGuardada = {
       ...atividadeCasaPreenchida(dados),
       id: gerarId('a'),
       ativa: true,
@@ -62,7 +75,7 @@ export const atividadesMock: ServicoAtividadeCasa = {
     }
     banco.atividades.push(atividade)
     auditar(sessao, { acao: 'CRIACAO', entidade: 'AtividadeCasa', idEntidade: atividade.id, pacienteId: atividade.pacienteId, detalhe: atividade.titulo })
-    return atividade
+    return comParaQue(atividade)
   }),
 
   /**
@@ -81,7 +94,7 @@ export const atividadesMock: ServicoAtividadeCasa = {
       acao: 'ALTERACAO', entidade: 'AtividadeCasa', idEntidade: atividade.id,
       pacienteId: atividade.pacienteId, detalhe: 'Prescrição encerrada.',
     })
-    return atividade
+    return comParaQue(atividade)
   }),
 
   registrarExecucao: (atividadeId, desempenho, observacao) => responder(() => {
@@ -101,7 +114,7 @@ export const atividadesMock: ServicoAtividadeCasa = {
       const quem = banco.responsaveis.find((r) => r.id === doDia.responsavelId)?.nome ?? 'outro responsável'
       throw new ErroServico('CONFLITO', textoDoRegistroRepetido(quem))
     }
-    const execucao: ExecucaoAtividadeCasa = {
+    const execucao: ExecucaoGuardada = {
       id: gerarId('ex'),
       atividadeId,
       responsavelId: sessao.usuario.id,
@@ -110,7 +123,7 @@ export const atividadesMock: ServicoAtividadeCasa = {
       observacao: observacao?.trim() || null,
     }
     banco.execucoes.push(execucao)
-    return execucao
+    return comQuemRegistrou(execucao)
   }),
 
   listarExecucoes: (atividadeId, filtro = {}) => responder(() => {
@@ -119,6 +132,7 @@ export const atividadesMock: ServicoAtividadeCasa = {
     const itens = banco.execucoes
       .filter((e) => e.atividadeId === atividadeId)
       .sort((a, b) => b.dataRealizacao.localeCompare(a.dataRealizacao))
+      .map(comQuemRegistrou)
     return paginar(itens, filtro)
   }),
 }

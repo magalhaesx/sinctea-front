@@ -689,6 +689,12 @@ export interface AtividadeCasa {
   urlVideo: string | null
   ativa: boolean
   prescritaEm: DataIso
+  /**
+   * Para que serve (item 15b): a redacao acessivel do objetivo, escrita pelo
+   * terapeuta, o mesmo nome do CartaoEscola. Campo derivado da resposta, fora
+   * do diagrama; a redacao tecnica nunca vem junto.
+   */
+  paraQue: string
 }
 
 export interface NovaAtividadeCasa {
@@ -706,6 +712,8 @@ export interface ExecucaoAtividadeCasa {
   id: string
   atividadeId: string
   responsavelId: string
+  /** Quem registrou (item 15b), lido do usuario na hora da leitura. */
+  responsavelNome: string
   dataRealizacao: DataCivil
   desempenho: Desempenho
   observacao: string | null

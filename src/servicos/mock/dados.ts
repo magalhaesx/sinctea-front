@@ -27,6 +27,14 @@ import { calcularExpiracaoConvite } from '@sinctea/compartilhado/dominio/regras'
 
 export const SENHA_DEMONSTRACAO = 'demonstracao'
 
+/**
+ * A atividade e a execucao como o mock as guarda (item 15b): o "para que
+ * serve" e o nome de quem registrou sao lidos na resposta, como no mapeador
+ * do servidor, e nao copiados aqui.
+ */
+export type AtividadeGuardada = Omit<AtividadeCasa, 'paraQue'>
+export type ExecucaoGuardada = Omit<ExecucaoAtividadeCasa, 'responsavelNome'>
+
 export interface BancoDemonstracao {
   profissionais: Profissional[]
   responsaveis: Responsavel[]
@@ -38,8 +46,8 @@ export interface BancoDemonstracao {
   sessoes: Sessao[]
   ocorrenciasComportamentais: OcorrenciaComportamental[]
   ocorrenciasEscolares: OcorrenciaEscolar[]
-  atividades: AtividadeCasa[]
-  execucoes: ExecucaoAtividadeCasa[]
+  atividades: AtividadeGuardada[]
+  execucoes: ExecucaoGuardada[]
   cartoes: CartaoEstrategia[]
   consentimentos: Consentimento[]
   convites: ConviteEscolar[]
@@ -556,7 +564,7 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
 
   // ------------------------------------------------------------ Atividades em casa
 
-  const atividades: AtividadeCasa[] = [
+  const atividades: AtividadeGuardada[] = [
     { id: 'a-001', pacienteId: 'p-001', objetivoId: 'o-001', titulo: 'Escolher o lanche apontando',
       descricao: 'Na hora do lanche, mostre duas opções e espere ele apontar ou pedir.',
       passos: ['Mostre duas opções de lanche, uma em cada mão.', 'Espere alguns segundos sem falar.', 'Entregue o que ele apontar ou pedir.'],
@@ -583,7 +591,7 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
       frequenciaSemanal: 5, urlVideo: null, ativa: true, prescritaEm: em(30, 11) },
   ]
 
-  const execucoes: ExecucaoAtividadeCasa[] = []
+  const execucoes: ExecucaoGuardada[] = []
   /* As tres ultimas caem dentro dos sete dias que a tela 9 conta, e com os tres
      desempenhos diferentes: e o que faz a divisao aparecer na adesao. */
   const desempenhos: ExecucaoAtividadeCasa['desempenho'][] =

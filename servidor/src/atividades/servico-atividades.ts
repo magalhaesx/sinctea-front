@@ -9,7 +9,9 @@ import {
 } from '@sinctea/compartilhado/dominio/regras'
 import { ServicoBanco } from '../banco/servico-banco.js'
 import { exigirPacienteClinico } from '../clinica/alcance.js'
-import { deDataCivil, paraAtividade, paraExecucao } from '../clinica/mapeadores.js'
+import {
+  deDataCivil, OBJETIVO_DA_ATIVIDADE, paraAtividade, paraExecucao, QUEM_REGISTROU,
+} from '../clinica/mapeadores.js'
 import type { DoPaciente } from '../clinica/servico-planos.js'
 import { exigirPacienteDaFamilia } from '../familia/acesso-familia.js'
 import { paginar } from '../http/paginacao.js'
@@ -47,7 +49,9 @@ export class ServicoAtividades {
   }
 
   private async buscar(atividadeId: string) {
-    const atividade = await this.banco.atividadeCasa.findUnique({ where: { id: exigirUuid(atividadeId, 'Atividade') } })
+    const atividade = await this.banco.atividadeCasa.findUnique({
+      where: { id: exigirUuid(atividadeId, 'Atividade') }, include: OBJETIVO_DA_ATIVIDADE,
+    })
     if (!atividade) throw new ErroServico('NAO_ENCONTRADO', 'Atividade não encontrada.')
     return atividade
   }
@@ -59,6 +63,7 @@ export class ServicoAtividades {
     const linhas = await this.banco.atividadeCasa.findMany({
       where: { pacienteId: alcance.pacienteId, ...(ativa === undefined ? {} : { ativa }) },
       orderBy: [{ prescritaEm: 'desc' }, { id: 'desc' }],
+      include: OBJETIVO_DA_ATIVIDADE,
     })
     return paginar(linhas.map(paraAtividade), filtro)
   }
@@ -98,9 +103,10 @@ export class ServicoAtividades {
       erros.objetivoId = 'Escolha um objetivo do plano vigente deste paciente.'
     }
     exigirValido(erros)
-    const criada = await this.banco.atividadeCasa.create({ data: {
-      pacienteId: paciente.id, objetivoId: objetivo!.id, ...escrita, ativa: true, prescritaEm: new Date(),
-    } })
+    const criada = await this.banco.atividadeCasa.create({
+      data: { pacienteId: paciente.id, objetivoId: objetivo!.id, ...escrita, ativa: true, prescritaEm: new Date() },
+      include: OBJETIVO_DA_ATIVIDADE,
+    })
     return paraAtividade(criada)
   }
 
@@ -111,7 +117,7 @@ export class ServicoAtividades {
     // Condicional na gravacao: dois encerramentos ao mesmo tempo, so um grava.
     const gravada = await this.banco.atividadeCasa.updateMany({ where: { id: atividade.id, ativa: true }, data: { ativa: false } })
     if (gravada.count !== 1) throw new ErroServico('CONFLITO', 'Esta atividade já foi encerrada.')
-    return paraAtividade(await this.banco.atividadeCasa.findUniqueOrThrow({ where: { id: atividade.id } }))
+    return paraAtividade(await this.banco.atividadeCasa.findUniqueOrThrow({ where: { id: atividade.id }, include: OBJETIVO_DA_ATIVIDADE }))
   }
 
   /**
@@ -138,17 +144,20 @@ export class ServicoAtividades {
         const [linha] = await tx.$queryRaw<Array<{ ativa: boolean }>>`
           SELECT "ativa" FROM "atividade_casa" WHERE "id" = ${atividade.id}::uuid FOR SHARE`
         if (!linha?.ativa) throw new ErroServico('CONFLITO', ATIVIDADE_ENCERRADA)
-        return tx.execucaoAtividadeCasa.create({ data: {
-          atividadeId: atividade.id, responsavelId: sessao.usuario.id, dataRealizacao, desempenho: desempenho!,
-          observacao: observacao || null,
-        } })
+        return tx.execucaoAtividadeCasa.create({
+          data: {
+            atividadeId: atividade.id, responsavelId: sessao.usuario.id, dataRealizacao, desempenho: desempenho!,
+            observacao: observacao || null,
+          },
+          include: QUEM_REGISTROU,
+        })
       })
       return { resultado: paraExecucao(execucao), pacienteId: atividade.pacienteId }
     } catch (erro) {
       if ((erro as { code?: string }).code !== 'P2002') throw erro
       const doDia = await this.banco.execucaoAtividadeCasa.findUnique({
         where: { atividadeId_dataRealizacao: { atividadeId: atividade.id, dataRealizacao } },
-        include: { responsavel: { include: { usuario: true } } },
+        include: QUEM_REGISTROU,
       })
       throw new ErroServico('CONFLITO', textoDoRegistroRepetido(doDia?.responsavel.usuario.nome ?? 'outro responsável'))
     }
@@ -159,6 +168,7 @@ export class ServicoAtividades {
     await this.alcancarPaciente(sessao, atividade.pacienteId)
     const linhas = await this.banco.execucaoAtividadeCasa.findMany({
       where: { atividadeId: atividade.id }, orderBy: [{ dataRealizacao: 'desc' }, { id: 'desc' }],
+      include: QUEM_REGISTROU,
     })
     return { resultado: paginar(linhas.map(paraExecucao), filtro), pacienteId: atividade.pacienteId }
   }

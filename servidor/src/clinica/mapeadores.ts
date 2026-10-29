@@ -89,18 +89,27 @@ export function paraOcorrencia(o: LinhaOcorrencia): OcorrenciaComportamental {
   }
 }
 
-/** A atividade leva o id do objetivo, e nao o objetivo: nada clinico sai para a familia (item 15). */
-export function paraAtividade(a: LinhaAtividade): AtividadeCasa {
+/**
+ * Do objetivo, a atividade leva o id e a redacao acessivel, o "para que serve"
+ * (item 15b): nada clinico sai para a familia. O select do Prisma so busca
+ * essa coluna, e a redacao tecnica nem chega a este mapeador.
+ */
+export const OBJETIVO_DA_ATIVIDADE = { objetivo: { select: { descricaoAcessivel: true } } } as const
+
+export function paraAtividade(a: LinhaAtividade & { objetivo: { descricaoAcessivel: string } }): AtividadeCasa {
   return {
     id: a.id, pacienteId: a.pacienteId, objetivoId: a.objetivoId, titulo: a.titulo, descricao: a.descricao,
     passos: a.passos, dicas: a.dicas, frequenciaSemanal: a.frequenciaSemanal, urlVideo: a.urlVideo, ativa: a.ativa,
-    prescritaEm: a.prescritaEm.toISOString(),
+    prescritaEm: a.prescritaEm.toISOString(), paraQue: a.objetivo.descricaoAcessivel,
   }
 }
 
-export function paraExecucao(e: LinhaExecucao): ExecucaoAtividadeCasa {
+/** Quem registrou (item 15b): o nome lido do usuario a cada leitura, e nao copiado na execucao. */
+export const QUEM_REGISTROU = { responsavel: { select: { usuario: { select: { nome: true } } } } } as const
+
+export function paraExecucao(e: LinhaExecucao & { responsavel: { usuario: { nome: string } } }): ExecucaoAtividadeCasa {
   return {
-    id: e.id, atividadeId: e.atividadeId, responsavelId: e.responsavelId, dataRealizacao: paraDataCivil(e.dataRealizacao),
-    desempenho: e.desempenho, observacao: e.observacao,
+    id: e.id, atividadeId: e.atividadeId, responsavelId: e.responsavelId, responsavelNome: e.responsavel.usuario.nome,
+    dataRealizacao: paraDataCivil(e.dataRealizacao), desempenho: e.desempenho, observacao: e.observacao,
   }
 }

@@ -368,3 +368,54 @@ describe('no banco', () => {
     } })).rejects.toThrow(/objetivo .* e de outro paciente/)
   })
 })
+
+describe('item 15b: para que serve e quem registrou', () => {
+  it('a atividade traz o para que serve, a redacao acessivel do objetivo, em toda rota; a tecnica nunca vai a familia', async () => {
+    const prescrita = await prescrever(c.ana, { titulo: 'Pedir com o cartão' })
+    expect(prescrita.corpo.paraQue).toBe(OBJETIVO.descricaoAcessivel)
+    const id = prescrita.corpo.id
+    const daClinica = await api.pedir('GET', `/pacientes/${p.miguel}/atividades`, { cookie: c.ana })
+    expect(daClinica.corpo.itens.map((a: { paraQue: string }) => a.paraQue)).toContain(OBJETIVO.descricaoAcessivel)
+
+    // Tudo o que a familia recebe: a lista, a atividade, o registro, o historico e a encerrada.
+    const daFamilia: unknown[] = []
+    for (const quem of ['mae', 'pai']) {
+      const lista = await api.pedir('GET', `/pacientes/${p.miguel}/atividades`, { cookie: c[quem] })
+      expect(lista.corpo.itens.length, quem).toBeGreaterThan(0)
+      for (const a of lista.corpo.itens) expect(a.paraQue, quem).toBe(OBJETIVO.descricaoAcessivel)
+      const uma = await api.pedir('GET', `/atividades/${id}`, { cookie: c[quem] })
+      expect(uma.corpo.paraQue, quem).toBe(OBJETIVO.descricaoAcessivel)
+      daFamilia.push(lista.corpo, uma.corpo)
+    }
+    const registro = await registrar(c.mae, id)
+    expect(registro.status, JSON.stringify(registro.corpo)).toBe(201)
+    daFamilia.push(registro.corpo, (await api.pedir('GET', `/atividades/${id}/execucoes`, { cookie: c.pai })).corpo)
+    const encerrada = await api.pedir('POST', `/atividades/${id}/encerramento`, { cookie: c.ana })
+    expect(encerrada.corpo.paraQue).toBe(OBJETIVO.descricaoAcessivel)
+    daFamilia.push((await api.pedir('GET', `/atividades/${id}`, { cookie: c.mae })).corpo)
+
+    for (const resposta of daFamilia) {
+      expect(JSON.stringify(resposta)).not.toContain(OBJETIVO.descricaoTecnica)
+      expect(JSON.stringify(resposta)).not.toContain(OBJETIVO.dominio)
+    }
+  })
+
+  it('cada execucao diz quem registrou, com o nome lido do usuario na hora, para a clinica e para a familia', async () => {
+    const id = (await prescrever(c.ana, { titulo: 'Guardar os brinquedos' })).corpo.id
+    const r = await registrar(c.pai, id)
+    expect(r.corpo).toMatchObject({ responsavelId: u.pai, responsavelNome: 'Paulo Ficticio' })
+    for (const quem of ['ana', 'coord', 'mae', 'pai']) {
+      const historico = await api.pedir('GET', `/atividades/${id}/execucoes`, { cookie: c[quem] })
+      expect(historico.corpo.itens.map((e: { responsavelNome: string }) => e.responsavelNome), quem).toEqual(['Paulo Ficticio'])
+    }
+
+    // O nome corrigido na rede de apoio vale ja na leitura seguinte: a execucao nao guarda copia.
+    const editado = await api.pedir('PUT', `/pacientes/${p.miguel}/responsaveis/${u.pai}`, {
+      cookie: c.ana, corpo: { nome: 'Paulo Ficticio Nogueira', telefone: '(92) 90000-0000', parentesco: 'Pai' },
+    })
+    expect(editado.status, JSON.stringify(editado.corpo)).toBe(200)
+    const depois = await api.pedir('GET', `/atividades/${id}/execucoes`, { cookie: c.mae })
+    expect(depois.corpo.itens[0].responsavelNome).toBe('Paulo Ficticio Nogueira')
+    expect((await registrar(c.mae, id)).corpo.mensagem).toBe('Hoje já foi registrado por Paulo Ficticio Nogueira.')
+  })
+})
