@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { Tela } from '../LayoutApp'
-import { SO_CAMINHO_PRINCIPAL } from '../caminhoPrincipal'
 import { Aviso } from '../../ui/Aviso'
 import { Botao, BotaoLink } from '../../ui/Botao'
 import { Cartao } from '../../ui/Cartao'
@@ -424,11 +423,9 @@ export function Ficha() {
                 <BotaoLink para={`/app/clinica/pacientes/${p.id}/evolucao`} area="cli" variante="secundaria">
                   Ver evolução por objetivo
                 </BotaoLink>
-                {!SO_CAMINHO_PRINCIPAL && (
-                  <BotaoLink para={`/app/clinica/pacientes/${p.id}/relatorio`} area="cli" variante="secundaria">
-                    Emitir relatório
-                  </BotaoLink>
-                )}
+                <BotaoLink para={`/app/clinica/pacientes/${p.id}/relatorio`} area="cli" variante="secundaria">
+                  Emitir relatório
+                </BotaoLink>
               </div>
             </section>
           </>

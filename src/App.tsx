@@ -64,6 +64,8 @@ const titulos: [padrao: string, titulo: string][] = [
   ['/app/familia/consentimento', 'Autorizar o acesso da escola'],
   ['/app/clinica/pacientes/:id/atividades', 'Atividades para casa'],
   ['/app/clinica/pacientes/:id/evolucao', 'Evolução por objetivo'],
+  ['/app/clinica/pacientes/:id/relatorio', 'Relatório de evolução'],
+  ['/app/clinica/pacientes/:id/relatorio/:relatorioId', 'Relatório emitido'],
   ['/app/familia/atividades/:id', 'Atividade em casa'],
   ['/app/escola', 'Meus alunos'],
   ['/app/escola/:pacienteId', 'Cartão de estratégias'],
@@ -72,8 +74,6 @@ const titulos: [padrao: string, titulo: string][] = [
   ['/app/ajuda', 'Acessibilidade e ajuda'],
   // Fora do caminho principal: so com o mock (app/caminhoPrincipal.ts).
   ...(SO_CAMINHO_PRINCIPAL ? [] : [
-    ['/app/clinica/pacientes/:id/relatorio', 'Relatório de evolução'],
-    ['/app/clinica/pacientes/:id/relatorio/:relatorioId', 'Relatório emitido'],
     ['/app/coordenacao', 'Indicadores da clínica'],
     ['/dev/estados', 'Vitrine de estados'],
   ] as [string, string][]),
@@ -131,6 +131,8 @@ export function App() {
         <Route path="clinica/pacientes/:id/sessao" element={protegida(CLINICA, <RegistroSessao />)} />
         <Route path="clinica/pacientes/:id/atividades" element={protegida(CLINICA, <Atividades />)} />
         <Route path="clinica/pacientes/:id/evolucao" element={protegida(CLINICA, <Evolucao />)} />
+        <Route path="clinica/pacientes/:id/relatorio" element={protegida(CLINICA, <Relatorio />)} />
+        <Route path="clinica/pacientes/:id/relatorio/:relatorioId" element={protegida(CLINICA, <RelatorioEmitido />)} />
 
         <Route path="coordenacao/planos" element={protegida(['COORDENADOR'], <Planos />)} />
         <Route path="coordenacao/auditoria" element={protegida(['COORDENADOR'], <Auditoria />)} />
@@ -154,8 +156,6 @@ export function App() {
             cai no "*" e volta ao painel do perfil. */}
         {!SO_CAMINHO_PRINCIPAL && (
           <>
-            <Route path="clinica/pacientes/:id/relatorio" element={protegida(CLINICA, <Relatorio />)} />
-            <Route path="clinica/pacientes/:id/relatorio/:relatorioId" element={protegida(CLINICA, <RelatorioEmitido />)} />
             <Route path="coordenacao" element={protegida(['COORDENADOR'], <PainelCoordenacao />)} />
           </>
         )}

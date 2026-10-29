@@ -12,6 +12,7 @@ import { EstadoErro } from '../../ui/EstadoErro'
 import { Paginacao } from '../../ui/Paginacao'
 import { FolhaRelatorio, NOME_DO_DESTINATARIO } from '../../componentes/FolhaRelatorio'
 import { diaCivilEm, emData, emDataCivil } from '@sinctea/compartilhado/dominio/datas'
+import { SEM_PLANO_VIGENTE, validarPedidoRelatorio } from '@sinctea/compartilhado/dominio/relatorio'
 import {
   ErroServico, servicos, type ConteudoRelatorio, type Destinatario, type Pagina,
   type PedidoRelatorio, type PlanoTerapeutico, type RelatorioEvolucao,
@@ -30,6 +31,11 @@ import {
  *
  * Nao ha botao que escreva as consideracoes: o relatorio e a leitura clinica
  * de quem assina (regra 4 do CLAUDE.md).
+ *
+ * Item 18: so com o plano vigente, e o pedido passa por
+ * validarPedidoRelatorio antes de ir, a mesma conferencia do servidor: o
+ * periodo em dias de Manaus, sem passar de hoje, e as consideracoes ate 4.000
+ * caracteres.
  */
 
 const POR_PAGINA = 5
@@ -42,6 +48,13 @@ type Estado<T> =
 
 export function Relatorio() {
   const { id = '' } = useParams()
+  // Uma tela por paciente: indo de um paciente a outro pelo endereco, a rota e
+  // a mesma e o React manteria o estado. Com a chave, nada do pedido — os
+  // objetivos escolhidos, as consideracoes, a previa — passa para o outro.
+  return <EmitirRelatorio key={id} id={id} />
+}
+
+function EmitirRelatorio({ id }: { id: string }) {
   const navegar = useNavigate()
 
   const [plano, setPlano] = useState<Estado<PlanoTerapeutico>>({ tipo: 'carregando' })
@@ -49,11 +62,12 @@ export function Relatorio() {
   const [pagina, setPagina] = useState(1)
   const [tentativa, setTentativa] = useState(0)
 
-  const hoje = new Date()
+  const agora = new Date()
+  const hoje = diaCivilEm(agora)
   const [periodoInicio, setPeriodoInicio] = useState(
-    diaCivilEm(new Date(hoje.getTime() - DIAS_PADRAO * 86_400_000)),
+    diaCivilEm(new Date(agora.getTime() - DIAS_PADRAO * 86_400_000)),
   )
-  const [periodoFim, setPeriodoFim] = useState(diaCivilEm(hoje))
+  const [periodoFim, setPeriodoFim] = useState(hoje)
   const [objetivoIds, setObjetivoIds] = useState<string[]>([])
   const [destinatario, setDestinatario] = useState<Destinatario>('PROFISSIONAIS')
   const [consideracoes, setConsideracoes] = useState('')
@@ -105,9 +119,16 @@ export function Relatorio() {
       : { geral: (erro as Error).message ?? 'Não foi possível concluir agora.' }
   }
 
+  /** A mesma conferencia do servidor, antes de ir: o erro aparece no campo, sem esperar a rede. */
+  const conferir = (emitir: boolean) => {
+    const invalidos = validarPedidoRelatorio(pedido(), hoje, { emitir })
+    setErros(invalidos)
+    return Object.keys(invalidos).length === 0
+  }
+
   const previsualizar = async (evento: FormEvent) => {
     evento.preventDefault()
-    setErros({})
+    if (!conferir(false)) { setPrevia(null); return }
     setOcupado(true)
     try {
       setPrevia(await servicos.relatorios.previsualizar(id, pedido()))
@@ -121,7 +142,7 @@ export function Relatorio() {
   }
 
   const emitir = async () => {
-    setErros({})
+    if (!conferir(true)) return
     setOcupado(true)
     try {
       const relatorio = await servicos.relatorios.emitir(id, pedido())
@@ -148,6 +169,8 @@ export function Relatorio() {
     && plano.erro.codigo === 'ACESSO_NEGADO'
   const semPlano = plano.tipo === 'erro' && plano.erro instanceof ErroServico
     && plano.erro.codigo === 'NAO_ENCONTRADO'
+  // Rascunho, em validacao ou devolvido: o documento so sai do plano vigente.
+  const vigente = plano.tipo === 'pronto' && plano.dados.status === 'VIGENTE'
 
   return (
     <Tela area="cli" caminho={['Área clínica', PACIENTES, doPaciente(id, null), 'Relatório de evolução']}>
@@ -191,6 +214,18 @@ export function Relatorio() {
               campo de data, e a 320px o bloco passa da borda. */}
           <section aria-labelledby="h-pedido" className="flex min-w-0 flex-col gap-3">
             <h2 id="h-pedido" className="text-lg font-bold">O que entra no relatório</h2>
+            {!vigente && (
+              <Cartao>
+                <p className="text-tinta2">{SEM_PLANO_VIGENTE}</p>
+                <p className="mt-3">
+                  <Link to={`/app/clinica/pacientes/${id}/plano`} className="font-bold text-cli-ink underline">
+                    Abrir o plano terapêutico
+                  </Link>
+                </p>
+              </Cartao>
+            )}
+
+            {vigente && (
             <Cartao>
               <form onSubmit={(e) => void previsualizar(e)} className="flex flex-col gap-4">
                 {/* Os dois campos de data precisam poder encolher: o seletor
@@ -202,11 +237,11 @@ export function Relatorio() {
                     {/* min-w-0: o campo de data tem largura minima propria, do
                         seletor nativo, e a 320px ela estoura a coluna. */}
                     <input id="inicio" type="date" className={`${campo} min-w-0`} value={periodoInicio}
-                      onChange={(e) => setPeriodoInicio(e.target.value)} />
+                      max={periodoFim || hoje} onChange={(e) => setPeriodoInicio(e.target.value)} />
                   </Campo>
                   <Campo id="fim" rotulo="Fim do período">
                     <input id="fim" type="date" className={`${campo} min-w-0`} value={periodoFim}
-                      onChange={(e) => setPeriodoFim(e.target.value)} />
+                      min={periodoInicio || undefined} max={hoje} onChange={(e) => setPeriodoFim(e.target.value)} />
                   </Campo>
                 </div>
                 <Erro chave="periodo" />
@@ -284,6 +319,7 @@ export function Relatorio() {
                 </div>
               </form>
             </Cartao>
+            )}
 
             <section aria-labelledby="h-historico" className="flex flex-col gap-3">
               <h2 id="h-historico" className="text-lg font-bold">Relatórios emitidos</h2>
@@ -347,6 +383,8 @@ export function Relatorio() {
             </section>
           </section>
 
+          {/* Sem plano vigente nao ha o que pre-visualizar: a coluna nao aparece. */}
+          {vigente && (
           <section aria-labelledby="h-previa" className="flex min-w-0 flex-col gap-3">
             <h2 id="h-previa" className="text-lg font-bold">Pré-visualização</h2>
             <div ref={regiaoPrevia} tabIndex={-1}>
@@ -362,6 +400,7 @@ export function Relatorio() {
               )}
             </div>
           </section>
+          )}
         </div>
       )}
     </Tela>

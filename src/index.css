@@ -71,6 +71,10 @@ body {
      controles da tela. Nada disso pertence ao documento. */
   header, nav, .nao-imprimir { display: none !important; }
 
+  /* O cabecalho da folha e documento, e nao cromo: paciente, periodo e
+     destinatario vao para o papel. Mais especifico, vence a regra acima. */
+  .folha-relatorio header { display: block !important; }
+
   main {
     padding: 0 !important;
     background: #fff !important;
