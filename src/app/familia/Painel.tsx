@@ -204,27 +204,33 @@ export function PainelFamilia() {
                     </p>
                   </Cartao>
                 ) : (
-                  dados.dados.objetivos.map((o) => (
-                    <Cartao key={o.id}>
-                      {/* So a redacao acessivel: a tecnica nao sai do servico. */}
-                      <h3 className="text-base font-bold">{o.descricaoAcessivel}</h3>
-                      <div className="mt-3">
-                        {/* A descricao ja e o h3 acima: repeti-la no rotulo
-                            faria o leitor de tela dizer a frase duas vezes. */}
-                        <Medidor
-                          valor={o.percentualAtual}
-                          area="fam"
-                          rotulo="Frequência"
-                          emPalavras={frequenciaEmLinguagemCotidiana(o.percentualAtual)}
-                        />
-                      </div>
-                      {o.status === 'DOMINADO' && (
-                        <p className="mt-2">
-                          <Etiqueta tom="ok" simbolo="✓">Já consegue sozinho</Etiqueta>
-                        </p>
-                      )}
-                    </Cartao>
-                  ))
+                  <ul className="flex flex-col gap-3">
+                    {dados.dados.objetivos.map((o) => (
+                      <li key={o.id}>
+                        <Cartao>
+                          {/* So a redacao acessivel: a tecnica nao sai do servico.
+                              E texto corrido, e nao titulo: peso normal e
+                              justificado (item 20). */}
+                          <p className="texto-corrido text-[15px]">{o.descricaoAcessivel}</p>
+                          <div className="mt-3">
+                            {/* A descricao ja e o paragrafo acima: repeti-la no
+                                rotulo faria o leitor de tela dizer a frase duas vezes. */}
+                            <Medidor
+                              valor={o.percentualAtual}
+                              area="fam"
+                              rotulo="Frequência"
+                              emPalavras={frequenciaEmLinguagemCotidiana(o.percentualAtual)}
+                            />
+                          </div>
+                          {o.status === 'DOMINADO' && (
+                            <p className="mt-2">
+                              <Etiqueta tom="ok" simbolo="✓">Já consegue sozinho</Etiqueta>
+                            </p>
+                          )}
+                        </Cartao>
+                      </li>
+                    ))}
+                  </ul>
                 )}
               </section>
 
