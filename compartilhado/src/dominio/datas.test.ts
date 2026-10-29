@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import type { Consentimento } from '../tipos.js'
 import {
-  dataIsoParaLocal, diaCivilEm, diaIso, emData, emDataCivil, fimDaValidade, inicioDoDia, partesDaDataCivil,
+  dataEHoraNaInstancia, dataIsoParaLocal, diaCivilEm, diaIso, emData, emDataCivil, fimDaValidade, inicioDoDia, partesDaDataCivil,
 } from './datas.js'
 import { idadeEmAnos, situacaoConsentimento } from './regras.js'
 
@@ -96,5 +96,12 @@ describe('diaIso', () => {
 describe('emData', () => {
   it('mostra a data no formato de quem le', () => {
     expect(emData('2019-03-12')).toBe('12/03/2019')
+  })
+})
+
+describe('dataEHoraNaInstancia (item 17b)', () => {
+  it('o relogio de Manaus, com os segundos: 03h30 em UTC ainda e 23h30 do dia anterior la', () => {
+    expect(dataEHoraNaInstancia(new Date('2026-10-30T03:30:05.000Z'))).toBe('29/10/2026 23:30:05')
+    expect(dataEHoraNaInstancia(new Date('2026-01-01T04:00:00.000Z'))).toBe('01/01/2026 00:00:00')
   })
 })

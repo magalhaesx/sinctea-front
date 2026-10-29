@@ -9,7 +9,7 @@
 
 import type { AcaoAuditoria, FiltroAuditoria, Perfil, RegistroAuditoria, RegistroDaTrilha } from '../tipos.js'
 import { montarCsv } from './csv.js'
-import { diaCivilEm, partesDaDataCivil } from './datas.js'
+import { dataEHoraNaInstancia, diaCivilEm, partesDaDataCivil } from './datas.js'
 
 /**
  * De que area veio o registro, pelo perfil com que a pessoa agia. Sem perfil
@@ -133,6 +133,39 @@ export const ENTIDADES_AUDITADAS = [
   'Profissional', 'RegistroAuditoria',
 ] as const
 
+/**
+ * O nome de cada entidade como a coordenacao le (item 17b): no filtro, na
+ * tabela e no CSV. O endereco e a API continuam com o nome tecnico. Entidade
+ * nova em ENTIDADES_AUDITADAS precisa de nome aqui: o tipo e o teste acusam.
+ */
+export const NOME_DA_ENTIDADE: Record<(typeof ENTIDADES_AUDITADAS)[number], string> = {
+  Paciente: 'Paciente',
+  VinculoFamiliar: 'Vínculo familiar',
+  Responsavel: 'Responsável',
+  PlanoTerapeutico: 'Plano terapêutico',
+  Objetivo: 'Objetivo',
+  CartaoEstrategia: 'Cartão de estratégias',
+  Sessao: 'Sessão',
+  RegistroAtividade: 'Tentativa na sessão',
+  OcorrenciaComportamental: 'Evento comportamental',
+  OcorrenciaEscolar: 'Ocorrência da escola',
+  AtividadeCasa: 'Atividade de casa',
+  ExecucaoAtividadeCasa: 'Registro da atividade de casa',
+  Consentimento: 'Autorização da escola',
+  ConviteEscolar: 'Convite da escola',
+  VinculoEscolar: 'Vínculo com a escola',
+  Escola: 'Escola',
+  RelatorioEvolucao: 'Relatório de evolução',
+  Indicadores: 'Indicadores da clínica',
+  Usuario: 'Conta de usuário',
+  Profissional: 'Dados profissionais',
+  RegistroAuditoria: 'Registro de auditoria',
+}
+
+/** O nome por extenso; o que nao esta na lista sai com o nome tecnico, e nao some. */
+export const nomeDaEntidade = (entidade: string): string =>
+  (NOME_DA_ENTIDADE as Record<string, string>)[entidade] ?? entidade
+
 export const ACOES_AUDITADAS: readonly AcaoAuditoria[] = [
   'CONCESSAO_ACESSO', 'REVOGACAO_ACESSO', 'LEITURA_AUTORIZADA', 'ACESSO_NEGADO', 'CRIACAO', 'ALTERACAO',
 ]
@@ -188,13 +221,17 @@ export function descreverFiltroAuditoria(filtro: FiltroAuditoria): string {
  * O CSV da trilha, o mesmo no mock e no servidor, sem a coluna do IP. A
  * protecao contra formula e do celulaCsv, como em qualquer celula. A versao
  * anterior sai em texto legivel, e nao em JSON: quem abre a planilha quer ler.
+ *
+ * Item 17b: a primeira coluna e a data e hora de Manaus, como na tela; a
+ * ultima, o instante exato em UTC. A entidade sai por extenso.
  */
 export function csvDaAuditoria(registros: RegistroDaTrilha[]): string {
   return montarCsv(
-    ['Data e hora', 'Usuário', 'Perfil', 'Ação', 'Entidade', 'Identificador', 'Paciente', 'Origem', 'Detalhe', 'Versão anterior'],
+    ['Data e hora (Manaus)', 'Usuário', 'Perfil', 'Ação', 'Entidade', 'Identificador', 'Paciente', 'Origem', 'Detalhe',
+      'Versão anterior', 'Instante (UTC)'],
     registros.map((r) => [
-      r.ocorridoEm, r.usuarioNome ?? '', r.perfil ?? '', r.acao, r.entidade,
-      r.idEntidade ?? '', r.pacienteId ?? '', r.origem, r.detalhe, versaoAnteriorEmTexto(r.valorAnterior),
+      dataEHoraNaInstancia(new Date(r.ocorridoEm)), r.usuarioNome ?? '', r.perfil ?? '', r.acao, nomeDaEntidade(r.entidade),
+      r.idEntidade ?? '', r.pacienteId ?? '', r.origem, r.detalhe, versaoAnteriorEmTexto(r.valorAnterior), r.ocorridoEm,
     ]),
   )
 }

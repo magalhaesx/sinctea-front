@@ -73,6 +73,12 @@ export function diaCivilEm(instante: Date): DataCivil {
   return new Date(instante.getTime() + DESLOCAMENTO_MS).toISOString().slice(0, 10)
 }
 
+/** "29/10/2026 06:41:40": o instante no relogio de Manaus, qualquer que seja o fuso da maquina. */
+export function dataEHoraNaInstancia(instante: Date): string {
+  const local = new Date(instante.getTime() + DESLOCAMENTO_MS).toISOString()
+  return `${emDataCivil(local.slice(0, 10))} ${local.slice(11, 19)}`
+}
+
 // ---------------------------------------------------------------- Instante
 
 /**

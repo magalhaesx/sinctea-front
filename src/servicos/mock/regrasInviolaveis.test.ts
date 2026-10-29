@@ -838,9 +838,9 @@ describe('regra 6 — auditoria imutavel', () => {
     const csv = await chamar(s.auditoria.exportar({ entidade: 'OcorrenciaEscolar' }))
     const linhas = csv.trimEnd().split('\r\n')
 
-    // Dez colunas, com a nova no fim.
-    expect(linhas[0].split(';')).toHaveLength(10)
-    expect(linhas[0]).toContain('"Versão anterior"')
+    // Onze colunas: a versao anterior e, desde o item 17b, o instante em UTC no fim.
+    expect(linhas[0].split(';')).toHaveLength(11)
+    expect(linhas[0].split(';').slice(-2)).toEqual(['"Versão anterior"', '"Instante (UTC)"'])
 
     // A linha da correcao traz os campos legiveis: nem chave, nem aspas de JSON.
     const correcao = linhas.find((l) => l.includes('Ocorrência corrigida pelo professor'))!
@@ -851,7 +851,7 @@ describe('regra 6 — auditoria imutavel', () => {
 
     // Criacao nao tem versao anterior: a decima coluna fica vazia.
     const criacao = linhas.find((l) => l.includes('"CRIACAO"'))!
-    expect(criacao.endsWith(';""')).toBe(true)
+    expect(criacao.split(';')[9]).toBe('""')
   })
 
   it('exportar e dado saindo do sistema, e por isso fica auditado', async () => {

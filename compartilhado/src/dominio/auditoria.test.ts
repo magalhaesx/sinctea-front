@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import type { RegistroDaTrilha } from '../tipos.js'
 import {
-  anterioresQueMudaram, camposAnteriores, csvDaAuditoria, descreverFiltroAuditoria, nomeDoArquivoDaAuditoria,
-  perfisQueMudaram, semNomeNaTrilhaAdministrativa, validarFiltroAuditoria, versaoAnteriorEmTexto,
+  anterioresQueMudaram, camposAnteriores, csvDaAuditoria, descreverFiltroAuditoria, ENTIDADES_AUDITADAS, NOME_DA_ENTIDADE,
+  nomeDaEntidade, nomeDoArquivoDaAuditoria, perfisQueMudaram, semNomeNaTrilhaAdministrativa, validarFiltroAuditoria,
+  versaoAnteriorEmTexto,
 } from './auditoria.js'
 import { jsonCanonico } from './hash.js'
 
@@ -117,5 +118,31 @@ describe('o filtro da tela 13 (item 17)', () => {
     expect(csv).not.toContain('203.0.113.9')
     expect(csv).toContain(`"'=HYPERLINK(""x"")"`)
     expect(csv).toContain(`"'+cmd"`)
+  })
+})
+
+describe('a tela 13 por extenso (item 17b)', () => {
+  it('toda entidade da lista fechada tem nome por extenso, e nenhum nome se repete', () => {
+    const semNome = ENTIDADES_AUDITADAS.filter((e) => !(NOME_DA_ENTIDADE as Record<string, string | undefined>)[e]?.trim())
+    expect(semNome).toEqual([])
+    expect(new Set(Object.values(NOME_DA_ENTIDADE)).size).toBe(ENTIDADES_AUDITADAS.length)
+    expect(nomeDaEntidade('PlanoTerapeutico')).toBe('Plano terapêutico')
+    // O que nao esta na lista sai com o nome tecnico.
+    expect(nomeDaEntidade('Desconhecida')).toBe('Desconhecida')
+  })
+
+  it('o CSV comeca com a data e hora de Manaus, termina com o instante em UTC e traz a entidade por extenso', () => {
+    const registro = {
+      id: 'r-1', ocorridoEm: '2026-10-30T03:30:05.000Z', usuarioId: null, usuarioNome: null, perfil: null,
+      acao: 'CRIACAO', entidade: 'ExecucaoAtividadeCasa', idEntidade: null, pacienteId: null, origem: 'SISTEMA',
+      detalhe: 'Registro.', valorAnterior: null,
+    } as RegistroDaTrilha
+    const [cabecalho, linha] = csvDaAuditoria([registro]).replace(String.fromCharCode(0xfeff), '').split(String.fromCharCode(13, 10))
+    expect(cabecalho.startsWith('"Data e hora (Manaus)";')).toBe(true)
+    expect(cabecalho.endsWith(';"Instante (UTC)"')).toBe(true)
+    expect(linha.startsWith('"29/10/2026 23:30:05";')).toBe(true)
+    expect(linha.endsWith(';"2026-10-30T03:30:05.000Z"')).toBe(true)
+    expect(linha).toContain('"Registro da atividade de casa"')
+    expect(linha).not.toContain('"ExecucaoAtividadeCasa"')
   })
 })
