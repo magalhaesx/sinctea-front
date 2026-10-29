@@ -206,7 +206,7 @@ Atualizado em 18/10/2026, lendo o código — não a memória.
   simulada que aplica controle de acesso e auditoria; o cliente da API, que
   não aplica regra nenhuma. A versão publicada usa só a API, e o mock fica
   fora do pacote; no desenvolvimento, `VITE_API_URL` escolhe entre as duas
-- **613 testes em 52 arquivos, nos três pacotes**, rodados por um único
+- **615 testes em 52 arquivos, nos três pacotes**, rodados por um único
   `npm test` na raiz, sem passo manual. O principal ainda é
   `src/servicos/mock/regrasInviolaveis.test.ts`, que verifica as regras
   invioláveis na camada de dados, e não na tela. Os 299 do servidor rodam contra
@@ -556,6 +556,20 @@ em produção (o antigo passo B5) foi cancelada. No código, hoje:
   prévia. Na impressão, o cabeçalho da folha (paciente, período e
   destinatário) sumia com a barra do topo; corrigido em `src/index.css`. Testes
   em `servidor/test/relatorios.test.ts`, quebras no `docs/06`
+- **Item 20 — texto corrido justificado e as telas 15, 16 e 18.** Uma classe
+  só, `.texto-corrido` (`src/index.css`): justificado, com hifenização pelo
+  `lang="pt-BR"` da página e no máximo 65 caracteres por linha. Vale para o
+  texto que se lê — redações do objetivo, a atividade de casa, o cartão de
+  estratégias, a evolução da sessão, as considerações do relatório, as
+  observações e o texto do aviso —; título, rótulo, botão, link com cara de
+  botão e campo dentro dele voltam ao alinhamento de sempre e não partem
+  palavra. Na tela 15, o objetivo sai do negrito. A tela 16 ocupa a largura,
+  com a atividade à esquerda e o registro e o histórico à direita a partir de
+  lg, e o `estreito` do `<Tela>` saiu, sem uso. Na tela 18, h2 para cada
+  estratégia e h3 para "Para que serve" e os três blocos, em três colunas da
+  mesma altura a partir de lg, e com o alerta embaixo entre md e lg; uma linha
+  separa as estratégias, e no celular o botão ocupa a largura. Nada mudou no
+  servidor nem nos contratos
 - `npm run criar-administrador -w @sinctea/servidor -- .env.producao --nome
   "Nome Completo" --email voce@exemplo.com` cria o primeiro administrador:
   nome e e-mail vêm da linha de comando, e só a senha é pedida, escondida e duas
