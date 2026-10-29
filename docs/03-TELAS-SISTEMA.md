@@ -1,7 +1,7 @@
 # 03 · Telas do sistema
 
 Revisão de 25/10/2026, atualizada em 29/10. A especificação de setembro dizia o
-que construir; esta diz o que existe, conferido no código até o item 16. Os
+que construir; esta diz o que existe, conferido no código até o item 17b. Os
 textos entre aspas são os que a pessoa lê na tela.
 
 **Situação de cada tela:**
@@ -28,7 +28,7 @@ Nenhuma tela diz "terapeuta". Quem atende aparece pela especialidade:
 | Perfil, como aparece | No ar | Só no desenvolvimento |
 |---|---|---|
 | Profissional da clínica | 3, 4, 24, 5, 6, 7, 8, 9 | 10 |
-| Coordenador clínico | as da clínica, e 12 | 11, 13 |
+| Coordenador clínico | as da clínica, 12 e 13 | 11 |
 | Administrador | 14, 25 | — |
 | Responsável | 15, 16, 17 | — |
 | Professor / AEE | 22, 18, 19 | — |
@@ -498,7 +498,8 @@ Coordenador clínico · UC08 (item 16)
 A tela faz duas leituras: o plano, para o seletor, e a evolução do objetivo
 escolhido, `GET /api/objetivos/:id/evolucao`. A evolução chega montada pelo
 `montarEvolucao`, a mesma função no servidor e no mock, e traz só datas e
-medidas, nenhum texto livre de ninguém. Cada abertura deixa uma linha na trilha.
+medidas, nenhum texto livre de ninguém. As duas leituras entram na trilha, uma
+linha cada, e trocar de objetivo acrescenta a linha da evolução do novo.
 
 **Conteúdo, nesta ordem:**
 
@@ -507,8 +508,11 @@ medidas, nenhum texto livre de ninguém. Cada abertura deixa uma linha na trilha
 2. **"Na clínica, sessão a sessão"**: o gráfico "Tentativas independentes por
    sessão", com a linha "critério de domínio · {n}%" e o botão para ver como
    tabela. Um ponto por sessão encerrada em que o objetivo foi trabalhado; a
-   sessão em andamento não entra.
+   sessão em andamento não entra. Sem nenhuma: *"Nenhuma sessão encerrada
+   registrou tentativas deste objetivo ainda."*
 3. **O bloco do domínio:**
+   - o título: "Critério de domínio atingido" ou "Ainda não atingiu o critério
+     de domínio";
    - *"O critério é {n}% em {n} sessões consecutivas."* e a etiqueta "Não
      iniciado", "Em aquisição" ou "Dominado";
    - critério atingido, no plano vigente: *"A promoção a dominado não é
@@ -686,27 +690,81 @@ Na versão publicada, a coordenação entra pela tela 12.
 de pacientes. O histórico das decisões fica na trilha (tela 13, só no
 desenvolvimento).
 
-## 13 · Registro de auditoria · só no desenvolvimento
-`/app/coordenacao/auditoria` · UC19
+## 13 · Registro de auditoria · no ar
+`/app/coordenacao/auditoria` · Coordenador clínico · UC19 (item 17)
 
-Esta tela é a resposta da LGPD, art. 37.
+Esta tela é a resposta da LGPD, art. 37: quem tocou em que dado do paciente,
+quando e de que origem, e também quem tentou e foi recusado.
 
-**Conteúdo:**
+"Quem acessou o quê, quando e de onde — inclusive o acesso que foi negado".
 
-- filtros por período, usuário, ação e paciente;
-- tabela com data e hora, usuário, perfil, ação, entidade e origem;
-- exportação.
+**Conteúdo, nesta ordem:**
+
+1. **"Registro imutável"**: *"Nada aqui pode ser editado ou excluído, nem por
+   esta tela nem por nenhuma outra. É o que sustenta o artigo 37 da LGPD: a
+   trilha só serve como prova se ninguém puder retocá-la."*
+2. **Os filtros:**
+   - "Só tentativas negadas", um atalho, e "Limpar os filtros";
+   - "De" e "Até", em dias do calendário de Manaus;
+   - "Ação", "Usuário" e "Entidade";
+   - "Paciente": busca pelo nome, com sugestões a partir de duas letras (item
+     17b). A lista não para nos 100 primeiros.
+   O filtro vive no endereço: o botão voltar funciona, e o recorte pode ser
+   enviado a outra pessoa.
+3. **"{n} registros encontrados."** e "Exportar em CSV".
+4. **A tabela**, 20 por página, do mais recente para o mais antigo: data e hora
+   em Manaus, usuário, perfil, ação, entidade, origem e detalhe.
+   - A ação aparece com símbolo e texto: "Concessão de acesso", "Revogação de
+     acesso", "Leitura autorizada", "Tentativa negada", "Criação" e
+     "Alteração".
+   - A entidade aparece por extenso, no filtro e na tabela: "Plano
+     terapêutico", "Registro de auditoria" (item 17b). O endereço guarda o nome
+     técnico.
+   - O usuário e o perfil são os do momento do registro, e não os de hoje. Sem
+     ninguém logado, como no aceite de convite que falhou: "Sem sessão".
+   - Quando o registro guardou a versão anterior, "Ver o que havia antes" mostra
+     os campos que mudaram, por nome, e não em JSON.
+   - Em telas estreitas, a tabela rola dentro do próprio quadro, e a página não
+     rola para o lado.
+
+**Filtro errado** (`validarFiltroAuditoria`, a mesma validação na tela e no
+servidor): a tela diz o que corrigir, em "Confira o filtro", e não pede a trilha
+ao servidor.
+
+- *"Escreva a data de início do período."* e *"Escreva a data de fim do
+  período."*;
+- *"O fim do período não pode vir antes do início."*;
+- *"Escolha uma pessoa da lista."*, *"Escolha um paciente da lista."*, *"Escolha
+  uma ação da lista."* e *"Escolha uma entidade da lista."*
+
+**Exportação:**
+
+- leva todos os registros do filtro, e não só a página, num arquivo
+  `auditoria-AAAA-MM-DD.csv`, com o dia de Manaus;
+- abre no Excel com os acentos certos, e uma célula que começa com "=" não vira
+  fórmula;
+- a primeira coluna é "Data e hora (Manaus)", como na tela, e a última,
+  "Instante (UTC)", o instante exato (item 17b);
+- acima de 10.000 registros, nada sai: *"O recorte tem mais de 10.000
+  registros. Reduza o período ou use outro filtro."*;
+- exportado: *"Arquivo gerado com todos os registros do filtro. A exportação
+  ficou registrada na própria trilha."*
 
 **Regras:**
 
-- a trilha registra:
-  - toda leitura e escrita de dado do paciente;
-  - concessão e revogação;
-  - **tentativa negada** (regra 6);
-- nenhuma tela edita ou exclui um registro. O banco recusa por gatilho
-  (`docs/09`).
-
-A trilha já é gravada no ar. O que falta é a tela que a mostra.
+- a trilha registra toda leitura e escrita de dado do paciente, a concessão e a
+  revogação de acesso, e a **tentativa negada** (regra 6);
+- **ler a trilha também entra nela**: cada consulta e cada exportação deixam
+  uma linha, com o filtro descrito e, quando há, o paciente. A lista de pessoas
+  do filtro vem da trilha inteira, e buscá-la não deixa linha;
+- só a coordenação abre. A negativa de qualquer outro perfil entra na trilha;
+- a consulta da coordenação sem filtro de paciente aparece também na trilha
+  administrativa da tela 25. É proposital: quem vigia a trilha também é
+  vigiado, e nela não há dado clínico;
+- o IP de origem fica no banco, por minimização: não aparece na tela nem no
+  CSV;
+- nenhuma tela edita ou exclui um registro, e não existe rota para isso. O
+  banco recusa por gatilho (`docs/09`).
 
 ---
 
