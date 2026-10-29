@@ -296,8 +296,8 @@ export function Usuarios() {
         <h2 id="h-convidar" className="text-lg font-bold">Criar conta para a equipe</h2>
         <Cartao>
           <form onSubmit={(e) => void convidar(e)} className="flex flex-col gap-4">
-            {/* Item 11: em tela larga, os quatro campos numa linha so. */}
-            <div className="grid gap-3 [&>*]:min-w-0 sm:grid-cols-2 2xl:grid-cols-4">
+            {/* Os quatro campos numa linha so a partir de lg (item 21). */}
+            <div className="grid gap-3 [&>*]:min-w-0 sm:grid-cols-2 lg:grid-cols-4">
               <Campo id="nome" rotulo="Nome">
                 <input id="nome" className={campo} value={convite.nome}
                   onChange={(e) => setConvite((c) => ({ ...c, nome: e.target.value }))}
@@ -322,8 +322,7 @@ export function Usuarios() {
                   aria-describedby={errosConvite.especialidade ? 'especialidade-erro' : undefined} />
                 {errosConvite.especialidade && <p id="especialidade-erro" className="text-sm font-bold text-cr">{errosConvite.especialidade}</p>}
               </Campo>
-              <Campo id="registro" rotulo="Registro no conselho (opcional)"
-                dica="Sem ele, a pessoa completa em Perfil e preferências antes de emitir relatório.">
+              <Campo id="registro" rotulo="Registro no conselho (opcional)">
                 <input id="registro" className={campo} value={convite.registroConselho}
                   onChange={(e) => setConvite((c) => ({ ...c, registroConselho: e.target.value }))} />
               </Campo>
