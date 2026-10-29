@@ -7,8 +7,8 @@ import { BarraPreferencias } from '../componentes/BarraPreferencias'
  * sensoriais ficam disponiveis antes do login — quem precisa de texto maior
  * precisa dele para ler a propria tela de entrada.
  *
- * Sem o aviso do ambiente: ele saiu das telas de acesso por decisao do Lucas,
- * e fica no rodape do app, onde os dados se cadastram.
+ * Sem o aviso do ambiente: ele saiu das telas de acesso em 25/10/2026 e do app
+ * inteiro em 29/10/2026, por decisao do Lucas (item 21).
  */
 export function LayoutAcesso({ children }: { children: ReactNode }) {
   return (

@@ -20,10 +20,9 @@ import { NOME_DO_PERFIL } from './perfis'
  * - Sem CAPTCHA (e-MAG 6.8; WCAG 3.3.8).
  * - Sem limite de tempo de sessao que expire sem aviso.
  *
- * O aviso do ambiente nao aparece aqui: desde 25/10/2026, por decisao do
- * Lucas, ele fica so no rodape do app, onde os dados se cadastram (docs/07,
- * secao 0). A entrada de demonstracao so existe com o mock: na versao
- * publicada, nem entra no pacote.
+ * O aviso do ambiente saiu daqui em 25/10/2026 e do app inteiro em 29/10/2026,
+ * por decisao do Lucas (item 21). A entrada de demonstracao so existe com o
+ * mock: na versao publicada, nem entra no pacote.
  *
  * Uma conta por aba (item 9): a aba sem conta mostra, acima do formulario, as
  * contas ja abertas neste navegador, para continuar numa delas sem senha nova.

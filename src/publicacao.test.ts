@@ -136,7 +136,9 @@ describe('a versao publicada', () => {
     expect(pacote).toContain('Profissional da clínica')
   })
 
-  it('leva o aviso do ambiente', () => {
-    expect(pacote).toContain('Ambiente acadêmico do TCC SINCTEA. Não cadastre dados de pacientes reais.')
+  it('nao leva o aviso do ambiente, que saiu do app e do relatorio impresso (item 21)', () => {
+    // A regra de cadastrar so dado ficticio continua; so deixou de aparecer.
+    expect(pacote).not.toContain('Ambiente acadêmico')
+    expect(pacote).not.toContain('Não cadastre dados de pacientes reais')
   })
 })

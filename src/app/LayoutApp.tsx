@@ -2,7 +2,6 @@ import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent }
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { BarraPreferencias } from '../componentes/BarraPreferencias'
 import { Botao } from '../ui/Botao'
-import { RodapeAmbiente } from '../componentes/AvisoAmbiente'
 import { usarSessao } from '../contexto/Sessao'
 import type { Perfil } from '../servicos'
 import { SO_CAMINHO_PRINCIPAL } from './caminhoPrincipal'
@@ -201,8 +200,6 @@ export function LayoutApp() {
             <Outlet />
           </div>
         </main>
-
-        <RodapeAmbiente />
       </div>
 
       {/* O fundo escurecido: o toque nele fecha a gaveta. */}
