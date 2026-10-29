@@ -1,6 +1,6 @@
 # 09 · Dicionário de dados
 
-Gerado em 29/10/2026 do catálogo do PostgreSQL 17, depois das 9 migrações do repositório (`20261015022852_inicial`, `20261015031253_caminhos_coerentes`, `20261015034333_chaves_compostas_sem_cascata`, `20261016004020_sessao_e_acesso_inicial`, `20261016022012_convite_token_resumo`, `20261017213654_evolucao_da_sessao`, `20261018231000_link_de_nova_senha`, `20261028203000_execucao_uma_por_dia`, `20261028230000_atividade_limites`). **Não se edita à mão:** muda o esquema, gera de novo.
+Gerado em 29/10/2026 do catálogo do PostgreSQL 17, depois das 10 migrações do repositório (`20261015022852_inicial`, `20261015031253_caminhos_coerentes`, `20261015034333_chaves_compostas_sem_cascata`, `20261016004020_sessao_e_acesso_inicial`, `20261016022012_convite_token_resumo`, `20261017213654_evolucao_da_sessao`, `20261018231000_link_de_nova_senha`, `20261028203000_execucao_uma_por_dia`, `20261028230000_atividade_limites`, `20261029150000_auditoria_ordem`). **Não se edita à mão:** muda o esquema, gera de novo.
 
 O significado de cada coluna está escrito a partir de `compartilhado/src/tipos.ts`, do `schema.prisma` e das regras do `CLAUDE.md`. O tipo, a nulidade, as chaves, as restrições, os índices e os gatilhos saem do próprio banco. O DER está em `docs/uml/SINCTEA_DER.svg` (todas as colunas) e `docs/uml/SINCTEA_DER_chaves.svg` (só as chaves).
 
@@ -574,6 +574,7 @@ Trilha de auditoria da regra 6: concessões, revogações, leituras autorizadas,
 - Chave estrangeira: (usuarioId) → usuario(id); ao apagar: restringe; ao atualizar: cascata
 - Gatilho: registro_auditoria_imutavel — Recusa UPDATE e DELETE: a trilha de auditoria só cresce (regra 6).
 - Gatilho: registro_auditoria_sem_truncate — Recusa TRUNCATE na trilha de auditoria.
+- Índice: (ocorridoEm, id)
 - Índice: (pacienteId, ocorridoEm)
 - Índice: (usuarioId)
 

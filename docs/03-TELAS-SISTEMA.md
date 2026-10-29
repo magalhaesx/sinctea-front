@@ -756,7 +756,9 @@ ao servidor.
   revogação de acesso, e a **tentativa negada** (regra 6);
 - **ler a trilha também entra nela**: cada consulta e cada exportação deixam
   uma linha, com o filtro descrito e, quando há, o paciente. A lista de pessoas
-  do filtro vem da trilha inteira, e buscá-la não deixa linha;
+  do filtro vem da trilha inteira, e buscá-la não deixa linha. Já a busca de
+  paciente e a leitura do nome do escolhido deixam linha, como em qualquer
+  tela: são leituras de dado do paciente;
 - só a coordenação abre. A negativa de qualquer outro perfil entra na trilha;
 - a consulta da coordenação sem filtro de paciente aparece também na trilha
   administrativa da tela 25. É proposital: quem vigia a trilha também é
