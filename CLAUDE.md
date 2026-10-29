@@ -179,11 +179,12 @@ Qualidade: ISO/IEC 25010:2023. Método: Kanban com limites de trabalho em progre
   `feat(UC15): consulta do cartao de estrategias`.
 - **Produção começa vazia** e se preenche pelo uso: nenhum registro é
   pré-carregado, e a semente não roda em produção. **Os testes usam dados
-  fictícios próprios** — dado de teste não é dado do site. No rodapé do app fica
-  o aviso *"Ambiente acadêmico do TCC SINCTEA. Não cadastre dados de pacientes
-  reais."* (`docs/07`, seção 0). Das telas de acesso — entrar, aceitar convite
-  e definir senha — ele saiu em 25/10/2026, por decisão do Lucas. Tirá-lo do
-  rodapé é decisão do Lucas com a orientadora
+  fictícios próprios** — dado de teste não é dado do site. O aviso *"Ambiente
+  acadêmico do TCC SINCTEA. Não cadastre dados de pacientes reais."* (`docs/07`,
+  seção 0) saiu das telas de acesso — entrar, aceitar convite e definir senha —
+  em 25/10/2026 e, em 29/10/2026, do rodapé do app e do relatório impresso
+  (item 21), por decisão do Lucas. A regra de cadastrar só dado fictício
+  continua: só deixou de aparecer na tela
 - Nenhum componente importa de `servicos/mock`. Importa sempre de `servicos`.
 
 ## 7. Estado atual
@@ -321,7 +322,8 @@ em produção (o antigo passo B5) foi cancelada. No código, hoje:
   atividades de casa e relatório — saem das rotas e do menu (`src/app/caminhoPrincipal.ts`); a coordenação entra na
   fila de planos.
   Saíram também `entrarDemonstracao` da API, o bloco de demonstração da
-  entrada e `/dev/estados`. O aviso do ambiente está no rodapé do app; desde 25/10, não nas telas de acesso.
+  entrada e `/dev/estados`. O aviso do ambiente ficou no rodapé do app, fora das
+  telas de acesso desde 25/10, até sair de tudo em 29/10 (item 21).
   O servidor manda `nosniff`, `no-referrer` e `X-Frame-Options: DENY` em toda
   resposta. `src/publicacao.test.ts` confere o próprio pacote de produção. No
   desenvolvimento sem `VITE_API_URL` e nos testes, o mock e as telas
@@ -570,6 +572,12 @@ em produção (o antigo passo B5) foi cancelada. No código, hoje:
   mesma altura a partir de lg, e com o alerta embaixo entre md e lg; uma linha
   separa as estratégias, e no celular o botão ocupa a largura. Nada mudou no
   servidor nem nos contratos
+- **Item 21 — dois textos a menos.** Na tela 14, o registro no conselho perdeu a
+  dica, e os quatro campos da conta da equipe ficam numa linha a partir de lg;
+  sem registro, quem recusa a emissão continua sendo a tela 10. O aviso do
+  ambiente saiu do rodapé do app e, com ele, da folha impressa do relatório
+  (tela 10b), em 29/10/2026, por decisão do Lucas; o `AvisoAmbiente` foi
+  removido, e `src/publicacao.test.ts` confere que o texto não está no pacote
 - `npm run criar-administrador -w @sinctea/servidor -- .env.producao --nome
   "Nome Completo" --email voce@exemplo.com` cria o primeiro administrador:
   nome e e-mail vêm da linha de comando, e só a senha é pedida, escondida e duas
