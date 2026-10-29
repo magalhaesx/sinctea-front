@@ -16,13 +16,15 @@ import { diaCivilEm, emDataCivil, FUSO_DA_INSTANCIA } from '@sinctea/compartilha
 // A leitura do valorAnterior mora no dominio: a tela e o CSV exportado dizem
 // a mesma coisa porque leem do mesmo lugar.
 import {
-  camposAnteriores, ENTIDADES_AUDITADAS, NOME_DO_CAMPO, nomeDoArquivoDaAuditoria, POR_PAGINA_DA_AUDITORIA,
-  validarFiltroAuditoria,
+  camposAnteriores, ENTIDADES_AUDITADAS, NOME_DA_ENTIDADE, NOME_DO_CAMPO, nomeDaEntidade, nomeDoArquivoDaAuditoria,
+  POR_PAGINA_DA_AUDITORIA, validarFiltroAuditoria,
 } from '@sinctea/compartilhado/dominio/auditoria'
 import {
   ehIdentificador, servicos, type AcaoAuditoria, type DataCivil, type FiltroAuditoria, type OrigemAuditoria,
-  type Pagina, type PacienteResumo, type RegistroDaTrilha,
+  type Pagina, type RegistroDaTrilha,
 } from '../../servicos'
+import { usarNomeDoPaciente } from '../clinica/caminho'
+import { BuscaDePaciente } from './BuscaDePaciente'
 
 /**
  * Tela 13 · Registro de auditoria · /app/coordenacao/auditoria (UC19)
@@ -44,6 +46,10 @@ import {
  * Item 17: o periodo e em dias de Manaus, como na tela 25, e o filtro passa
  * por validarFiltroAuditoria antes de ir, a mesma conferencia do servidor. O
  * IP nao chega aqui. Cada consulta e cada exportacao entram na trilha.
+ *
+ * Item 17b: a entidade aparece por extenso (NOME_DA_ENTIDADE), e o endereco
+ * guarda o nome tecnico. O paciente se escolhe por busca, e nao numa lista
+ * que parava nos 100 primeiros.
  */
 
 const ACOES: Record<AcaoAuditoria, { rotulo: string; tom: 'ok' | 'at' | 'cr' | 'neutro'; simbolo: string }> = {
@@ -89,7 +95,7 @@ const colunas: Coluna<RegistroDaTrilha>[] = [
       return <Etiqueta tom={a.tom} simbolo={a.simbolo}>{a.rotulo}</Etiqueta>
     },
   },
-  { id: 'entidade', titulo: 'Entidade', celula: (r) => r.entidade },
+  { id: 'entidade', titulo: 'Entidade', celula: (r) => nomeDaEntidade(r.entidade) },
   { id: 'origem', titulo: 'Origem', celula: (r) => ORIGENS[r.origem] },
   {
     id: 'detalhe', titulo: 'Detalhe', quebrar: true,
@@ -123,7 +129,6 @@ export function Auditoria() {
   const [estado, setEstado] = useState<Estado>({ tipo: 'carregando' })
   const [tentativa, setTentativa] = useState(0)
   const [usuarios, setUsuarios] = useState<Array<{ id: string; nome: string }>>([])
-  const [pacientes, setPacientes] = useState<PacienteResumo[]>([])
   const [exportando, setExportando] = useState(false)
   const [aviso, setAviso] = useState<string | null>(null)
   const [erroExportacao, setErroExportacao] = useState<string | null>(null)
@@ -135,6 +140,7 @@ export function Auditoria() {
   const pacienteId = params.get('paciente') ?? ''
   const entidade = params.get('entidade') ?? ''
   const pagina = Math.max(1, Number(params.get('pagina') ?? 1) || 1)
+  const nomeDoPaciente = usarNomeDoPaciente(pacienteId)
   const temFiltro = Boolean(desde || ate || usuarioId || acao || pacienteId || entidade)
   const soNegadas = acao === 'ACESSO_NEGADO'
 
@@ -186,9 +192,6 @@ export function Auditoria() {
     servicos.auditoria.listarPessoas()
       .then((pessoas) => { if (ativo) setUsuarios(pessoas.map((p) => ({ id: p.usuarioId, nome: p.nome }))) })
       .catch(() => { if (ativo) setUsuarios([]) })
-    servicos.pacientes.listar({ porPagina: 100 })
-      .then((p) => { if (ativo) setPacientes(p.itens) })
-      .catch(() => { if (ativo) setPacientes([]) })
     return () => { ativo = false }
   }, [tentativa])
 
@@ -286,19 +289,14 @@ export function Auditoria() {
             </select>
           </Campo>
 
-          <Campo id="paciente" rotulo="Paciente">
-            <select id="paciente" className={campo} value={pacienteId}
-              onChange={(e) => atualizar({ paciente: e.target.value || null })}>
-              <option value="">Todos</option>
-              {pacientes.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
-            </select>
-          </Campo>
+          <BuscaDePaciente pacienteId={pacienteId} nome={nomeDoPaciente} classeDoCampo={campo}
+            aoEscolher={(id) => atualizar({ paciente: id })} />
 
           <Campo id="entidade" rotulo="Entidade">
             <select id="entidade" className={campo} value={entidade}
               onChange={(e) => atualizar({ entidade: e.target.value || null })}>
               <option value="">Todas</option>
-              {ENTIDADES_AUDITADAS.map((e) => <option key={e} value={e}>{e}</option>)}
+              {ENTIDADES_AUDITADAS.map((e) => <option key={e} value={e}>{NOME_DA_ENTIDADE[e]}</option>)}
             </select>
           </Campo>
         </div>

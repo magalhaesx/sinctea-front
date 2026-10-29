@@ -14,13 +14,15 @@ export const doPaciente = (pacienteId: string, nome: string | null): ItemDoCamin
 /**
  * O nome do paciente, para a trilha das telas que nao o carregam. E a leitura
  * da ficha, e entra na trilha de auditoria como ela (regra 6). Enquanto nao
- * chega, ou se a leitura falhar, a trilha diz "Paciente".
+ * chega, ou se a leitura falhar, a trilha diz "Paciente". Sem paciente (o
+ * filtro vazio da tela 13), nao le nada.
  */
 export function usarNomeDoPaciente(pacienteId: string): string | null {
   const [nome, setNome] = useState<string | null>(null)
   useEffect(() => {
     let ativo = true
     setNome(null)
+    if (!pacienteId) return
     servicos.pacientes.obter(pacienteId)
       .then((paciente) => { if (ativo) setNome(paciente.nome) })
       .catch(() => { /* a tela mostra o proprio erro; a trilha fica com "Paciente" */ })
