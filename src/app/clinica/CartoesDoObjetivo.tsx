@@ -113,9 +113,9 @@ export function CartoesDoObjetivo({ objetivoId }: { objetivoId: string }) {
       {estado.tipo === 'pronto' && estado.cartoes.map((c) => editando !== c.id && (
         <div key={c.id} className="mt-2 rounded-lg border border-linha bg-sup p-3 text-[15px]">
           <p className="font-bold">{c.tituloSimples}</p>
-          <p className="mt-1 text-sm"><b>O que ajuda:</b> {c.oQueFazer.join('; ')}</p>
-          <p className="text-sm"><b>O que evitar:</b> {c.oQueEvitar.join('; ')}</p>
-          <p className="text-sm"><b>Sinal de alerta:</b> {c.sinalAlerta}</p>
+          <p className="texto-corrido mt-1 text-sm"><b>O que ajuda:</b> {c.oQueFazer.join('; ')}</p>
+          <p className="texto-corrido text-sm"><b>O que evitar:</b> {c.oQueEvitar.join('; ')}</p>
+          <p className="texto-corrido text-sm"><b>Sinal de alerta:</b> {c.sinalAlerta}</p>
           <p className="mt-1 text-sm text-tinta2">Atualizado em {emData(c.atualizadoEm)}.</p>
           <Botao area="cli" variante="secundaria" className="mt-2" onClick={() => abrir(c)}>Editar cartão</Botao>
         </div>

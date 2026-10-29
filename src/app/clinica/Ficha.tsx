@@ -261,7 +261,7 @@ function HistoricoDeSessoes({ pacienteId, equipe }: {
                   </h3>
                   <p className="text-sm text-tinta2">{quem(s.profissionalId)} · {s.registros.length} {s.registros.length === 1 ? 'registro' : 'registros'}</p>
                   {s.evolucao
-                    ? <p className="mt-2 max-w-[65ch] whitespace-pre-line">{s.evolucao}</p>
+                    ? <p className="texto-corrido mt-2 whitespace-pre-line">{s.evolucao}</p>
                     // So as sessoes encerradas antes de a evolucao ser exigida.
                     : <p className="mt-2 text-sm text-tinta2">Sessão encerrada antes de a evolução ser exigida: sem evolução registrada.</p>}
                 </li>

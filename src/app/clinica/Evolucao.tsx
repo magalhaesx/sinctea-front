@@ -266,7 +266,7 @@ export function Evolucao() {
                   {plano.objetivos.map((o) => <option key={o.id} value={o.id}>{o.dominio}</option>)}
                 </select>
               </Campo>
-              <p className="mt-2 max-w-[65ch] text-sm text-tinta2">{objetivo.descricaoTecnica}</p>
+              <p className="texto-corrido mt-2 text-sm text-tinta2">{objetivo.descricaoTecnica}</p>
             </Cartao>
 
             <div aria-live="polite">

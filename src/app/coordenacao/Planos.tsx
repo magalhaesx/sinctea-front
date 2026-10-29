@@ -308,11 +308,11 @@ export function Planos() {
                       <div className="mt-3 grid gap-3 md:grid-cols-2">
                         <div className="min-w-0 rounded-lg border border-linha bg-sup2 p-3">
                           <h4 className="text-sm font-bold">Redação técnica — a equipe lê</h4>
-                          <p className="mt-1 text-[15px]">{o.descricaoTecnica}</p>
+                          <p className="texto-corrido mt-1 text-[15px]">{o.descricaoTecnica}</p>
                         </div>
                         <div className="min-w-0 rounded-lg border border-fam bg-fam-sup p-3">
                           <h4 className="text-sm font-bold">Redação acessível — a família e a escola leem</h4>
-                          <p className="mt-1 text-[15px]">{o.descricaoAcessivel}</p>
+                          <p className="texto-corrido mt-1 text-[15px]">{o.descricaoAcessivel}</p>
                         </div>
                       </div>
                       <p className="mt-3 text-sm text-tinta2">

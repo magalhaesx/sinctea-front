@@ -19,6 +19,7 @@ const RAIZ = fileURLToPath(new URL('..', import.meta.url))
 let pasta: string
 let pacote: string
 let estilos: string
+let pagina: string
 
 beforeAll(() => {
   pasta = mkdtempSync(join(tmpdir(), 'sinctea-publicacao-'))
@@ -31,6 +32,7 @@ beforeAll(() => {
   const assets = join(pasta, 'assets')
   pacote = readdirSync(assets).filter((a) => a.endsWith('.js')).map((a) => readFileSync(join(assets, a), 'utf8')).join('\n')
   estilos = readdirSync(assets).filter((a) => a.endsWith('.css')).map((a) => readFileSync(join(assets, a), 'utf8')).join('\n')
+  pagina = readFileSync(join(pasta, 'index.html'), 'utf8')
 }, 180_000)
 
 afterAll(() => { if (pasta) rmSync(pasta, { recursive: true, force: true }) })
@@ -88,6 +90,19 @@ describe('a versao publicada', () => {
     const impressao = estilos.match(/@media print\{(.*?\})\}/s)?.[1] ?? ''
     expect(impressao).toContain('header,nav,.nao-imprimir{display:none!important}')
     expect(impressao).toContain('.folha-relatorio header{display:block!important}')
+  })
+
+  it('justifica o texto corrido do item 20, com hifenizacao em portugues e 65 caracteres por linha', () => {
+    // Sem o lang, o navegador nao sabe em que lingua partir a palavra.
+    expect(pagina).toMatch(/<html lang="pt-BR">/)
+    const corrido = estilos.match(/\.texto-corrido\{([^}]*)\}/)?.[1] ?? ''
+    for (const regra of ['text-align:justify', 'text-justify:inter-word', 'hyphens:auto', 'max-width:65ch']) {
+      expect(corrido, regra).toContain(regra)
+    }
+    // Titulo, rotulo e link com cara de botao dentro do texto corrido nao
+    // justificam; nem eles, nem botao e campo, partem palavra.
+    expect(estilos).toContain('.texto-corrido :is(h1,h2,h3,h4,h5,h6,label,legend,a.inline-flex){text-align:start}')
+    expect(estilos).toMatch(/\.texto-corrido :is\(h1,h2,h3,h4,h5,h6,label,legend,a\.inline-flex,button,input,select,textarea\)\{[^}]*hyphens:manual/)
   })
 
   it('leva o registro de auditoria do item 17: a tela 13, o menu e a exportacao', () => {

@@ -62,6 +62,29 @@ body {
   border-radius: 4px;
 }
 
+/* Texto corrido de leitura (item 20): justificado, com hifenizacao pelo idioma
+   do documento — o lang="pt-BR" do index.html — e no maximo 65 caracteres por
+   linha (docs/02, secao 2). Uma classe so, aplicada ao texto de mais de uma
+   linha que se le: redacoes, cartao, atividade, evolucao, consideracoes,
+   observacoes e o texto do aviso. A ultima linha fica a esquerda, e o texto de
+   uma linha nao muda. */
+.texto-corrido {
+  max-width: 65ch;
+  text-align: justify;
+  text-justify: inter-word;
+  hyphens: auto;
+}
+
+/* O que mora dentro do texto corrido e nao e texto corrido — titulo, rotulo,
+   link com cara de botao, botao e campo — volta ao alinhamento de sempre e
+   nao parte palavra. O botao ja traz o centro do navegador. */
+.texto-corrido :is(h1, h2, h3, h4, h5, h6, label, legend, a.inline-flex) {
+  text-align: start;
+}
+.texto-corrido :is(h1, h2, h3, h4, h5, h6, label, legend, a.inline-flex, button, input, select, textarea) {
+  hyphens: manual;
+}
+
 /* Impressao: o que vai para o papel e a folha do relatorio (tela 10). O PDF
    sai daqui, pelo proprio navegador — nao ha back-end para guardar arquivo. */
 @media print {

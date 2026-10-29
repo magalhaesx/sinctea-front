@@ -60,7 +60,7 @@ export function FolhaRelatorio({ conteudo, rodape }: {
                 <h4 className="text-[13px] font-bold uppercase tracking-wider text-tinta2">
                   {o.dominio}
                 </h4>
-                <p className="mt-1 text-[15px]">{o.redacao}</p>
+                <p className="texto-corrido mt-1 text-[15px]">{o.redacao}</p>
 
                 <dl className="mt-3 grid gap-x-4 gap-y-1.5 text-[15px] sm:grid-cols-[auto_1fr]">
                   {/* Para a familia o alvo se chama objetivo, nao criterio de
@@ -91,7 +91,7 @@ export function FolhaRelatorio({ conteudo, rodape }: {
             Considerações do profissional
           </h3>
           {/* Escrito por quem assina: o sistema nao gera esta parte. */}
-          <p className="mt-2 max-w-[70ch] whitespace-pre-line text-[15px]">
+          <p className="texto-corrido mt-2 whitespace-pre-line text-[15px]">
             {conteudo.consideracoes}
           </p>
         </section>

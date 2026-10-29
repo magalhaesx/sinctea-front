@@ -277,7 +277,7 @@ export function Plano() {
                             </h3>
                             <Etiqueta tom={st.tom} simbolo={st.simbolo}>{st.rotulo}</Etiqueta>
                           </div>
-                          <p className="my-2.5 max-w-[65ch]">
+                          <p className="texto-corrido my-2.5">
                             {acessivel ? o.descricaoAcessivel : o.descricaoTecnica}
                           </p>
                           <Medidor valor={o.percentualAtual} area="cli" rotulo={`Domínio de ${dominio}`} />

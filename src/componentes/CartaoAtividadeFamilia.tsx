@@ -14,6 +14,9 @@ import { ehEnderecoDeVideo, frequenciaSemanalEmPalavras } from '@sinctea/compart
  *
  * "Para que serve" (item 15b) e a redacao acessivel do objetivo, logo abaixo
  * do titulo. Na previa da tela 9, a do objetivo escolhido no formulario.
+ *
+ * O que se le — para que serve, descricao, passos e dicas — e texto corrido,
+ * justificado (item 20).
  */
 
 /** So o que a familia ve. O registro do dia nao e deste cartao. */
@@ -44,7 +47,7 @@ export function CartaoAtividadeFamilia({ atividade }: { atividade: AtividadePara
       {paraQue && (
         <div>
           <h4 className="text-base font-bold">Para que serve</h4>
-          <p className="mt-1 text-[15px]">{paraQue}</p>
+          <p className="texto-corrido mt-1 text-[15px]">{paraQue}</p>
         </div>
       )}
 
@@ -52,7 +55,7 @@ export function CartaoAtividadeFamilia({ atividade }: { atividade: AtividadePara
         <p className="text-sm text-tinta2">
           {frequenciaSemanalEmPalavras(atividade.frequenciaSemanal)}
         </p>
-        {descricao && <p className="mt-1 text-[15px]">{descricao}</p>}
+        {descricao && <p className="texto-corrido mt-1 text-[15px]">{descricao}</p>}
       </div>
 
       {ehEnderecoDeVideo(video) && (
@@ -77,7 +80,7 @@ export function CartaoAtividadeFamilia({ atividade }: { atividade: AtividadePara
                   className="grid h-7 w-7 flex-none place-items-center rounded-full bg-fam-ink text-[13px] font-bold text-white">
                   {i + 1}
                 </span>
-                <span>{p}</span>
+                <span className="texto-corrido min-w-0">{p}</span>
               </li>
             ))}
           </ol>
@@ -87,7 +90,7 @@ export function CartaoAtividadeFamilia({ atividade }: { atividade: AtividadePara
       {dicas && (
         <div className="rounded-lg border border-linha bg-sup p-3.5">
           <h4 className="text-base font-bold">Se não sair de primeira</h4>
-          <p className="mt-1 text-[15px]">{dicas}</p>
+          <p className="texto-corrido mt-1 text-[15px]">{dicas}</p>
         </div>
       )}
     </div>

@@ -8,8 +8,9 @@ export function Aviso({ tom = 'neutro', titulo, children }: {
   return (
     <div className={`rounded-xl border border-linha border-l-4 p-4 ${borda}`}>
       {titulo && <h3 className="font-bold text-base mb-1">{titulo}</h3>}
-      {/* Texto corrido: no maximo 65 caracteres por linha, em qualquer largura (item 11). */}
-      <div className="max-w-[65ch] text-sm text-tinta2">{children}</div>
+      {/* Texto corrido: no maximo 65 caracteres por linha, em qualquer largura
+          (item 11), e justificado (item 20). */}
+      <div className="texto-corrido text-sm text-tinta2">{children}</div>
     </div>
   )
 }

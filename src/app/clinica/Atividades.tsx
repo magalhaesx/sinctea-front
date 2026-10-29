@@ -163,7 +163,7 @@ function Historico({ atividadeId }: { atividadeId: string }) {
                     <Etiqueta simbolo="○">{NOME_DO_DESEMPENHO[e.desempenho]}</Etiqueta>
                     <span className="text-sm text-tinta2">Registrado por {e.responsavelNome}</span>
                   </span>
-                  {e.observacao && <p className="mt-1 text-tinta2">“{e.observacao}”</p>}
+                  {e.observacao && <p className="texto-corrido mt-1 text-tinta2">“{e.observacao}”</p>}
                 </li>
               ))}
             </ul>
@@ -222,7 +222,7 @@ function CartaoAtividade({ atividade, objetivo, aoEncerrar }: {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 className="text-base font-bold">{atividade.titulo}</h3>
-          <p className="mt-0.5 text-sm text-tinta2">
+          <p className="texto-corrido mt-0.5 text-sm text-tinta2">
             {objetivo
               ? <>Objetivo: {objetivo.dominio} — {objetivo.descricaoTecnica}</>
               : 'Objetivo fora do plano vigente.'}
