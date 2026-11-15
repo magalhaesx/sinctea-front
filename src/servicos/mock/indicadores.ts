@@ -1,13 +1,11 @@
 import type { ServicoIndicadores } from '@sinctea/compartilhado'
-import type {
-  AlertaAtencao, Indicador, MotivoAtencao, Objetivo, OcorrenciaComportamental, Paciente,
-  PlanoTerapeutico, Sessao,
-} from '@sinctea/compartilhado'
+import type { AlertaAtencao, MotivoAtencao, Paciente } from '@sinctea/compartilhado'
+import { consentimentoVigente, percentualIndependente } from '@sinctea/compartilhado/dominio/regras'
 import {
-  consentimentoVencendo, consentimentoVigente, objetivoSemAvanco, pacienteSemSessaoRecente,
-  percentualIndependente, planoPrecisaRevisao,
-} from '@sinctea/compartilhado/dominio/regras'
-import { diaCivilEm, fimDaValidade, inicioDoDia } from '@sinctea/compartilhado/dominio/datas'
+  alertaConsentimentoVencendo, alertaObjetivoSemAvanco, alertaPacienteSemSessao, alertaPlanoSemRevisao, diaNaJanela,
+  diasInteiros, horasAteLeitura, JANELA_CURTA_DIAS, JANELA_LONGA_DIAS, janelaFutura, janelaPassada, mediana, naJanela,
+  ordenarAlertas, rotuloDeHoje, rotuloFuturo, rotuloPassado,
+} from '@sinctea/compartilhado/dominio/indicadores'
 import { auditar, banco, exigirPerfil, paginar, relogio, responder } from './infra'
 import { ultimaSessaoDe } from './pacientes'
 
@@ -17,161 +15,51 @@ import { ultimaSessaoDe } from './pacientes'
  * Nenhum texto clinico atravessa este servico — a tela nao teria como exibir
  * o que nao esta no tipo.
  *
- * Os limiares NAO moram aqui: sao os de dominio/regras.ts, os mesmos que as
- * telas do terapeuta usam. Este servico so decide o RECORTE (ultimos 7 dias,
- * ultimos 30, proximos 30) e a ORDEM (o mais urgente primeiro).
+ * O recorte (a janela em dias de Manaus, os rotulos), a ordem e os alertas sao
+ * os de dominio/indicadores.ts, os mesmos do servidor (item 19); os limiares,
+ * os de dominio/regras.ts.
  */
-
-const MS_DIA = 86_400_000
-const MS_HORA = 3_600_000
-
-/** Janelas do painel. Moveis, nao civis — ver o comentario de rotuloTras(). */
-const JANELA_CURTA_DIAS = 7
-const JANELA_LONGA_DIAS = 30
-
-const ms = (iso: string) => Date.parse(iso)
-const diaMes = (d: Date) => d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
-const emDias = (de: number, ate: number) => Math.floor((ate - de) / MS_DIA)
-
-/**
- * Inicio do dia, contando `dias` dias ate hoje inclusive: com dias = 7 e hoje
- * em 21/09, comeca a zero hora de 15/09.
- *
- * A janela e movel de proposito. "Sessoes na semana" numa segunda-feira mostra
- * quase zero — toda semana, justamente no dia em que a coordenacao planeja.
- */
-function inicioDaJanela(agora: Date, dias: number): Date {
-  const d = new Date(agora)
-  d.setHours(0, 0, 0, 0)
-  d.setDate(d.getDate() - (dias - 1))
-  return d
-}
-
-/** "nos últimos 7 dias (15 a 21/09)" */
-function rotuloTras(agora: Date, dias: number): string {
-  return `nos últimos ${dias} dias (${diaMes(inicioDaJanela(agora, dias))} a ${diaMes(agora)})`
-}
-
-/** "nos próximos 30 dias (21/09 a 21/10)" */
-function rotuloFrente(agora: Date, dias: number): string {
-  const fim = new Date(agora.getTime() + dias * MS_DIA)
-  return `nos próximos ${dias} dias (${diaMes(agora)} a ${diaMes(fim)})`
-}
-
-/** "em 21/09" — numero de fotografia, que so faz sentido com a data. */
-const rotuloHoje = (agora: Date) => `em ${diaMes(agora)}`
 
 const pacientesAtivos = () => banco.pacientes.filter((p) => p.ativo)
+const ativos = () => new Set(pacientesAtivos().map((p) => p.id))
 
-const nomeDoPaciente = (pacienteId: string) =>
-  banco.pacientes.find((p) => p.id === pacienteId)?.nome ?? '—'
+const pessoa = (pacienteId: string) =>
+  ({ id: pacienteId, nome: banco.pacientes.find((p) => p.id === pacienteId)?.nome ?? '—' })
 
-const pacienteDoAlerta = (pacienteId: string) => ({ id: pacienteId, nome: nomeDoPaciente(pacienteId) })
-
-/** Sessoes encerradas do paciente, em ordem de numero: a serie do objetivo. */
-function sessoesEncerradas(pacienteId: string): Sessao[] {
+/** Percentual de independencia por sessao encerrada em que o objetivo foi trabalhado, em ordem de numero. */
+function percentuaisDoObjetivo(pacienteId: string, objetivoId: string): number[] {
   return banco.sessoes
     .filter((s) => s.pacienteId === pacienteId && s.situacao === 'ENCERRADA')
     .sort((a, b) => a.numero - b.numero)
-}
-
-/** Percentual de independencia por sessao em que o objetivo foi trabalhado. */
-function percentuaisDoObjetivo(pacienteId: string, objetivoId: string): number[] {
-  return sessoesEncerradas(pacienteId)
     .map((s) => percentualIndependente(s.registros, objetivoId))
     .filter((p): p is number => p !== null)
 }
 
-/** Ha quantas sessoes o objetivo nao bate o proprio recorde. */
-function sessoesDesdeORecorde(percentuais: number[]): number {
-  const recorde = Math.max(...percentuais)
-  return percentuais.length - 1 - percentuais.lastIndexOf(recorde)
+const planosDeAtivos = () => {
+  const deAtivos = ativos()
+  return banco.planos.filter((p) => deAtivos.has(p.pacienteId))
 }
 
-const planosDeAtivos = (): PlanoTerapeutico[] => {
-  const ativos = new Set(pacientesAtivos().map((p) => p.id))
-  return banco.planos.filter((p) => ativos.has(p.pacienteId))
-}
+const existe = <T>(x: T | null): x is T => x !== null
 
-/** Mediana: um atraso isolado nao pode mover o numero da clinica inteira. */
-function mediana(valores: number[]): number {
-  const ordenados = [...valores].sort((a, b) => a - b)
-  const meio = Math.floor(ordenados.length / 2)
-  return ordenados.length % 2 === 1
-    ? ordenados[meio]
-    : (ordenados[meio - 1] + ordenados[meio]) / 2
-}
-
-const daEscola = (o: OcorrenciaComportamental) => o.origem === 'ESCOLA'
-
-// ---------------------------------------------------------------- Alertas
-
-function alertasPlanoSemRevisao(agora: Date): AlertaAtencao[] {
-  return planosDeAtivos()
-    .filter((plano) => planoPrecisaRevisao(plano, agora))
-    .map((plano) => ({
-      motivo: 'PLANO_SEM_REVISAO' as const,
-      paciente: pacienteDoAlerta(plano.pacienteId),
-      referenciaId: plano.id,
-      quantidade: emDias(plano.ultimaRevisaoEm ? ms(plano.ultimaRevisaoEm) : inicioDoDia(plano.dataInicio).getTime(),
-        agora.getTime()),
-      unidade: 'dias' as const,
-    }))
-}
-
-function alertasPacienteSemSessao(agora: Date): AlertaAtencao[] {
-  return pacientesAtivos()
-    .map((p: Paciente) => ({ p, ultima: ultimaSessaoDe(p.id) }))
-    .filter(({ ultima }) => pacienteSemSessaoRecente(ultima, agora))
-    .map(({ p, ultima }) => ({
-      motivo: 'PACIENTE_SEM_SESSAO' as const,
-      paciente: pacienteDoAlerta(p.id),
-      referenciaId: p.id,
-      // Nulo quando nunca houve sessao: nao ha "ha quantos dias" a dizer.
-      quantidade: ultima === null ? null : emDias(ms(ultima), agora.getTime()),
-      unidade: 'dias' as const,
-    }))
-}
-
-function alertasConsentimentoVencendo(agora: Date): AlertaAtencao[] {
-  const ativos = new Set(pacientesAtivos().map((p) => p.id))
-  return banco.consentimentos
-    .filter((c) => ativos.has(c.pacienteId) && consentimentoVencendo(c, agora))
-    .map((c) => ({
-      motivo: 'CONSENTIMENTO_VENCENDO' as const,
-      paciente: pacienteDoAlerta(c.pacienteId),
-      referenciaId: c.id,
-      quantidade: emDias(agora.getTime(), fimDaValidade(c.validadeAte).getTime()),
-      unidade: 'dias' as const,
-    }))
-}
-
-function alertasObjetivoSemAvanco(): AlertaAtencao[] {
-  return planosDeAtivos().flatMap((plano) =>
-    plano.objetivos.flatMap((o: Objetivo) => {
-      const percentuais = percentuaisDoObjetivo(plano.pacienteId, o.id)
-      if (!objetivoSemAvanco(o.status, percentuais)) return []
-      return [{
-        motivo: 'OBJETIVO_SEM_AVANCO' as const,
-        paciente: pacienteDoAlerta(plano.pacienteId),
-        referenciaId: o.id,
-        quantidade: sessoesDesdeORecorde(percentuais),
-        unidade: 'sessoes' as const,
-      }]
-    }),
-  )
-}
-
-/**
- * Mais urgente primeiro: quem espera ha mais tempo, ou — no consentimento —
- * quem vence antes. Sem quantidade (paciente que nunca teve sessao) vai para o
- * topo: e o caso mais grave, nao o menos.
- */
-function ordenar(alertas: AlertaAtencao[], motivo: MotivoAtencao): AlertaAtencao[] {
-  const peso = (a: AlertaAtencao) => a.quantidade ?? Number.POSITIVE_INFINITY
-  return alertas.sort((a, b) => motivo === 'CONSENTIMENTO_VENCENDO'
-    ? peso(a) - peso(b)
-    : peso(b) - peso(a))
+function alertas(motivo: MotivoAtencao, agora: Date): AlertaAtencao[] {
+  switch (motivo) {
+    case 'PLANO_SEM_REVISAO':
+      return planosDeAtivos().map((plano) => alertaPlanoSemRevisao(plano, pessoa(plano.pacienteId), agora)).filter(existe)
+    case 'PACIENTE_SEM_SESSAO':
+      return pacientesAtivos().map((p: Paciente) => alertaPacienteSemSessao(pessoa(p.id), ultimaSessaoDe(p.id), agora)).filter(existe)
+    case 'CONSENTIMENTO_VENCENDO': {
+      const deAtivos = ativos()
+      return banco.consentimentos
+        .filter((c) => deAtivos.has(c.pacienteId))
+        .map((c) => alertaConsentimentoVencendo(c, pessoa(c.pacienteId), agora))
+        .filter(existe)
+    }
+    case 'OBJETIVO_SEM_AVANCO':
+      return planosDeAtivos().flatMap((plano) => plano.objetivos.map((o) =>
+        alertaObjetivoSemAvanco(o, plano.status, pessoa(plano.pacienteId), percentuaisDoObjetivo(plano.pacienteId, o.id))))
+        .filter(existe)
+  }
 }
 
 // ---------------------------------------------------------------- Servico
@@ -180,40 +68,32 @@ export const indicadoresMock: ServicoIndicadores = {
   resumo: () => responder(() => {
     exigirPerfil(['COORDENADOR'], 'Indicadores')
     const agora = relogio.agora()
-    const desde7 = inicioDaJanela(agora, JANELA_CURTA_DIAS).getTime()
-    const desde30 = inicioDaJanela(agora, JANELA_LONGA_DIAS).getTime()
-    const ate30 = agora.getTime() + JANELA_LONGA_DIAS * MS_DIA
-
-    const numero = (valor: number, periodo: string): Indicador => ({ valor, periodo })
+    const semana = janelaPassada(agora, JANELA_CURTA_DIAS)
+    const mes = janelaPassada(agora, JANELA_LONGA_DIAS)
+    const adiante = janelaFutura(agora, JANELA_LONGA_DIAS)
 
     // Sessao que aconteceu e sessao encerrada: agendada nao conta como feita.
-    const sessoes = banco.sessoes
-      .filter((s) => s.situacao === 'ENCERRADA' && s.inicio && ms(s.inicio) >= desde7)
+    const sessoes = banco.sessoes.filter((s) => s.situacao === 'ENCERRADA' && s.inicio && naJanela(s.inicio, semana))
 
-    const dominados = banco.planos.flatMap((p) => p.objetivos)
-      .filter((o) => o.dominadoEm !== null && ms(o.dominadoEm) >= desde30)
+    const dominados = planosDeAtivos().flatMap((p) => p.objetivos)
+      .filter((o) => o.dominadoEm !== null && naJanela(o.dominadoEm, mes))
 
-    const revisoes = planosDeAtivos()
-      // Data civil contra data civil: a revisao marcada para hoje ainda esta por vir.
-      .filter((p) => p.dataRevisao >= diaCivilEm(agora) && p.dataRevisao <= diaCivilEm(new Date(ate30)))
+    // So o plano vigente tem revisao a cumprir.
+    const revisoes = planosDeAtivos().filter((p) => p.status === 'VIGENTE' && diaNaJanela(p.dataRevisao, adiante))
 
     return {
       // Clinica sem nenhuma sessao registrada nao tem indicador para mostrar.
       temDados: banco.sessoes.length > 0,
-      pacientesEmAcompanhamento: numero(pacientesAtivos().length, rotuloHoje(agora)),
-      sessoesUltimos7Dias: numero(sessoes.length, rotuloTras(agora, JANELA_CURTA_DIAS)),
-      objetivosDominadosUltimos30Dias: numero(dominados.length, rotuloTras(agora, JANELA_LONGA_DIAS)),
-      planosComRevisaoProximos30Dias: numero(revisoes.length, rotuloFrente(agora, JANELA_LONGA_DIAS)),
+      pacientesEmAcompanhamento: { valor: pacientesAtivos().length, periodo: rotuloDeHoje(agora) },
+      sessoesUltimos7Dias: { valor: sessoes.length, periodo: rotuloPassado(agora, JANELA_CURTA_DIAS) },
+      objetivosDominadosUltimos30Dias: { valor: dominados.length, periodo: rotuloPassado(agora, JANELA_LONGA_DIAS) },
+      planosComRevisaoProximos30Dias: { valor: revisoes.length, periodo: rotuloFuturo(agora, JANELA_LONGA_DIAS) },
     }
   }),
 
   listarAlertas: (motivo, filtro = {}) => responder(() => {
     const sessao = exigirPerfil(['COORDENADOR'], 'Indicadores')
     const agora = relogio.agora()
-    const alertas = motivo === 'PLANO_SEM_REVISAO' ? alertasPlanoSemRevisao(agora)
-      : motivo === 'PACIENTE_SEM_SESSAO' ? alertasPacienteSemSessao(agora)
-        : motivo === 'CONSENTIMENTO_VENCENDO' ? alertasConsentimentoVencendo(agora)
-          : alertasObjetivoSemAvanco()
 
     // Das quatro operacoes, so esta nomeia pacientes, e e registrada como
     // leitura autorizada uma vez por chamada. Ela nao leva pacienteId de
@@ -224,15 +104,14 @@ export const indicadoresMock: ServicoIndicadores = {
       acao: 'LEITURA_AUTORIZADA', entidade: 'Indicadores', idEntidade: motivo,
       detalhe: 'Alertas do painel da coordenação.',
     })
-    return paginar(ordenar(alertas, motivo), filtro)
+    return paginar(ordenarAlertas(alertas(motivo, agora), motivo), filtro)
   }),
 
   sessoesPorProfissional: () => responder(() => {
     exigirPerfil(['COORDENADOR'], 'Indicadores')
     const agora = relogio.agora()
-    const desde = inicioDaJanela(agora, JANELA_LONGA_DIAS).getTime()
-    const feitas = banco.sessoes
-      .filter((s) => s.situacao === 'ENCERRADA' && s.inicio && ms(s.inicio) >= desde)
+    const mes = janelaPassada(agora, JANELA_LONGA_DIAS)
+    const feitas = banco.sessoes.filter((s) => s.situacao === 'ENCERRADA' && s.inicio && naJanela(s.inicio, mes))
 
     const itens = banco.profissionais
       .map((prof) => ({
@@ -247,53 +126,52 @@ export const indicadoresMock: ServicoIndicadores = {
       // em que o profissional foi cadastrado.
       .sort((a, b) => b.sessoes - a.sessoes || a.profissional.nome.localeCompare(b.profissional.nome, 'pt-BR'))
 
-    return { periodo: rotuloTras(agora, JANELA_LONGA_DIAS), itens }
+    return { periodo: rotuloPassado(agora, JANELA_LONGA_DIAS), itens }
   }),
 
   ponteEscola: () => responder(() => {
     exigirPerfil(['COORDENADOR'], 'Indicadores')
     const agora = relogio.agora()
-    const desde30 = inicioDaJanela(agora, JANELA_LONGA_DIAS).getTime()
-    const periodo30 = rotuloTras(agora, JANELA_LONGA_DIAS)
+    const mes = janelaPassada(agora, JANELA_LONGA_DIAS)
+    const periodo30 = rotuloPassado(agora, JANELA_LONGA_DIAS)
 
-    const escolasAtivas = new Set(
-      banco.vinculos
-        .map((v) => banco.consentimentos.find((c) => c.id === v.consentimentoId))
-        .filter((c) => c !== undefined && consentimentoVigente(c, agora))
-        .map((c) => c!.escolaId),
-    )
+    // A escola conta quando ha professor com vinculo ATIVO e o consentimento
+    // que o sustenta esta vigente: um sem o outro nao e ponte.
+    const escolasAtivas = new Set(banco.vinculos
+      .filter((v) => v.status === 'ATIVO')
+      .map((v) => banco.consentimentos.find((c) => c.id === v.consentimentoId))
+      .filter((c) => c !== undefined && consentimentoVigente(c, agora))
+      .map((c) => c!.escolaId))
 
-    const daJanela = banco.ocorrenciasComportamentais
-      .filter((o) => daEscola(o) && ms(o.ocorridaEm) >= desde30)
+    // A ocorrencia da escola e o evento que ela gerou na clinica («gera»). O
+    // tempo corre do registro, e nao de quando aconteceu: a clinica so pode
+    // ler o que ja foi registrado.
+    const comLeitura = banco.ocorrenciasEscolares.map((oe) => ({
+      registradaEm: oe.registradaEm,
+      leituraClinicaEm: banco.ocorrenciasComportamentais.find((o) => o.ocorrenciaEscolarId === oe.id)?.leituraClinicaEm ?? null,
+    }))
+    const daJanela = comLeitura.filter((o) => naJanela(o.registradaEm, mes))
 
     // So entram as que ja foram lidas — e por isso as que faltam aparecem ao
     // lado, sempre: sem elas o numero ficaria melhor do que a realidade,
     // porque justamente as mais lentas estariam de fora.
     const horas = daJanela
       .filter((o) => o.leituraClinicaEm !== null)
-      .map((o) => (ms(o.leituraClinicaEm!) - ms(o.ocorridaEm)) / MS_HORA)
+      .map((o) => horasAteLeitura(o.registradaEm, o.leituraClinicaEm!))
+    const meio = mediana(horas)
 
     // Aguardando nao tem recorte de tempo: um relato de 40 dias sem leitura e
     // exatamente o que nao pode sumir por estar fora da janela.
-    const aguardando = banco.ocorrenciasComportamentais
-      .filter((o) => daEscola(o) && o.leituraClinicaEm === null)
-    const maisAntiga = aguardando
-      .map((o) => ms(o.ocorridaEm))
-      .sort((a, b) => a - b)[0]
+    const aguardando = comLeitura.filter((o) => o.leituraClinicaEm === null)
+    const maisAntiga = aguardando.map((o) => o.registradaEm).sort()[0]
 
     return {
-      escolasComVinculoAtivo: { valor: escolasAtivas.size, periodo: rotuloHoje(agora) },
+      escolasComVinculoAtivo: { valor: escolasAtivas.size, periodo: rotuloDeHoje(agora) },
       ocorrenciasUltimos30Dias: { valor: daJanela.length, periodo: periodo30 },
-      tempoAteLeituraClinica: {
-        // Com menos de tres leituras, a mediana diria mais sobre o acaso do
-        // que sobre a clinica.
-        medianaHoras: horas.length >= 3 ? Math.round(mediana(horas)) : null,
-        leituras: horas.length,
-        periodo: periodo30,
-      },
+      tempoAteLeituraClinica: { medianaHoras: meio === null ? null : Math.round(meio), leituras: horas.length, periodo: periodo30 },
       aguardandoLeitura: {
         quantidade: aguardando.length,
-        maisAntigaHaDias: maisAntiga === undefined ? null : emDias(maisAntiga, agora.getTime()),
+        maisAntigaHaDias: maisAntiga === undefined ? null : diasInteiros(maisAntiga, agora),
       },
     }
   }),

@@ -3,6 +3,7 @@ import { ErroServico, type NovaAtividadeCasa, type OcorrenciaComportamental, typ
 import { servicosMock as s } from '.'
 import { banco, relogio } from './infra'
 import { diaCivilEm } from '@sinctea/compartilhado/dominio/datas'
+import { janelaPassada } from '@sinctea/compartilhado/dominio/indicadores'
 import { ENTIDADES_ADMINISTRATIVAS } from '@sinctea/compartilhado/dominio/auditoria'
 import { jsonCanonico, resumoSha256 } from '@sinctea/compartilhado/dominio/hash'
 import {
@@ -1206,7 +1207,7 @@ describe('painel da coordenacao — conta e aponta', () => {
       expect(indicador.valor).toBeGreaterThanOrEqual(0)
     }
     // Movel: o rotulo traz as duas pontas, nao "esta semana" nem "este mes".
-    expect(resumo.sessoesUltimos7Dias.periodo).toMatch(/últimos 7 dias \(\d{2}\/\d{2} a \d{2}\/\d{2}\)/)
+    expect(resumo.sessoesUltimos7Dias.periodo).toMatch(/últimos 7 dias \(\d{2}(\/\d{2})? a \d{2}\/\d{2}\)/)
     expect(resumo.planosComRevisaoProximos30Dias.periodo).toMatch(/próximos 30 dias/)
   })
 
@@ -1253,6 +1254,27 @@ describe('painel da coordenacao — conta e aponta', () => {
     }
   })
 
+  it('so o plano vigente gera alerta; vinculo encerrado nao conta a escola (item 19)', async () => {
+    await entrarComo('COORDENADOR')
+    const planos = await chamar(s.indicadores.listarAlertas('PLANO_SEM_REVISAO', { porPagina: 100 }))
+    const plano = banco.planos.find((p) => p.id === planos.itens[0].referenciaId)!
+    expect(plano.status).toBe('VIGENTE')
+    const status = plano.status
+    const situacoes = banco.vinculos.map((v) => v.status)
+    try {
+      plano.status = 'RASCUNHO'
+      const depois = await chamar(s.indicadores.listarAlertas('PLANO_SEM_REVISAO', { porPagina: 100 }))
+      expect(depois.itens.map((a) => a.referenciaId)).not.toContain(plano.id)
+
+      expect((await chamar(s.indicadores.ponteEscola())).escolasComVinculoAtivo.valor).toBeGreaterThan(0)
+      for (const v of banco.vinculos) v.status = 'ENCERRADO'
+      expect((await chamar(s.indicadores.ponteEscola())).escolasComVinculoAtivo.valor).toBe(0)
+    } finally {
+      plano.status = status
+      banco.vinculos.forEach((v, i) => { v.status = situacoes[i] })
+    }
+  })
+
   it('serie de grafico nao e paginada e traz a clinica inteira', async () => {
     await entrarComo('COORDENADOR')
     const serie = await chamar(s.indicadores.sessoesPorProfissional())
@@ -1290,23 +1312,18 @@ describe('painel da coordenacao — conta e aponta', () => {
     expect(depois.tempoAteLeituraClinica.leituras).toBe(antes.tempoAteLeituraClinica.leituras + 1)
   })
 
-  it('o primeiro dia do rotulo entra na conta; o dia anterior, nao', async () => {
+  it('o primeiro dia do rotulo entra na conta; o dia anterior, nao — em dias de Manaus', async () => {
     await entrarComo('COORDENADOR')
     // Congela o relogio: a fronteira nao pode andar no meio da verificacao.
     const original = relogio.agora
     const agora = original()
     relogio.agora = () => agora
 
-    /** Zero hora do primeiro dia que o rotulo da janela mostra. */
-    const primeiroDia = (dias: number) => {
-      const d = new Date(agora)
-      d.setHours(0, 0, 0, 0)
-      d.setDate(d.getDate() - (dias - 1))
-      return d
-    }
-    const dentro7 = primeiroDia(7)
+    // Item 19: zero hora, em Manaus, do primeiro dia que o rotulo mostra — e
+    // nao a da maquina que roda o teste.
+    const dentro7 = janelaPassada(agora, 7).desde
     const fora7 = new Date(dentro7.getTime() - 1)
-    const dentro30 = primeiroDia(30)
+    const dentro30 = janelaPassada(agora, 30).desde
     const fora30 = new Date(dentro30.getTime() - 1)
 
     const sessao = (id: string, inicio: Date): Sessao => ({
@@ -1315,24 +1332,34 @@ describe('painel da coordenacao — conta e aponta', () => {
       fim: inicio.toISOString(), local: 'Sala', situacao: 'ENCERRADA',
       statusSync: 'SINCRONIZADO', evolucao: 'Evolução de teste.', registros: [],
     })
-    const ocorrencia = (id: string, ocorridaEm: Date): OcorrenciaComportamental => ({
-      id, pacienteId: 'p-001', origem: 'ESCOLA', ocorridaEm: ocorridaEm.toISOString(),
-      antecedente: '—', comportamento: '—', consequencia: '—', intensidade: 1,
-      leituraClinicaEm: ocorridaEm.toISOString(), sessaoId: null, ocorrenciaEscolarId: null,
-    })
+    // A janela da ponte corre do registro da escola (item 19): a ocorrencia
+    // escolar e o evento que ela gera na clinica.
+    const v1 = banco.vinculos[0]
+    const ocorrencia = (id: string, registradaEm: Date) => {
+      banco.ocorrenciasEscolares.push({
+        id, vinculoId: v1.id, pacienteId: v1.pacienteId, professorId: v1.professorId,
+        ocorridoEm: registradaEm.toISOString(), registradaEm: registradaEm.toISOString(), corrigidaEm: null,
+        tipo: '—', intensidade: 1, contexto: '—',
+      })
+      const gerada: OcorrenciaComportamental = {
+        id: `oc-${id}`, pacienteId: v1.pacienteId, origem: 'ESCOLA', ocorridaEm: registradaEm.toISOString(),
+        antecedente: '—', comportamento: '—', consequencia: '—', intensidade: 1,
+        leituraClinicaEm: registradaEm.toISOString(), sessaoId: null, ocorrenciaEscolarId: id,
+      }
+      banco.ocorrenciasComportamentais.push(gerada)
+    }
 
     try {
       const antes = await chamar(s.indicadores.resumo())
       const ponteAntes = await chamar(s.indicadores.ponteEscola())
 
       // O rotulo promete as duas pontas; o filtro tem de cumprir a primeira.
-      expect(antes.sessoesUltimos7Dias.periodo)
-        .toContain(dentro7.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }))
-      expect(ponteAntes.ocorrenciasUltimos30Dias.periodo)
-        .toContain(dentro30.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }))
+      const diaDe = (d: Date) => diaCivilEm(d).slice(8, 10)
+      expect(antes.sessoesUltimos7Dias.periodo).toContain(`(${diaDe(dentro7)}`)
+      expect(ponteAntes.ocorrenciasUltimos30Dias.periodo).toContain(`(${diaDe(dentro30)}`)
 
       banco.sessoes.push(sessao('s-fronteira-dentro', dentro7))
-      banco.ocorrenciasComportamentais.push(ocorrencia('oc-fronteira-dentro', dentro30))
+      ocorrencia('oe-fronteira-dentro', dentro30)
       const comDentro = await chamar(s.indicadores.resumo())
       const ponteComDentro = await chamar(s.indicadores.ponteEscola())
       expect(comDentro.sessoesUltimos7Dias.valor).toBe(antes.sessoesUltimos7Dias.valor + 1)
@@ -1341,7 +1368,7 @@ describe('painel da coordenacao — conta e aponta', () => {
 
       // Um milissegundo antes da zero hora daquele dia ja e outro periodo.
       banco.sessoes.push(sessao('s-fronteira-fora', fora7))
-      banco.ocorrenciasComportamentais.push(ocorrencia('oc-fronteira-fora', fora30))
+      ocorrencia('oe-fronteira-fora', fora30)
       const comFora = await chamar(s.indicadores.resumo())
       const ponteComFora = await chamar(s.indicadores.ponteEscola())
       expect(comFora.sessoesUltimos7Dias.valor).toBe(comDentro.sessoesUltimos7Dias.valor)
@@ -1351,7 +1378,8 @@ describe('painel da coordenacao — conta e aponta', () => {
       relogio.agora = original
       banco.sessoes = banco.sessoes.filter((x) => !x.id.startsWith('s-fronteira'))
       banco.ocorrenciasComportamentais = banco.ocorrenciasComportamentais
-        .filter((x) => !x.id.startsWith('oc-fronteira'))
+        .filter((x) => !x.id.startsWith('oc-oe-fronteira'))
+      banco.ocorrenciasEscolares = banco.ocorrenciasEscolares.filter((x) => !x.id.startsWith('oe-fronteira'))
     }
   })
 
