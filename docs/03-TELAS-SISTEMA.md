@@ -1,7 +1,7 @@
 # 03 · Telas do sistema
 
 Revisão de 25/10/2026, atualizada em 29/10. A especificação de setembro dizia o
-que construir; esta diz o que existe, conferido no código até o item 17b. Os
+que construir; esta diz o que existe, conferido no código até o item 18. Os
 textos entre aspas são os que a pessoa lê na tela.
 
 **Situação de cada tela:**
@@ -27,7 +27,7 @@ Nenhuma tela diz "terapeuta". Quem atende aparece pela especialidade:
 
 | Perfil, como aparece | No ar | Só no desenvolvimento |
 |---|---|---|
-| Profissional da clínica | 3, 4, 24, 5, 6, 7, 8, 9 | 10 |
+| Profissional da clínica | 3, 4, 24, 5, 6, 7, 8, 9, 10 | — |
 | Coordenador clínico | as da clínica, 12 e 13 | 11 |
 | Administrador | 14, 25 | — |
 | Responsável | 15, 16, 17 | — |
@@ -77,7 +77,7 @@ telas do perfil **ativo**. Esconder item de menu não é segurança: quem autori
 | Perfil ativo | Itens |
 |---|---|
 | Profissional da clínica | Painel do profissional · Pacientes |
-| Coordenador clínico | Painel do profissional · Pacientes · Validar planos |
+| Coordenador clínico | Painel do profissional · Pacientes · Validar planos · Registro de auditoria |
 | Administrador | Usuários e perfis · Trilha administrativa |
 | Responsável | Painel da família · Autorizar a escola |
 | Professor / AEE | Meus alunos |
@@ -357,8 +357,7 @@ cadastrou. O plano vem depois, na tela 6.
    recente para a mais antiga, com quem conduziu ("Nome · Especialidade") e o
    número de registros. 5 por página.
 8. **Ações:** "Abrir o plano terapêutico", "Iniciar sessão", "Atividades
-   para casa" e "Ver evolução por objetivo". "Emitir relatório" só aparece no
-   desenvolvimento.
+   para casa", "Ver evolução por objetivo" e "Emitir relatório".
 
 **Rede de apoio:**
 
@@ -611,22 +610,85 @@ ler".
   alcance: *"Estas atividades não são do seu alcance"*, e a negativa entra na
   trilha (regra 6).
 
-## 10 · Emitir relatório de evolução · só no desenvolvimento
-`/app/clinica/pacientes/:id/relatorio` · UC09
+## 10 · Emitir relatório de evolução · no ar
+`/app/clinica/pacientes/:id/relatorio` · Profissional da clínica da equipe,
+Coordenador clínico · UC09 (item 18)
+
+"Documento clínico: o que sair aqui fica guardado como saiu, e a emissão entra
+na auditoria".
 
 **Conteúdo:**
 
-- período e objetivos;
-- destinatário: a equipe ou a família;
-- as considerações do profissional, obrigatórias e nunca geradas;
-- pré-visualização e histórico.
+- **"O que entra no relatório"**: o período, em dias; os objetivos do plano
+  vigente; e o destinatário, "Equipe e outros profissionais" ou "Família";
+- **"Considerações do profissional"**: *"A sua leitura do período. É esta parte
+  que o relatório existe para carregar."* Obrigatórias ao emitir, até 4.000
+  caracteres, e nunca geradas;
+- **a prévia**, com o mesmo desenho do documento emitido: o que se confere
+  antes de emitir é o que sai;
+- "Emitir relatório";
+- **"Relatórios emitidos"**, do mais recente para o mais antigo. Cada um abre a
+  tela 10b.
+
+**O documento** traz o paciente e o nascimento, o período, o destinatário e as
+sessões no período. Por objetivo: o domínio, a redação, o critério, as sessões
+com o objetivo, o que mudou no período e a situação. No fim, as considerações.
+
+- **Para a família:** a redação acessível e os números em palavras, como
+  *"conseguir 8 de cada 10 vezes, em 2 sessões seguidas"*. Nenhum percentual e
+  nenhuma redação técnica.
+- **Para a equipe:** a redação técnica e o percentual.
+- Contam as sessões encerradas cujo início cai no período, em dias de Manaus.
+  A sessão em andamento não entra.
+
+**Recusas** (`validarPedidoRelatorio`, a mesma na tela e no servidor):
+
+- *"Escolha o período do relatório."*, *"O fim do período não pode ser anterior
+  ao início."* e *"O período não pode passar de hoje."*;
+- *"Escolha ao menos um objetivo para o relatório."* e *"Um dos objetivos
+  escolhidos não é do plano vigente deste paciente."*;
+- sem considerações: *"O relatório é a sua leitura clínica, não só os números.
+  Escreva as suas considerações — elas não são geradas pelo sistema."*;
+- sem registro no conselho: *"Complete o seu registro no conselho em Perfil e
+  preferências antes de emitir um relatório."*;
+- sem plano vigente: *"Para emitir, o paciente precisa de um plano vigente."*,
+  e a coluna da prévia não aparece.
 
 **Regras:**
 
-- é documento clínico;
-- sem o registro no conselho, o relatório não é emitido;
-- o emitido não muda (`relatorio_evolucao` só cresce);
-- a escola nunca acessa.
+- é documento clínico: só a equipe do paciente e a coordenação. Escola,
+  família e administração nunca alcançam (regra 3), e a negativa entra na
+  trilha;
+- leva o nome e o registro no conselho de quem emite, como estavam no dia;
+- a prévia, a emissão, a lista e a abertura entram na trilha, uma linha cada,
+  com o paciente;
+- de um paciente para outro, a tela recomeça: nada do pedido anterior vai
+  junto;
+- a família não abre o relatório pelo sistema: recebe a cópia impressa ou o PDF
+  das mãos do profissional.
+
+## 10b · Relatório emitido · no ar
+`/app/clinica/pacientes/:id/relatorio/:relatorioId` · Profissional da clínica
+da equipe, Coordenador clínico · UC09 (item 18)
+
+"Documento emitido. Não se regenera: é esta cópia que a família ou o outro
+profissional recebeu".
+
+- O documento como saiu e, embaixo, *"Emitido por {nome} · {registro} · {data}
+  às {hora}"* e *"Resumo do conteúdo: sha256:…"*.
+- **A conferência:** ao abrir, o navegador recalcula o resumo do conteúdo
+  guardado e compara com o que foi gravado na emissão.
+  - Igual: *"Conteúdo conferido: igual ao emitido em {data} às {hora}."*
+  - Diferente: "O conteúdo não confere com a emissão", *"O resumo calculado
+    agora é diferente do que foi gravado quando o relatório saiu. Não use esta
+    cópia como documento: procure a coordenação da clínica."*
+- "Imprimir ou salvar em PDF", pela impressão do navegador. A folha impressa
+  leva o cabeçalho do relatório, a assinatura, o resumo e a conferência, e o
+  aviso do ambiente acadêmico no rodapé.
+
+**O emitido não muda:** o banco guarda o texto exato do conteúdo e recusa
+`UPDATE`, `DELETE` e `TRUNCATE` (`docs/09`). Uma sessão registrada depois, no
+mesmo período, muda a prévia da tela 10, e não o emitido.
 
 ---
 
