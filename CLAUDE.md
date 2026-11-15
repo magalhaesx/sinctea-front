@@ -207,10 +207,10 @@ Atualizado em 18/10/2026, lendo o código — não a memória.
   simulada que aplica controle de acesso e auditoria; o cliente da API, que
   não aplica regra nenhuma. A versão publicada usa só a API, e o mock fica
   fora do pacote; no desenvolvimento, `VITE_API_URL` escolhe entre as duas
-- **615 testes em 52 arquivos, nos três pacotes**, rodados por um único
+- **649 testes em 54 arquivos, nos três pacotes**, rodados por um único
   `npm test` na raiz, sem passo manual. O principal ainda é
   `src/servicos/mock/regrasInviolaveis.test.ts`, que verifica as regras
-  invioláveis na camada de dados, e não na tela. Os 299 do servidor rodam contra
+  invioláveis na camada de dados, e não na tela. Os 313 do servidor rodam contra
   um PostgreSQL 17 de verdade
 - **As seis regras verificadas** em `docs/06`: para cada teste citado, a regra foi
   quebrada de propósito para confirmar que ele falha, e as quebras que não
@@ -558,6 +558,24 @@ em produção (o antigo passo B5) foi cancelada. No código, hoje:
   prévia. Na impressão, o cabeçalho da folha (paciente, período e
   destinatário) sumia com a barra do topo; corrigido em `src/index.css`. Testes
   em `servidor/test/relatorios.test.ts`, quebras no `docs/06`
+- **Item 19 — os indicadores da coordenação (tela 11) no ar.** Só a
+  coordenação: `GET /api/indicadores/resumo`, `/alertas/:motivo`,
+  `/sessoes-por-profissional` e `/ponte-escola` (`servidor/src/indicadores/`).
+  O recorte é `compartilhado/src/dominio/indicadores.ts`, o mesmo no mock e no
+  servidor: a janela móvel conta dias civis de Manaus, hoje incluído, e o
+  rótulo traz as duas pontas (*"nos últimos 7 dias (15 a 21/09)"*); a mediana
+  é nula com menos de três medidas; os limiares continuam os de
+  `LIMIARES_ATENCAO`. Plano sem revisão e objetivo parado, só no plano
+  vigente; revisão prevista, só do plano vigente de paciente ativo; paciente
+  sem sessão, pela última encerrada; a escola conta com vínculo ATIVO e
+  consentimento vigente; a ponte corre do registro da ocorrência escolar. Os
+  números são contados no banco; os alertas, calculados sobre os pacientes
+  ativos e paginados depois (limite de escala no `docs/06`). Só os alertas
+  deixam linha `LEITURA_AUTORIZADA`, sem paciente e com o motivo no detalhe; a
+  leitura de cada paciente fica no destino. Sessões por profissional mostra
+  quem atende, e não a coordenação nem a administração sem sessão. A
+  coordenação entra pela tela 11, que mostra o estado vazio enquanto não há
+  sessão. Testes em `servidor/test/indicadores.test.ts`, quebras no `docs/06`
 - **Item 20 — texto corrido justificado e as telas 15, 16 e 18.** Uma classe
   só, `.texto-corrido` (`src/index.css`): justificado, com hifenização pelo
   `lang="pt-BR"` da página e no máximo 65 caracteres por linha. Vale para o
@@ -618,7 +636,7 @@ Não se corta, nem com pressa: as regras 1, 2, 3, 5 e 6 provadas por teste contr
 a API no caminho principal, o *trigger* da auditoria, o papel que não é dono e o
 argon2id.
 
-Depois de 19/10, sem data: indicadores e a agenda; o
+Depois de 19/10, sem data: a agenda (item 19b); o
 envio de e-mail, com a recuperação de senha sem passar pela clínica; a remoção completa de `servicos/mock`; o offline reduzido ao registro de
 sessão (`docs/07`, seção 3A); e a Etapa 13, de 16/11 a 23/11 — artigo, slides,
 vídeo e ensaio.
