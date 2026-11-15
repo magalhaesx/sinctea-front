@@ -1,6 +1,5 @@
 import type { Perfil } from '../servicos'
 import { NOME_DO_PERFIL } from '@sinctea/compartilhado/dominio/perfis'
-import { SO_CAMINHO_PRINCIPAL } from './caminhoPrincipal'
 
 /**
  * Como cada perfil aparece na interface: o nome mora no dominio desde o item
@@ -9,14 +8,13 @@ import { SO_CAMINHO_PRINCIPAL } from './caminhoPrincipal'
 export { NOME_DO_PERFIL }
 
 /**
- * Painel inicial de cada perfil (mapa de rotas: docs/01, secao 2). So no
- * caminho principal, os indicadores da coordenacao ainda nao existem: a
- * entrada dela e a fila de planos. O painel do terapeuta abre com os avisos
- * da escola, sem a agenda.
+ * Painel inicial de cada perfil (mapa de rotas: docs/01, secao 2). A
+ * coordenacao entra pelos indicadores, que voltaram com o item 19. O painel
+ * do terapeuta abre com os avisos da escola, sem a agenda.
  */
 export const PAINEL_DO_PERFIL: Record<Perfil, string> = {
   TERAPEUTA: '/app/clinica',
-  COORDENADOR: SO_CAMINHO_PRINCIPAL ? '/app/coordenacao/planos' : '/app/coordenacao',
+  COORDENADOR: '/app/coordenacao',
   ADMINISTRADOR: '/app/admin/usuarios',
   RESPONSAVEL: '/app/familia',
   PROFESSOR: '/app/escola',

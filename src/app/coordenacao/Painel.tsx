@@ -327,8 +327,9 @@ function BlocoPonte() {
 // ---------------------------------------------------------------- Tela
 
 /**
- * Clinica sem nenhuma sessao registrada. Exportado porque os dados de
- * demonstracao nunca estao vazios: a variante se ve em /dev/estados.
+ * Clinica sem nenhuma sessao registrada: e a primeira coisa que a coordenacao
+ * ve na versao publicada, que nasce vazia (item 19). Exportado para a vitrine
+ * de estados do desenvolvimento, onde o mock nunca esta vazio.
  */
 export function PainelSemDados() {
   return (

@@ -4,7 +4,6 @@ import { BarraPreferencias } from '../componentes/BarraPreferencias'
 import { Botao } from '../ui/Botao'
 import { usarSessao } from '../contexto/Sessao'
 import type { Perfil } from '../servicos'
-import { SO_CAMINHO_PRINCIPAL } from './caminhoPrincipal'
 import { FOCAVEIS, focoPresoNaGaveta, rotuloDoBotaoDoMenu } from './gaveta'
 import { iniciaisDe } from './iniciais'
 import { papelNaTela } from './perfis'
@@ -17,8 +16,7 @@ import { textoDoAvisoDeRedefinicao } from './textoDaRedefinicao'
  * cada leitura e o servidor.
  */
 
-/** `fora`: fora do caminho principal, so com o mock (caminhoPrincipal.ts). */
-type Item = { para: string; nome: string; uc?: string; cor: string; fim?: boolean; fora?: true }
+type Item = { para: string; nome: string; uc?: string; cor: string; fim?: boolean }
 
 /** Um passo da trilha que leva de volta a outra tela. */
 export type ItemDoCaminho = { rotulo: string; para: string }
@@ -43,7 +41,7 @@ const menu: Grupo[] = [
     titulo: 'Coordenação',
     perfis: ['COORDENADOR'],
     itens: [
-      { para: '/app/coordenacao', nome: 'Indicadores da clínica', uc: 'UC18', cor: CLI, fim: true, fora: true },
+      { para: '/app/coordenacao', nome: 'Indicadores da clínica', uc: 'UC18', cor: CLI, fim: true },
       { para: '/app/coordenacao/planos', nome: 'Validar planos', uc: 'UC17', cor: CLI },
       { para: '/app/coordenacao/auditoria', nome: 'Registro de auditoria', uc: 'UC19', cor: CLI },
     ],
@@ -86,9 +84,7 @@ export function LayoutApp() {
   const { usuario, perfilAtivo, especialidade, sair } = usarSessao()
   const navegar = useNavigate()
   const { pathname } = useLocation()
-  const grupos = menu
-    .filter((g) => perfilAtivo !== null && g.perfis.includes(perfilAtivo))
-    .map((g) => ({ ...g, itens: g.itens.filter((i) => !(SO_CAMINHO_PRINCIPAL && i.fora)) }))
+  const grupos = menu.filter((g) => perfilAtivo !== null && g.perfis.includes(perfilAtivo))
 
   /*
    * Item 12: o menu fica atras do botao ☰, em qualquer largura, numa gaveta

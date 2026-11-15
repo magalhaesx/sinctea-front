@@ -105,6 +105,16 @@ describe('a versao publicada', () => {
     expect(estilos).toMatch(/\.texto-corrido :is\(h1,h2,h3,h4,h5,h6,label,legend,a\.inline-flex,button,input,select,textarea\)\{[^}]*hyphens:manual/)
   })
 
+  it('leva os indicadores do item 19: a tela 11, o menu, as quatro rotas e o estado vazio', () => {
+    expect(pacote).toContain('Indicadores da clínica')
+    expect(pacote).toContain('O que precisa de atenção')
+    for (const rota of ['/indicadores/resumo', '/indicadores/alertas/', '/indicadores/sessoes-por-profissional', '/indicadores/ponte-escola']) {
+      expect(pacote, rota).toContain(rota)
+    }
+    // A producao nasce vazia: o estado vazio e o que a coordenacao ve primeiro.
+    expect(pacote).toContain('Os indicadores aparecem depois das primeiras sessões')
+  })
+
   it('leva o registro de auditoria do item 17: a tela 13, o menu e a exportacao', () => {
     expect(pacote).toContain('Registro de auditoria')
     expect(pacote).toContain('Só tentativas negadas')

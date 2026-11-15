@@ -56,6 +56,7 @@ const titulos: [padrao: string, titulo: string][] = [
   ['/app/clinica/pacientes/:id', 'Ficha do paciente'],
   ['/app/clinica/pacientes/:id/plano', 'Plano Terapêutico Individual'],
   ['/app/clinica/pacientes/:id/sessao', 'Registro de sessão'],
+  ['/app/coordenacao', 'Indicadores da clínica'],
   ['/app/coordenacao/planos', 'Validar planos terapêuticos'],
   ['/app/coordenacao/auditoria', 'Registro de auditoria'],
   ['/app/admin/usuarios', 'Usuários e perfis'],
@@ -74,7 +75,6 @@ const titulos: [padrao: string, titulo: string][] = [
   ['/app/ajuda', 'Acessibilidade e ajuda'],
   // Fora do caminho principal: so com o mock (app/caminhoPrincipal.ts).
   ...(SO_CAMINHO_PRINCIPAL ? [] : [
-    ['/app/coordenacao', 'Indicadores da clínica'],
     ['/dev/estados', 'Vitrine de estados'],
   ] as [string, string][]),
 ]
@@ -134,6 +134,7 @@ export function App() {
         <Route path="clinica/pacientes/:id/relatorio" element={protegida(CLINICA, <Relatorio />)} />
         <Route path="clinica/pacientes/:id/relatorio/:relatorioId" element={protegida(CLINICA, <RelatorioEmitido />)} />
 
+        <Route path="coordenacao" element={protegida(['COORDENADOR'], <PainelCoordenacao />)} />
         <Route path="coordenacao/planos" element={protegida(['COORDENADOR'], <Planos />)} />
         <Route path="coordenacao/auditoria" element={protegida(['COORDENADOR'], <Auditoria />)} />
 
@@ -150,15 +151,6 @@ export function App() {
 
         <Route path="conta" element={protegida(TODOS, <Conta />)} />
         <Route path="ajuda" element={protegida(TODOS, <Ajuda />)} />
-
-        {/* Fora do caminho principal: so com o mock, nunca com dado simulado na
-            versao publicada (app/caminhoPrincipal.ts). Sem a rota, o endereco
-            cai no "*" e volta ao painel do perfil. */}
-        {!SO_CAMINHO_PRINCIPAL && (
-          <>
-            <Route path="coordenacao" element={protegida(['COORDENADOR'], <PainelCoordenacao />)} />
-          </>
-        )}
       </Route>
 
       {VitrineEstados && (
