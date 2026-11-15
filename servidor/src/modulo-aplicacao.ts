@@ -12,6 +12,7 @@ import { ModuloClinica } from './clinica/modulo-clinica.js'
 import { ModuloEscola } from './escola/modulo-escola.js'
 import { ModuloAtividades } from './atividades/modulo-atividades.js'
 import { ModuloRelatorios } from './relatorios/modulo-relatorios.js'
+import { ModuloIndicadores } from './indicadores/modulo-indicadores.js'
 
 /**
  * A guarda, o interceptador e o filtro valem para toda rota, sem excecao
@@ -20,7 +21,7 @@ import { ModuloRelatorios } from './relatorios/modulo-relatorios.js'
 @Module({
   imports: [
     ModuloBanco, ModuloAuditoria, ModuloAutenticacao, ModuloUsuarios, ModuloClinica, ModuloEscola, ModuloAtividades,
-    ModuloRelatorios,
+    ModuloRelatorios, ModuloIndicadores,
   ],
   controllers: [ControladorSaude],
   providers: [
