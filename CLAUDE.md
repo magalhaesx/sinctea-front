@@ -207,10 +207,10 @@ Atualizado em 18/10/2026, lendo o código — não a memória.
   simulada que aplica controle de acesso e auditoria; o cliente da API, que
   não aplica regra nenhuma. A versão publicada usa só a API, e o mock fica
   fora do pacote; no desenvolvimento, `VITE_API_URL` escolhe entre as duas
-- **649 testes em 54 arquivos, nos três pacotes**, rodados por um único
+- **690 testes em 57 arquivos, nos três pacotes**, rodados por um único
   `npm test` na raiz, sem passo manual. O principal ainda é
   `src/servicos/mock/regrasInviolaveis.test.ts`, que verifica as regras
-  invioláveis na camada de dados, e não na tela. Os 313 do servidor rodam contra
+  invioláveis na camada de dados, e não na tela. Os 332 do servidor rodam contra
   um PostgreSQL 17 de verdade
 - **As seis regras verificadas** em `docs/06`: para cada teste citado, a regra foi
   quebrada de propósito para confirmar que ele falha, e as quebras que não
@@ -576,6 +576,39 @@ em produção (o antigo passo B5) foi cancelada. No código, hoje:
   quem atende, e não a coordenação nem a administração sem sessão. A
   coordenação entra pela tela 11, que mostra o estado vazio enquanto não há
   sessão. Testes em `servidor/test/indicadores.test.ts`, quebras no `docs/06`
+- **Item 19b — a agenda com agendamento (telas 3, 5 e 7) e o link da tela
+  12.** Agendar é de quem vai conduzir, para si, com o alcance de hoje
+  (`POST /api/pacientes/:id/agendamentos`); a validação é
+  `validarAgendamento` (`compartilhado/src/dominio/agenda.ts`), a mesma no
+  front, no mock e no servidor: nada no passado, até 90 dias à frente em dias
+  de Manaus, local obrigatório até 100 caracteres, com "Clínica" no campo, e o
+  horário no minuto. O banco recusa, com dois índices únicos parciais sobre as
+  sessões em `AGENDADA` (migração `agendamento`), o mesmo profissional no
+  mesmo horário e o mesmo paciente com o mesmo profissional no mesmo dia de
+  Manaus, inclusive em corrida; a recusa sai como `CONFLITO`, no campo.
+  Cancelar (`POST /api/sessoes/:id/cancelamento`) é só da agendada, só por
+  quem vai conduzir, com `ALTERACAO` e o `valorAnterior` da situação;
+  remarcar é cancelar e agendar de novo. O agendamento só se inicia no dia
+  dele (*"Este agendamento é para {data}."*); o cancelado ouve *"Este
+  agendamento foi cancelado."*; sem o id, o início usa o agendamento de hoje
+  de quem pede. **O número da sessão nasce no início**: nulo na agendada e na
+  cancelada (CHECK `sessao_numero_so_iniciada`), o seguinte ao maior do
+  paciente, com o paciente travado (`FOR NO KEY UPDATE`) e o índice único
+  `(pacienteId, numero)` como garantia — o cancelado não gasta número, e dois
+  inícios ao mesmo tempo não o repetem. Iniciar a agendada ou retomar a
+  pausada entra na trilha como `ALTERACAO`, com a situação anterior; a pausada
+  se retoma com o id dela, e não vira outra sessão. A agenda
+  (`GET /api/agenda`) traz só as sessões de quem pede, no dia de Manaus, pelo
+  horário, com uma linha *"Agenda de {dia}: N."*; as próximas do paciente
+  (`GET /api/pacientes/:id/proximas-sessoes`), de hoje em diante, de qualquer
+  profissional. A tela 3 voltou à versão publicada com o dia anterior e o
+  próximo; a contagem a sincronizar continua só no desenvolvimento. Agendar e
+  cancelar não contam em indicador, evolução, relatório nem "paciente sem
+  sessão", e `temDados` passou a pedir uma sessão iniciada. O link da tela 12
+  para a auditoria voltou. O PostgreSQL embutido roda em UTC, como o CI e o
+  Neon: o adaptador pg do Prisma manda o instante sem o fuso, e o índice do
+  dia de Manaus depende disso. Testes em `servidor/test/agenda.test.ts`,
+  quebras no `docs/06`
 - **Item 20 — texto corrido justificado e as telas 15, 16 e 18.** Uma classe
   só, `.texto-corrido` (`src/index.css`): justificado, com hifenização pelo
   `lang="pt-BR"` da página e no máximo 65 caracteres por linha. Vale para o
@@ -636,7 +669,7 @@ Não se corta, nem com pressa: as regras 1, 2, 3, 5 e 6 provadas por teste contr
 a API no caminho principal, o *trigger* da auditoria, o papel que não é dono e o
 argon2id.
 
-Depois de 19/10, sem data: a agenda (item 19b); o
+Depois de 19/10, sem data: o
 envio de e-mail, com a recuperação de senha sem passar pela clínica; a remoção completa de `servicos/mock`; o offline reduzido ao registro de
 sessão (`docs/07`, seção 3A); e a Etapa 13, de 16/11 a 23/11 — artigo, slides,
 vídeo e ensaio.
@@ -726,7 +759,8 @@ viaja dentro do próprio `hashTermo`.
   passa a valer sobre `lower(email)`
 - `percentualMinimo`: o domínio aceita de 1 a 100 (`validarNovoObjetivo`), mas o
   CHECK do banco aceita de 0 a 100. Alinhar numa migração
-- `sessoesConsecutivas`, `numero` e `ordem` não têm CHECK de no mínimo 1
+- `sessoesConsecutivas` e `ordem` não têm CHECK de no mínimo 1 (o `numero` ganhou
+  o dele no item 19b, na sessão iniciada)
 - O `sinctea_app` só precisa ler `_prisma_migrations`: revogar o INSERT, o
   UPDATE e o DELETE dele nessa tabela
 
