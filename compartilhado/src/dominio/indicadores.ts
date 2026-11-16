@@ -1,7 +1,7 @@
 import type {
   AlertaAtencao, Consentimento, DataCivil, DataIso, MotivoAtencao, PlanoTerapeutico, StatusObjetivo,
 } from '../tipos.js'
-import { diaCivilEm, fimDaValidade, inicioDoDia, partesDaDataCivil } from './datas.js'
+import { diaCivilEm, fimDaValidade, inicioDoDia, somarDias } from './datas.js'
 import { consentimentoVencendo, objetivoSemAvanco, pacienteSemSessaoRecente, planoPrecisaRevisao } from './regras.js'
 
 /**
@@ -31,12 +31,8 @@ const MS_DIA = 24 * MS_HORA
 
 const instante = (d: Date | DataIso) => (d instanceof Date ? d.getTime() : Date.parse(d))
 
-/** Soma dias a um dia civil, pelo calendario: nenhum fuso entra. */
-export function somarDias(d: DataCivil, dias: number): DataCivil {
-  const partes = partesDaDataCivil(d)
-  if (!partes) throw new Error(`Data civil invalida: "${d}".`)
-  return new Date(Date.UTC(partes.ano, partes.mes - 1, partes.dia + dias)).toISOString().slice(0, 10)
-}
+/** Mora em datas.ts desde o item 19b, que tambem conta dias; daqui, so reexportada. */
+export { somarDias }
 
 /**
  * Dias civis de Manaus, os dois das pontas dentro. Como instantes, vai de

@@ -61,6 +61,12 @@ export function fimDaValidade(d: DataCivil): Date {
   return new Date(Date.UTC(ano, mes - 1, dia + 1) - DESLOCAMENTO_MS)
 }
 
+/** Soma dias a um dia civil, pelo calendario: nenhum fuso entra. */
+export function somarDias(d: DataCivil, dias: number): DataCivil {
+  const { ano, mes, dia } = exigirDataCivil(d)
+  return new Date(Date.UTC(ano, mes - 1, dia + dias)).toISOString().slice(0, 10)
+}
+
 /** "31/12/2026", so com operacoes de texto: fuso nenhum entra. */
 export function emDataCivil(d: DataCivil): string {
   const { ano, mes, dia } = exigirDataCivil(d)

@@ -3,7 +3,7 @@ import {
   type PedidoRelatorio, type Sessao, type SituacaoPlano,
 } from '../tipos.js'
 import { diaCivilEm, partesDaDataCivil } from './datas.js'
-import { percentualIndependente, textoDoCriterio, textoDoPeriodo } from './regras.js'
+import { encerradasEmOrdem, percentualIndependente, textoDoCriterio, textoDoPeriodo } from './regras.js'
 
 /**
  * O relatorio de evolucao (UC09, tela 10; item 18): a validacao do pedido e a
@@ -73,13 +73,12 @@ export interface EntradaRelatorio {
  */
 export function montarConteudoRelatorio({ paciente, plano, sessoes, pedido }: EntradaRelatorio): ConteudoRelatorio {
   if (!plano || plano.status !== 'VIGENTE') throw new ErroServico('CONFLITO', SEM_PLANO_VIGENTE)
-  const doPeriodo = sessoes
-    .filter((s) => s.situacao === 'ENCERRADA' && s.inicio)
+  const doPeriodo = encerradasEmOrdem(sessoes)
+    .filter((s) => s.inicio)
     .filter((s) => {
       const dia = diaCivilEm(new Date(s.inicio!))
       return dia >= pedido.periodoInicio && dia <= pedido.periodoFim
     })
-    .sort((a, b) => a.numero - b.numero)
 
   const objetivos: ObjetivoNoRelatorio[] = pedido.objetivoIds.map((objetivoId) => {
     const objetivo = plano.objetivos.find((o) => o.id === objetivoId)

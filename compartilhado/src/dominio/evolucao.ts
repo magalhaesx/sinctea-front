@@ -1,7 +1,7 @@
 import type {
   AtividadeCasa, CriterioDominio, EvolucaoObjetivo, ExecucaoAtividadeCasa, OcorrenciaComportamental, Sessao,
 } from '../tipos.js'
-import { objetivoAtingiuCriterio, percentualIndependente } from './regras.js'
+import { encerradasEmOrdem, objetivoAtingiuCriterio, percentualIndependente } from './regras.js'
 
 /**
  * A evolucao de um objetivo nos tres contextos (tela 8, item 16), a mesma no
@@ -25,9 +25,7 @@ export interface EntradaEvolucao {
 }
 
 export function montarEvolucao({ objetivo, sessoes, atividades, execucoes, ocorrencias }: EntradaEvolucao): EvolucaoObjetivo {
-  const clinica = sessoes
-    .filter((s) => s.situacao === 'ENCERRADA')
-    .sort((a, b) => a.numero - b.numero)
+  const clinica = encerradasEmOrdem(sessoes)
     .flatMap((s) => {
       const percentual = percentualIndependente(s.registros, objetivo.id)
       return percentual === null

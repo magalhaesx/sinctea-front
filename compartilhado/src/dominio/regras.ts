@@ -90,15 +90,24 @@ export function percentualIndependente(registros: RegistroAtividade[], objetivoI
  * objetivo: sessao em que o objetivo nao foi trabalhado nao quebra nem
  * completa a sequencia.
  */
+/**
+ * As sessoes encerradas, na ordem em que comecaram. A encerrada sempre tem
+ * numero (CHECK sessao_numero_so_iniciada); a agendada e a cancelada nao tem,
+ * e nunca entram em evolucao, criterio, indicador ou relatorio (item 19b).
+ */
+export function encerradasEmOrdem<T extends Pick<Sessao, 'situacao' | 'numero'>>(sessoes: T[]): Array<T & { numero: number }> {
+  return sessoes
+    .filter((s): s is T & { numero: number } => s.situacao === 'ENCERRADA' && s.numero !== null)
+    .sort((a, b) => a.numero - b.numero)
+}
+
 export function objetivoAtingiuCriterio(
   sessoes: Array<Pick<Sessao, 'situacao' | 'numero' | 'registros'>>,
   objetivoId: string,
   criterio: CriterioDominio,
 ): boolean {
   if (criterio.sessoesConsecutivas < 1) return false
-  const percentuais = sessoes
-    .filter((s) => s.situacao === 'ENCERRADA')
-    .sort((a, b) => a.numero - b.numero)
+  const percentuais = encerradasEmOrdem(sessoes)
     .map((s) => percentualIndependente(s.registros, objetivoId))
     .filter((p): p is number => p !== null)
 

@@ -3,7 +3,7 @@ import type {
   CartaoEstrategia,
   ConsentimentoConcedido, ConsentimentoDetalhe, ContaCriada, ConvitePublico, Desempenho, Escola,
   EvolucaoObjetivo, ExecucaoAtividadeCasa, FiltroAgenda, FiltroAuditoria, FiltroOcorrencia, FiltroPaciente,
-  FiltroPaginacao, FiltroSessao, FiltroUsuario, FilhoResumo, ItemAgenda, LinkPrimeiroAcesso, NovaAtividadeCasa,
+  FiltroPaginacao, FiltroSessao, FiltroUsuario, FilhoResumo, ItemAgenda, LinkPrimeiroAcesso, NovaAtividadeCasa, NovoAgendamento,
   NovaOcorrenciaComportamental, NovaOcorrenciaEscolar, NovoConsentimento, NovoObjetivo, EdicaoObjetivo,
   NovoPaciente, NovoPlano, NovoResponsavel, EdicaoResponsavel, ResponsavelCadastrado, ResponsavelNaFicha, DadosCartao, NovaEscola, Objetivo, ObjetivoAcessivel, OcorrenciaComportamental, OcorrenciaEscolar,
   ConteudoRelatorio, DadosProfissionais, MotivoAtencao, Pagina, PacienteDetalhe, PacienteResumo, PedidoRelatorio,
@@ -129,7 +129,10 @@ export interface ServicoPlano {
 }
 
 export interface ServicoSessao {
+  /** As sessoes de quem pede, no dia de Manaus, pelo horario previsto (tela 3). */
   listarAgenda(filtro?: FiltroAgenda): Promise<Pagina<ItemAgenda>>
+  /** Os agendamentos do paciente de hoje em diante, de qualquer profissional (tela 5). */
+  listarProximas(pacienteId: string, filtro?: FiltroPaginacao): Promise<Pagina<ItemAgenda>>
   listarPorPaciente(pacienteId: string, filtro?: FiltroSessao): Promise<Pagina<Sessao>>
   /**
    * Registros feitos sem conexao que ainda nao subiram, do profissional
@@ -137,7 +140,19 @@ export interface ServicoSessao {
    */
   listarPendentesDeSincronizacao(filtro?: FiltroPaginacao): Promise<Pagina<Sessao>>
   obter(id: string): Promise<Sessao>
-  /** Inicia uma sessao agendada ou cria uma nova, conduzida pelo usuario atual. */
+  /**
+   * Agenda uma sessao para quem pede, que e quem vai conduzir (item 19b). O
+   * mesmo profissional nao fica com dois agendamentos no mesmo horario, nem
+   * com dois do mesmo paciente no mesmo dia de Manaus.
+   */
+  agendar(pacienteId: string, dados: NovoAgendamento): Promise<Sessao>
+  /** So a agendada, e so por quem vai conduzi-la. Remarcar e cancelar e agendar de novo. */
+  cancelar(sessaoId: string): Promise<Sessao>
+  /**
+   * Inicia a sessao agendada, so no dia dela, ou retoma a pausada. Sem o id,
+   * inicia o agendamento de hoje de quem pede para o paciente, se houver; se
+   * nao, cria uma sessao nova. O numero nasce aqui.
+   */
   iniciar(pacienteId: string, sessaoAgendadaId?: string): Promise<Sessao>
   registrarAtividade(sessaoId: string, objetivoId: string, resultado: Resultado): Promise<RegistroAtividade>
   desfazerUltimoRegistro(sessaoId: string): Promise<Sessao>

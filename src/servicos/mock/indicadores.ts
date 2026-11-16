@@ -1,6 +1,6 @@
 import type { ServicoIndicadores } from '@sinctea/compartilhado'
 import type { AlertaAtencao, MotivoAtencao, Paciente } from '@sinctea/compartilhado'
-import { consentimentoVigente, percentualIndependente } from '@sinctea/compartilhado/dominio/regras'
+import { consentimentoVigente, encerradasEmOrdem, percentualIndependente } from '@sinctea/compartilhado/dominio/regras'
 import {
   alertaConsentimentoVencendo, alertaObjetivoSemAvanco, alertaPacienteSemSessao, alertaPlanoSemRevisao, diaNaJanela,
   diasInteiros, horasAteLeitura, JANELA_CURTA_DIAS, JANELA_LONGA_DIAS, janelaFutura, janelaPassada, mediana, naJanela,
@@ -28,9 +28,7 @@ const pessoa = (pacienteId: string) =>
 
 /** Percentual de independencia por sessao encerrada em que o objetivo foi trabalhado, em ordem de numero. */
 function percentuaisDoObjetivo(pacienteId: string, objetivoId: string): number[] {
-  return banco.sessoes
-    .filter((s) => s.pacienteId === pacienteId && s.situacao === 'ENCERRADA')
-    .sort((a, b) => a.numero - b.numero)
+  return encerradasEmOrdem(banco.sessoes.filter((s) => s.pacienteId === pacienteId))
     .map((s) => percentualIndependente(s.registros, objetivoId))
     .filter((p): p is number => p !== null)
 }
@@ -82,8 +80,9 @@ export const indicadoresMock: ServicoIndicadores = {
     const revisoes = planosDeAtivos().filter((p) => p.status === 'VIGENTE' && diaNaJanela(p.dataRevisao, adiante))
 
     return {
-      // Clinica sem nenhuma sessao registrada nao tem indicador para mostrar.
-      temDados: banco.sessoes.length > 0,
+      // Clinica sem nenhuma sessao iniciada nao tem indicador para mostrar; o
+      // agendamento, sozinho, nao conta (item 19b).
+      temDados: banco.sessoes.some((s) => s.inicio !== null),
       pacientesEmAcompanhamento: { valor: pacientesAtivos().length, periodo: rotuloDeHoje(agora) },
       sessoesUltimos7Dias: { valor: sessoes.length, periodo: rotuloPassado(agora, JANELA_CURTA_DIAS) },
       objetivosDominadosUltimos30Dias: { valor: dominados.length, periodo: rotuloPassado(agora, JANELA_LONGA_DIAS) },

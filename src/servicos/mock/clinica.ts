@@ -8,12 +8,16 @@ import {
   validarCartao, validarDevolucaoPlano, validarNovoObjetivo, validarNovoPlano,
 } from '@sinctea/compartilhado/dominio/regras'
 import { montarEvolucao } from '@sinctea/compartilhado/dominio/evolucao'
-import { inicioDoDia } from '@sinctea/compartilhado/dominio/datas'
+import { diaCivilEm, emDataCivil, inicioDoDia } from '@sinctea/compartilhado/dominio/datas'
+import {
+  LOCAL_PADRAO, SO_CANCELA_AGENDADA, SO_QUEM_CONDUZ_CANCELA, agendamentoPreenchido, conflitoDeHorario, conflitoDoDia,
+  diaDoAgendamento, quandoEmManaus, recusaDoInicio, validarAgendamento,
+} from '@sinctea/compartilhado/dominio/agenda'
 import { anterioresQueMudaram } from '@sinctea/compartilhado/dominio/auditoria'
 import { jsonCanonico } from '@sinctea/compartilhado/dominio/hash'
 import { alcancaClinicamente, exigirPacienteClinico } from './acesso'
 import {
-  auditar, banco, exigirPerfil, exigirSessao, exigirValido, gerarId, naoEncontrado, paginar,
+  auditar, banco, exigirPerfil, exigirSessao, exigirValido, gerarId, naoEncontrado, negar, paginar,
   relogio, responder, type SessaoServidor,
 } from './infra'
 
@@ -306,36 +310,62 @@ function exigirEmAndamento(sessao: Sessao): void {
   }
 }
 
+const itemDaAgenda = (s: Sessao): ItemAgenda => ({
+  sessaoId: s.id,
+  inicioPrevistoEm: s.inicioPrevistoEm,
+  situacao: s.situacao,
+  local: s.local,
+  paciente: { id: s.pacienteId, nome: banco.pacientes.find((p) => p.id === s.pacienteId)?.nome ?? '—' },
+  profissional: { id: s.profissionalId, nome: banco.profissionais.find((p) => p.id === s.profissionalId)?.nome ?? '—' },
+})
+
+/** O numero nasce no inicio, o seguinte ao maior do paciente: o cancelado nao gasta numero (item 19b). */
+const proximoNumero = (pacienteId: string) =>
+  Math.max(0, ...banco.sessoes.filter((s) => s.pacienteId === pacienteId).map((s) => s.numero ?? 0)) + 1
+
+/** A agendada vira EM_ANDAMENTO com o numero dela; a pausada so volta a andar. */
+function iniciarExistente(sessao: Sessao, agora: string): Sessao {
+  if (sessao.situacao === 'AGENDADA') sessao.numero = proximoNumero(sessao.pacienteId)
+  sessao.situacao = 'EM_ANDAMENTO'
+  sessao.inicio ??= agora
+  // Enquanto nao ha back-end (S06), nada subiu a lugar nenhum: o registro
+  // aberto agora fica pendente, e a tela diz isso com estas palavras.
+  sessao.statusSync = 'PENDENTE'
+  return sessao
+}
+
 export const sessoesMock: ServicoSessao = {
   listarAgenda: (filtro = {}) => responder(() => {
     const autenticada = exigirPerfil(['TERAPEUTA', 'COORDENADOR'], 'Sessao')
-    const agora = relogio.agora()
-    const dia = filtro.dia ??
-      `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}-${String(agora.getDate()).padStart(2, '0')}`
-    const doDia = (iso: string) => {
-      const d = new Date(iso)
-      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` === dia
-    }
+    // O dia e o de Manaus, como no servidor (item 19b), e nao o da maquina.
+    const dia = filtro.dia ?? diaCivilEm(relogio.agora())
     // Agenda e de quem atende: mesmo o coordenador ve apenas as proprias sessoes aqui.
     const itens: ItemAgenda[] = banco.sessoes
-      .filter((s) => s.profissionalId === autenticada.usuario.id && doDia(s.inicioPrevistoEm))
-      .sort((a, b) => a.inicioPrevistoEm.localeCompare(b.inicioPrevistoEm))
-      .map((s) => ({
-        sessaoId: s.id,
-        inicioPrevistoEm: s.inicioPrevistoEm,
-        situacao: s.situacao,
-        paciente: { id: s.pacienteId, nome: banco.pacientes.find((p) => p.id === s.pacienteId)?.nome ?? '—' },
-        profissional: { id: autenticada.usuario.id, nome: autenticada.usuario.nome },
-      }))
+      .filter((s) => s.profissionalId === autenticada.usuario.id && diaDoAgendamento(s.inicioPrevistoEm) === dia)
+      .sort((a, b) => a.inicioPrevistoEm.localeCompare(b.inicioPrevistoEm) || a.id.localeCompare(b.id))
+      .map(itemDaAgenda)
+    auditar(autenticada, { acao: 'LEITURA_AUTORIZADA', entidade: 'Sessao', detalhe: `Agenda de ${emDataCivil(dia)}: ${itens.length}.` })
+    return paginar(itens, filtro)
+  }),
+
+  listarProximas: (pacienteId, filtro = {}) => responder(() => {
+    const { sessao } = exigirPacienteClinico(pacienteId, 'Sessao')
+    const hoje = diaCivilEm(relogio.agora())
+    const itens = banco.sessoes
+      .filter((s) => s.pacienteId === pacienteId && s.situacao === 'AGENDADA' && diaDoAgendamento(s.inicioPrevistoEm) >= hoje)
+      .sort((a, b) => a.inicioPrevistoEm.localeCompare(b.inicioPrevistoEm) || a.id.localeCompare(b.id))
+      .map(itemDaAgenda)
+    auditar(sessao, { acao: 'LEITURA_AUTORIZADA', entidade: 'Sessao', pacienteId, detalhe: `Próximas sessões: ${itens.length}.` })
     return paginar(itens, filtro)
   }),
 
   listarPorPaciente: (pacienteId, filtro = {}) => responder(() => {
     const { sessao } = exigirPacienteClinico(pacienteId, 'Sessao')
     auditar(sessao, { acao: 'LEITURA_AUTORIZADA', entidade: 'Sessao', pacienteId, detalhe: 'Histórico de sessões.' })
+    // Da mais recente para a mais antiga; a agendada e a cancelada, sem numero, vao para o fim.
     const itens = banco.sessoes
       .filter((s) => s.pacienteId === pacienteId && (!filtro.situacao || s.situacao === filtro.situacao))
-      .sort((a, b) => b.numero - a.numero)
+      .sort((a, b) => (b.numero ?? 0) - (a.numero ?? 0) || b.inicioPrevistoEm.localeCompare(a.inicioPrevistoEm))
     return paginar(itens, filtro)
   }),
 
@@ -354,34 +384,73 @@ export const sessoesMock: ServicoSessao = {
     return sessao
   }),
 
+  agendar: (pacienteId, dados) => responder(() => {
+    const { sessao: autenticada } = exigirPacienteClinico(pacienteId, 'Sessao')
+    exigirValido(validarAgendamento(dados, relogio.agora()))
+    const { inicioPrevistoEm, local } = agendamentoPreenchido(dados)
+    const inicio = inicioPrevistoEm!.toISOString()
+    // No servidor, quem garante sao os dois indices unicos parciais; aqui, a mesma conferencia.
+    const agendadas = banco.sessoes.filter((s) => s.situacao === 'AGENDADA' && s.profissionalId === autenticada.usuario.id)
+    if (agendadas.some((s) => s.inicioPrevistoEm === inicio)) {
+      throw new ErroServico('CONFLITO', conflitoDeHorario(inicio), { inicioPrevistoEm: conflitoDeHorario(inicio) })
+    }
+    if (agendadas.some((s) => s.pacienteId === pacienteId && diaDoAgendamento(s.inicioPrevistoEm) === diaDoAgendamento(inicio))) {
+      throw new ErroServico('CONFLITO', conflitoDoDia(inicio), { inicioPrevistoEm: conflitoDoDia(inicio) })
+    }
+    const nova: Sessao = {
+      id: gerarId('s'), pacienteId, profissionalId: autenticada.usuario.id, numero: null,
+      inicioPrevistoEm: inicio, inicio: null, fim: null, local, situacao: 'AGENDADA', statusSync: 'SINCRONIZADO',
+      evolucao: null, registros: [],
+    }
+    banco.sessoes.push(nova)
+    auditar(autenticada, { acao: 'CRIACAO', entidade: 'Sessao', idEntidade: nova.id, pacienteId, detalhe: `Sessão agendada para ${quandoEmManaus(inicio)}.` })
+    return nova
+  }),
+
+  cancelar: (sessaoId) => responder(() => {
+    const sessao = buscarSessao(sessaoId)
+    const { sessao: autenticada } = exigirPacienteClinico(sessao.pacienteId, 'Sessao')
+    if (sessao.profissionalId !== autenticada.usuario.id) {
+      negar(autenticada, {
+        entidade: 'Sessao', idEntidade: sessao.id, pacienteId: sessao.pacienteId,
+        detalhe: 'Cancelamento de sessão de outro profissional.',
+      }, SO_QUEM_CONDUZ_CANCELA)
+    }
+    if (sessao.situacao !== 'AGENDADA') throw new ErroServico('CONFLITO', SO_CANCELA_AGENDADA)
+    sessao.situacao = 'CANCELADA'
+    auditar(autenticada, {
+      acao: 'ALTERACAO', entidade: 'Sessao', idEntidade: sessao.id, pacienteId: sessao.pacienteId,
+      detalhe: 'Agendamento cancelado.', valorAnterior: jsonCanonico({ situacao: 'AGENDADA' }),
+    })
+    return sessao
+  }),
+
   iniciar: (pacienteId, sessaoAgendadaId) => responder(() => {
     const { sessao: autenticada } = exigirPacienteClinico(pacienteId, 'Sessao')
-    const agora = relogio.agora().toISOString()
+    const agora = relogio.agora()
     if (sessaoAgendadaId) {
       const agendada = buscarSessao(sessaoAgendadaId)
       if (agendada.pacienteId !== pacienteId || agendada.profissionalId !== autenticada.usuario.id) {
         throw new ErroServico('ACESSO_NEGADO', 'Esta sessão está agendada para outro profissional.')
       }
       if (agendada.situacao === 'EM_ANDAMENTO') return agendada
-      if (agendada.situacao !== 'AGENDADA' && agendada.situacao !== 'PAUSADA') {
-        throw new ErroServico('CONFLITO', 'Esta sessão já foi encerrada.')
-      }
-      agendada.situacao = 'EM_ANDAMENTO'
-      agendada.inicio ??= agora
-      // Enquanto nao ha back-end (S06), nada subiu a lugar nenhum: o registro
-      // aberto agora fica pendente, e a tela diz isso com estas palavras.
-      agendada.statusSync = 'PENDENTE'
-      return agendada
+      const recusa = recusaDoInicio(agendada, agora)
+      if (recusa) throw new ErroServico('CONFLITO', recusa)
+      return iniciarExistente(agendada, agora.toISOString())
     }
+    // Sem o id, o agendamento de hoje de quem pede, se houver (tela 7).
+    const deHoje = banco.sessoes.find((s) => s.pacienteId === pacienteId && s.profissionalId === autenticada.usuario.id &&
+      s.situacao === 'AGENDADA' && diaDoAgendamento(s.inicioPrevistoEm) === diaCivilEm(agora))
+    if (deHoje) return iniciarExistente(deHoje, agora.toISOString())
     const nova: Sessao = {
       id: gerarId('s'),
       pacienteId,
       profissionalId: autenticada.usuario.id,
-      numero: banco.sessoes.filter((s) => s.pacienteId === pacienteId).length + 1,
-      inicioPrevistoEm: agora,
-      inicio: agora,
+      numero: proximoNumero(pacienteId),
+      inicioPrevistoEm: agora.toISOString(),
+      inicio: agora.toISOString(),
       fim: null,
-      local: 'Clínica',
+      local: LOCAL_PADRAO,
       situacao: 'EM_ANDAMENTO',
       // Idem: sessao aberta agora nasce pendente de sincronizacao.
       statusSync: 'PENDENTE',

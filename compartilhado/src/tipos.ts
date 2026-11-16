@@ -424,7 +424,14 @@ export interface Sessao {
   id: string
   pacienteId: string
   profissionalId: string
-  numero: number
+  /**
+   * A ordem em que as sessoes do paciente comecaram, a partir de 1. Nulo na
+   * agendada e na cancelada (item 19b): o numero nasce no inicio, e o
+   * agendamento cancelado nao gasta numero. Evolucao, indicadores e relatorio
+   * ordenam por ele.
+   */
+  numero: number | null
+  /** Quando a sessao foi marcada para comecar; na sessao sem agendamento, o proprio inicio. */
   inicioPrevistoEm: DataIso
   inicio: DataIso | null
   fim: DataIso | null
@@ -446,13 +453,24 @@ export interface ItemAgenda {
   sessaoId: string
   inicioPrevistoEm: DataIso
   situacao: SituacaoSessao
+  local: string
   paciente: { id: string; nome: string }
   profissional: { id: string; nome: string }
 }
 
 export interface FiltroAgenda extends FiltroPaginacao {
-  /** Dia da agenda (AAAA-MM-DD). Padrao: hoje. */
-  dia?: string
+  /** Dia da agenda (AAAA-MM-DD), em Manaus. Padrao: hoje. */
+  dia?: DataCivil
+}
+
+/**
+ * O agendamento (item 19b): quem agenda e quem vai conduzir. A tela monta o
+ * instante da data e da hora de Manaus (instanteEmManaus); a validacao e
+ * validarAgendamento, a mesma no front, no mock e no servidor.
+ */
+export interface NovoAgendamento {
+  inicioPrevistoEm: DataIso
+  local: string
 }
 
 export interface FiltroSessao extends FiltroPaginacao {

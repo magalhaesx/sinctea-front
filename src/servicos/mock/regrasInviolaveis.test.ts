@@ -2,7 +2,8 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import { ErroServico, type NovaAtividadeCasa, type OcorrenciaComportamental, type Sessao } from '@sinctea/compartilhado'
 import { servicosMock as s } from '.'
 import { banco, relogio } from './infra'
-import { diaCivilEm } from '@sinctea/compartilhado/dominio/datas'
+import { diaCivilEm, emDataCivil, somarDias } from '@sinctea/compartilhado/dominio/datas'
+import { instanteEmManaus } from '@sinctea/compartilhado/dominio/agenda'
 import { janelaPassada } from '@sinctea/compartilhado/dominio/indicadores'
 import { ENTIDADES_ADMINISTRATIVAS } from '@sinctea/compartilhado/dominio/auditoria'
 import { jsonCanonico, resumoSha256 } from '@sinctea/compartilhado/dominio/hash'
@@ -155,8 +156,8 @@ describe('camada simulada', () => {
 
   it('a agenda do dia so traz os atendimentos de quem esta logado', async () => {
     await entrarComo('TERAPEUTA')
-    const hoje = new Date()
-    const dia = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`
+    // O dia de Manaus, como no servidor (item 19b).
+    const dia = diaCivilEm(new Date())
     const agenda = await chamar(s.sessoes.listarAgenda({ dia }))
     expect(agenda.total).toBeGreaterThan(0)
     expect(agenda.itens.every((i) => i.profissional.id === 'u-prof-1')).toBe(true)
@@ -164,6 +165,56 @@ describe('camada simulada', () => {
     // Dia sem atendimento devolve pagina vazia, nao erro.
     const vazio = await chamar(s.sessoes.listarAgenda({ dia: '2020-01-01' }))
     expect(vazio).toMatchObject({ total: 0, itens: [] })
+  })
+
+  it('agendamento (item 19b): para si; sem o mesmo horario nem o mesmo dia; o cancelado nao gasta numero; sem o id, inicia o de hoje', async () => {
+    await entrarComo('TERAPEUTA')
+    const original = relogio.agora
+    // 06:00 de hoje em Manaus: ainda da para agendar as 20:00 de hoje.
+    const hoje = diaCivilEm(new Date())
+    relogio.agora = () => instanteEmManaus(hoje, '06:00')!
+    try {
+      const amanha = instanteEmManaus(somarDias(hoje, 1), '10:00')!.toISOString()
+      const a = await chamar(s.sessoes.agendar('p-006', { inicioPrevistoEm: amanha, local: '  Sala 3 ' }))
+      expect(a).toMatchObject({ situacao: 'AGENDADA', numero: null, inicio: null, local: 'Sala 3', profissionalId: 'u-prof-1' })
+      expect((await ultimaAuditoria())).toMatchObject({ acao: 'CRIACAO', entidade: 'Sessao', pacienteId: 'p-006' })
+
+      // O mesmo horario, com outro paciente; o mesmo paciente, no mesmo dia.
+      expect((await erroDe(s.sessoes.agendar('p-001', { inicioPrevistoEm: amanha, local: 'Sala' }))).codigo).toBe('CONFLITO')
+      const tarde = instanteEmManaus(somarDias(hoje, 1), '15:00')!.toISOString()
+      expect((await erroDe(s.sessoes.agendar('p-006', { inicioPrevistoEm: tarde, local: 'Sala' }))).campos.inicioPrevistoEm)
+        .toMatch(/cancele aquela/)
+      expect((await erroDe(s.sessoes.agendar('p-006', { inicioPrevistoEm: '', local: '' }))).campos)
+        .toMatchObject({ inicioPrevistoEm: expect.any(String), local: expect.any(String) })
+
+      // De outro dia nao se inicia; cancelado, tambem nao.
+      expect((await erroDe(s.sessoes.iniciar('p-006', a.id))).message).toMatch(/^Este agendamento é para /)
+      expect((await chamar(s.sessoes.cancelar(a.id))).situacao).toBe('CANCELADA')
+      expect(await ultimaAuditoria()).toMatchObject({ acao: 'ALTERACAO', valorAnterior: '{"situacao":"AGENDADA"}' })
+      expect((await erroDe(s.sessoes.iniciar('p-006', a.id))).message).toBe('Este agendamento foi cancelado.')
+      expect((await erroDe(s.sessoes.cancelar(a.id))).codigo).toBe('CONFLITO')
+
+      // Sem o id, o agendamento de hoje; o numero e o seguinte ao maior, sem o cancelado.
+      const maior = Math.max(...banco.sessoes.filter((x) => x.pacienteId === 'p-006').map((x) => x.numero ?? 0))
+      const deHoje = await chamar(s.sessoes.agendar('p-006', { inicioPrevistoEm: instanteEmManaus(hoje, '20:00')!.toISOString(), local: 'Sala 3' }))
+      const iniciada = await chamar(s.sessoes.iniciar('p-006'))
+      expect(iniciada).toMatchObject({ id: deHoje.id, situacao: 'EM_ANDAMENTO', numero: maior + 1 })
+
+      // A agenda de hoje traz o local; o cancelado de amanha continua no dia dele, sem botao.
+      const agenda = await chamar(s.sessoes.listarAgenda({ dia: somarDias(hoje, 1), porPagina: 100 }))
+      expect(agenda.itens.find((i) => i.sessaoId === a.id)).toMatchObject({ situacao: 'CANCELADA', local: 'Sala 3' })
+      expect(await ultimaAuditoria()).toMatchObject({ acao: 'LEITURA_AUTORIZADA', detalhe: `Agenda de ${emDataCivil(somarDias(hoje, 1))}: ${agenda.total}.` })
+
+      // A coordenadora alcanca o paciente, mas nao cancela o que e da Ana.
+      const outro = await chamar(s.sessoes.agendar('p-006', { inicioPrevistoEm: instanteEmManaus(somarDias(hoje, 2), '09:00')!.toISOString(), local: 'Sala' }))
+      await entrarComo('COORDENADOR')
+      expect((await erroDe(s.sessoes.cancelar(outro.id))).codigo).toBe('ACESSO_NEGADO')
+      const proximas = await chamar(s.sessoes.listarProximas('p-006', { porPagina: 100 }))
+      expect(proximas.itens.map((i) => i.sessaoId)).toContain(outro.id)
+      expect(proximas.itens.every((i) => i.situacao === 'AGENDADA')).toBe(true)
+    } finally {
+      relogio.agora = original
+    }
   })
 
   it('trocar de objetivo nao perde registro, e desfazer tira o ultimo da sessao', async () => {

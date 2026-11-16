@@ -6,6 +6,7 @@ import type {
   Sessao, VinculoEscolar, VinculoFamiliar, ConviteEscolar,
 } from '@sinctea/compartilhado'
 import { diaCivilEm } from '@sinctea/compartilhado/dominio/datas'
+import { instanteEmManaus } from '@sinctea/compartilhado/dominio/agenda'
 import { calcularExpiracaoConvite } from '@sinctea/compartilhado/dominio/regras'
 
 /**
@@ -395,12 +396,12 @@ export function criarDadosDemonstracao(agora: Date): BancoDemonstracao {
     s.statusSync = 'PENDENTE'
   }
 
-  // Agenda de hoje.
+  // Agenda de hoje, no relogio de Manaus. A agendada ainda nao tem numero: ele nasce no inicio (item 19b).
   const agendada = (id: string, pacienteId: string, profissionalId: string, hora: number, minuto = 0) => {
-    const numero = sessoes.filter((s) => s.pacienteId === pacienteId).length + 1
+    const horario = `${String(hora).padStart(2, '0')}:${String(minuto).padStart(2, '0')}`
     sessoes.push({
-      id, pacienteId, profissionalId, numero,
-      inicioPrevistoEm: em(0, hora, minuto), inicio: null, fim: null,
+      id, pacienteId, profissionalId, numero: null,
+      inicioPrevistoEm: instanteEmManaus(dia(0), horario)!.toISOString(), inicio: null, fim: null,
       local: 'Clínica · sala 2', situacao: 'AGENDADA', statusSync: 'SINCRONIZADO', evolucao: null, registros: [],
     })
   }
