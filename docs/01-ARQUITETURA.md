@@ -112,9 +112,9 @@ A página institucional em `/` está suspensa (`docs/04`); volta na Etapa 13 se
 sobrar tempo. `/dev/estados` não existe na versão publicada.
 
 **Na versão publicada, só existem as rotas cujo serviço já está no servidor**
-(`docs/07`, seção 0). As outras — evolução por objetivo (tela 8), atividades, relatório, indicadores e
-auditoria — somem da navegação e das rotas até o serviço chegar. Nunca aparecem
-com dado simulado.
+(`docs/07`, seção 0). O que ainda não chegou some da navegação e das rotas, e
+nunca aparece com dado simulado. Desde o item 19, em 16/11/2026, só a agenda do
+dia, um bloco da tela 3, está nessa situação.
 
 **Toda tela do app tem um caminho de volta visível** (por exemplo, Pacientes ›
 nome do paciente › Plano), e o Voltar do navegador funciona.
@@ -323,7 +323,8 @@ São muitos, e não um: uma lista com um item não exercita paginação, busca,
 filtro, ordenação nem estado vazio. Os e-mails ficam no domínio reservado
 `.example`.
 
-**Nenhum dado de paciente real, em nenhuma hipótese.** O rodapé do app diz:
-*"Ambiente acadêmico do TCC SINCTEA. Não cadastre dados de pacientes reais."*
-Desde 25/10/2026, por decisão do Lucas, o aviso não aparece nas telas de acesso
-(entrar, aceitar convite e definir senha): dado se cadastra dentro do app.
+**Nenhum dado de paciente real, em nenhuma hipótese.** A regra vale mesmo sem
+aviso na tela. O rodapé do app dizia *"Ambiente acadêmico do TCC SINCTEA. Não
+cadastre dados de pacientes reais."*: o aviso saiu das telas de acesso em
+25/10/2026 e do resto do app e do relatório impresso em 29/10/2026, as duas
+vezes por decisão do Lucas.

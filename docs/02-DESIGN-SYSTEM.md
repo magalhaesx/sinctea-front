@@ -136,6 +136,22 @@ caracteres, no site comercial e no sistema. Com o conteúdo na largura da tela
 
 Números em coluna recebem `font-variant-numeric: tabular-nums`. Sem exceção.
 
+### Texto corrido
+
+Revisão de 29/10/2026, item 20. O texto que se lê, e não se varre, usa a classe
+`.texto-corrido` (`src/index.css`):
+
+- justificado, com hifenização pelo `lang="pt-BR"` da página;
+- no máximo 65 caracteres por linha;
+- vale para as redações do objetivo, a atividade de casa, o cartão de
+  estratégias, a evolução da sessão, as considerações do relatório, as
+  observações e o texto dos avisos;
+- título, rótulo, botão, link com cara de botão e campo, mesmo dentro dele,
+  voltam ao alinhamento de sempre e não partem palavra.
+
+Fora dessa classe, o texto continua alinhado à esquerda: lista curta, tabela,
+rótulo e número.
+
 ## 3. Espaçamento
 
 Escala de 4: `4 · 8 · 12 · 16 · 20 · 24 · 32 · 40 · 48`.

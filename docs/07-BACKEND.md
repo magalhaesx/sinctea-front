@@ -29,7 +29,8 @@ Os testes continuam com dados fictícios próprios: dado de teste não é dado d
 acadêmico do TCC SINCTEA. Não cadastre dados de pacientes reais."* Até
 25/10/2026 ela aparecia também na tela de entrada. Saiu das telas de acesso
 (entrar, aceitar convite e definir senha) por decisão do Lucas, porque é
-dentro do app que os dados se cadastram.
+dentro do app que os dados se cadastram. Em 29/10/2026, também por decisão do
+Lucas, saiu do rodapé e do relatório impresso (item 21).
 
 Não é aviso de demonstração. É o que impede que dado de saúde de criança de verdade
 entre num sistema acadêmico sem as bases que a lei pede:
@@ -84,7 +85,8 @@ Com o banco vazio, cinco caminhos que a semente cobria precisam existir:
 **O que fica para depois de 19/10:** indicadores, relatórios, atividades de casa,
 ocorrências comportamentais, evolução, avisos da escola, a tela de auditoria e a
 agenda. Até cada serviço chegar, a tela dele **some da navegação e das rotas na
-versão publicada**. Nunca aparece com dado simulado.
+versão publicada**. Nunca aparece com dado simulado. Em 16/11/2026, só a agenda
+continua de fora: os outros chegaram entre os itens 6 e 19.
 
 **O que não se corta, nem com pressa:**
 - as regras 1, 2, 3, 5 e 6 provadas por teste de integração contra a API, no
@@ -321,6 +323,10 @@ linha discreta no rodapé:** *"Instância acadêmica do TCC SINCTEA. Todos os
 registros são fictícios."* Não é aviso de demonstração — é o que impede um
 visitante de achar que encontrou um vazamento. Se a orientadora pedir para tirar,
 tira.
+
+**Revogada em 29/10/2026** (item 21): por decisão do Lucas, nenhuma tela nem o
+relatório impresso mostram aviso de ambiente. A regra de só cadastrar dado
+fictício continua.
 
 ---
 

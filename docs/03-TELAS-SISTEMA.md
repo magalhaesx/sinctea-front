@@ -1,7 +1,7 @@
 # 03 · Telas do sistema
 
-Revisão de 25/10/2026, atualizada em 29/10. A especificação de setembro dizia o
-que construir; esta diz o que existe, conferido no código até o item 18. Os
+Revisão de 25/10/2026, atualizada em 16/11. A especificação de setembro dizia o
+que construir; esta diz o que existe, conferido no código até o item 21. Os
 textos entre aspas são os que a pessoa lê na tela.
 
 **Situação de cada tela:**
@@ -28,7 +28,7 @@ Nenhuma tela diz "terapeuta". Quem atende aparece pela especialidade:
 | Perfil, como aparece | No ar | Só no desenvolvimento |
 |---|---|---|
 | Profissional da clínica | 3, 4, 24, 5, 6, 7, 8, 9, 10 | — |
-| Coordenador clínico | as da clínica, 12 e 13 | 11 |
+| Coordenador clínico | as da clínica, 11, 12 e 13 | — |
 | Administrador | 14, 25 | — |
 | Responsável | 15, 16, 17 | — |
 | Professor / AEE | 22, 18, 19 | — |
@@ -77,7 +77,7 @@ telas do perfil **ativo**. Esconder item de menu não é segurança: quem autori
 | Perfil ativo | Itens |
 |---|---|
 | Profissional da clínica | Painel do profissional · Pacientes |
-| Coordenador clínico | Painel do profissional · Pacientes · Validar planos · Registro de auditoria |
+| Coordenador clínico | Painel do profissional · Pacientes · Indicadores da clínica · Validar planos · Registro de auditoria |
 | Administrador | Usuários e perfis · Trilha administrativa |
 | Responsável | Painel da família · Autorizar a escola |
 | Professor / AEE | Meus alunos |
@@ -91,14 +91,13 @@ telas do perfil **ativo**. Esconder item de menu não é segurança: quem autori
 - o último item é a própria tela, em negrito, com `aria-current="page"`;
 - enquanto o nome do paciente carrega, a trilha diz "Paciente".
 
-**Rodapé:** *"Ambiente acadêmico do TCC SINCTEA. Não cadastre dados de
-pacientes reais."*
+**Texto corrido** (item 20): o texto que se lê sai justificado, com
+hifenização, em no máximo 65 caracteres por linha (`docs/02`, seção 2).
 
-- Aparece em todas as telas do app.
-- As telas de acesso (entrar, aceitar convite e definir senha) não o mostram
-  desde 25/10/2026, por decisão do Lucas.
-- Tirá-lo do rodapé é decisão do Lucas com a orientadora (`docs/01`,
-  seção 8).
+**Rodapé:** não há. O aviso *"Ambiente acadêmico do TCC SINCTEA. Não cadastre
+dados de pacientes reais."* saiu das telas de acesso em 25/10/2026 e do resto do
+app e do relatório impresso em 29/10/2026, por decisão do Lucas (item 21). A
+regra continua: só dados fictícios (`docs/01`, seção 8).
 
 **Aviso de senha redefinida** (item 8). Aparece acima de qualquer tela depois
 que a pessoa usa um link de nova senha:
@@ -683,8 +682,7 @@ profissional recebeu".
     agora é diferente do que foi gravado quando o relatório saiu. Não use esta
     cópia como documento: procure a coordenação da clínica."*
 - "Imprimir ou salvar em PDF", pela impressão do navegador. A folha impressa
-  leva o cabeçalho do relatório, a assinatura, o resumo e a conferência, e o
-  aviso do ambiente acadêmico no rodapé.
+  leva o cabeçalho do relatório, a assinatura, o resumo e a conferência.
 
 **O emitido não muda:** o banco guarda o texto exato do conteúdo e recusa
 `UPDATE`, `DELETE` e `TRUNCATE` (`docs/09`). Uma sessão registrada depois, no
@@ -694,36 +692,76 @@ mesmo período, muda a prévia da tela 10, e não o emitido.
 
 # Coordenação
 
-## 11 · Indicadores da clínica · só no desenvolvimento
-`/app/coordenacao` · UC18
+## 11 · Indicadores da clínica · no ar
+`/app/coordenacao` · Coordenador clínico · UC18 (item 19)
+
+É a tela de entrada da coordenação. Subtítulo: *"A visão de gestão da clínica,
+diferente do painel de quem atende"*.
 
 **Conteúdo, nesta ordem:**
 
-1. Quatro números, sempre com o período:
-   - pacientes;
-   - sessões em 7 dias;
-   - objetivos dominados em 30 dias;
-   - revisões nos próximos 30 dias.
-2. **O que precisa de atenção**, com cada item levando ao registro:
-   - planos sem revisão há mais de 90 dias;
-   - pacientes sem sessão há mais de 15 dias;
-   - consentimentos vencendo em 30 dias;
-   - objetivos parados há 8 sessões.
-3. Sessões por profissional.
-4. A ponte clínica–escola, com a mediana até a leitura clínica.
+1. **"A clínica em números"**, cada número com o seu período embaixo:
+   - "Pacientes em acompanhamento", em {hoje};
+   - "Sessões realizadas", nos últimos 7 dias;
+   - "Objetivos dominados", nos últimos 30 dias;
+   - "Planos com revisão prevista", nos próximos 30 dias.
+2. **"O que precisa de atenção"**, em quatro grupos. Cada um mostra os cinco
+   mais urgentes, com "Ver todos os {n}" quando há mais, ou *"Nenhum no
+   momento."*:
+   - "Planos sem revisão há mais de 90 dias": *"{nome} — N dias sem revisão"*,
+     e leva ao plano (tela 6);
+   - "Pacientes sem sessão há mais de 15 dias": *"N dias sem sessão"* ou
+     *"nenhuma sessão registrada"*, e leva à ficha (tela 5);
+   - "Consentimentos escolares vencendo em 30 dias": *"vence em N dias · a
+     renovação é da família"*, e leva à ficha;
+   - "Objetivos sem novo melhor resultado há 8 sessões ou mais": *"N sessões
+     sem novo melhor resultado"*, e leva à evolução daquele objetivo (tela 8).
+3. **"Sessões por profissional"**, em barras, nos últimos 30 dias. Aparece
+   quem tem o perfil de profissional da clínica, mais quem conduziu sessão no
+   período.
+4. **"Ponte clínica–escola"**:
+   - "Escolas com vínculo ativo";
+   - "Ocorrências relatadas pela escola", nos últimos 30 dias;
+   - "Tempo até a leitura clínica": a mediana, em horas até 48 h e em dias
+     depois disso. Com menos de três leituras: *"Poucas leituras no período
+     para calcular."*;
+   - sempre visível, quantas ocorrências aguardam a leitura clínica e há
+     quantos dias está a mais antiga, ou *"Nenhuma ocorrência aguardando
+     leitura."*
 
 **Regras:**
 
-- a janela é móvel, e não mês civil;
-- usa mediana, e não média;
-- conta e aponta, sem descrever conteúdo clínico.
+- só a coordenação. Os outros perfis recebem acesso negado, que entra na
+  trilha;
+- **a janela é móvel**, contada em dias de Manaus com hoje incluído, e não mês
+  civil. Os rótulos dizem as datas: *"nos últimos 7 dias (10 a 16/11)"*;
+- **usa mediana, e não média**: um atraso isolado não move o número da
+  clínica;
+- **conta e aponta, sem descrever conteúdo clínico.** Do servidor sai só
+  número, motivo, o identificador e o nome do paciente;
+- só o plano **vigente** de paciente ativo entra nos planos sem revisão, nas
+  revisões previstas e nos objetivos parados;
+- a escola conta com professor de vínculo ativo e consentimento vigente;
+- o tempo da ponte corre do registro da escola, e não de quando o fato
+  aconteceu: a clínica só pode ler o que já foi registrado;
+- os limiares são os de `compartilhado/src/dominio/regras.ts`, os mesmos das
+  telas de quem atende; a janela, os rótulos e a ordem, os de
+  `compartilhado/src/dominio/indicadores.ts`, os mesmos no servidor e no mock.
 
-Na versão publicada, a coordenação entra pela tela 12.
+**Trilha:** cada abertura grava quatro linhas, uma por grupo de alertas, sem
+paciente: o alerta aponta, não descreve. Quando a coordenação abre o destino,
+a leitura entra na trilha lá, com o paciente. Os números, as sessões por profissional e a
+ponte não nomeiam paciente e não gravam leitura (`docs/06`).
+
+**Sem nenhuma sessão registrada**, a tela inteira dá lugar a *"Os indicadores
+aparecem depois das primeiras sessões"*, *"Assim que a equipe registrar
+atendimentos, este painel passa a contar sessões, acompanhar planos e apontar o
+que precisa de atenção."*, com o botão "Cadastrar paciente". É o que a versão
+publicada mostra enquanto o banco está vazio; com pacientes e nenhuma sessão,
+os alertas também ficam escondidos.
 
 ## 12 · Validar planos terapêuticos · no ar
 `/app/coordenacao/planos` · Coordenador clínico · UC17
-
-É a tela de entrada da coordenação na versão publicada.
 
 **Conteúdo:**
 
@@ -749,8 +787,9 @@ Na versão publicada, a coordenação entra pela tela 12.
 - a decisão entra na trilha, com quem decidiu e quando.
 
 **Fila vazia:** *"Nenhum plano aguardando validação"*, com o link para a lista
-de pacientes. O histórico das decisões fica na trilha (tela 13, só no
-desenvolvimento).
+de pacientes. O histórico das decisões fica na trilha (tela 13). O link
+"Ver as validações no registro de auditoria" ainda só aparece no
+desenvolvimento.
 
 ## 13 · Registro de auditoria · no ar
 `/app/coordenacao/auditoria` · Coordenador clínico · UC19 (item 17)
@@ -843,8 +882,10 @@ ao servidor.
 - só perfis de equipe: Profissional da clínica, Coordenador clínico e
   Administrador;
 - a especialidade é obrigatória para o profissional da clínica;
-- o registro no conselho é opcional aqui. Quem o completa é o próprio dono, na
-  tela 21;
+- o registro no conselho é opcional aqui, sem dica (item 21). Quem o completa
+  é o próprio dono, na tela 21;
+- a partir de 1024px, nome, e-mail, especialidade e registro ficam numa linha
+  (item 21);
 - *"Esta tela cadastra apenas a equipe da clínica. O responsável nasce do
   vínculo com o paciente, e o professor, do convite da família."*;
 - a conta nasce sem senha conhecida. O administrador recebe o link de primeiro
@@ -894,8 +935,7 @@ Coordenador clínico, ou marque esse perfil numa conta da equipe.
 só com o recorte administrativo)
 
 O administrador também é auditado (LGPD, art. 37), mas a trilha que ele lê não
-tem dado clínico (regra 3). A coordenação lê a trilha clínica na tela 13, que
-ainda está só no desenvolvimento.
+tem dado clínico (regra 3). A coordenação lê a trilha clínica na tela 13.
 
 **O que aparece:** só registros que, ao mesmo tempo, **não têm paciente** e são
 de uma entidade da lista: `Usuario`, `Profissional`, `Escola` e
@@ -946,7 +986,8 @@ mais antigo.
 - "Como {nome} está indo";
 - seletor "Ver o painel de", quando há mais de um filho;
 - **"Como está indo"**:
-  - cada objetivo só na redação acessível;
+  - cada objetivo só na redação acessível, em texto corrido e sem negrito
+    (item 20);
   - um medidor de frequência em palavras;
   - "Já consegue sozinho" quando o objetivo foi dominado;
 - **"Atividades desta semana"** (item 15): as atividades ativas, cada uma com
@@ -994,6 +1035,10 @@ mais antigo.
      sessão. Obrigado por registrar."*
 3. **"O que você já registrou"**: a data, como foi e a observação. Quando quem
    registrou foi outro responsável, o nome dele aparece (item 15b).
+
+**Disposição** (item 20): a tela ocupa a largura. A partir de 1024px, a
+atividade fica à esquerda, e o "Como foi hoje?" e o histórico, à direita; abaixo
+disso, um embaixo do outro, nesta ordem.
 
 **Um registro por dia** (item 15):
 
@@ -1110,7 +1155,8 @@ quem autoriza é a família.
 
 - "{aluno} · {turma}", com *"Orientações práticas para o dia a dia em sala. Não
   é diagnóstico nem laudo."*;
-- cada estratégia: título, "O que fazer", "O que evitar" e "Sinal de alerta";
+- cada estratégia: o título, "Para que serve" e os blocos "O que fazer", "O que
+  evitar" e "Sinal de alerta". Uma linha separa uma estratégia da outra;
 - no rodapé: *"Autorizado pela família até {data}. Sua consulta fica
   registrada."*;
 - "Registrar uma ocorrência", só quando a família autorizou o registro. A
@@ -1125,6 +1171,14 @@ quem autoriza é a família.
   - ou *"A autorização venceu."*;
 - só aparecem os cartões dos objetivos do plano vigente;
 - a consulta entra na trilha.
+
+**Disposição** (item 20):
+
+- a partir de 1024px, os três blocos em três colunas da mesma altura;
+- de 768 a 1024px, "O que fazer" e "O que evitar" lado a lado, com o sinal de
+  alerta embaixo;
+- abaixo de 768px, um embaixo do outro; no celular, o "Registrar uma
+  ocorrência" ocupa a largura.
 
 **Sem cartão:** *"Ainda não há estratégias para este aluno"*, e *"O profissional
 da clínica escreve o cartão a partir dos objetivos do plano."*
@@ -1206,8 +1260,8 @@ As seis divergências achadas na revisão de 25/10 foram corrigidas no item 10
 (`150b9b5`). Ficam para depois:
 
 - envio de e-mail;
-- as telas só no desenvolvimento, cada uma quando o seu serviço chegar ao
-  servidor (`docs/07`, seção 0);
+- o que ainda é só do desenvolvimento, na tela 3: a agenda do dia e a contagem
+  de registros aguardando sincronização (`docs/07`, seção 0);
 - revisar um plano vigente. A família e a escola leem só o plano vigente,
   então devolver o vigente a rascunho as deixaria sem nada durante a revisão.
   O caminho certo é uma versão nova em rascunho, enquanto a vigente continua

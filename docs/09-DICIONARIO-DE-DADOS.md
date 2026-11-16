@@ -574,7 +574,7 @@ Trilha de auditoria da regra 6: concessões, revogações, leituras autorizadas,
 - Chave estrangeira: (usuarioId) → usuario(id); ao apagar: restringe; ao atualizar: cascata
 - Gatilho: registro_auditoria_imutavel — Recusa UPDATE e DELETE: a trilha de auditoria só cresce (regra 6).
 - Gatilho: registro_auditoria_sem_truncate — Recusa TRUNCATE na trilha de auditoria.
-- Índice: (ocorridoEm, id)
+- Índice: (ocorridoEm DESC, id DESC)
 - Índice: (pacienteId, ocorridoEm)
 - Índice: (usuarioId)
 
