@@ -136,6 +136,11 @@ export async function conferirPapel(comoPapel: PrismaClient, papel: string): Pro
   const [{ cria }] = await q<{ cria: boolean }>(`SELECT has_schema_privilege('public', 'CREATE') AS cria`)
   conferir('CREATE no esquema public', cria, !cria)
 
+  // Item 19c: a sessao do papel em UTC, como a migracao fuso_do_banco deixa o banco.
+  const [{ fuso, deslocamento }] = await q<{ fuso: string; deslocamento: number }>(
+    `SELECT current_setting('TimeZone') AS fuso, EXTRACT(TIMEZONE FROM now())::int AS deslocamento`)
+  conferir('fuso da sessao', `${fuso} (deslocamento de ${Number(deslocamento)} s)`, Number(deslocamento) === 0)
+
   const esperadas = migracoesVersionadas()
   const aplicadas = (await q<{ nome: string }>(
     `SELECT migration_name AS nome FROM _prisma_migrations WHERE finished_at IS NOT NULL AND rolled_back_at IS NULL ORDER BY 1`))

@@ -29,6 +29,17 @@ export class ServicoBanco extends PrismaClient implements OnModuleDestroy {
     return linhas[0]?.migration_name ?? null
   }
 
+  /**
+   * O deslocamento da sessao em relacao a UTC, em segundos. Tem de ser zero: o
+   * adaptador pg manda o instante sem o deslocamento, e o banco o le no fuso da
+   * sessao (migracao fuso_do_banco, item 19c).
+   */
+  async deslocamentoDaSessao(): Promise<number> {
+    const [linha] = await this.$queryRaw<Array<{ deslocamento: number }>>`
+      SELECT EXTRACT(TIMEZONE FROM now())::int AS deslocamento`
+    return Number(linha.deslocamento)
+  }
+
   async onModuleDestroy(): Promise<void> {
     await this.$disconnect()
   }

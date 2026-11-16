@@ -98,6 +98,8 @@ describe('zerar o banco depois do ensaio', () => {
       const itens = await conferirPapel(comoPapel, papel)
       expect(itens.filter((i) => !i.ok)).toEqual([])
       expect(itens.map((i) => i.rotulo)).toEqual(expect.arrayContaining(['CREATE TABLE', 'desligar o trigger da auditoria']))
+      // Item 19c: o fuso da sessao do papel, em UTC.
+      expect(itens.find((i) => i.rotulo === 'fuso da sessao')).toEqual({ rotulo: 'fuso da sessao', valor: 'UTC (deslocamento de 0 s)', ok: true })
       // E a aplicacao volta a gravar.
       await expect(comoPapel.escola.create({ data: { nome: 'Depois', rede: 'Municipal', municipio: 'Manaus' } })).resolves.toBeTruthy()
     } finally {
