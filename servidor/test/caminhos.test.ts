@@ -97,8 +97,8 @@ beforeAll(async () => {
       percentualMinimo: 80, sessoesConsecutivas: 3,
     } })
     await prisma.sessao.create({ data: {
-      id: sessao, pacienteId: paciente, profissionalId: m.profissional, numero: 1,
-      inicioPrevistoEm: agora, local: 'Sala 1', situacao: 'AGENDADA', statusSync: 'SINCRONIZADO',
+      id: sessao, pacienteId: paciente, profissionalId: m.profissional, numero: 1, inicio: agora,
+      inicioPrevistoEm: agora, local: 'Sala 1', situacao: 'EM_ANDAMENTO', statusSync: 'SINCRONIZADO',
     } })
     await prisma.consentimento.create({ data: {
       id: consentimento, responsavelId: m.responsavel, pacienteId: paciente, escolaId: m.escola,

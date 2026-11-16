@@ -48,7 +48,8 @@ export class ServicoIndicadores {
         status: 'VIGENTE', paciente: { ativo: true },
         dataRevisao: { gte: deDataCivil(adiante.primeiroDia), lte: deDataCivil(adiante.ultimoDia) },
       } }),
-      this.banco.sessao.findFirst({ select: { id: true } }),
+      // O agendamento, sozinho, nao conta: so a sessao que comecou (item 19b).
+      this.banco.sessao.findFirst({ where: { inicio: { not: null } }, select: { id: true } }),
     ])
     return {
       // Clinica sem nenhuma sessao registrada nao tem indicador para mostrar.

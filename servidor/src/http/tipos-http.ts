@@ -48,6 +48,12 @@ export interface ContextoSinctea {
   /** A versao anterior dos campos que mudaram (a correcao de ocorrencia escolar). */
   valorAnterior?: string
   /**
+   * A acao, quando so o servico sabe qual foi: iniciar cria a sessao nova, mas
+   * altera a agendada e a pausada, e so le a que ja estava em andamento (item
+   * 19b). O interceptador a prefere a da rota; a negativa nunca usa isto.
+   */
+  acao?: 'LEITURA_AUTORIZADA' | 'CRIACAO' | 'ALTERACAO'
+  /**
    * O detalhe do registro, quando so o servico sabe escreve-lo (a exportacao
    * da trilha, com o filtro e o total). O interceptador o prefere ao da rota.
    */

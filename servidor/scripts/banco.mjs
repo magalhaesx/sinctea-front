@@ -26,6 +26,12 @@ const postgres = new EmbeddedPostgres({
   password: 'sinctea',
   persistent: true,
   initdbFlags: ['--encoding=UTF8', '--locale=C'],
+  /* Em UTC, como o CI (postgres:17) e o Neon. O adaptador pg do Prisma manda
+     o instante como relogio de UTC, sem o fuso, e o banco o le no fuso da
+     sessao: com o fuso da maquina (aqui, -04:00), cada instante seria
+     gravado 4 horas adiantado, e o indice do dia de Manaus do agendamento
+     (item 19b) contaria o dia de UTC. */
+  postgresFlags: ['-c', 'TimeZone=UTC'],
   onLog: () => {},
 })
 

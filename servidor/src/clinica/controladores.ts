@@ -3,6 +3,9 @@ import type {
   CartaoEstrategia, NivelSuporte, Objetivo, OcorrenciaComportamental, Origem, PacienteDetalhe, Pagina, PlanoTerapeutico,
   RegistroAtividade, ResponsavelCadastrado, Sessao, SituacaoPlano, SituacaoSessao,
 } from '@sinctea/compartilhado'
+import { quandoEmManaus } from '@sinctea/compartilhado/dominio/agenda'
+import { emDataCivil } from '@sinctea/compartilhado/dominio/datas'
+import { jsonCanonico } from '@sinctea/compartilhado/dominio/hash'
 import { Auditar, Perfis } from '../acesso/metadados.js'
 import { lerInstante, lerPaginacao, lerTexto } from '../http/paginacao.js'
 import { textoOuVazio } from '../http/validacao.js'
@@ -10,7 +13,7 @@ import type { RequisicaoHttp } from '../http/tipos-http.js'
 import { ServicoOcorrencias, type FiltroOcorrenciaServidor } from './servico-ocorrencias.js'
 import { ServicoPacientes } from './servico-pacientes.js'
 import { ServicoPlanos, type DoPaciente, type Editado } from './servico-planos.js'
-import { ServicoSessoesClinicas } from './servico-sessoes-clinicas.js'
+import { ServicoSessoesClinicas, type Inicio } from './servico-sessoes-clinicas.js'
 
 /**
  * As rotas da area clinica (docs/07, secao 0, item 3). Toda leitura e escrita
@@ -168,6 +171,26 @@ export class ControladorPacientes {
     return this.ocorrencias.listarPorPaciente(sessaoDe(req), id, lerFiltroOcorrencia(query))
   }
 
+  /** Item 19b: os agendamentos de hoje em diante, de qualquer profissional (tela 5). */
+  @Get(':id/proximas-sessoes')
+  @Auditar({
+    entidade: 'Sessao', acao: 'LEITURA_AUTORIZADA', pacienteId: deParametro,
+    detalhe: (_q, r) => `Próximas sessões: ${(r as Pagina<unknown>).total}.`,
+  })
+  listarProximas(@Req() req: RequisicaoHttp, @Param('id') id: string, @Query() query: Record<string, unknown>) {
+    return this.sessoes.listarProximas(sessaoDe(req), id, lerPaginacao(query))
+  }
+
+  /** Item 19b: quem agenda e quem vai conduzir. */
+  @Post(':id/agendamentos')
+  @Auditar({
+    entidade: 'Sessao', acao: 'CRIACAO', idEntidade: (_q, r) => (r as Sessao).id, pacienteId: deParametro,
+    detalhe: (_q, r) => `Sessão agendada para ${quandoEmManaus((r as Sessao).inicioPrevistoEm)}.`,
+  })
+  agendar(@Req() req: RequisicaoHttp, @Param('id') id: string, @Body() corpo: Record<string, unknown> | undefined) {
+    return this.sessoes.agendar(sessaoDe(req), id, corpo ?? {})
+  }
+
   @Get(':id/sessoes')
   @Auditar({ entidade: 'Sessao', acao: 'LEITURA_AUTORIZADA', pacienteId: deParametro, detalhe: 'Histórico de sessões.' })
   listarSessoes(@Req() req: RequisicaoHttp, @Param('id') id: string, @Query() query: Record<string, unknown>) {
@@ -321,6 +344,38 @@ export class ControladorOcorrencias {
   }
 }
 
+/**
+ * A agenda de quem pede (tela 3, item 19b). A lista atravessa pacientes: o
+ * registro guarda o dia e quantas sessoes sairam, como os avisos da escola.
+ */
+@Controller('agenda')
+@Perfis(...CLINICA)
+export class ControladorAgenda {
+  constructor(private readonly sessoes: ServicoSessoesClinicas) {}
+
+  @Get()
+  @Auditar({ entidade: 'Sessao', acao: 'LEITURA_AUTORIZADA', detalhe: 'Agenda.' })
+  async listar(@Req() req: RequisicaoHttp, @Query() query: Record<string, unknown>) {
+    const { pagina, dia } = await this.sessoes.listarAgenda(sessaoDe(req), { ...lerPaginacao(query), dia: lerTexto(query.dia) })
+    req.sinctea!.detalhe = `Agenda de ${emDataCivil(dia)}: ${pagina.total}.`
+    return pagina
+  }
+}
+
+/** A trilha do inicio: criacao, alteracao com a situacao anterior, ou leitura. */
+function registrarInicio(req: RequisicaoHttp, { sessao, como }: Inicio): Sessao {
+  const ctx = req.sinctea!
+  if (como === 'AGENDADA' || como === 'RETOMADA') {
+    ctx.acao = 'ALTERACAO'
+    ctx.valorAnterior = jsonCanonico({ situacao: como === 'AGENDADA' ? 'AGENDADA' : 'PAUSADA' })
+    ctx.detalhe = como === 'AGENDADA' ? `Sessão agendada iniciada, com o número ${sessao.numero}.` : 'Sessão retomada.'
+  } else if (como === 'JA_EM_ANDAMENTO') {
+    ctx.acao = 'LEITURA_AUTORIZADA'
+    ctx.detalhe = 'Sessão já em andamento.'
+  }
+  return sessao
+}
+
 @Controller('sessoes')
 @Perfis(...CLINICA)
 export class ControladorSessoes {
@@ -340,8 +395,16 @@ export class ControladorSessoes {
     entidade: 'Sessao', acao: 'CRIACAO', idEntidade: (_q, r) => (r as Sessao).id,
     pacienteId: (_q, r) => (r as Sessao).pacienteId, detalhe: 'Sessão iniciada.',
   })
-  iniciar(@Req() req: RequisicaoHttp, @Body() corpo: { pacienteId?: unknown; sessaoAgendadaId?: unknown } | undefined) {
-    return this.sessoes.iniciar(sessaoDe(req), corpo?.pacienteId, corpo?.sessaoAgendadaId)
+  async iniciar(@Req() req: RequisicaoHttp, @Body() corpo: { pacienteId?: unknown; sessaoAgendadaId?: unknown } | undefined) {
+    return registrarInicio(req, await this.sessoes.iniciar(sessaoDe(req), corpo?.pacienteId, corpo?.sessaoAgendadaId))
+  }
+
+  /** Item 19b: so a agendada, so por quem vai conduzir; a situacao anterior vai para a trilha. */
+  @Post(':id/cancelamento')
+  @HttpCode(200)
+  @Auditar({ entidade: 'Sessao', acao: 'ALTERACAO', idEntidade: deParametro, detalhe: 'Agendamento cancelado.' })
+  async cancelar(@Req() req: RequisicaoHttp, @Param('id') id: string) {
+    return comValorAnterior(req, await this.sessoes.cancelar(sessaoDe(req), id))
   }
 
   @Post(':id/registros')

@@ -22,7 +22,7 @@ export class InterceptadorAuditoria implements NestInterceptor {
       const declaracao = ctx?.declaracao
       if (ctx && declaracao?.acao && !ctx.dispensarRegistro) {
         await this.auditoria.registrar(ctx.sessao, {
-          acao: declaracao.acao,
+          acao: ctx.acao ?? declaracao.acao,
           entidade: declaracao.entidade,
           idEntidade: ctx.idEntidade ?? textoOuNulo(resolver(declaracao.idEntidade, requisicao, resposta)),
           pacienteId: ctx.pacienteId ?? textoOuNulo(resolver(declaracao.pacienteId, requisicao, resposta)),

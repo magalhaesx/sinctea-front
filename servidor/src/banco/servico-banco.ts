@@ -1,6 +1,9 @@
 import { Injectable, type OnModuleDestroy } from '@nestjs/common'
 import { PrismaPg } from '@prisma/adapter-pg'
-import { PrismaClient } from '../gerado/client.js'
+import { PrismaClient, type Prisma } from '../gerado/client.js'
+
+/** O cliente dentro de $transaction, para quem recebe a transacao de quem a abriu. */
+export type TransacaoBanco = Prisma.TransactionClient
 
 /**
  * O PrismaClient do servidor, com o adaptador pg (Prisma 7: sem motor em Rust,

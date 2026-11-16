@@ -305,7 +305,12 @@ model Sessao {
   id               String         @id @default(uuid(7)) @db.Uuid
   pacienteId       String         @db.Uuid
   profissionalId   String         @db.Uuid
-  numero           Int
+  /// A ordem em que as sessoes do paciente comecaram, a partir de 1. Nulo na
+  /// agendada e na cancelada: nasce no inicio (item 19b). CHECK e indices
+  /// parciais na migracao agendamento: numero unico por paciente; o mesmo
+  /// profissional sem dois agendamentos no mesmo horario, nem com dois do
+  /// mesmo paciente no mesmo dia de Manaus.
+  numero           Int?
   inicioPrevistoEm DateTime       @db.Timestamptz(3)
   inicio           DateTime?      @db.Timestamptz(3)
   fim              DateTime?      @db.Timestamptz(3)

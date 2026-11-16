@@ -1,19 +1,56 @@
 import { Injectable } from '@nestjs/common'
 import {
-  ErroServico, type FiltroSessao, type OcorrenciaComportamental, type Pagina, type RegistroAtividade, type Resultado,
-  type Sessao,
+  ErroServico, type DataCivil, type FiltroAgenda, type FiltroPaginacao, type FiltroSessao, type ItemAgenda,
+  type OcorrenciaComportamental, type Pagina, type RegistroAtividade, type Resultado, type Sessao,
 } from '@sinctea/compartilhado'
+import {
+  LOCAL_PADRAO, SO_CANCELA_AGENDADA, SO_QUEM_CONDUZ_CANCELA, agendamentoPreenchido, conflitoDeHorario, conflitoDoDia,
+  recusaDoInicio, validarAgendamento,
+} from '@sinctea/compartilhado/dominio/agenda'
+import { diaCivilEm, fimDaValidade, inicioDoDia, partesDaDataCivil } from '@sinctea/compartilhado/dominio/datas'
+import { jsonCanonico } from '@sinctea/compartilhado/dominio/hash'
 import { erroDaEvolucao, percentualIndependente } from '@sinctea/compartilhado/dominio/regras'
 import { Negacao } from '../acesso/negacao.js'
-import { ServicoBanco } from '../banco/servico-banco.js'
+import { ServicoBanco, type TransacaoBanco } from '../banco/servico-banco.js'
 import { paginar } from '../http/paginacao.js'
 import type { SessaoServidor } from '../http/tipos-http.js'
 import { exigirUuid, exigirValido } from '../http/validacao.js'
 import { exigirPacienteClinico } from './alcance.js'
 import { paraOcorrencia, paraRegistro, paraSessao } from './mapeadores.js'
-import type { DoPaciente } from './servico-planos.js'
+import type { DoPaciente, Editado } from './servico-planos.js'
 
 const RESULTADOS: Resultado[] = ['INDEPENDENTE', 'AJUDA_GESTUAL', 'AJUDA_FISICA', 'SEM_RESPOSTA']
+
+/**
+ * Como a sessao comecou, para a trilha: a nova e criacao; a agendada e a
+ * pausada que voltam a andar sao alteracao, com a situacao anterior; a que ja
+ * estava em andamento so foi lida.
+ */
+export type ComoIniciou = 'NOVA' | 'AGENDADA' | 'RETOMADA' | 'JA_EM_ANDAMENTO'
+export interface Inicio { sessao: Sessao; como: ComoIniciou }
+
+/** O que a agenda e a ficha mostram de cada sessao: horario, situacao, local e quem. */
+const DA_AGENDA = {
+  paciente: { select: { nome: true } },
+  profissional: { select: { usuario: { select: { nome: true } } } },
+} as const
+
+type LinhaDaAgenda = {
+  id: string; pacienteId: string; profissionalId: string; inicioPrevistoEm: Date; situacao: Sessao['situacao']; local: string
+  paciente: { nome: string }; profissional: { usuario: { nome: string } }
+}
+
+const paraItemAgenda = (s: LinhaDaAgenda): ItemAgenda => ({
+  sessaoId: s.id,
+  inicioPrevistoEm: s.inicioPrevistoEm.toISOString(),
+  situacao: s.situacao,
+  local: s.local,
+  paciente: { id: s.pacienteId, nome: s.paciente.nome },
+  profissional: { id: s.profissionalId, nome: s.profissional.usuario.nome },
+})
+
+/** O dia civil inteiro de Manaus, como instantes: de 00:00 ate antes de 00:00 do dia seguinte. */
+const noDia = (dia: DataCivil) => ({ gte: inicioDoDia(dia), lt: fimDaValidade(dia) })
 
 /**
  * Sessao terapeutica (UC02, tela 7), portada de src/servicos/mock/clinica.ts.
@@ -28,9 +65,107 @@ export class ServicoSessoesClinicas {
     const paciente = await exigirPacienteClinico(this.banco, sessao, pacienteId)
     const linhas = await this.banco.sessao.findMany({
       where: { pacienteId: paciente.id, ...(filtro.situacao ? { situacao: filtro.situacao } : {}) },
-      include: { registros: true }, orderBy: { numero: 'desc' },
+      // Da mais recente para a mais antiga; a agendada e a cancelada, sem numero, vao para o fim.
+      include: { registros: true }, orderBy: [{ numero: { sort: 'desc', nulls: 'last' } }, { inicioPrevistoEm: 'desc' }],
     })
     return paginar(linhas.map(paraSessao), filtro)
+  }
+
+  /**
+   * A agenda de quem pede (tela 3): as proprias sessoes, de qualquer situacao,
+   * no dia civil de Manaus, pelo horario previsto. Mesmo a coordenacao ve so
+   * as dela aqui. Devolve o dia, porque o registro da trilha o nomeia.
+   */
+  async listarAgenda(sessao: SessaoServidor, filtro: FiltroAgenda): Promise<{ pagina: Pagina<ItemAgenda>; dia: DataCivil }> {
+    const dia = filtro.dia ?? diaCivilEm(new Date())
+    if (!partesDaDataCivil(dia)) {
+      throw new ErroServico('VALIDACAO', 'Informe o dia da agenda no formato AAAA-MM-DD.', { dia: 'Informe o dia da agenda no formato AAAA-MM-DD.' })
+    }
+    const linhas = await this.banco.sessao.findMany({
+      where: { profissionalId: sessao.usuario.id, inicioPrevistoEm: noDia(dia) },
+      include: DA_AGENDA, orderBy: [{ inicioPrevistoEm: 'asc' }, { id: 'asc' }],
+    })
+    return { pagina: paginar(linhas.map(paraItemAgenda), filtro), dia }
+  }
+
+  /** Os agendamentos do paciente de hoje em diante, em Manaus, de qualquer profissional (tela 5). */
+  async listarProximas(sessao: SessaoServidor, pacienteId: string, filtro: FiltroPaginacao): Promise<Pagina<ItemAgenda>> {
+    const paciente = await exigirPacienteClinico(this.banco, sessao, pacienteId)
+    const linhas = await this.banco.sessao.findMany({
+      where: { pacienteId: paciente.id, situacao: 'AGENDADA', inicioPrevistoEm: { gte: inicioDoDia(diaCivilEm(new Date())) } },
+      include: DA_AGENDA, orderBy: [{ inicioPrevistoEm: 'asc' }, { id: 'asc' }],
+    })
+    return paginar(linhas.map(paraItemAgenda), filtro)
+  }
+
+  /**
+   * Agenda para quem pede, que e quem vai conduzir (item 19b). A validacao e a
+   * do compartilhado; o mesmo horario e o mesmo dia, quem recusa e o banco,
+   * com os dois indices unicos parciais — dois pedidos ao mesmo tempo, um
+   * grava e o outro ouve por que nao.
+   */
+  async agendar(sessao: SessaoServidor, pacienteId: string, corpo: Record<string, unknown>): Promise<Sessao> {
+    const paciente = await exigirPacienteClinico(this.banco, sessao, pacienteId)
+    exigirValido(validarAgendamento(corpo, new Date()))
+    const { inicioPrevistoEm, local } = agendamentoPreenchido(corpo)
+    const inicio = inicioPrevistoEm!
+    try {
+      return paraSessao(await this.banco.sessao.create({
+        data: {
+          pacienteId: paciente.id, profissionalId: sessao.usuario.id, numero: null, inicioPrevistoEm: inicio,
+          inicio: null, fim: null, local, situacao: 'AGENDADA', statusSync: 'SINCRONIZADO',
+        },
+        include: { registros: true },
+      }))
+    } catch (erro) {
+      if ((erro as { code?: string }).code !== 'P2002') throw erro
+      throw await this.conflitoDoAgendamento(sessao.usuario.id, inicio)
+    }
+  }
+
+  /** Qual dos dois indices recusou: o mesmo horario primeiro, porque ele diz qual sessao conferir. */
+  private async conflitoDoAgendamento(profissionalId: string, inicio: Date): Promise<ErroServico> {
+    const mesmoHorario = await this.banco.sessao.count({ where: { profissionalId, situacao: 'AGENDADA', inicioPrevistoEm: inicio } })
+    const mensagem = mesmoHorario > 0 ? conflitoDeHorario(inicio) : conflitoDoDia(inicio)
+    return new ErroServico('CONFLITO', mensagem, { inicioPrevistoEm: mensagem })
+  }
+
+  /**
+   * O numero da sessao que comeca agora: o seguinte ao maior do paciente. Quem
+   * chama ja travou o paciente, e o indice unico (pacienteId, numero) e a
+   * garantia: dois inicios ao mesmo tempo nao repetem numero.
+   */
+  private async proximoNumero(tx: TransacaoBanco, pacienteId: string): Promise<number> {
+    const { _max } = await tx.sessao.aggregate({ where: { pacienteId }, _max: { numero: true } })
+    return (_max.numero ?? 0) + 1
+  }
+
+  /**
+   * Trava o paciente ate o fim da transacao. Inicio e cancelamento do mesmo
+   * paciente passam um de cada vez: o segundo ja le o que o primeiro gravou.
+   * FOR NO KEY UPDATE nao segura quem so grava linha que aponta para o
+   * paciente (uma ocorrencia, um registro).
+   */
+  private async travarPaciente(tx: TransacaoBanco, pacienteId: string): Promise<void> {
+    await tx.$queryRaw`SELECT 1 FROM "paciente" WHERE "id" = ${pacienteId}::uuid FOR NO KEY UPDATE`
+  }
+
+  /**
+   * So a sessao AGENDADA, e so por quem vai conduzi-la. A situacao anterior vai
+   * para a trilha. Remarcar e cancelar e agendar de novo: nao ha edicao.
+   */
+  async cancelar(sessao: SessaoServidor, sessaoId: string): Promise<Editado<Sessao>> {
+    const linha = await this.sessaoAlcancada(sessao, sessaoId)
+    if (linha.profissionalId !== sessao.usuario.id) {
+      throw new Negacao(SO_QUEM_CONDUZ_CANCELA, { pacienteId: linha.pacienteId, detalhe: 'Cancelamento de sessão de outro profissional.' })
+    }
+    const cancelada = await this.banco.$transaction(async (tx) => {
+      await this.travarPaciente(tx, linha.pacienteId)
+      const gravado = await tx.sessao.updateMany({ where: { id: linha.id, situacao: 'AGENDADA' }, data: { situacao: 'CANCELADA' } })
+      if (gravado.count !== 1) throw new ErroServico('CONFLITO', SO_CANCELA_AGENDADA)
+      return tx.sessao.findUniqueOrThrow({ where: { id: linha.id }, include: { registros: true } })
+    })
+    return { resultado: paraSessao(cancelada), pacienteId: linha.pacienteId, valorAnterior: jsonCanonico({ situacao: 'AGENDADA' }) }
   }
 
   private async sessaoAlcancada(sessao: SessaoServidor, sessaoId: string) {
@@ -44,33 +179,60 @@ export class ServicoSessoesClinicas {
     return paraSessao(await this.sessaoAlcancada(sessao, sessaoId))
   }
 
-  /** Inicia uma sessao agendada ou cria uma nova, conduzida por quem esta na sessao de login. */
-  async iniciar(sessao: SessaoServidor, pacienteId: unknown, sessaoAgendadaId: unknown): Promise<Sessao> {
+  /**
+   * Inicia a sessao agendada, so no dia dela em Manaus, ou retoma a pausada.
+   * Sem o id, inicia o agendamento de hoje de quem pede para o paciente, se
+   * houver — o "Iniciar a sessao" da tela 7 nao o passa —; se nao, cria uma
+   * sessao nova, conduzida por quem pede.
+   *
+   * O numero nasce aqui, com o paciente travado: segue a ordem em que as
+   * sessoes comecaram, e o agendamento cancelado nao gasta numero.
+   */
+  async iniciar(sessao: SessaoServidor, pacienteId: unknown, sessaoAgendadaId: unknown): Promise<Inicio> {
     const paciente = await exigirPacienteClinico(this.banco, sessao, typeof pacienteId === 'string' ? pacienteId : '')
-    const agora = new Date()
+    const eu = sessao.usuario.id
+    let agendadaId: string | null = null
     if (typeof sessaoAgendadaId === 'string' && sessaoAgendadaId) {
-      const agendada = await this.sessaoAlcancada(sessao, sessaoAgendadaId)
-      if (agendada.pacienteId !== paciente.id || agendada.profissionalId !== sessao.usuario.id) {
+      // Alcance e dono conferidos fora da transacao: a negativa vai para a trilha.
+      const alvo = await this.sessaoAlcancada(sessao, sessaoAgendadaId)
+      if (alvo.pacienteId !== paciente.id || alvo.profissionalId !== eu) {
         throw new Negacao('Esta sessão está agendada para outro profissional.', { pacienteId: paciente.id, detalhe: 'Sessão agendada para outro profissional.' })
       }
-      if (agendada.situacao === 'EM_ANDAMENTO') return paraSessao(agendada)
-      if (agendada.situacao !== 'AGENDADA' && agendada.situacao !== 'PAUSADA') {
-        throw new ErroServico('CONFLITO', 'Esta sessão já foi encerrada.')
-      }
-      return paraSessao(await this.banco.sessao.update({
-        where: { id: agendada.id },
-        data: { situacao: 'EM_ANDAMENTO', inicio: agendada.inicio ?? agora, statusSync: 'SINCRONIZADO' },
-        include: { registros: true },
-      }))
+      agendadaId = alvo.id
     }
-    const numero = await this.banco.sessao.count({ where: { pacienteId: paciente.id } }) + 1
-    return paraSessao(await this.banco.sessao.create({
-      data: {
-        pacienteId: paciente.id, profissionalId: sessao.usuario.id, numero, inicioPrevistoEm: agora, inicio: agora,
-        fim: null, local: 'Clínica', situacao: 'EM_ANDAMENTO', statusSync: 'SINCRONIZADO',
-      },
-      include: { registros: true },
-    }))
+    return this.banco.$transaction(async (tx): Promise<Inicio> => {
+      await this.travarPaciente(tx, paciente.id)
+      // Lida depois da trava: o segundo de dois toques ve o que o primeiro gravou.
+      const agora = new Date()
+      const alvo = agendadaId
+        ? await tx.sessao.findUniqueOrThrow({ where: { id: agendadaId }, include: { registros: true } })
+        : await tx.sessao.findFirst({
+          where: { pacienteId: paciente.id, profissionalId: eu, situacao: 'AGENDADA', inicioPrevistoEm: noDia(diaCivilEm(agora)) },
+          include: { registros: true }, orderBy: { inicioPrevistoEm: 'asc' },
+        })
+      if (alvo) {
+        if (alvo.situacao === 'EM_ANDAMENTO') return { sessao: paraSessao(alvo), como: 'JA_EM_ANDAMENTO' }
+        const recusa = recusaDoInicio(alvo, agora)
+        if (recusa) throw new ErroServico('CONFLITO', recusa)
+        const retomada = alvo.situacao === 'PAUSADA'
+        const iniciada = await tx.sessao.update({
+          where: { id: alvo.id },
+          data: retomada
+            ? { situacao: 'EM_ANDAMENTO' }
+            : { situacao: 'EM_ANDAMENTO', inicio: agora, numero: await this.proximoNumero(tx, paciente.id), statusSync: 'SINCRONIZADO' },
+          include: { registros: true },
+        })
+        return { sessao: paraSessao(iniciada), como: retomada ? 'RETOMADA' : 'AGENDADA' }
+      }
+      const nova = await tx.sessao.create({
+        data: {
+          pacienteId: paciente.id, profissionalId: eu, numero: await this.proximoNumero(tx, paciente.id),
+          inicioPrevistoEm: agora, inicio: agora, fim: null, local: LOCAL_PADRAO, situacao: 'EM_ANDAMENTO', statusSync: 'SINCRONIZADO',
+        },
+        include: { registros: true },
+      })
+      return { sessao: paraSessao(nova), como: 'NOVA' }
+    })
   }
 
   /** So quem conduz a sessao registra nela (Sessao *—1 Profissional, "conduzida por"). */
