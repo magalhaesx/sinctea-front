@@ -113,8 +113,9 @@ sobrar tempo. `/dev/estados` não existe na versão publicada.
 
 **Na versão publicada, só existem as rotas cujo serviço já está no servidor**
 (`docs/07`, seção 0). O que ainda não chegou some da navegação e das rotas, e
-nunca aparece com dado simulado. Desde o item 19, em 16/11/2026, só a agenda do
-dia, um bloco da tela 3, está nessa situação.
+nunca aparece com dado simulado. Desde o item 19b, em 16/11/2026, só a contagem
+de registros aguardando sincronização, na tela 3, está nessa situação: ela
+depende do registro sem conexão (`docs/07`, seção 3A).
 
 **Toda tela do app tem um caminho de volta visível** (por exemplo, Pacientes ›
 nome do paciente › Plano), e o Voltar do navegador funciona.

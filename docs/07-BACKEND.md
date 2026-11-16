@@ -85,8 +85,9 @@ Com o banco vazio, cinco caminhos que a semente cobria precisam existir:
 **O que fica para depois de 19/10:** indicadores, relatórios, atividades de casa,
 ocorrências comportamentais, evolução, avisos da escola, a tela de auditoria e a
 agenda. Até cada serviço chegar, a tela dele **some da navegação e das rotas na
-versão publicada**. Nunca aparece com dado simulado. Em 16/11/2026, só a agenda
-continua de fora: os outros chegaram entre os itens 6 e 19.
+versão publicada**. Nunca aparece com dado simulado. Em 16/11/2026, todos chegaram,
+entre os itens 6 e 19b; fora fica só a contagem do que aguarda sincronização,
+que depende do registro sem conexão (seção 3A).
 
 **O que não se corta, nem com pressa:**
 - as regras 1, 2, 3, 5 e 6 provadas por teste de integração contra a API, no

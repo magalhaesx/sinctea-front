@@ -1,7 +1,7 @@
 # 03 · Telas do sistema
 
 Revisão de 25/10/2026, atualizada em 16/11. A especificação de setembro dizia o
-que construir; esta diz o que existe, conferido no código até o item 21. Os
+que construir; esta diz o que existe, conferido no código até o item 19b. Os
 textos entre aspas são os que a pessoa lê na tela.
 
 **Situação de cada tela:**
@@ -259,10 +259,27 @@ campos, e nas telas 1 e 2.
 ## 3 · Painel do profissional · no ar
 `/app/clinica` · Profissional da clínica, Coordenador clínico · UC10, UC06
 
-**No ar:**
+**Conteúdo:**
 
 - o título é a data por extenso;
-- o subtítulo conta os avisos novos da escola;
+- o subtítulo conta a agenda: *"N sessões na agenda hoje"*, *"1 sessão na
+  agenda hoje"* ou *"Nenhuma sessão na agenda hoje"*. A cancelada entra na
+  conta;
+- **"Agenda do dia"** (item 19b), ou "Agenda de {data}" em outro dia:
+  - "← Dia anterior", "Próximo dia →" e, fora de hoje, "Voltar para hoje";
+  - cada linha: *"{hora} · {paciente} · {local}"*, com a etiqueta da situação:
+    Agendada, Não iniciada, Em aberto, Pausada, Concluída ou Cancelada. A
+    cancelada aparece riscada;
+  - botões: "Iniciar" na agendada de hoje; "Abrir a sessão" na em aberto ou
+    pausada; "Ver a sessão" na concluída. Os três levam à tela 7 naquela
+    sessão;
+  - "Cancelar" em toda agendada, de hoje, futura ou não iniciada, com
+    confirmação em duas etapas: *"Cancelar o agendamento de {nome}, {data} às
+    {hora}?"*, *"O horário fica livre. Para remarcar, agende de novo."*, "Sim,
+    cancelar" e "Manter o agendamento". Depois: *"Agendamento cancelado:
+    {nome}, {data} às {hora}."*;
+  - vazia: *"Nenhuma sessão agendada para hoje. Para agendar, abra a ficha do
+    paciente."*
 - **"Avisos da escola"**: até cinco, dos últimos sete dias.
   - Cada aviso traz paciente, hora, escola e "Relato: {tipo} · intensidade N de
     5. A leitura clínica é sua."
@@ -271,12 +288,18 @@ campos, e nas telas 1 e 2.
 
 **Regras:**
 
+- a agenda é de quem atende: cada pessoa vê só as próprias sessões, inclusive
+  a coordenação. O dia é o de Manaus;
+- "Não iniciada" é a agendada de dia passado que não começou. Só se inicia uma
+  sessão no dia do agendamento;
+- a leitura da agenda entra na trilha com o dia e o total, sem paciente, como
+  a lista de avisos: *"Agenda de {dia}: N."*;
 - os avisos são só os eventos ainda preliminares: é a fila do que espera a
-  leitura clínica;
-- registrada a leitura, o aviso sai da lista, e o histórico fica na ficha.
+  leitura clínica. Registrada a leitura, o aviso sai da lista, e o histórico
+  fica na ficha.
 
-**Só no desenvolvimento:** a agenda do dia, com a situação de cada atendimento,
-e a contagem de registros aguardando sincronização.
+**Só no desenvolvimento:** a contagem de registros aguardando sincronização,
+que depende do registro sem conexão (`docs/07`, seção 3A).
 
 **Aceitação:** sem aviso, *"Nenhum aviso novo da escola nos últimos sete
 dias."*, e não uma lista em branco.
@@ -355,7 +378,9 @@ cadastrou. O plano vem depois, na tela 6.
 7. **Histórico de sessões:** a evolução de cada sessão encerrada, da mais
    recente para a mais antiga, com quem conduziu ("Nome · Especialidade") e o
    número de registros. 5 por página.
-8. **Ações:** "Abrir o plano terapêutico", "Iniciar sessão", "Atividades
+8. **"Próximas sessões"** (item 19b): *"De hoje em diante, com todos os
+   profissionais da equipe."* Detalhes abaixo.
+9. **Ações:** "Abrir o plano terapêutico", "Iniciar sessão", "Atividades
    para casa", "Ver evolução por objetivo" e "Emitir relatório".
 
 **Rede de apoio:**
@@ -387,6 +412,45 @@ cadastrou. O plano vem depois, na tela 6.
   - o e-mail só muda enquanto a senha não foi definida. Depois, *"É o login da
     pessoa, que já definiu a senha: a clínica não o troca."*;
   - **ser ou não o responsável legal não se altera depois do cadastro.**
+
+**Próximas sessões** (item 19b):
+
+- cada item: *"{data} às {hora} · {nome}"*, com o local embaixo. "Cancelar" só
+  no agendamento de quem está na sessão, com a mesma confirmação da tela 3;
+- vazia: *"Nenhuma sessão agendada para {nome}."*;
+- **"Agendar sessão":** *"Para você conduzir. Data e hora de Manaus, de hoje
+  até {data}."*, com os campos Data, Hora e Local ("Clínica" já preenchido) e
+  os botões "Agendar" e "Fechar";
+- erros na tela: *"Informe a data."*, *"Informe a hora."*, *"Confira a data e a
+  hora."*;
+- erros do servidor, sob a data e a hora:
+  - *"O agendamento não pode ficar no passado."*;
+  - *"Agende com até 90 dias de antecedência: até {data}."*;
+  - *"Informe o local da sessão."*;
+  - *"Você já tem uma sessão agendada para {data} às {hora}."*;
+  - *"Você já tem uma sessão agendada com este paciente em {data}. Para mudar
+    o horário, cancele aquela e agende de novo."*;
+- sucesso: *"Sessão agendada para {data} às {hora}, em {local}."*, e o foco
+  volta para "Agendar sessão".
+
+**Regras do agendamento:**
+
+- quem agenda é quem vai conduzir, para si mesmo. A coordenação agenda para
+  si, e não para outra pessoa;
+- nada no passado, e no máximo 90 dias à frente. O horário é cortado no
+  minuto;
+- **o banco garante** (índices únicos parciais, `docs/09`): o mesmo
+  profissional não fica com dois agendamentos no mesmo horário, nem com dois
+  do mesmo paciente no mesmo dia de Manaus. Sessões que se sobrepõem, como
+  14h00 e 14h30, convivem, porque a sessão não tem fim previsto;
+- cancelar só a agendada, e só quem vai conduzir. Quem não vai conduzir
+  recebe *"Só o profissional que vai conduzir a sessão pode cancelar o
+  agendamento."*, e a negativa entra na trilha. Não há edição: remarcar é
+  cancelar e agendar de novo;
+- agendar e cancelar entram na trilha, com o paciente; o cancelamento, com a
+  situação anterior;
+- paciente sem plano com objetivos pode ser agendado, mas a sessão só se
+  inicia depois que o plano tiver objetivos (tela 7).
 
 **Sem alcance:** *"Esta ficha não é do seu alcance"*, sem botão de tentar de
 novo. A negativa entra na trilha (regra 6).
@@ -457,7 +521,15 @@ novo. A negativa entra na trilha (regra 6).
   no servidor"* ou *"Sem conexão · o toque não é gravado até a conexão
   voltar"*;
 - "Iniciar a sessão" ou "Retomar a sessão". A sessão em andamento ou pausada é
-  retomada ao abrir a tela;
+  retomada ao abrir a tela, e "Retomar" volta à mesma sessão, sem criar outra
+  (*"Sessão N retomada."*);
+- **vinda da agenda** (`?sessao=`, item 19b), a tela abre naquela sessão:
+  - subtítulo *"Agendada para {data} às {hora} · {local}"*;
+  - agendada para hoje: *"Agendada para hoje às {hora}, em {local}. Inicie
+    quando o atendimento começar."*;
+  - agendada para outro dia: *"Este agendamento é para {data}. Ele se inicia
+    no dia."*, sem botão;
+  - cancelada: o botão é "Iniciar uma sessão nova";
 - **"Objetivo em trabalho"**, que pode ser trocado: *"Trocar de objetivo não
   perde os registros do anterior."*;
 - **"Como foi esta tentativa?"**:
@@ -483,6 +555,14 @@ novo. A negativa entra na trilha (regra 6).
 
 - quem conduz a sessão é quem a iniciou (`Sessao 0..* — 1 Profissional`), e
   aparece no histórico da ficha;
+- **o número da sessão nasce no início**, e não no agendamento: segue a ordem
+  em que as sessões do paciente começaram, e o agendamento cancelado não gasta
+  número. O servidor trava o paciente para numerar, e o banco garante que dois
+  inícios ao mesmo tempo não repetem número (item 19b);
+- "Iniciar sessão" sem vir da agenda usa o agendamento de hoje desse
+  profissional com o paciente, se houver, em vez de criar outra sessão;
+- iniciar um agendamento ou retomar a pausada entra na trilha como alteração,
+  com a situação anterior;
 - não há fila sem conexão na versão publicada: sem conexão, o toque não é
   gravado, e a tela diz isso.
 
@@ -753,12 +833,12 @@ paciente: o alerta aponta, não descreve. Quando a coordenação abre o destino,
 a leitura entra na trilha lá, com o paciente. Os números, as sessões por profissional e a
 ponte não nomeiam paciente e não gravam leitura (`docs/06`).
 
-**Sem nenhuma sessão registrada**, a tela inteira dá lugar a *"Os indicadores
+**Sem nenhuma sessão iniciada** (o agendamento não conta), a tela inteira dá lugar a *"Os indicadores
 aparecem depois das primeiras sessões"*, *"Assim que a equipe registrar
 atendimentos, este painel passa a contar sessões, acompanhar planos e apontar o
 que precisa de atenção."*, com o botão "Cadastrar paciente". É o que a versão
-publicada mostra enquanto o banco está vazio; com pacientes e nenhuma sessão,
-os alertas também ficam escondidos.
+publicada mostra enquanto o banco está vazio; com pacientes e nenhuma sessão
+iniciada, os alertas também ficam escondidos.
 
 ## 12 · Validar planos terapêuticos · no ar
 `/app/coordenacao/planos` · Coordenador clínico · UC17
@@ -787,9 +867,8 @@ os alertas também ficam escondidos.
 - a decisão entra na trilha, com quem decidiu e quando.
 
 **Fila vazia:** *"Nenhum plano aguardando validação"*, com o link para a lista
-de pacientes. O histórico das decisões fica na trilha (tela 13). O link
-"Ver as validações no registro de auditoria" ainda só aparece no
-desenvolvimento.
+de pacientes. O histórico das decisões fica na trilha (tela 13), pelo link "Ver as
+validações no registro de auditoria", que abre a tela 13 já filtrada.
 
 ## 13 · Registro de auditoria · no ar
 `/app/coordenacao/auditoria` · Coordenador clínico · UC19 (item 17)
@@ -1260,8 +1339,11 @@ As seis divergências achadas na revisão de 25/10 foram corrigidas no item 10
 (`150b9b5`). Ficam para depois:
 
 - envio de e-mail;
-- o que ainda é só do desenvolvimento, na tela 3: a agenda do dia e a contagem
-  de registros aguardando sincronização (`docs/07`, seção 0);
+- o que ainda é só do desenvolvimento, na tela 3: a contagem de registros
+  aguardando sincronização, que depende do registro sem conexão (`docs/07`,
+  seção 3A);
+- motivo do cancelamento e a coordenação agendar para outro profissional
+  (item 19b);
 - revisar um plano vigente. A família e a escola leem só o plano vigente,
   então devolver o vigente a rascunho as deixaria sem nada durante a revisão.
   O caminho certo é uma versão nova em rascunho, enquanto a vigente continua

@@ -194,10 +194,10 @@ Atualizado em 18/10/2026, lendo o código — não a memória.
 **Concluído**
 - Pré-projeto entregue em 17/08 — não pode mais ser alterado
 - Alinhamento aos 5 eixos · cronograma de 13 semanas · quadro Kanban
-- Modelagem UML: casos de uso, classes (revisão de 18/10 em `docs/uml/`), sequência
-- DER e dicionário de dados (`docs/uml/` e `docs/09`), gerados em 29/10 do
-  catálogo do PostgreSQL com as dez migrações, até `auditoria_ordem`
-  (item 17b). Não se editam à mão: mudou o esquema, geram-se de novo
+- Modelagem UML: casos de uso, classes (revisão de 16/11 em `docs/uml/`), sequência
+- DER e dicionário de dados (`docs/uml/` e `docs/09`), gerados em 16/11 do
+  catálogo do PostgreSQL com as onze migrações, até `agendamento`
+  (item 19b). Não se editam à mão: mudou o esquema, geram-se de novo
 - Documento de IHC e UX/UI com avaliação heurística e conformidade
 - **As 22 telas existem e falam com a camada de serviços**, e a tela 25,
   trilha administrativa (item 13), em 25 rotas do produto, mais `/sobre` e a vitrine `/dev/estados`, que só existe no servidor de
@@ -740,6 +740,9 @@ termo, e a família reabre o texto da versão registrada pela própria tela 17.
 - 18/10/2026 — `Sessao` ganhou `evolucao : String [0..1]`: o registro
   documental da sessão (Resolução CFP 001/2009), escrito pelo profissional ao
   encerrar, nunca gerado. Preenchida se, e só se, a sessão está encerrada
+- 16/11/2026 — `Sessao.numero` passou a `Integer [0..1]`: nasce no início da
+  sessão; a agendada e a cancelada não têm número. `Sessao` ganhou
+  `cancelar()` (item 19b)
 
 **Termo de consentimento**
 

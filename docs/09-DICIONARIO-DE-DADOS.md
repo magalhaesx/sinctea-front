@@ -1,6 +1,6 @@
 # 09 · Dicionário de dados
 
-Gerado em 29/10/2026 do catálogo do PostgreSQL 17, depois das 10 migrações do repositório (`20261015022852_inicial`, `20261015031253_caminhos_coerentes`, `20261015034333_chaves_compostas_sem_cascata`, `20261016004020_sessao_e_acesso_inicial`, `20261016022012_convite_token_resumo`, `20261017213654_evolucao_da_sessao`, `20261018231000_link_de_nova_senha`, `20261028203000_execucao_uma_por_dia`, `20261028230000_atividade_limites`, `20261029150000_auditoria_ordem`). **Não se edita à mão:** muda o esquema, gera de novo.
+Gerado em 16/11/2026 do catálogo do PostgreSQL 17, depois das 11 migrações do repositório (`20261015022852_inicial`, `20261015031253_caminhos_coerentes`, `20261015034333_chaves_compostas_sem_cascata`, `20261016004020_sessao_e_acesso_inicial`, `20261016022012_convite_token_resumo`, `20261017213654_evolucao_da_sessao`, `20261018231000_link_de_nova_senha`, `20261028203000_execucao_uma_por_dia`, `20261028230000_atividade_limites`, `20261029150000_auditoria_ordem`, `20261115230000_agendamento`). **Não se edita à mão:** muda o esquema, gera de novo.
 
 O significado de cada coluna está escrito a partir de `compartilhado/src/tipos.ts`, do `schema.prisma` e das regras do `CLAUDE.md`. O tipo, a nulidade, as chaves, as restrições, os índices e os gatilhos saem do próprio banco. O DER está em `docs/uml/SINCTEA_DER.svg` (todas as colunas) e `docs/uml/SINCTEA_DER_chaves.svg` (só as chaves).
 
@@ -13,7 +13,7 @@ O significado de cada coluna está escrito a partir de `compartilhado/src/tipos.
 - **Chave composta:** quando o mesmo paciente é alcançável por dois caminhos, uma chave estrangeira composta obriga os dois a concordarem; quando o caminho tem mais de um passo, um gatilho faz o mesmo.
 - Ações de chave estrangeira: *restringe* recusa a operação enquanto houver quem aponte; *cascata* propaga a mudança.
 
-**Totais:** 24 tabelas, 174 colunas, 39 chaves estrangeiras (5 compostas), 26 CHECKs, 10 gatilhos, 14 enumerações.
+**Totais:** 24 tabelas, 174 colunas, 39 chaves estrangeiras (5 compostas), 28 CHECKs, 10 gatilhos, 14 enumerações.
 
 ## 2. Enumerações
 
@@ -232,11 +232,11 @@ Sessão terapêutica conduzida por um profissional.
 | `id` | uuid | não | PK | Identificador. |
 | `pacienteId` | uuid | não | FK | O paciente. Não muda depois de criada. |
 | `profissionalId` | uuid | não | FK | Profissional que conduz a sessão. |
-| `numero` | integer | não |  | Número da sessão na sequência do paciente. |
-| `inicioPrevistoEm` | timestamptz(3) | não |  | Início agendado. |
-| `inicio` | timestamptz(3) | sim |  | Início real. |
+| `numero` | integer | sim |  | Número da sessão na sequência do paciente, dado quando ela começa: segue a ordem em que as sessões começaram. Nulo enquanto agendada ou se cancelada. |
+| `inicioPrevistoEm` | timestamptz(3) | não |  | Início agendado, cortado no minuto. Na sessão começada sem agendamento, o mesmo instante do início. |
+| `inicio` | timestamptz(3) | sim |  | Início real. Nulo enquanto agendada ou se cancelada. |
 | `fim` | timestamptz(3) | sim |  | Fim real. |
-| `local` | text | não |  | Onde aconteceu: sala, domicílio, escola. |
+| `local` | text | não |  | Onde acontece: sala, domicílio, escola. "Clínica" na sessão sem agendamento. |
 | `situacao` | situacao_sessao | não |  | Situação da sessão. |
 | `statusSync` | status_sync | não |  | Se o registro feito sem conexão já subiu ao servidor. |
 | `evolucao` | text | sim |  | Evolução do atendimento, escrita pelo profissional ao encerrar (registro documental, Resolução CFP nº 001/2009). Nunca gerada. Só a equipe do paciente e a coordenação a leem; nunca a família nem a escola. |
@@ -246,8 +246,13 @@ Sessão terapêutica conduzida por um profissional.
 - Chave primária: (id)
 - Chave estrangeira: (pacienteId) → paciente(id); ao apagar: restringe; ao atualizar: cascata
 - Chave estrangeira: (profissionalId) → profissional(usuarioId); ao apagar: restringe; ao atualizar: cascata
+- Única: (pacienteId, profissionalId, dia de Manaus de inicioPrevistoEm), só onde situacao = AGENDADA
+- Única: (profissionalId, inicioPrevistoEm), só onde situacao = AGENDADA
 - Única: (id, pacienteId)
+- Única: (pacienteId, numero), só onde numero não é nulo
 - CHECK: evolucao preenchida se, e só se, a sessão está encerrada (NOT VALID: vale para linhas gravadas depois da migração)
+- CHECK: local não fica em branco e tem até 100 caracteres
+- CHECK: agendada ou cancelada: numero e inicio nulos; iniciada: os dois preenchidos, numero a partir de 1
 - Gatilho: sessao_dono_fixo — Recusa trocar o paciente de uma sessão.
 - Índice: (pacienteId)
 - Índice: (profissionalId, inicioPrevistoEm)
