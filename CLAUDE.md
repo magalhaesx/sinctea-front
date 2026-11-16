@@ -207,10 +207,10 @@ Atualizado em 18/10/2026, lendo o código — não a memória.
   simulada que aplica controle de acesso e auditoria; o cliente da API, que
   não aplica regra nenhuma. A versão publicada usa só a API, e o mock fica
   fora do pacote; no desenvolvimento, `VITE_API_URL` escolhe entre as duas
-- **690 testes em 57 arquivos, nos três pacotes**, rodados por um único
+- **697 testes em 58 arquivos, nos três pacotes**, rodados por um único
   `npm test` na raiz, sem passo manual. O principal ainda é
   `src/servicos/mock/regrasInviolaveis.test.ts`, que verifica as regras
-  invioláveis na camada de dados, e não na tela. Os 332 do servidor rodam contra
+  invioláveis na camada de dados, e não na tela. Os 338 do servidor rodam contra
   um PostgreSQL 17 de verdade
 - **As seis regras verificadas** em `docs/06`: para cada teste citado, a regra foi
   quebrada de propósito para confirmar que ele falha, e as quebras que não
@@ -609,6 +609,19 @@ em produção (o antigo passo B5) foi cancelada. No código, hoje:
   Neon: o adaptador pg do Prisma manda o instante sem o fuso, e o índice do
   dia de Manaus depende disso. Testes em `servidor/test/agenda.test.ts`,
   quebras no `docs/06`
+- **Item 19c — o fuso do banco garantido e o resumo da agenda.** O
+  adaptador pg do Prisma manda o instante em UTC sem o deslocamento, e o
+  PostgreSQL o lê no fuso da sessão. A migração `fuso_do_banco` grava no
+  próprio banco `timezone = UTC` (`ALTER DATABASE`), e toda sessão nova nasce
+  em UTC, pela conexão direta ou pelo pooler; ela confere antes que quem a
+  aplica é o dono do banco, e recusa quem não é, sem mudar nada.
+  `GET /api/saude` responde 503 se o deslocamento da sessão não for zero, sem
+  dizer qual é o fuso, e `conferir-papel` mostra o fuso da sessão do
+  `sinctea_app`. Provado em `servidor/test/fuso.test.ts`, num banco que nasce
+  em America/Manaus e é migrado por um dono que não é superusuário. Na tela 3,
+  o resumo do topo não conta a cancelada (`resumoDaAgenda`), que continua na
+  lista, riscada e com a etiqueta; o dia vem inteiro numa chamada, até 100
+  sessões, e a tela o pagina. Quebras no `docs/06`
 - **Item 20 — texto corrido justificado e as telas 15, 16 e 18.** Uma classe
   só, `.texto-corrido` (`src/index.css`): justificado, com hifenização pelo
   `lang="pt-BR"` da página e no máximo 65 caracteres por linha. Vale para o
