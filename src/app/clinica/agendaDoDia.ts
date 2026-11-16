@@ -35,3 +35,13 @@ export function acaoNaAgenda(item: Pick<ItemAgenda, 'situacao' | 'inicioPrevisto
 
 /** A agendada, de qualquer dia, ainda se cancela. */
 export const cancelavel = (acao: AcaoNaAgenda) => acao === 'INICIAR' || acao === 'CANCELAR_FUTURA' || acao === 'NAO_INICIADA'
+
+/**
+ * O resumo do topo da tela 3 (item 19c): as sessoes do dia, sem a cancelada.
+ * Ela continua na lista, riscada e com a etiqueta, mas nao e atendimento.
+ */
+export function resumoDaAgenda(itens: Array<Pick<ItemAgenda, 'situacao'>>, ehHoje: boolean): string {
+  const n = itens.filter((i) => i.situacao !== 'CANCELADA').length
+  const quantas = n === 0 ? 'Nenhuma sessão na agenda' : n === 1 ? '1 sessão na agenda' : `${n} sessões na agenda`
+  return `${quantas}${ehHoje ? ' hoje' : ''}`
+}

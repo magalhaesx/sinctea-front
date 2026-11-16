@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { instanteEmManaus } from '@sinctea/compartilhado/dominio/agenda'
-import { acaoNaAgenda, cancelavel } from './agendaDoDia'
+import { acaoNaAgenda, cancelavel, resumoDaAgenda } from './agendaDoDia'
 
 /** Item 19b: o botao de cada linha da agenda da tela 3, pelo dia de Manaus. */
 describe('acaoNaAgenda', () => {
@@ -21,6 +21,14 @@ describe('acaoNaAgenda', () => {
     expect(acaoNaAgenda({ situacao: 'PAUSADA', inicioPrevistoEm: ontem }, HOJE)).toBe('ABRIR')
     expect(acaoNaAgenda({ situacao: 'ENCERRADA', inicioPrevistoEm: ontem }, HOJE)).toBe('VER')
     expect(acaoNaAgenda({ situacao: 'CANCELADA', inicioPrevistoEm: as(HOJE, '10:00') }, HOJE)).toBe('CANCELADA')
+  })
+
+  it('o resumo conta as sessoes do dia sem a cancelada (item 19c)', () => {
+    const s = (...situacoes: Array<'AGENDADA' | 'CANCELADA' | 'ENCERRADA' | 'EM_ANDAMENTO'>) => situacoes.map((situacao) => ({ situacao }))
+    expect(resumoDaAgenda(s('ENCERRADA', 'CANCELADA', 'AGENDADA', 'EM_ANDAMENTO'), true)).toBe('3 sessões na agenda hoje')
+    expect(resumoDaAgenda(s('CANCELADA', 'AGENDADA'), true)).toBe('1 sessão na agenda hoje')
+    expect(resumoDaAgenda(s('CANCELADA'), true)).toBe('Nenhuma sessão na agenda hoje')
+    expect(resumoDaAgenda([], false)).toBe('Nenhuma sessão na agenda')
   })
 
   it('so a agendada se cancela', () => {

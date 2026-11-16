@@ -15,7 +15,7 @@ import { usarSessao } from '../../contexto/Sessao'
 import { dataIsoParaLocal, diaCivilEm, emDataCivil, partesDaDataCivil, somarDias } from '@sinctea/compartilhado/dominio/datas'
 import { horaEmManaus } from '@sinctea/compartilhado/dominio/agenda'
 import { CancelarAgendamento } from './CancelarAgendamento'
-import { acaoNaAgenda, cancelavel, type AcaoNaAgenda } from './agendaDoDia'
+import { acaoNaAgenda, cancelavel, resumoDaAgenda, type AcaoNaAgenda } from './agendaDoDia'
 import {
   servicos, type AvisoOcorrenciaEscolar, type ItemAgenda, type Pagina,
 } from '../../servicos'
@@ -35,6 +35,10 @@ import {
  * Manaus, como no servidor, e a hora tambem: a sessao das 23h30 e daquele dia.
  * Os registros a sincronizar continuam so no desenvolvimento: sao o offline
  * (docs/07, secao 3A), que ainda nao existe no servidor.
+ *
+ * O dia vem inteiro numa chamada, ate 100 sessoes — o maximo da API —, e a
+ * tela o pagina: o resumo do topo conta o dia todo sem a cancelada (item 19c),
+ * e abrir o dia deixa uma linha so na trilha.
  */
 
 /** A etiqueta de cada linha. A cancelada, alem dela, fica riscada. */
@@ -48,11 +52,18 @@ const ETIQUETA: Record<AcaoNaAgenda, { rotulo: string; tom: 'ok' | 'at' | 'neutr
 }
 
 const POR_PAGINA = 10
+/** O dia inteiro: o maximo de itens por pagina que a API devolve. */
+const DIA_INTEIRO = 100
 
 type Estado<T> =
   | { tipo: 'carregando' }
   | { tipo: 'erro'; erro: unknown }
   | { tipo: 'pronto'; dados: T }
+
+type EstadoAgenda =
+  | { tipo: 'carregando' }
+  | { tipo: 'erro'; erro: unknown }
+  | { tipo: 'pronto'; dia: string; itens: ItemAgenda[] }
 
 /** O dia de hoje em Manaus, que e como a agenda e pedida (item 19b). */
 const diaDeHoje = () => diaCivilEm(new Date())
@@ -69,8 +80,6 @@ const quando = (iso: string) => {
     : `${data.toLocaleDateString('pt-BR')}, ${hora(iso)}`
 }
 
-const contagem = (n: number, um: string, varios: string) => (n === 0 ? `Nenhuma ${um}` : n === 1 ? `1 ${um}` : `${n} ${varios}`)
-
 export function PainelClinica() {
   const { usuario, perfilAtivo, especialidade } = usarSessao()
   const [params, setParams] = useSearchParams()
@@ -78,7 +87,7 @@ export function PainelClinica() {
   const dia = pedido && partesDaDataCivil(pedido) ? pedido : diaDeHoje()
   const pagina = Math.max(1, Number(params.get('pagina') ?? 1) || 1)
 
-  const [agenda, setAgenda] = useState<Estado<Pagina<ItemAgenda>>>({ tipo: 'carregando' })
+  const [agenda, setAgenda] = useState<EstadoAgenda>({ tipo: 'carregando' })
   const [avisos, setAvisos] = useState<Estado<Pagina<AvisoOcorrenciaEscolar>>>({ tipo: 'carregando' })
   const [pendentes, setPendentes] = useState(0)
   const [tentativaAgenda, setTentativaAgenda] = useState(0)
@@ -90,13 +99,13 @@ export function PainelClinica() {
 
   useEffect(() => {
     let ativo = true
-    // Depois de cancelar, a lista continua na tela enquanto se atualiza.
-    setAgenda((atual) => (atual.tipo === 'pronto' && atual.dados.pagina === pagina ? atual : { tipo: 'carregando' }))
-    servicos.sessoes.listarAgenda({ dia, pagina, porPagina: POR_PAGINA })
-      .then((dados) => { if (ativo) setAgenda({ tipo: 'pronto', dados }) })
+    // Depois de cancelar, a lista do mesmo dia continua na tela enquanto se atualiza.
+    setAgenda((atual) => (atual.tipo === 'pronto' && atual.dia === dia ? atual : { tipo: 'carregando' }))
+    servicos.sessoes.listarAgenda({ dia, porPagina: DIA_INTEIRO })
+      .then((dados) => { if (ativo) setAgenda({ tipo: 'pronto', dia, itens: dados.itens }) })
       .catch((erro) => { if (ativo) setAgenda({ tipo: 'erro', erro }) })
     return () => { ativo = false }
-  }, [dia, pagina, tentativaAgenda])
+  }, [dia, tentativaAgenda])
 
   // Trocar de dia leva o aviso do cancelamento embora: ele era do outro dia.
   useEffect(() => { setAvisoAgenda(null) }, [dia])
@@ -149,13 +158,13 @@ export function PainelClinica() {
   const dataPorExtenso = dataIsoParaLocal(dia).toLocaleDateString('pt-BR', {
     weekday: 'long', day: 'numeric', month: 'long',
   })
-  const totalNaAgenda = agenda.tipo === 'pronto' ? agenda.dados.total : null
   const totalAvisos = avisos.tipo === 'pronto' ? avisos.dados.total : 0
+  const daPagina = agenda.tipo === 'pronto' ? agenda.itens.slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA) : []
 
-  // A agenda conta as sessoes do dia, a cancelada tambem: ela aparece na lista, com a etiqueta.
-  const resumo = totalNaAgenda === null
+  // A cancelada fica na lista, riscada e com a etiqueta, mas nao conta no resumo.
+  const resumo = agenda.tipo !== 'pronto'
     ? 'Carregando a agenda'
-    : `${contagem(totalNaAgenda, 'sessão na agenda', 'sessões na agenda')}${ehHoje ? ' hoje' : ''} · ` +
+    : `${resumoDaAgenda(agenda.itens, ehHoje)} · ` +
       `${totalAvisos === 0 ? 'nenhum aviso novo' : totalAvisos === 1 ? '1 aviso novo' : `${totalAvisos} avisos novos`}`
 
   return (
@@ -261,7 +270,7 @@ export function PainelClinica() {
         )}
 
         {agenda.tipo === 'pronto' && (
-          agenda.dados.total === 0 ? (
+          agenda.itens.length === 0 ? (
             // Sem EstadoVazio: agendar e na ficha do paciente, e a lista de
             // pacientes ja esta nos atalhos e no menu (docs/02, secao 4).
             <Cartao>
@@ -273,7 +282,7 @@ export function PainelClinica() {
           ) : (
             <>
               <ul className="flex flex-col gap-2.5">
-                {agenda.dados.itens.map((i) => {
+                {daPagina.map((i) => {
                   const acao = acaoNaAgenda(i, hoje)
                   const etiqueta = ETIQUETA[acao]
                   const sessao = `/app/clinica/pacientes/${i.paciente.id}/sessao?sessao=${i.sessaoId}`
@@ -311,9 +320,9 @@ export function PainelClinica() {
               </ul>
 
               <Paginacao
-                pagina={agenda.dados.pagina}
-                porPagina={agenda.dados.porPagina}
-                total={agenda.dados.total}
+                pagina={pagina}
+                porPagina={POR_PAGINA}
+                total={agenda.itens.length}
                 aoMudar={(p) => {
                   const proximos = new URLSearchParams(params)
                   proximos.set('pagina', String(p))
