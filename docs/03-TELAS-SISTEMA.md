@@ -1,7 +1,7 @@
 # 03 · Telas do sistema
 
 Revisão de 25/10/2026, atualizada em 16/11. A especificação de setembro dizia o
-que construir; esta diz o que existe, conferido no código até o item 19b. Os
+que construir; esta diz o que existe, conferido no código até o item 19c. Os
 textos entre aspas são os que a pessoa lê na tela.
 
 **Situação de cada tela:**
@@ -263,8 +263,10 @@ campos, e nas telas 1 e 2.
 
 - o título é a data por extenso;
 - o subtítulo conta a agenda: *"N sessões na agenda hoje"*, *"1 sessão na
-  agenda hoje"* ou *"Nenhuma sessão na agenda hoje"*. A cancelada entra na
-  conta;
+  agenda hoje"* ou *"Nenhuma sessão na agenda hoje"*. A cancelada não entra
+  na conta (item 19c), mas continua na lista, e o rodapé da paginação conta as
+  linhas da lista, com ela. Em seguida, os avisos: *"· nenhum aviso novo"*,
+  *"· 1 aviso novo"* ou *"· N avisos novos"*;
 - **"Agenda do dia"** (item 19b), ou "Agenda de {data}" em outro dia:
   - "← Dia anterior", "Próximo dia →" e, fora de hoje, "Voltar para hoje";
   - cada linha: *"{hora} · {paciente} · {local}"*, com a etiqueta da situação:
@@ -292,8 +294,9 @@ campos, e nas telas 1 e 2.
   a coordenação. O dia é o de Manaus;
 - "Não iniciada" é a agendada de dia passado que não começou. Só se inicia uma
   sessão no dia do agendamento;
-- a leitura da agenda entra na trilha com o dia e o total, sem paciente, como
-  a lista de avisos: *"Agenda de {dia}: N."*;
+- a tela pede o dia inteiro numa chamada, até 100 sessões, e pagina sozinha.
+  Abrir o dia deixa uma linha só na trilha, com o dia e o total, sem paciente,
+  como a lista de avisos: *"Agenda de {dia}: N."*;
 - os avisos são só os eventos ainda preliminares: é a fila do que espera a
   leitura clínica. Registrada a leitura, o aviso sai da lista, e o histórico
   fica na ficha.

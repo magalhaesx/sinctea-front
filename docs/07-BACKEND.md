@@ -235,6 +235,14 @@ testes. O Render publica com o auto-deploy em *After CI Checks Pass*: só sobe
 código cujo commit passou nos testes e já migrou o banco. Assim, a credencial de
 dono nunca entra no servidor.
 
+**O banco roda em UTC, gravado nele mesmo** (item 19c, migração
+`fuso_do_banco`). O adaptador pg do Prisma 7.10 manda o instante sem o
+deslocamento e, na leitura, o trata como UTC: com a sessão em outro fuso, todos
+os horários seriam gravados deslocados. A migração fixa `timezone = UTC` no
+próprio banco, e por isso vale pela conexão direta e pelo pooler; ela recusa quem
+não é dono do banco. A `/api/saude` confere o deslocamento e responde 503 se não
+for zero, e o `conferir-papel` mostra o fuso da sessão do `sinctea_app`.
+
 Fontes, conferidas em 13/10/2026: [Render — Deploy for Free](https://render.com/docs/free)
 · [Neon — limites do plano gratuito](https://neon.com/faqs/free-plan-limits-and-quotas)
 · [histórico de mudanças do plano gratuito do Neon](https://agentdeals.dev/vendor/neon)

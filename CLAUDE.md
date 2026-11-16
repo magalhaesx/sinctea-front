@@ -196,8 +196,9 @@ Atualizado em 18/10/2026, lendo o código — não a memória.
 - Alinhamento aos 5 eixos · cronograma de 13 semanas · quadro Kanban
 - Modelagem UML: casos de uso, classes (revisão de 16/11 em `docs/uml/`), sequência
 - DER e dicionário de dados (`docs/uml/` e `docs/09`), gerados em 16/11 do
-  catálogo do PostgreSQL com as onze migrações, até `agendamento`
-  (item 19b). Não se editam à mão: mudou o esquema, geram-se de novo
+  catálogo do PostgreSQL com as doze migrações, até `fuso_do_banco`
+  (item 19c); o dicionário registra também a configuração do banco
+  (TimeZone=UTC). Não se editam à mão: mudou o esquema, geram-se de novo
 - Documento de IHC e UX/UI com avaliação heurística e conformidade
 - **As 22 telas existem e falam com a camada de serviços**, e a tela 25,
   trilha administrativa (item 13), em 25 rotas do produto, mais `/sobre` e a vitrine `/dev/estados`, que só existe no servidor de

@@ -1,6 +1,6 @@
 # 09 · Dicionário de dados
 
-Gerado em 16/11/2026 do catálogo do PostgreSQL 17, depois das 11 migrações do repositório (`20261015022852_inicial`, `20261015031253_caminhos_coerentes`, `20261015034333_chaves_compostas_sem_cascata`, `20261016004020_sessao_e_acesso_inicial`, `20261016022012_convite_token_resumo`, `20261017213654_evolucao_da_sessao`, `20261018231000_link_de_nova_senha`, `20261028203000_execucao_uma_por_dia`, `20261028230000_atividade_limites`, `20261029150000_auditoria_ordem`, `20261115230000_agendamento`). **Não se edita à mão:** muda o esquema, gera de novo.
+Gerado em 16/11/2026 do catálogo do PostgreSQL 17, depois das 12 migrações do repositório (`20261015022852_inicial`, `20261015031253_caminhos_coerentes`, `20261015034333_chaves_compostas_sem_cascata`, `20261016004020_sessao_e_acesso_inicial`, `20261016022012_convite_token_resumo`, `20261017213654_evolucao_da_sessao`, `20261018231000_link_de_nova_senha`, `20261028203000_execucao_uma_por_dia`, `20261028230000_atividade_limites`, `20261029150000_auditoria_ordem`, `20261115230000_agendamento`, `20261116120000_fuso_do_banco`). **Não se edita à mão:** muda o esquema, gera de novo.
 
 O significado de cada coluna está escrito a partir de `compartilhado/src/tipos.ts`, do `schema.prisma` e das regras do `CLAUDE.md`. O tipo, a nulidade, as chaves, as restrições, os índices e os gatilhos saem do próprio banco. O DER está em `docs/uml/SINCTEA_DER.svg` (todas as colunas) e `docs/uml/SINCTEA_DER_chaves.svg` (só as chaves).
 
@@ -14,6 +14,8 @@ O significado de cada coluna está escrito a partir de `compartilhado/src/tipos.
 - Ações de chave estrangeira: *restringe* recusa a operação enquanto houver quem aponte; *cascata* propaga a mudança.
 
 **Totais:** 24 tabelas, 174 colunas, 39 chaves estrangeiras (5 compostas), 28 CHECKs, 10 gatilhos, 14 enumerações.
+
+**Configuração do banco:** `TimeZone=UTC`, gravada no próprio banco pela migração `fuso_do_banco` (item 19c). O adaptador pg do Prisma manda o instante sem o deslocamento e o lê como UTC: com a sessão em outro fuso, os horários seriam gravados deslocados. A `/api/saude` confere o deslocamento e responde 503 se não for zero.
 
 ## 2. Enumerações
 
