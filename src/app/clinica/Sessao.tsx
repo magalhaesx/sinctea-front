@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { Tela } from '../LayoutApp'
 import { PACIENTES, doPaciente, usarNomeDoPaciente } from './caminho'
-import { dataIsoParaLocal } from '@sinctea/compartilhado/dominio/datas'
+import { dataIsoParaLocal, diaCivilEm } from '@sinctea/compartilhado/dominio/datas'
+import { diaDoAgendamento, horaEmManaus, quandoEmManaus, recusaDoInicio } from '@sinctea/compartilhado/dominio/agenda'
 import { Aviso } from '../../ui/Aviso'
 import { Botao, BotaoLink } from '../../ui/Botao'
 import { Campo } from '../../ui/Campo'
@@ -34,6 +35,12 @@ import {
  * ENCERRAR EXIGE A EVOLUCAO (Resolucao CFP 001/2009, registro documental). O
  * campo abre vazio e assim fica ate o profissional escrever: nada aqui gera,
  * sugere ou pre-preenche o texto, no mesmo espirito da regra 4.
+ *
+ * O AGENDAMENTO (item 19b). A agenda da tela 3 abre esta tela com ?sessao=, e
+ * ela mostra aquela sessao: a agendada de hoje se inicia com o id dela; a de
+ * outro dia, nao. Sem o id, "Iniciar a sessao" inicia o agendamento de hoje
+ * de quem esta na sessao para o paciente, se houver — quem decide e o
+ * servidor. A pausada se retoma com o id dela, e nao vira outra sessao.
  */
 
 const RESPOSTAS: { valor: Resultado; rotulo: string }[] = [
@@ -61,8 +68,20 @@ type Estado =
 const hora = (iso: string) =>
   dataIsoParaLocal(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
 
+/** A agendada e a cancelada ainda nao comecaram: nao tem numero, registro nem contagem. */
+const comecou = (s: Sessao | null): s is Sessao => !!s && s.situacao !== 'AGENDADA' && s.situacao !== 'CANCELADA'
+
+function descricaoDaSessao(s: Sessao): string {
+  if (s.situacao === 'AGENDADA') return `Agendada para ${quandoEmManaus(s.inicioPrevistoEm)} · ${s.local}`
+  if (s.situacao === 'CANCELADA') return `Agendamento cancelado · era para ${quandoEmManaus(s.inicioPrevistoEm)}`
+  const situacao = s.situacao === 'ENCERRADA' ? 'encerrada' : s.situacao === 'PAUSADA' ? 'pausada' : 'em andamento'
+  return `Sessão ${s.numero} · ${situacao}${s.inicio ? ` desde ${hora(s.inicio)}` : ''} · ${s.local}`
+}
+
 export function RegistroSessao() {
   const { id = '' } = useParams()
+  const [params, setParams] = useSearchParams()
+  const sessaoPedida = params.get('sessao')
   const nomeDoPaciente = usarNomeDoPaciente(id)
   const [estado, setEstado] = useState<Estado>({ tipo: 'carregando' })
   const [tentativa, setTentativa] = useState(0)
@@ -97,6 +116,14 @@ export function RegistroSessao() {
     setAviso(null)
     const carregar = async () => {
       const plano = await servicos.planos.obterPorPaciente(id)
+      // A sessao que a agenda pediu, se for deste paciente.
+      if (sessaoPedida) {
+        const pedida = await servicos.sessoes.obter(sessaoPedida).catch((e: unknown) => {
+          if (e instanceof ErroServico && e.codigo === 'NAO_ENCONTRADO') return null
+          throw e
+        })
+        if (pedida?.pacienteId === id) return { objetivos: plano.objetivos, sessao: pedida }
+      }
       // Retoma a sessao que ja estava aberta, em vez de comecar outra.
       const emAndamento = await servicos.sessoes.listarPorPaciente(id, { situacao: 'EM_ANDAMENTO', porPagina: 1 })
       const pausada = emAndamento.itens.length === 0
@@ -112,7 +139,7 @@ export function RegistroSessao() {
       })
       .catch((erro) => { if (ativo) setEstado({ tipo: 'erro', erro }) })
     return () => { ativo = false }
-  }, [id, tentativa])
+  }, [id, sessaoPedida, tentativa])
 
   const atualizarSessao = (sessao: Sessao) =>
     setEstado((e) => (e.tipo === 'pronto' ? { ...e, sessao } : e))
@@ -131,10 +158,20 @@ export function RegistroSessao() {
     }
   }
 
-  const iniciar = () => comErro(async () => {
-    const sessao = await servicos.sessoes.iniciar(id)
+  /**
+   * A agendada e a pausada vao com o id delas; sem sessao, ou depois de uma
+   * encerrada ou cancelada, sem id: o servidor inicia o agendamento de hoje,
+   * se houver, ou cria uma sessao nova.
+   */
+  const iniciar = (atual: Sessao | null) => comErro(async () => {
+    const comId = atual && (atual.situacao === 'AGENDADA' || atual.situacao === 'PAUSADA') ? atual.id : undefined
+    const sessao = await servicos.sessoes.iniciar(id, comId)
     atualizarSessao(sessao)
-    setAviso(`Sessão ${sessao.numero} iniciada às ${hora(sessao.inicio ?? new Date().toISOString())}.`)
+    // O endereco passa a apontar para a sessao que esta aberta.
+    if (sessao.id !== sessaoPedida) setParams({ sessao: sessao.id }, { replace: true })
+    setAviso(atual?.situacao === 'PAUSADA'
+      ? `Sessão ${sessao.numero} retomada.`
+      : `Sessão ${sessao.numero} iniciada às ${hora(sessao.inicio ?? new Date().toISOString())}.`)
     primeiraResposta.current?.focus()
   })
 
@@ -227,13 +264,14 @@ export function RegistroSessao() {
         const objetivoDoUltimo = ultimo && objetivos.find((o) => o.id === ultimo.objetivoId)
         const aberta = sessao?.situacao === 'EM_ANDAMENTO'
         const percentual = percentualIndependente(registros, objetivo?.id ?? '')
+        // A agendada de outro dia nao se inicia: o servidor recusaria com estas palavras.
+        const recusa = sessao?.situacao === 'AGENDADA' ? recusaDoInicio(sessao, new Date()) : null
+        const agendadaHoje = sessao?.situacao === 'AGENDADA' && diaDoAgendamento(sessao.inicioPrevistoEm) === diaCivilEm(new Date())
 
         return (
           <>
             <div className="flex flex-wrap items-start justify-between gap-3">
-              <Titulo sub={sessao
-                ? `Sessão ${sessao.numero} · ${sessao.situacao === 'ENCERRADA' ? 'encerrada' : sessao.situacao === 'PAUSADA' ? 'pausada' : 'em andamento'}${sessao.inicio ? ` desde ${hora(sessao.inicio)}` : ''} · ${sessao.local}`
-                : 'Nenhuma sessão aberta para este paciente'}>
+              <Titulo sub={sessao ? descricaoDaSessao(sessao) : 'Nenhuma sessão aberta para este paciente'}>
                 Registro de sessão
               </Titulo>
 
@@ -270,19 +308,31 @@ export function RegistroSessao() {
             {objetivos.length > 0 && !aberta && (
               <Cartao>
                 <h2 className="text-lg font-bold">
-                  {sessao?.situacao === 'PAUSADA' ? 'Sessão pausada' : sessao?.situacao === 'ENCERRADA' ? 'Sessão encerrada' : 'Nenhuma sessão aberta'}
+                  {sessao?.situacao === 'PAUSADA' ? 'Sessão pausada'
+                    : sessao?.situacao === 'ENCERRADA' ? 'Sessão encerrada'
+                      : sessao?.situacao === 'AGENDADA' ? 'Sessão agendada'
+                        : sessao?.situacao === 'CANCELADA' ? 'Agendamento cancelado' : 'Nenhuma sessão aberta'}
                 </h2>
                 <p className="mt-1 text-tinta2">
                   {sessao?.situacao === 'PAUSADA'
                     ? 'Os registros feitos até aqui continuam guardados. Retome quando voltar para o atendimento.'
                     : sessao?.situacao === 'ENCERRADA'
                       ? 'Esta sessão foi encerrada. Para registrar de novo, inicie uma sessão nova.'
-                      : 'Inicie a sessão para começar a registrar as tentativas.'}
+                      : agendadaHoje
+                        ? `Agendada para hoje às ${horaEmManaus(sessao.inicioPrevistoEm)}, em ${sessao.local}. Inicie quando o atendimento começar.`
+                        : recusa
+                          ? `${recusa} Ele se inicia no dia.`
+                          : sessao?.situacao === 'CANCELADA'
+                            ? 'Este agendamento foi cancelado. Para atender agora, inicie uma sessão nova.'
+                            : 'Inicie a sessão para começar a registrar as tentativas.'}
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <Botao area="cli" onClick={() => void iniciar()} disabled={ocupado}>
-                    {sessao?.situacao === 'PAUSADA' ? 'Retomar a sessão' : 'Iniciar a sessão'}
-                  </Botao>
+                  {!recusa && (
+                    <Botao area="cli" onClick={() => void iniciar(sessao)} disabled={ocupado}>
+                      {sessao?.situacao === 'PAUSADA' ? 'Retomar a sessão'
+                        : sessao?.situacao === 'CANCELADA' ? 'Iniciar uma sessão nova' : 'Iniciar a sessão'}
+                    </Botao>
+                  )}
                   <BotaoLink para={`/app/clinica/pacientes/${id}`} area="cli" variante="secundaria">
                     Voltar para a ficha
                   </BotaoLink>
@@ -290,7 +340,7 @@ export function RegistroSessao() {
               </Cartao>
             )}
 
-            {objetivos.length > 0 && sessao && (
+            {objetivos.length > 0 && comecou(sessao) && (
               <>
                 <Cartao>
                   <Campo id="objetivo" rotulo="Objetivo em trabalho" dica="Trocar de objetivo não perde os registros do anterior." className="max-w-3xl">

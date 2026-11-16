@@ -2,8 +2,10 @@ import { usandoApi } from '../servicos'
 
 /**
  * So o caminho principal (docs/07, secao 0), na versao publicada e no
- * desenvolvimento contra a API: a agenda some da tela ate o servico dela
- * chegar ao servidor. Nunca aparece com dado simulado. Os avisos da escola e
+ * desenvolvimento contra a API: o que ainda nao chegou ao servidor some da
+ * tela, e nunca aparece com dado simulado. Hoje, so a contagem de registros a
+ * sincronizar da tela 3, que e o offline (docs/07, secao 3A), e a vitrine de
+ * estados. A agenda e o agendamento voltaram com o item 19b. Os avisos da escola e
  * os eventos comportamentais da ficha voltaram com o item 6; o registro de
  * ocorrencia na sessao, com o 7; as atividades de casa (telas 9 e 16, e o
  * bloco da tela 15), com o 15; a evolucao por objetivo (tela 8), com o 16; o

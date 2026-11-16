@@ -54,11 +54,24 @@ describe('a versao publicada', () => {
     expect(pacote).not.toContain('Vitrine de estados')
   })
 
-  it('nao leva as telas fora do caminho principal', () => {
-    // Um texto proprio de cada tela que so existe com o mock: a agenda.
-    for (const tela of ['Agenda do dia', 'Voltar para hoje']) {
-      expect(pacote, tela).not.toContain(tela)
+  it('nao leva o que ainda nao chegou ao servidor: a fila do offline', () => {
+    // A contagem da tela 3 e o offline (docs/07, secao 3A): so no desenvolvimento.
+    expect(pacote).not.toContain('serão enviados assim que a rede voltar')
+  })
+
+  it('leva a agenda e o agendamento do item 19b: as telas 3 e 5 e as rotas', () => {
+    for (const texto of ['Agenda do dia', 'Voltar para hoje', 'Dia anterior', 'Próximo dia', 'Não iniciada',
+      'Próximas sessões', 'Agendar sessão', 'Sim, cancelar']) {
+      expect(pacote, texto).toContain(texto)
     }
+    for (const rota of ['"/agenda"', '/proximas-sessoes', '/agendamentos', '/cancelamento']) {
+      expect(pacote, rota).toContain(rota)
+    }
+  })
+
+  it('leva o link da tela 12 para as validacoes no registro de auditoria (item 19b)', () => {
+    expect(pacote).toContain('Ver as validações no registro de auditoria')
+    expect(pacote).toContain('/app/coordenacao/auditoria?entidade=PlanoTerapeutico')
   })
 
   it('leva as atividades de casa do item 15: as telas 9 e 16 e o bloco da tela 15', () => {

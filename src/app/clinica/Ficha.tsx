@@ -10,7 +10,9 @@ import { EstadoCarregando } from '../../ui/EstadoCarregando'
 import { EstadoErro } from '../../ui/EstadoErro'
 import { Paginacao } from '../../ui/Paginacao'
 import { RedeDeApoio } from './RedeDeApoio'
+import { ProximasSessoes } from './ProximasSessoes'
 import { PACIENTES } from './caminho'
+import { usarSessao } from '../../contexto/Sessao'
 import { descricaoNivelSuporte, ehPreliminar } from '@sinctea/compartilhado/dominio/regras'
 import { emData, emDataCivil } from '@sinctea/compartilhado/dominio/datas'
 import {
@@ -29,6 +31,9 @@ import {
  * so mostra os que ainda esperam leitura clinica. Lido, o evento precisa de um
  * lugar onde continue visivel — e quem chega pelo "Abrir a ficha" do aviso nao
  * pode ter de voltar ao painel para agir sobre o que esta vendo.
+ *
+ * As proximas sessoes e o agendamento ficam aqui tambem (item 19b): agendar e
+ * sempre de um paciente, e e na ficha que se ve a agenda dele com toda a equipe.
  */
 
 const SITUACAO_PLANO: Record<SituacaoPlano, { rotulo: string; tom: 'ok' | 'at' | 'neutro'; simbolo: string }> = {
@@ -286,6 +291,7 @@ function HistoricoDeSessoes({ pacienteId, equipe }: {
 
 export function Ficha() {
   const { id = '' } = useParams()
+  const { usuario } = usarSessao()
   const [estado, setEstado] = useState<Estado>({ tipo: 'carregando' })
   const [tentativa, setTentativa] = useState(0)
 
@@ -395,6 +401,8 @@ export function Ficha() {
             </Cartao>
 
             <EventosComportamentais pacienteId={p.id} primeiroNome={p.nome.split(' ')[0]} />
+
+            <ProximasSessoes pacienteId={p.id} primeiroNome={p.nome.split(' ')[0]} usuarioId={usuario?.id} />
 
             <Cartao>
               <h2 className="text-lg font-bold">Histórico resumido</h2>

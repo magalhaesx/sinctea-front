@@ -12,9 +12,12 @@ import { EstadoCarregando } from '../../ui/EstadoCarregando'
 import { EstadoErro } from '../../ui/EstadoErro'
 import { Paginacao } from '../../ui/Paginacao'
 import { usarSessao } from '../../contexto/Sessao'
-import { dataIsoParaLocal, diaIso } from '@sinctea/compartilhado/dominio/datas'
+import { dataIsoParaLocal, diaCivilEm, emDataCivil, partesDaDataCivil, somarDias } from '@sinctea/compartilhado/dominio/datas'
+import { horaEmManaus } from '@sinctea/compartilhado/dominio/agenda'
+import { CancelarAgendamento } from './CancelarAgendamento'
+import { acaoNaAgenda, cancelavel, type AcaoNaAgenda } from './agendaDoDia'
 import {
-  servicos, type AvisoOcorrenciaEscolar, type ItemAgenda, type Pagina, type SituacaoSessao,
+  servicos, type AvisoOcorrenciaEscolar, type ItemAgenda, type Pagina,
 } from '../../servicos'
 
 /**
@@ -27,16 +30,21 @@ import {
  * habilitacao para faze-la. E aqui que ela e registrada, e o aviso lido sai
  * da lista: o bloco mostra o que ainda espera pelo profissional.
  *
- * So no caminho principal (app/caminhoPrincipal.ts), a agenda e os registros
- * a sincronizar ainda nao existem no servidor: o painel abre so com os avisos.
+ * A AGENDA voltou a versao publicada com o item 19b: as sessoes de quem esta
+ * na sessao, no dia de Manaus, com o dia anterior e o proximo. O dia e o de
+ * Manaus, como no servidor, e a hora tambem: a sessao das 23h30 e daquele dia.
+ * Os registros a sincronizar continuam so no desenvolvimento: sao o offline
+ * (docs/07, secao 3A), que ainda nao existe no servidor.
  */
 
-const SITUACAO: Record<SituacaoSessao, { rotulo: string; tom: 'ok' | 'at' | 'neutro'; simbolo: string }> = {
-  ENCERRADA: { rotulo: 'Concluída', tom: 'ok', simbolo: '✓' },
-  EM_ANDAMENTO: { rotulo: 'Em aberto', tom: 'at', simbolo: '●' },
-  PAUSADA: { rotulo: 'Pausada', tom: 'at', simbolo: '▲' },
-  AGENDADA: { rotulo: 'Agendada', tom: 'neutro', simbolo: '○' },
-  CANCELADA: { rotulo: 'Cancelada', tom: 'neutro', simbolo: '○' },
+/** A etiqueta de cada linha. A cancelada, alem dela, fica riscada. */
+const ETIQUETA: Record<AcaoNaAgenda, { rotulo: string; tom: 'ok' | 'at' | 'neutro'; simbolo: string }> = {
+  INICIAR: { rotulo: 'Agendada', tom: 'neutro', simbolo: '○' },
+  CANCELAR_FUTURA: { rotulo: 'Agendada', tom: 'neutro', simbolo: '○' },
+  NAO_INICIADA: { rotulo: 'Não iniciada', tom: 'at', simbolo: '▲' },
+  ABRIR: { rotulo: 'Em aberto', tom: 'at', simbolo: '●' },
+  VER: { rotulo: 'Concluída', tom: 'ok', simbolo: '✓' },
+  CANCELADA: { rotulo: 'Cancelada', tom: 'neutro', simbolo: '✕' },
 }
 
 const POR_PAGINA = 10
@@ -46,8 +54,8 @@ type Estado<T> =
   | { tipo: 'erro'; erro: unknown }
   | { tipo: 'pronto'; dados: T }
 
-/** AAAA-MM-DD no fuso de quem usa, que e como a agenda e pedida. */
-const diaDeHoje = () => diaIso(new Date())
+/** O dia de hoje em Manaus, que e como a agenda e pedida (item 19b). */
+const diaDeHoje = () => diaCivilEm(new Date())
 
 const hora = (iso: string) =>
   dataIsoParaLocal(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
@@ -61,10 +69,13 @@ const quando = (iso: string) => {
     : `${data.toLocaleDateString('pt-BR')}, ${hora(iso)}`
 }
 
+const contagem = (n: number, um: string, varios: string) => (n === 0 ? `Nenhuma ${um}` : n === 1 ? `1 ${um}` : `${n} ${varios}`)
+
 export function PainelClinica() {
   const { usuario, perfilAtivo, especialidade } = usarSessao()
   const [params, setParams] = useSearchParams()
-  const dia = params.get('dia') ?? diaDeHoje()
+  const pedido = params.get('dia')
+  const dia = pedido && partesDaDataCivil(pedido) ? pedido : diaDeHoje()
   const pagina = Math.max(1, Number(params.get('pagina') ?? 1) || 1)
 
   const [agenda, setAgenda] = useState<Estado<Pagina<ItemAgenda>>>({ tipo: 'carregando' })
@@ -75,16 +86,20 @@ export function PainelClinica() {
   const [lendo, setLendo] = useState<string | null>(null)
   const [aviso, setAviso] = useState<string | null>(null)
   const [erroLeitura, setErroLeitura] = useState<string | null>(null)
+  const [avisoAgenda, setAvisoAgenda] = useState<string | null>(null)
 
   useEffect(() => {
-    if (SO_CAMINHO_PRINCIPAL) return
     let ativo = true
-    setAgenda({ tipo: 'carregando' })
+    // Depois de cancelar, a lista continua na tela enquanto se atualiza.
+    setAgenda((atual) => (atual.tipo === 'pronto' && atual.dados.pagina === pagina ? atual : { tipo: 'carregando' }))
     servicos.sessoes.listarAgenda({ dia, pagina, porPagina: POR_PAGINA })
       .then((dados) => { if (ativo) setAgenda({ tipo: 'pronto', dados }) })
       .catch((erro) => { if (ativo) setAgenda({ tipo: 'erro', erro }) })
     return () => { ativo = false }
   }, [dia, pagina, tentativaAgenda])
+
+  // Trocar de dia leva o aviso do cancelamento embora: ele era do outro dia.
+  useEffect(() => { setAvisoAgenda(null) }, [dia])
 
   useEffect(() => {
     let ativo = true
@@ -96,6 +111,7 @@ export function PainelClinica() {
     return () => { ativo = false }
   }, [tentativaAvisos])
 
+  // A fila do offline ainda nao existe no servidor: so no desenvolvimento.
   useEffect(() => {
     if (SO_CAMINHO_PRINCIPAL) return
     let ativo = true
@@ -120,21 +136,27 @@ export function PainelClinica() {
     }
   }
 
-  const ehHoje = dia === diaDeHoje()
+  const irPara = (novoDia: string) => {
+    const proximos = new URLSearchParams(params)
+    proximos.delete('pagina')
+    if (novoDia === diaDeHoje()) proximos.delete('dia')
+    else proximos.set('dia', novoDia)
+    setParams(proximos)
+  }
+
+  const hoje = diaDeHoje()
+  const ehHoje = dia === hoje
   const dataPorExtenso = dataIsoParaLocal(dia).toLocaleDateString('pt-BR', {
     weekday: 'long', day: 'numeric', month: 'long',
   })
   const totalNaAgenda = agenda.tipo === 'pronto' ? agenda.dados.total : null
   const totalAvisos = avisos.tipo === 'pronto' ? avisos.dados.total : 0
 
-  const resumoDosAvisos = avisos.tipo !== 'pronto'
-    ? 'Carregando os avisos da escola'
-    : totalAvisos === 0 ? 'Nenhum aviso novo da escola' : totalAvisos === 1 ? '1 aviso novo da escola' : `${totalAvisos} avisos novos da escola`
-
-  const resumo = SO_CAMINHO_PRINCIPAL ? resumoDosAvisos : totalNaAgenda === null
+  // A agenda conta as sessoes do dia, a cancelada tambem: ela aparece na lista, com a etiqueta.
+  const resumo = totalNaAgenda === null
     ? 'Carregando a agenda'
-    : `${totalNaAgenda === 0 ? 'Nenhum atendimento' : totalNaAgenda === 1 ? '1 atendimento' : `${totalNaAgenda} atendimentos`}` +
-      `${ehHoje ? ' hoje' : ''} · ${totalAvisos === 0 ? 'nenhum aviso novo' : totalAvisos === 1 ? '1 aviso novo' : `${totalAvisos} avisos novos`}`
+    : `${contagem(totalNaAgenda, 'sessão na agenda', 'sessões na agenda')}${ehHoje ? ' hoje' : ''} · ` +
+      `${totalAvisos === 0 ? 'nenhum aviso novo' : totalAvisos === 1 ? '1 aviso novo' : `${totalAvisos} avisos novos`}`
 
   return (
     <Tela
@@ -144,13 +166,6 @@ export function PainelClinica() {
       caminho={['Área clínica', 'Painel do profissional']}
     >
       <Titulo sub={resumo}>{dataPorExtenso}</Titulo>
-
-      {!ehHoje && !SO_CAMINHO_PRINCIPAL && (
-        <p className="text-sm">
-          Você está vendo a agenda de outro dia.{' '}
-          <Link to="/app/clinica" className="font-bold text-cli-ink underline">Voltar para hoje</Link>
-        </p>
-      )}
 
       <section aria-labelledby="h-avisos" className="flex flex-col gap-3">
         <h2 id="h-avisos" className="text-lg font-bold">Avisos da escola</h2>
@@ -208,9 +223,29 @@ export function PainelClinica() {
         )}
       </section>
 
-      {!SO_CAMINHO_PRINCIPAL && (
       <section aria-labelledby="h-agenda" className="flex flex-col gap-3">
-        <h2 id="h-agenda" className="text-lg font-bold">Agenda do dia</h2>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 id="h-agenda" className="text-lg font-bold">
+            {ehHoje ? 'Agenda do dia' : `Agenda de ${emDataCivil(dia)}`}
+          </h2>
+          <nav aria-label="Dia da agenda" className="flex flex-wrap items-center gap-2">
+            <Botao area="cli" variante="secundaria" onClick={() => irPara(somarDias(dia, -1))}>
+              <span aria-hidden="true">←</span> Dia anterior
+            </Botao>
+            {!ehHoje && (
+              <Link to="/app/clinica" className="inline-flex min-h-11 items-center px-2 font-bold text-cli-ink underline">
+                Voltar para hoje
+              </Link>
+            )}
+            <Botao area="cli" variante="secundaria" onClick={() => irPara(somarDias(dia, 1))}>
+              Próximo dia <span aria-hidden="true">→</span>
+            </Botao>
+          </nav>
+        </div>
+
+        <div aria-live="polite">
+          {avisoAgenda && <Aviso tom="ok" titulo="Pronto">{avisoAgenda}</Aviso>}
+        </div>
 
         {agenda.tipo === 'carregando' && (
           <EstadoCarregando forma="lista" linhas={3} rotulo="Carregando a agenda do dia" />
@@ -227,36 +262,48 @@ export function PainelClinica() {
 
         {agenda.tipo === 'pronto' && (
           agenda.dados.total === 0 ? (
-            // Sem EstadoVazio: a acao que ele ofereceria — ir para a lista de
-            // pacientes — ja esta nos atalhos e no menu (docs/02, secao 4).
+            // Sem EstadoVazio: agendar e na ficha do paciente, e a lista de
+            // pacientes ja esta nos atalhos e no menu (docs/02, secao 4).
             <Cartao>
               <p className="text-tinta2">
-                {ehHoje
-                  ? 'Nenhum atendimento agendado para hoje.'
-                  : 'Nenhum atendimento agendado para este dia.'}
+                {ehHoje ? 'Nenhuma sessão agendada para hoje.' : 'Nenhuma sessão agendada para este dia.'}{' '}
+                Para agendar, abra a ficha do paciente.
               </p>
             </Cartao>
           ) : (
             <>
               <ul className="flex flex-col gap-2.5">
                 {agenda.dados.itens.map((i) => {
-                  const s = SITUACAO[i.situacao]
+                  const acao = acaoNaAgenda(i, hoje)
+                  const etiqueta = ETIQUETA[acao]
+                  const sessao = `/app/clinica/pacientes/${i.paciente.id}/sessao?sessao=${i.sessaoId}`
+                  const cancelada = acao === 'CANCELADA'
                   return (
                     <li
                       key={i.sessaoId}
                       className="flex flex-wrap items-center justify-between gap-2.5 rounded-xl border border-linha bg-sup px-3.5 py-3"
                     >
-                      <span>
-                        <b className="tabular-nums">{hora(i.inicioPrevistoEm)}</b> ·{' '}
+                      <span className={cancelada ? 'text-tinta2 line-through' : undefined}>
+                        <b className="tabular-nums">{horaEmManaus(i.inicioPrevistoEm)}</b> ·{' '}
                         <Link to={`/app/clinica/pacientes/${i.paciente.id}`} className="text-cli-ink underline">
                           {i.paciente.nome}
                         </Link>
+                        <span className="text-tinta2"> · {i.local}</span>
                       </span>
                       <span className="flex flex-wrap items-center gap-2.5">
-                        <Etiqueta tom={s.tom} simbolo={s.simbolo}>{s.rotulo}</Etiqueta>
-                        <BotaoLink para={`/app/clinica/pacientes/${i.paciente.id}/sessao`} area="cli">
-                          {i.situacao === 'ENCERRADA' ? 'Ver a sessão' : 'Abrir a sessão'}
-                        </BotaoLink>
+                        <Etiqueta tom={etiqueta.tom} simbolo={etiqueta.simbolo}>
+                          {i.situacao === 'PAUSADA' ? 'Pausada' : etiqueta.rotulo}
+                        </Etiqueta>
+                        {acao === 'INICIAR' && <BotaoLink para={sessao} area="cli">Iniciar</BotaoLink>}
+                        {acao === 'ABRIR' && <BotaoLink para={sessao} area="cli">Abrir a sessão</BotaoLink>}
+                        {acao === 'VER' && <BotaoLink para={sessao} area="cli" variante="secundaria">Ver a sessão</BotaoLink>}
+                        {cancelavel(acao) && (
+                          <CancelarAgendamento
+                            sessaoId={i.sessaoId}
+                            descricao={`${i.paciente.nome}, ${emDataCivil(dia)} às ${horaEmManaus(i.inicioPrevistoEm)}`}
+                            aoCancelar={(mensagem) => { setAvisoAgenda(mensagem); setTentativaAgenda((t) => t + 1) }}
+                          />
+                        )}
                       </span>
                     </li>
                   )
@@ -273,16 +320,16 @@ export function PainelClinica() {
                   setParams(proximos)
                 }}
                 rotulo="Páginas da agenda do dia"
-                nomeItens={{ singular: 'atendimento', plural: 'atendimentos' }}
+                nomeItens={{ singular: 'sessão', plural: 'sessões' }}
               />
             </>
           )
         )}
       </section>
-      )}
 
-      {/* Bloco que so diz "nada aqui" gasta atencao: sem pendencia, sem bloco. */}
-      {pendentes > 0 && !SO_CAMINHO_PRINCIPAL && (
+      {/* Bloco que so diz "nada aqui" gasta atencao: sem pendencia, sem bloco.
+          A condicao do offline vem primeiro: no build, ela tira o bloco do pacote. */}
+      {!SO_CAMINHO_PRINCIPAL && pendentes > 0 && (
         <Aviso titulo={`${pendentes} ${pendentes === 1 ? 'registro aguardando' : 'registros aguardando'} sincronização`}>
           Foram feitos sem conexão e serão enviados assim que a rede voltar. Nada se perde — você
           pode continuar registrando normalmente.

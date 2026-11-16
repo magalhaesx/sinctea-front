@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { Tela } from '../LayoutApp'
 import { comEspecialidade } from '../perfis'
-import { SO_CAMINHO_PRINCIPAL } from '../caminhoPrincipal'
 import { Aviso } from '../../ui/Aviso'
 import { Botao } from '../../ui/Botao'
 import { Campo } from '../../ui/Campo'
@@ -178,21 +177,15 @@ export function Planos() {
               <EstadoVazio
                 nivel={3}
                 titulo="Nenhum plano aguardando validação"
-                explicacao={SO_CAMINHO_PRINCIPAL
-                  ? 'Quando um profissional enviar um plano, ele aparece aqui. Enquanto isso, a lista de pacientes mostra a situação do plano de cada um.'
-                  : 'Quando um profissional enviar um plano, ele aparece aqui. Enquanto isso, o registro de auditoria mostra as validações já feitas.'}
-                acao={SO_CAMINHO_PRINCIPAL ? (
-                  <Link to="/app/clinica/pacientes" className="min-h-11 items-center font-bold text-cli-ink underline">
-                    Ver a lista de pacientes
-                  </Link>
-                ) : (
+                explicacao="Quando um profissional enviar um plano, ele aparece aqui. Enquanto isso, o registro de auditoria mostra as validações já feitas."
+                acao={
                   <Link
                     to="/app/coordenacao/auditoria?entidade=PlanoTerapeutico"
                     className="min-h-11 items-center font-bold text-cli-ink underline"
                   >
                     Ver as validações no registro de auditoria
                   </Link>
-                )}
+                }
               />
             ) : (
               <>
@@ -236,8 +229,9 @@ export function Planos() {
             )
           )}
 
-          {/* A tela de auditoria: fora do caminho principal (app/caminhoPrincipal.ts). */}
-          {!SO_CAMINHO_PRINCIPAL && (
+          {/* A tela 13 esta no ar desde o item 17, e o link voltou com o 19b. Com
+              a fila vazia, o proprio estado vazio ja o oferece. */}
+          {!(fila.tipo === 'pronto' && fila.dados.total === 0) && (
             <p className="text-sm">
               <Link
                 to="/app/coordenacao/auditoria?entidade=PlanoTerapeutico"
