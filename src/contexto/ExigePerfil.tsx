@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
 import type { Perfil } from '../servicos'
 import { usarSessao } from './Sessao'
+import { SemConexao } from '../app/SemConexao'
 
 /**
  * Protege uma rota do app pelo perfil ativo.
@@ -14,6 +15,7 @@ import { usarSessao } from './Sessao'
  * de servicos simulada (servicos/mock), nunca este componente.
  *
  * Sem sessao: vai para /app/entrar, guardando o destino para voltar depois.
+ * Sem conexao com o servidor ao abrir: diz isso, e espera a conexao voltar.
  * Com sessao em outro perfil: vai para /app, que redireciona ao painel certo.
  */
 export function ExigePerfil({ perfis, children }: { perfis: Perfil[]; children: ReactNode }) {
@@ -23,6 +25,8 @@ export function ExigePerfil({ perfis, children }: { perfis: Perfil[]; children: 
   if (estado.situacao === 'CARREGANDO') {
     return <p role="status" className="p-6 text-sm">Verificando sua sessão…</p>
   }
+
+  if (estado.situacao === 'SEM_CONEXAO') return <SemConexao />
 
   if (estado.situacao === 'ANONIMO') {
     return <Navigate to="/app/entrar" replace state={{ destino: local.pathname + local.search }} />

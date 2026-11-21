@@ -3,6 +3,8 @@ import { matchPath, Navigate, Route, Routes, useLocation } from 'react-router-do
 import { ExigePerfil } from './contexto/ExigePerfil'
 import { usarSessao } from './contexto/Sessao'
 import { usandoApi, type Perfil } from './servicos'
+import { usarSincronizacao } from './fila'
+import { AvisoDeVersao } from './pwa/AvisoDeVersao'
 import { SO_CAMINHO_PRINCIPAL } from './app/caminhoPrincipal'
 import { Ajuda } from './app/Ajuda'
 import { Conta } from './app/Conta'
@@ -98,6 +100,10 @@ function Solta({ children }: { children: ReactNode }) {
 
 export function App() {
   const { pathname } = useLocation()
+  const { usuario } = usarSessao()
+  // A fila de toques da conta sobe ao abrir o app, ao voltar a conexao e de
+  // tempos em tempos, em qualquer tela (item 22).
+  usarSincronizacao(usuario?.id)
 
   useEffect(() => {
     const achado = titulos.find(([padrao]) => matchPath(padrao, pathname))
@@ -108,6 +114,8 @@ export function App() {
     <>
     {/* Outra janela trocou a conta ou o perfil, ou saiu: o aviso vale para qualquer tela. */}
     <AvisoDeJanela />
+    {/* Versao nova do app guardado: a pessoa decide quando atualizar (item 22). */}
+    <AvisoDeVersao />
     <Routes>
       {/* A raiz leva ao login. Uma pagina institucional pode ocupa-la, se houver
           tempo (docs/07, Etapa 13). */}

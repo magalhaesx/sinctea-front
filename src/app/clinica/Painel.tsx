@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { Tela } from '../LayoutApp'
-import { SO_CAMINHO_PRINCIPAL } from '../caminhoPrincipal'
 import { papelNaTela } from '../perfis'
 import { Aviso } from '../../ui/Aviso'
 import { Botao, BotaoLink } from '../../ui/Botao'
@@ -12,6 +11,8 @@ import { EstadoCarregando } from '../../ui/EstadoCarregando'
 import { EstadoErro } from '../../ui/EstadoErro'
 import { Paginacao } from '../../ui/Paginacao'
 import { usarSessao } from '../../contexto/Sessao'
+import { usarPendentes } from '../../fila'
+import { RecusasDaFila } from '../../fila/RecusasDaFila'
 import { dataIsoParaLocal, diaCivilEm, emDataCivil, partesDaDataCivil, somarDias } from '@sinctea/compartilhado/dominio/datas'
 import { horaEmManaus } from '@sinctea/compartilhado/dominio/agenda'
 import { CancelarAgendamento } from './CancelarAgendamento'
@@ -33,8 +34,8 @@ import {
  * A AGENDA voltou a versao publicada com o item 19b: as sessoes de quem esta
  * na sessao, no dia de Manaus, com o dia anterior e o proximo. O dia e o de
  * Manaus, como no servidor, e a hora tambem: a sessao das 23h30 e daquele dia.
- * Os registros a sincronizar continuam so no desenvolvimento: sao o offline
- * (docs/07, secao 3A), que ainda nao existe no servidor.
+ * Os toques a sincronizar sao os da fila deste aparelho, da conta que esta na
+ * sessao (item 22): o servidor nao tem o que esta so no aparelho.
  *
  * O dia vem inteiro numa chamada, ate 100 sessoes — o maximo da API —, e a
  * tela o pagina: o resumo do topo conta o dia todo sem a cancelada (item 19c),
@@ -89,7 +90,7 @@ export function PainelClinica() {
 
   const [agenda, setAgenda] = useState<EstadoAgenda>({ tipo: 'carregando' })
   const [avisos, setAvisos] = useState<Estado<Pagina<AvisoOcorrenciaEscolar>>>({ tipo: 'carregando' })
-  const [pendentes, setPendentes] = useState(0)
+  const pendentes = usarPendentes(usuario?.id).length
   const [tentativaAgenda, setTentativaAgenda] = useState(0)
   const [tentativaAvisos, setTentativaAvisos] = useState(0)
   const [lendo, setLendo] = useState<string | null>(null)
@@ -119,16 +120,6 @@ export function PainelClinica() {
       .catch((erro) => { if (ativo) setAvisos({ tipo: 'erro', erro }) })
     return () => { ativo = false }
   }, [tentativaAvisos])
-
-  // A fila do offline ainda nao existe no servidor: so no desenvolvimento.
-  useEffect(() => {
-    if (SO_CAMINHO_PRINCIPAL) return
-    let ativo = true
-    servicos.sessoes.listarPendentesDeSincronizacao({ porPagina: 1 })
-      .then((p) => { if (ativo) setPendentes(p.total) })
-      .catch(() => { if (ativo) setPendentes(0) })
-    return () => { ativo = false }
-  }, [tentativaAgenda])
 
   const registrarLeitura = async (a: AvisoOcorrenciaEscolar) => {
     setAviso(null)
@@ -336,14 +327,14 @@ export function PainelClinica() {
         )}
       </section>
 
-      {/* Bloco que so diz "nada aqui" gasta atencao: sem pendencia, sem bloco.
-          A condicao do offline vem primeiro: no build, ela tira o bloco do pacote. */}
-      {!SO_CAMINHO_PRINCIPAL && pendentes > 0 && (
-        <Aviso titulo={`${pendentes} ${pendentes === 1 ? 'registro aguardando' : 'registros aguardando'} sincronização`}>
-          Foram feitos sem conexão e serão enviados assim que a rede voltar. Nada se perde — você
-          pode continuar registrando normalmente.
+      {/* Bloco que so diz "nada aqui" gasta atencao: sem pendencia, sem bloco. */}
+      {pendentes > 0 && (
+        <Aviso titulo={`${pendentes} ${pendentes === 1 ? 'toque aguardando' : 'toques aguardando'} sincronização`}>
+          {pendentes === 1 ? 'Está guardado' : 'Estão guardados'} neste aparelho e {pendentes === 1 ? 'sobe' : 'sobem'} assim
+          que a conexão voltar. Você pode continuar registrando normalmente.
         </Aviso>
       )}
+      <RecusasDaFila usuarioId={usuario?.id} />
 
       <div className="flex flex-wrap gap-2">
         <BotaoLink para="/app/clinica/pacientes" area="cli" variante="secundaria">Ver meus pacientes</BotaoLink>

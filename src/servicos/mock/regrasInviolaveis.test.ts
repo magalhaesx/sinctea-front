@@ -143,18 +143,6 @@ describe('camada simulada', () => {
     expect(nivelInvalido.campos.nome).toBeUndefined()
   })
 
-  it('os registros pendentes sao de quem conduziu, nao da clinica', async () => {
-    await entrarComo('TERAPEUTA')
-    const daAna = await chamar(s.sessoes.listarPendentesDeSincronizacao({ porPagina: 100 }))
-    expect(daAna.total).toBeGreaterThan(0)
-    expect(daAna.itens.every((x) => x.statusSync === 'PENDENTE' && x.profissionalId === 'u-prof-1')).toBe(true)
-
-    // A coordenadora nao herda os registros pendentes da equipe.
-    await entrarComo('COORDENADOR')
-    const daJuliana = await chamar(s.sessoes.listarPendentesDeSincronizacao({ porPagina: 100 }))
-    expect(daJuliana.itens.some((x) => x.profissionalId === 'u-prof-1')).toBe(false)
-  })
-
   it('o toque com o id do aparelho: o reenvio devolve o gravado, outro conteudo e conflito (item 22)', async () => {
     await entrarComo('TERAPEUTA')
     const sessao = await chamar(s.sessoes.iniciar('p-006'))

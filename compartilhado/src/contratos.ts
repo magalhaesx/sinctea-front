@@ -134,11 +134,6 @@ export interface ServicoSessao {
   /** Os agendamentos do paciente de hoje em diante, de qualquer profissional (tela 5). */
   listarProximas(pacienteId: string, filtro?: FiltroPaginacao): Promise<Pagina<ItemAgenda>>
   listarPorPaciente(pacienteId: string, filtro?: FiltroSessao): Promise<Pagina<Sessao>>
-  /**
-   * Registros feitos sem conexao que ainda nao subiram, do profissional
-   * autenticado. O painel mostra a contagem; nada se perde enquanto isso.
-   */
-  listarPendentesDeSincronizacao(filtro?: FiltroPaginacao): Promise<Pagina<Sessao>>
   obter(id: string): Promise<Sessao>
   /**
    * Agenda uma sessao para quem pede, que e quem vai conduzir (item 19b). O

@@ -14,8 +14,12 @@ import { Titulo } from '../../ui/Titulo'
 import { EstadoCarregando } from '../../ui/EstadoCarregando'
 import { EstadoErro } from '../../ui/EstadoErro'
 import { EVOLUCAO_MAXIMO, erroDaEvolucao, percentualIndependente } from '@sinctea/compartilhado/dominio/regras'
+import { gerarUuidV7 } from '@sinctea/compartilhado/dominio/toque'
+import { usarSessao } from '../../contexto/Sessao'
+import { fila, usarPendentes } from '../../fila'
+import { RecusasDaFila } from '../../fila/RecusasDaFila'
 import {
-  ErroServico, servicos, type Intensidade, type Objetivo, type Resultado, type Sessao,
+  ErroServico, servicos, type Intensidade, type Objetivo, type RegistroAtividade, type Resultado, type Sessao,
 } from '../../servicos'
 
 /**
@@ -25,12 +29,13 @@ import {
  * Registro rapido, em tablet, com a crianca na frente: alvos grandes, uma
  * decisao por toque e desfazer que diz o que vai desfazer.
  *
- * ESTADO DE CONEXAO, HONESTO. O indicador reflete navigator.onLine e o
- * statusSync que o servico devolve. Pela API, cada toque e gravado no servidor
- * na hora, e a sessao volta SINCRONIZADO; o mock, sem servidor, marca PENDENTE.
- * A fila de sincronizacao — IndexedDB e chave de idempotencia gerada no
- * aparelho — esta prevista depois da Etapa 11 (docs/07, secao 3A): ate la,
- * sem conexao o toque nao e gravado, e a tela diz isso.
+ * SEM CONEXAO, SO OS TOQUES (item 22; docs/07, secao 3A). Todo toque do
+ * "Como foi esta tentativa?" passa pela fila do aparelho (src/fila): ganha um
+ * id e o instante ali, e gravado no IndexedDB e so depois enviado. Sem
+ * conexao, o contador e o medidor seguem, com os toques guardados marcados.
+ * Iniciar, pausar, encerrar e a ocorrencia ABC precisam de conexao e da fila
+ * vazia. A sessao nao tem copia no aparelho, de proposito, para nao guardar
+ * dado clinico: reabrir a tela sem conexao nao registra, e a tela diz isso.
  *
  * ENCERRAR EXIGE A EVOLUCAO (Resolucao CFP 001/2009, registro documental). O
  * campo abre vazio e assim fica ate o profissional escrever: nada aqui gera,
@@ -83,6 +88,10 @@ export function RegistroSessao() {
   const [params, setParams] = useSearchParams()
   const sessaoPedida = params.get('sessao')
   const nomeDoPaciente = usarNomeDoPaciente(id)
+  const { usuario } = usarSessao()
+  const usuarioId = usuario?.id
+  /** Os toques da conta que ainda nao subiram (de qualquer sessao). */
+  const pendentes = usarPendentes(usuarioId)
   const [estado, setEstado] = useState<Estado>({ tipo: 'carregando' })
   const [tentativa, setTentativa] = useState(0)
   const [objetivoId, setObjetivoId] = useState('')
@@ -109,6 +118,23 @@ export function RegistroSessao() {
     window.addEventListener('offline', mudou)
     return () => { window.removeEventListener('online', mudou); window.removeEventListener('offline', mudou) }
   }, [])
+
+  // O toque que o servidor confirmou entra na sessao, e sai da fila.
+  useEffect(() => fila.aoConfirmar((toque, registro) => {
+    setEstado((e) => {
+      if (e.tipo !== 'pronto' || !e.sessao || e.sessao.id !== toque.sessaoId) return e
+      if (e.sessao.registros.some((r) => r.id === registro.id)) return e
+      return { ...e, sessao: { ...e.sessao, registros: [...e.sessao.registros, registro] } }
+    })
+  }), [])
+
+  // Aberta sem conexao, a tela tenta de novo quando ela volta.
+  useEffect(() => {
+    if (estado.tipo !== 'erro') return undefined
+    const deNovo = () => setTentativa((t) => t + 1)
+    window.addEventListener('online', deNovo)
+    return () => window.removeEventListener('online', deNovo)
+  }, [estado.tipo])
 
   useEffect(() => {
     let ativo = true
@@ -175,13 +201,21 @@ export function RegistroSessao() {
     primeiraResposta.current?.focus()
   })
 
+  /** Um caminho so, com ou sem conexao: grava na fila do aparelho, depois envia. */
   const registrar = (sessaoId: string, resultado: Resultado) => comErro(async () => {
     setErros({})
-    await servicos.sessoes.registrarAtividade(sessaoId, objetivoId, resultado)
-    atualizarSessao(await servicos.sessoes.obter(sessaoId))
+    if (!usuarioId) return
+    await fila.enfileirar({
+      id: gerarUuidV7(), usuarioId, sessaoId, objetivoId, resultado, ocorridoEm: new Date().toISOString(),
+    })
+    void fila.enviarPendentes(usuarioId)
   })
 
+  /** O ultimo toque ainda na fila sai dela, sem ir ao servidor; o que ja subiu, precisa de conexao. */
   const desfazer = (sessaoId: string) => comErro(async () => {
+    setErros({})
+    if (usuarioId && await fila.desfazerUltimo(usuarioId, sessaoId)) return
+    if (!navigator.onLine) throw new ErroServico('INDISPONIVEL', 'Desfazer um toque que já subiu precisa de conexão.')
     atualizarSessao(await servicos.sessoes.desfazerUltimoRegistro(sessaoId))
   })
 
@@ -230,6 +264,12 @@ export function RegistroSessao() {
 
   const negado = estado.tipo === 'erro' && estado.erro instanceof ErroServico
     && estado.erro.codigo === 'ACESSO_NEGADO'
+  const semServidor = estado.tipo === 'erro' && estado.erro instanceof ErroServico
+    && estado.erro.codigo === 'INDISPONIVEL'
+
+  /** Iniciar, pausar, encerrar e a ocorrencia ABC: so com conexao e com a fila vazia. */
+  const bloqueado = !online || pendentes.length > 0
+  const guardados = (n: number) => (n === 1 ? '1 toque guardado neste aparelho' : `${n} toques guardados neste aparelho`)
 
   return (
     <Tela area="cli" caminho={['Área clínica', PACIENTES, doPaciente(id, nomeDoPaciente), 'Registro de sessão']}>
@@ -240,7 +280,24 @@ export function RegistroSessao() {
         </>
       )}
 
-      {estado.tipo === 'erro' && (
+      {semServidor && (
+        <>
+          <Titulo>Registro de sessão</Titulo>
+          <Cartao>
+            <h2 className="text-lg font-bold">Sem conexão com o servidor</h2>
+            <p className="texto-corrido mt-1 text-tinta2">
+              Para registrar, a tela da sessão precisa estar aberta: este aparelho não guarda cópia da
+              sessão, para não guardar dado clínico.
+              {pendentes.length > 0 && ` ${pendentes.length === 1 ? 'O toque guardado sobe' : `Os ${pendentes.length} toques guardados sobem`} quando a conexão voltar.`}
+            </p>
+            <p className="mt-3">
+              <Botao area="cli" variante="secundaria" onClick={() => setTentativa((t) => t + 1)}>Tentar de novo</Botao>
+            </p>
+          </Cartao>
+        </>
+      )}
+
+      {estado.tipo === 'erro' && !semServidor && (
         <>
           <Titulo>Registro de sessão</Titulo>
           <EstadoErro
@@ -258,7 +315,13 @@ export function RegistroSessao() {
       {estado.tipo === 'pronto' && (() => {
         const { objetivos, sessao } = estado
         const objetivo = objetivos.find((o) => o.id === objetivoId) ?? objetivos[0]
-        const registros = sessao?.registros ?? []
+        // Os confirmados pelo servidor e, depois deles, os que ainda estao na fila.
+        const confirmados = sessao?.registros ?? []
+        const naFila = sessao ? pendentes.filter((t) => t.sessaoId === sessao.id && !confirmados.some((r) => r.id === t.id)) : []
+        const registros: RegistroAtividade[] = [...confirmados, ...naFila.map((t, i) => ({
+          id: t.id, objetivoId: t.objetivoId, ordem: confirmados.length + i + 1, resultado: t.resultado, ocorridoEm: t.ocorridoEm,
+        }))]
+        const ehDaFila = new Set(naFila.map((t) => t.id))
         const doObjetivo = registros.filter((r) => r.objetivoId === objetivo?.id)
         const ultimo = registros[registros.length - 1]
         const objetivoDoUltimo = ultimo && objetivos.find((o) => o.id === ultimo.objetivoId)
@@ -275,21 +338,28 @@ export function RegistroSessao() {
                 Registro de sessão
               </Titulo>
 
-              {/* Estado de conexao sempre visivel, e honesto: sem a fila
-                  offline, sem conexao nada e gravado. */}
+              {/* Estado de conexao sempre visivel, e honesto: quantos toques
+                  estao guardados no aparelho, e se estao subindo. */}
               {online
                 ? <Etiqueta simbolo="●">
-                    {sessao?.statusSync === 'PENDENTE'
-                      ? 'Conectado · registro pendente de sincronização'
+                    {pendentes.length > 0
+                      ? `Enviando ${pendentes.length === 1 ? '1 toque' : `${pendentes.length} toques`}…`
                       : 'Conectado · cada toque é gravado no servidor'}
                   </Etiqueta>
-                : <Etiqueta tom="at" simbolo="▲">Sem conexão · o toque não é gravado até a conexão voltar</Etiqueta>}
+                : <Etiqueta tom="at" simbolo="▲">
+                    {pendentes.length > 0
+                      ? `Sem conexão · ${guardados(pendentes.length)}, ${pendentes.length === 1 ? 'sobe' : 'sobem'} quando a conexão voltar`
+                      : 'Sem conexão · os toques ficam guardados neste aparelho e sobem quando a conexão voltar'}
+                  </Etiqueta>}
             </div>
 
             <div aria-live="polite">
               {aviso && <Aviso tom="ok" titulo="Pronto">{aviso}</Aviso>}
               {erros.geral && <Aviso tom="cr" titulo="Não foi possível concluir">{erros.geral}</Aviso>}
             </div>
+
+            {/* A recusa do servidor tira o toque da fila: aqui ele aparece, e nunca some calado. */}
+            <RecusasDaFila usuarioId={usuarioId} />
 
             {objetivos.length === 0 && (
               <Cartao>
@@ -328,7 +398,8 @@ export function RegistroSessao() {
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {!recusa && (
-                    <Botao area="cli" onClick={() => void iniciar(sessao)} disabled={ocupado}>
+                    <Botao area="cli" onClick={() => void iniciar(sessao)} disabled={ocupado || bloqueado}
+                      aria-describedby={bloqueado ? 'motivo-iniciar' : undefined}>
                       {sessao?.situacao === 'PAUSADA' ? 'Retomar a sessão'
                         : sessao?.situacao === 'CANCELADA' ? 'Iniciar uma sessão nova' : 'Iniciar a sessão'}
                     </Botao>
@@ -337,6 +408,11 @@ export function RegistroSessao() {
                     Voltar para a ficha
                   </BotaoLink>
                 </div>
+                {!recusa && bloqueado && (
+                  <p id="motivo-iniciar" className="mt-2 text-sm text-tinta2">
+                    {sessao?.situacao === 'PAUSADA' ? 'Retomar' : 'Iniciar'} precisa de conexão e de todos os toques enviados.
+                  </p>
+                )}
               </Cartao>
             )}
 
@@ -380,12 +456,19 @@ export function RegistroSessao() {
                     {ultimo && (
                       <p className="mt-3">
                         {/* Desfazer age sobre a SESSAO, nao sobre o objetivo em tela:
-                            o rotulo nomeia o registro que vai sumir. */}
-                        <Botao area="cli" variante="secundaria" disabled={ocupado}
+                            o rotulo nomeia o registro que vai sumir. O que ainda esta
+                            na fila sai dela; o que ja subiu precisa de conexao. */}
+                        <Botao area="cli" variante="secundaria" disabled={ocupado || (!online && !ehDaFila.has(ultimo.id))}
+                          aria-describedby={!online && !ehDaFila.has(ultimo.id) ? 'motivo-desfazer' : undefined}
                           onClick={() => void desfazer(sessao.id)}>
                           Desfazer: {objetivoDoUltimo?.dominio ?? 'registro'} ·{' '}
                           {RESPOSTAS.find((r) => r.valor === ultimo.resultado)?.rotulo}
                         </Botao>
+                        {!online && !ehDaFila.has(ultimo.id) && (
+                          <span id="motivo-desfazer" className="mt-1 block text-sm text-tinta2">
+                            Este toque já subiu: desfazer precisa de conexão.
+                          </span>
+                        )}
                       </p>
                     )}
                   </Cartao>
@@ -395,16 +478,19 @@ export function RegistroSessao() {
                   <h2 className="text-base font-bold">Contagem desta sessão</h2>
                   <p className="mt-1 text-sm text-tinta2">
                     {registros.length} {registros.length === 1 ? 'registro' : 'registros'} no total, somando todos os objetivos.
+                    {naFila.length > 0 && ` Desses, ${guardados(naFila.length)}, ainda não ${naFila.length === 1 ? 'enviado' : 'enviados'}.`}
                   </p>
                   <ul className="mt-3 flex flex-col gap-2">
                     {objetivos.map((o) => {
                       const meus = registros.filter((r) => r.objetivoId === o.id)
+                      const meusNaFila = meus.filter((r) => ehDaFila.has(r.id)).length
                       return (
                         <li key={o.id} className="rounded-lg border border-linha bg-sup px-3 py-2.5">
                           <div className="flex flex-wrap items-center justify-between gap-2">
                             <b>{o.dominio}</b>
                             <span className="text-sm tabular-nums text-tinta2">
                               {meus.length} {meus.length === 1 ? 'tentativa' : 'tentativas'}
+                              {meusNaFila > 0 && ` · ${meusNaFila} ${meusNaFila === 1 ? 'guardada' : 'guardadas'} neste aparelho`}
                             </span>
                           </div>
                           <ul className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm tabular-nums text-tinta2">
@@ -476,18 +562,33 @@ export function RegistroSessao() {
                       </fieldset>
 
                       <p>
-                        <Botao area="cli" type="submit" disabled={ocupado}>Registrar ocorrência</Botao>
+                        <Botao area="cli" type="submit" disabled={ocupado || bloqueado}
+                          aria-describedby={bloqueado ? 'motivo-ocorrencia' : undefined}>Registrar ocorrência</Botao>
+                        {bloqueado && (
+                          <span id="motivo-ocorrencia" className="mt-1 block text-sm text-tinta2">
+                            Registrar a ocorrência precisa de conexão e de todos os toques enviados.
+                          </span>
+                        )}
                       </p>
                     </form>
                   </Cartao>
                 )}
 
                 {aberta && !encerrando && (
-                  <div className="flex flex-wrap gap-2">
-                    <Botao area="cli" variante="secundaria" disabled={ocupado}
-                      onClick={() => void pausar(sessao.id)}>Pausar a sessão</Botao>
-                    <Botao ref={botaoEncerrar} area="cli" disabled={ocupado}
-                      onClick={() => { setErros({}); setEncerrando(true) }}>Encerrar a sessão</Botao>
+                  <div>
+                    <div className="flex flex-wrap gap-2">
+                      <Botao area="cli" variante="secundaria" disabled={ocupado || bloqueado}
+                        aria-describedby={bloqueado ? 'motivo-encerrar' : undefined}
+                        onClick={() => void pausar(sessao.id)}>Pausar a sessão</Botao>
+                      <Botao ref={botaoEncerrar} area="cli" disabled={ocupado || bloqueado}
+                        aria-describedby={bloqueado ? 'motivo-encerrar' : undefined}
+                        onClick={() => { setErros({}); setEncerrando(true) }}>Encerrar a sessão</Botao>
+                    </div>
+                    {bloqueado && (
+                      <p id="motivo-encerrar" className="mt-2 text-sm text-tinta2">
+                        Pausar e encerrar precisam de conexão e de todos os toques enviados.
+                      </p>
+                    )}
                   </div>
                 )}
 
@@ -509,7 +610,8 @@ export function RegistroSessao() {
                         <Erro chave="evolucao" />
                       </Campo>
                       <div className="flex flex-wrap gap-2">
-                        <Botao area="cli" type="submit" disabled={ocupado}>
+                        <Botao area="cli" type="submit" disabled={ocupado || bloqueado}
+                          aria-describedby={bloqueado ? 'motivo-encerrar-evolucao' : undefined}>
                           {ocupado ? 'Encerrando…' : 'Encerrar com esta evolução'}
                         </Botao>
                         <Botao area="cli" variante="secundaria" disabled={ocupado}
@@ -517,6 +619,11 @@ export function RegistroSessao() {
                           Voltar à sessão
                         </Botao>
                       </div>
+                      {bloqueado && (
+                        <p id="motivo-encerrar-evolucao" className="text-sm text-tinta2">
+                          Encerrar precisa de conexão e de todos os toques enviados. A evolução escrita continua aqui.
+                        </p>
+                      )}
                     </form>
                   </Cartao>
                 )}

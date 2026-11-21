@@ -22,6 +22,13 @@ type PerfilDemonstracao = Exclude<Perfil, 'ADMINISTRADOR'>
 type Estado =
   | { situacao: 'CARREGANDO' }
   | { situacao: 'ANONIMO' }
+  /**
+   * O app abriu, mas o servidor nao respondeu (item 22): sem conexao, nao da
+   * para saber de quem e a sessao. As rotas do app dizem isso, em vez de
+   * mandar a pessoa para a entrada, e a sessao e lida de novo quando a conexao
+   * volta.
+   */
+  | { situacao: 'SEM_CONEXAO' }
   | {
     situacao: 'AUTENTICADO'; usuario: Usuario; perfilAtivo: Perfil; especialidade: string | null
     avisoDeRedefinicao: AvisoDeRedefinicao | null
@@ -50,6 +57,8 @@ interface Ctx {
   continuarComo(vaga: number): Promise<boolean>
   trocarPerfil(perfil: Perfil): Promise<void>
   sair(): Promise<void>
+  /** Sem conexao ao abrir, le a sessao de novo (item 22). */
+  reconectar(): void
   /**
    * O que mudou na sessao desde que esta janela a leu: outra janela entrou com
    * outra conta, trocou de perfil ou saiu (item 7). MESMA, nada.
@@ -94,14 +103,29 @@ export function ProvedorSessao({ children }: { children: ReactNode }) {
     return () => aoNegarAcesso(null)
   }, [])
 
+  const [leitura, setLeitura] = useState(0)
+  const reconectar = useCallback(() => setLeitura((n) => n + 1), [])
+
   useEffect(() => {
     let ativo = true
     servicos.autenticacao.sessaoAtual()
       .then((s) => { if (ativo) setEstado(s ? autenticado(s) : { situacao: 'ANONIMO' }) })
-      // Sem conseguir confirmar a sessao, trata como anonimo: a tela de entrada resolve.
-      .catch(() => { if (ativo) setEstado({ situacao: 'ANONIMO' }) })
+      // Sem o servidor, nao da para saber de quem e a sessao (item 22). Com
+      // outra falha, trata como anonimo: a tela de entrada resolve.
+      .catch((erro: unknown) => {
+        if (!ativo) return
+        setEstado(erro instanceof ErroServico && erro.codigo === 'INDISPONIVEL' ? { situacao: 'SEM_CONEXAO' } : { situacao: 'ANONIMO' })
+      })
     return () => { ativo = false }
-  }, [])
+  }, [leitura])
+
+  // Sem conexao, tenta de novo quando ela volta e de tempos em tempos.
+  useEffect(() => {
+    if (estado.situacao !== 'SEM_CONEXAO') return undefined
+    window.addEventListener('online', reconectar)
+    const periodico = setInterval(reconectar, 15_000)
+    return () => { window.removeEventListener('online', reconectar); clearInterval(periodico) }
+  }, [estado.situacao, reconectar])
 
   // Os erros de entrar/trocar sobem para a tela, que sabe como exibi-los.
   const entrar = useCallback(async (email: string, senha: string) => {
@@ -153,8 +177,8 @@ export function ProvedorSessao({ children }: { children: ReactNode }) {
     especialidade: estado.situacao === 'AUTENTICADO' ? estado.especialidade : null,
     avisoDeRedefinicao: estado.situacao === 'AUTENTICADO' ? estado.avisoDeRedefinicao : null,
     darCienciaDaNovaSenha,
-    entrar, entrarDemonstracao, entrarComConvite, entrarComPrimeiroAcesso, continuarComo, trocarPerfil, sair, mudanca,
-  }), [estado, darCienciaDaNovaSenha, entrar, entrarDemonstracao, entrarComConvite, entrarComPrimeiroAcesso, continuarComo, trocarPerfil, sair, mudanca])
+    entrar, entrarDemonstracao, entrarComConvite, entrarComPrimeiroAcesso, continuarComo, trocarPerfil, sair, mudanca, reconectar,
+  }), [estado, darCienciaDaNovaSenha, entrar, entrarDemonstracao, entrarComConvite, entrarComPrimeiroAcesso, continuarComo, trocarPerfil, sair, mudanca, reconectar])
 
   return <SessaoCtx.Provider value={valor}>{children}</SessaoCtx.Provider>
 }

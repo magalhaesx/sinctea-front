@@ -54,9 +54,14 @@ describe('a versao publicada', () => {
     expect(pacote).not.toContain('Vitrine de estados')
   })
 
-  it('nao leva o que ainda nao chegou ao servidor: a fila do offline', () => {
-    // A contagem da tela 3 e o offline (docs/07, secao 3A): so no desenvolvimento.
-    expect(pacote).not.toContain('serão enviados assim que a rede voltar')
+  it('leva a fila de toques do item 22: as telas 3 e 7, o Sair e o aviso de versao', () => {
+    for (const texto of ['toques aguardando', 'guardados neste aparelho', 'Enviando ', 'toques não foram aceitos',
+      'precisa de conexão e de todos os toques enviados.', 'Sair com toques guardados?', 'Nova versão disponível', 'Atualizar']) {
+      expect(pacote, texto).toContain(texto)
+    }
+    expect(pacote).toContain('sinctea-fila')
+    // A lista de pendentes do servidor saiu: o pendente so existe no aparelho.
+    expect(pacote).not.toContain('/sessoes/pendentes')
   })
 
   it('e uma PWA: o manifesto com nome, inicio no app, standalone e os tres icones', () => {

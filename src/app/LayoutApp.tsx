@@ -3,6 +3,7 @@ import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-do
 import { BarraPreferencias } from '../componentes/BarraPreferencias'
 import { Botao } from '../ui/Botao'
 import { usarSessao } from '../contexto/Sessao'
+import { usarPendentes } from '../fila'
 import type { Perfil } from '../servicos'
 import { FOCAVEIS, focoPresoNaGaveta, rotuloDoBotaoDoMenu } from './gaveta'
 import { iniciaisDe } from './iniciais'
@@ -137,6 +138,19 @@ export function LayoutApp() {
     navegar('/app/entrar', { replace: true })
   }
 
+  /*
+   * Item 22: com toque ainda na fila, sair pede confirmacao. Os toques nao se
+   * perdem — ficam no aparelho e sobem quando a conta entrar de novo —, mas a
+   * pessoa precisa saber disso antes de entregar o tablet. O <dialog> modal do
+   * navegador prende o foco, fecha com Esc e devolve o foco ao "Sair".
+   */
+  const pendentes = usarPendentes(usuario?.id).length
+  const confirmacaoDeSaida = useRef<HTMLDialogElement>(null)
+  const pedirSaida = () => {
+    if (pendentes > 0) confirmacaoDeSaida.current?.showModal()
+    else void encerrar()
+  }
+
   const quem = usuario && perfilAtivo && (
     <span className="text-[12px] leading-tight text-cromo-tinta">
       <span className="block font-bold">{usuario.nome}</span>
@@ -146,7 +160,7 @@ export function LayoutApp() {
   const botaoSair = (
     <button
       type="button"
-      onClick={encerrar}
+      onClick={pedirSaida}
       className="min-h-11 cursor-pointer rounded-lg border-2 border-cromo-linha px-3 text-[13px] font-bold text-cromo-tinta hover:bg-cromo2"
     >
       Sair
@@ -274,6 +288,21 @@ export function LayoutApp() {
           </div>
         )}
       </div>
+
+      <dialog ref={confirmacaoDeSaida} aria-labelledby="h-sair-com-fila"
+        className="m-auto max-w-md rounded-xl border border-linha bg-sup p-5 text-tinta backdrop:bg-black/50">
+        <h2 id="h-sair-com-fila" className="text-lg font-bold">Sair com toques guardados?</h2>
+        <p className="mt-2">
+          {pendentes === 1
+            ? '1 toque ainda não subiu. Ele fica neste aparelho e sobe quando você entrar de novo.'
+            : `${pendentes} toques ainda não subiram. Eles ficam neste aparelho e sobem quando você entrar de novo.`}
+        </p>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Botao area="cli" onClick={() => { confirmacaoDeSaida.current?.close(); void encerrar() }}>Sair mesmo assim</Botao>
+          {/* O foco comeca na escolha que nao perde nada. */}
+          <Botao area="cli" variante="secundaria" autoFocus onClick={() => confirmacaoDeSaida.current?.close()}>Continuar aqui</Botao>
+        </div>
+      </dialog>
     </div>
   )
 }
