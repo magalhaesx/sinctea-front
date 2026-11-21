@@ -17,6 +17,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@fontsource/atkinson-hyperlegible": "5.3.0",
     "@sinctea/compartilhado": "*",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -27,6 +28,7 @@
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.4",
+    "fake-indexeddb": "6.2.7",
     "tailwindcss": "^4.0.0",
     "typescript": "~5.6.3",
     "vite": "^6.0.0",

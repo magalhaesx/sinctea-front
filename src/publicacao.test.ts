@@ -59,6 +59,47 @@ describe('a versao publicada', () => {
     expect(pacote).not.toContain('serão enviados assim que a rede voltar')
   })
 
+  it('e uma PWA: o manifesto com nome, inicio no app, standalone e os tres icones', () => {
+    expect(pagina).toContain('<link rel="manifest" href="./manifest.webmanifest"')
+    const manifesto = JSON.parse(readFileSync(join(pasta, 'manifest.webmanifest'), 'utf8'))
+    expect(manifesto).toMatchObject({ name: 'SINCTEA', short_name: 'SINCTEA', start_url: './#/app', scope: './', display: 'standalone' })
+    expect(manifesto.theme_color).toMatch(/^#[0-9a-f]{6}$/i)
+    expect(manifesto.background_color).toMatch(/^#[0-9a-f]{6}$/i)
+    const icones = manifesto.icons as Array<{ src: string; sizes: string; purpose: string }>
+    expect(icones.map((i) => `${i.sizes} ${i.purpose}`).sort()).toEqual(['192x192 any', '512x512 any', '512x512 maskable'])
+    for (const icone of icones) {
+      // O tamanho declarado e o do PNG: largura e altura no cabecalho IHDR.
+      const png = readFileSync(join(pasta, icone.src))
+      const lado = Number(icone.sizes.split('x')[0])
+      expect([png.readUInt32BE(16), png.readUInt32BE(20)], icone.src).toEqual([lado, lado])
+    }
+  })
+
+  it('o service worker guarda so os arquivos do app, e nao tem rota para /api', () => {
+    const sw = readFileSync(join(pasta, 'sw.js'), 'utf8')
+    expect(sw).not.toContain('/api')
+    // Nenhuma gravacao em tempo de execucao: so o que entrou na instalacao.
+    expect(sw).not.toMatch(/\.put\(/)
+    // A versao nova so assume quando a tela pede, depois do "Atualizar": nunca na instalacao.
+    expect(sw.match(/skipWaiting/g)).toHaveLength(1)
+    expect(sw).toContain("if (evento.data === 'atualizar') self.skipWaiting()")
+    const lista = JSON.parse(sw.match(/const ARQUIVOS = (\[[^\]]*\])/)![1]) as string[]
+    expect(lista).toContain('./')
+    expect(lista).toContain('./index.html')
+    expect(lista).toContain('./manifest.webmanifest')
+    // Todo arquivo do build, e so eles: JS, CSS, fontes e icones.
+    const assets = readdirSync(join(pasta, 'assets')).map((a) => `./assets/${a}`)
+    for (const a of assets) expect(lista, a).toContain(a)
+    expect(lista.every((a) => a === './' || /\.(html|js|css|woff2?|png|webmanifest)$/.test(a))).toBe(true)
+    expect(lista.some((a) => /woff2$/.test(a))).toBe(true)
+  })
+
+  it('a fonte vem do proprio sistema, e nao do Google Fonts', () => {
+    expect(pagina).not.toContain('fonts.googleapis.com')
+    expect(pagina).not.toContain('fonts.gstatic.com')
+    expect(estilos).toContain('Atkinson Hyperlegible')
+  })
+
   it('leva a agenda e o agendamento do item 19b: as telas 3 e 5 e as rotas', () => {
     for (const texto of ['Agenda do dia', 'Voltar para hoje', 'Dia anterior', 'Próximo dia', 'Não iniciada',
       'Próximas sessões', 'Agendar sessão', 'Sim, cancelar']) {

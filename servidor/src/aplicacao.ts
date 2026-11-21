@@ -43,7 +43,17 @@ export async function criarAplicacao(opcoes: NestApplicationOptions = {}): Promi
     if (!existsSync(join(pasta, 'index.html'))) {
       throw new Error(`PASTA_DO_FRONT nao tem index.html: ${pasta}`)
     }
-    aplicacao.useStaticAssets(pasta, { index: 'index.html', redirect: false })
+    aplicacao.useStaticAssets(pasta, {
+      index: 'index.html',
+      redirect: false,
+      // Item 22: o service worker, o manifesto e a pagina sao conferidos a cada
+      // visita (no-cache: o navegador pergunta antes de usar o que guardou). Sem
+      // isso, um sw.js guardado no cache HTTP impediria a versao nova de chegar.
+      // Os arquivos de assets/ tem o resumo do conteudo no nome.
+      setHeaders: (resposta: { setHeader(nome: string, valor: string): void }, caminho: string) => {
+        if (/(^|[\\/])(sw\.js|manifest\.webmanifest|index\.html)$/.test(caminho)) resposta.setHeader('Cache-Control', 'no-cache')
+      },
+    })
   }
   return aplicacao
 }

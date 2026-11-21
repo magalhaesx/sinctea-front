@@ -2,6 +2,7 @@
 import { defaultClientConditions, defaultServerConditions, defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+import { trabalhadorDoApp } from './pwa/trabalhador'
 
 /**
  * @sinctea/compartilhado expoe o fonte TypeScript pela condicao "fonte". O
@@ -41,7 +42,7 @@ function semMockNoPacote(): Plugin {
 // D3), ou em qualquer outro caminho, sem precisar reconfigurar.
 export default defineConfig({
   base: './',
-  plugins: [semMockNoPacote(), react(), tailwindcss()],
+  plugins: [semMockNoPacote(), react(), tailwindcss(), trabalhadorDoApp()],
   resolve: { conditions: [FONTE, ...defaultClientConditions] },
   ssr: { resolve: { conditions: [FONTE, ...defaultServerConditions] } },
   // No desenvolvimento, com VITE_API_URL=/api, o Vite repassa a API ao Nest

@@ -29,6 +29,8 @@ beforeAll(() => {
   writeFileSync(join(pasta, 'index.html'), `<!doctype html><title>${MARCA}</title><div id="root"></div>`)
   mkdirSync(join(pasta, 'assets'))
   writeFileSync(join(pasta, 'assets', 'app.js'), 'console.log("front falso")')
+  writeFileSync(join(pasta, 'sw.js'), 'self.addEventListener("fetch", () => {})')
+  writeFileSync(join(pasta, 'manifest.webmanifest'), '{"name":"SINCTEA"}')
 })
 
 afterAll(() => {
@@ -80,6 +82,20 @@ describe('com PASTA_DO_FRONT', () => {
       expect(resposta.headers.get('x-frame-options'), caminho).toBe('DENY')
       expect(resposta.headers.get('x-powered-by'), caminho).toBeNull()
     }
+  })
+
+  it('o service worker, o manifesto e a pagina saem com o tipo certo e no-cache; o resto, sem (item 22)', async () => {
+    const tipos: Record<string, RegExp> = {
+      '/sw.js': /javascript/, '/manifest.webmanifest': /application\/manifest\+json/, '/': /text\/html/, '/index.html': /text\/html/,
+    }
+    for (const [caminho, tipo] of Object.entries(tipos)) {
+      const resposta = await fetch(`${endereco}${caminho}`)
+      expect(resposta.status, caminho).toBe(200)
+      expect(resposta.headers.get('content-type'), caminho).toMatch(tipo)
+      // Sem isso, um sw.js guardado no cache HTTP impediria a versao nova de chegar.
+      expect(resposta.headers.get('cache-control'), caminho).toBe('no-cache')
+    }
+    expect((await fetch(`${endereco}/assets/app.js`)).headers.get('cache-control')).not.toBe('no-cache')
   })
 
   it('caminho que nao e arquivo do front tambem e 404, sem fallback: o HashRouter nao precisa', async () => {
