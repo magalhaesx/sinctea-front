@@ -412,8 +412,11 @@ export class ControladorSessoes {
     entidade: 'RegistroAtividade', acao: 'CRIACAO', idEntidade: (_q, r) => (r as RegistroAtividade).id,
     detalhe: (_q, r) => `Tentativa ${(r as RegistroAtividade).ordem}: ${(r as RegistroAtividade).resultado}.`,
   })
-  async registrar(@Req() req: RequisicaoHttp, @Param('id') id: string, @Body() corpo: { objetivoId?: unknown; resultado?: unknown } | undefined) {
-    return doPaciente(req, await this.sessoes.registrarAtividade(sessaoDe(req), id, corpo?.objetivoId, corpo?.resultado))
+  async registrar(@Req() req: RequisicaoHttp, @Param('id') id: string, @Body() corpo: Record<string, unknown> | undefined) {
+    const r = await this.sessoes.registrarAtividade(sessaoDe(req), id, corpo ?? {})
+    // O reenvio do mesmo toque nao grava nada: nada se registra de novo (item 22).
+    if (r.repetido) req.sinctea!.dispensarRegistro = true
+    return doPaciente(req, r)
   }
 
   @Delete(':id/registros/ultimo')

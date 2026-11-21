@@ -9,6 +9,9 @@ import {
 } from '@sinctea/compartilhado/dominio/agenda'
 import { diaCivilEm, fimDaValidade, inicioDoDia, partesDaDataCivil } from '@sinctea/compartilhado/dominio/datas'
 import { jsonCanonico } from '@sinctea/compartilhado/dominio/hash'
+import {
+  TOQUE_COM_OUTRO_CONTEUDO, erroDaIdentificacaoDoToque, lerInstanteComFuso, mesmoToque,
+} from '@sinctea/compartilhado/dominio/toque'
 import { erroDaEvolucao, percentualIndependente } from '@sinctea/compartilhado/dominio/regras'
 import { Negacao } from '../acesso/negacao.js'
 import { ServicoBanco, type TransacaoBanco } from '../banco/servico-banco.js'
@@ -250,20 +253,72 @@ export class ServicoSessoesClinicas {
     if (linha.situacao !== 'EM_ANDAMENTO') throw new ErroServico('CONFLITO', 'A sessão não está em andamento.')
   }
 
-  async registrarAtividade(sessao: SessaoServidor, sessaoId: string, objetivoId: unknown, resultado: unknown): Promise<DoPaciente<RegistroAtividade>> {
+  /**
+   * O toque da tela 7. Sem id nem instante, como antes do item 22: o servidor
+   * gera os dois. Com eles (a fila do aparelho), o registro e gravado com o id
+   * do aparelho, e o reenvio e idempotente: o mesmo id com o mesmo conteudo
+   * devolve o registro ja gravado, marcado como repetido para a trilha nao
+   * ganhar uma segunda criacao; com outro conteudo, CONFLITO. Dois envios do
+   * mesmo id ao mesmo tempo gravam um so: a chave primaria decide.
+   *
+   * A ordem e a de chegada: a sessao fica travada da leitura do maior numero
+   * ate a gravacao, e a fila do aparelho envia um toque por vez, em ordem.
+   */
+  async registrarAtividade(
+    sessao: SessaoServidor, sessaoId: string, corpo: Record<string, unknown>,
+  ): Promise<DoPaciente<RegistroAtividade> & { repetido: boolean }> {
     const linha = await this.exigirConducao(sessao, sessaoId)
-    this.exigirEmAndamento(linha)
+    const { objetivoId, resultado, id, ocorridoEm } = corpo
+    const enviado = { sessaoId: linha.id, objetivoId, resultado, ocorridoEm }
+
+    // O reenvio vem antes de tudo: o toque ja foi aceito quando chegou da
+    // primeira vez, mesmo que a sessao tenha mudado depois.
+    const repetido = typeof id === 'string' ? await this.toqueJaGravado(id, enviado) : null
+    if (repetido) return { resultado: repetido, pacienteId: linha.pacienteId, repetido: true }
+
     if (!RESULTADOS.includes(resultado as Resultado)) {
       throw new ErroServico('VALIDACAO', 'Resultado desconhecido.', { resultado: 'Resultado desconhecido.' })
     }
     const doPlano = typeof objetivoId === 'string' && /^[0-9a-f-]{36}$/i.test(objetivoId)
       && await this.banco.objetivo.count({ where: { id: objetivoId, plano: { pacienteId: linha.pacienteId } } }) > 0
     if (!doPlano) throw new ErroServico('VALIDACAO', 'O objetivo não pertence ao plano deste paciente.')
-    const registro = await this.banco.registroAtividade.create({ data: {
-      sessaoId: linha.id, objetivoId: objetivoId as string, resultado: resultado as Resultado,
-      ordem: linha.registros.length + 1, ocorridoEm: new Date(),
-    } })
-    return { resultado: paraRegistro(registro), pacienteId: linha.pacienteId }
+
+    try {
+      const registro = await this.banco.$transaction(async (tx) => {
+        await tx.$queryRaw`SELECT 1 FROM "sessao" WHERE "id" = ${linha.id}::uuid FOR NO KEY UPDATE`
+        const atual = await tx.sessao.findUniqueOrThrow({ where: { id: linha.id }, select: { situacao: true, inicio: true } })
+        this.exigirEmAndamento(atual)
+        const agora = new Date()
+        exigirValido(erroDaIdentificacaoDoToque({ id, ocorridoEm }, atual.inicio, agora))
+        const { _max } = await tx.registroAtividade.aggregate({ where: { sessaoId: linha.id }, _max: { ordem: true } })
+        return tx.registroAtividade.create({ data: {
+          ...(typeof id === 'string' ? { id: id.toLowerCase() } : {}),
+          sessaoId: linha.id, objetivoId: objetivoId as string, resultado: resultado as Resultado,
+          ordem: (_max.ordem ?? 0) + 1,
+          ocorridoEm: ocorridoEm === undefined ? agora : lerInstanteComFuso(ocorridoEm)!,
+        } })
+      })
+      return { resultado: paraRegistro(registro), pacienteId: linha.pacienteId, repetido: false }
+    } catch (erro) {
+      // O mesmo id chegou duas vezes ao mesmo tempo: o outro pedido gravou.
+      if ((erro as { code?: string }).code !== 'P2002' || typeof id !== 'string') throw erro
+      const gravado = await this.toqueJaGravado(id, enviado)
+      if (!gravado) throw erro
+      return { resultado: gravado, pacienteId: linha.pacienteId, repetido: true }
+    }
+  }
+
+  /** O registro com este id, se ja existe e e o mesmo toque; CONFLITO se e outro. */
+  private async toqueJaGravado(
+    id: string, enviado: { sessaoId: string; objetivoId: unknown; resultado: unknown; ocorridoEm: unknown },
+  ): Promise<RegistroAtividade | null> {
+    if (!/^[0-9a-f-]{36}$/i.test(id)) return null
+    const gravado = await this.banco.registroAtividade.findUnique({ where: { id: id.toLowerCase() } })
+    if (!gravado) return null
+    if (!mesmoToque(gravado, enviado)) {
+      throw new ErroServico('CONFLITO', TOQUE_COM_OUTRO_CONTEUDO, { id: TOQUE_COM_OUTRO_CONTEUDO })
+    }
+    return paraRegistro(gravado)
   }
 
   async desfazerUltimoRegistro(sessao: SessaoServidor, sessaoId: string): Promise<Sessao> {
