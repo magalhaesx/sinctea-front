@@ -4,6 +4,7 @@ import { servicosMock as s } from '.'
 import { banco, relogio } from './infra'
 import { diaCivilEm, emDataCivil, somarDias } from '@sinctea/compartilhado/dominio/datas'
 import { instanteEmManaus } from '@sinctea/compartilhado/dominio/agenda'
+import { gerarUuidV7 } from '@sinctea/compartilhado/dominio/toque'
 import { janelaPassada } from '@sinctea/compartilhado/dominio/indicadores'
 import { ENTIDADES_ADMINISTRATIVAS } from '@sinctea/compartilhado/dominio/auditoria'
 import { jsonCanonico, resumoSha256 } from '@sinctea/compartilhado/dominio/hash'
@@ -152,6 +153,20 @@ describe('camada simulada', () => {
     await entrarComo('COORDENADOR')
     const daJuliana = await chamar(s.sessoes.listarPendentesDeSincronizacao({ porPagina: 100 }))
     expect(daJuliana.itens.some((x) => x.profissionalId === 'u-prof-1')).toBe(false)
+  })
+
+  it('o toque com o id do aparelho: o reenvio devolve o gravado, outro conteudo e conflito (item 22)', async () => {
+    await entrarComo('TERAPEUTA')
+    const sessao = await chamar(s.sessoes.iniciar('p-006'))
+    const toque = { id: gerarUuidV7(), ocorridoEm: relogio.agora().toISOString() }
+    const gravado = await chamar(s.sessoes.registrarAtividade(sessao.id, 'o-010', 'INDEPENDENTE', toque))
+    expect(gravado).toMatchObject({ id: toque.id, ocorridoEm: toque.ocorridoEm })
+    expect(await chamar(s.sessoes.registrarAtividade(sessao.id, 'o-010', 'INDEPENDENTE', toque))).toEqual(gravado)
+    expect((await chamar(s.sessoes.obter(sessao.id))).registros.filter((r) => r.id === toque.id)).toHaveLength(1)
+    expect((await erroDe(s.sessoes.registrarAtividade(sessao.id, 'o-010', 'SEM_RESPOSTA', toque))).codigo).toBe('CONFLITO')
+    const noFuturo = { id: gerarUuidV7(), ocorridoEm: new Date(relogio.agora().getTime() + 3_600_000).toISOString() }
+    expect((await erroDe(s.sessoes.registrarAtividade(sessao.id, 'o-010', 'INDEPENDENTE', noFuturo))).campos.ocorridoEm).toBeTruthy()
+    await chamar(s.sessoes.pausar(sessao.id))
   })
 
   it('a agenda do dia so traz os atendimentos de quem esta logado', async () => {

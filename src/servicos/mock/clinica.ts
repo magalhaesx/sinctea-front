@@ -10,6 +10,9 @@ import {
 import { montarEvolucao } from '@sinctea/compartilhado/dominio/evolucao'
 import { diaCivilEm, emDataCivil, inicioDoDia } from '@sinctea/compartilhado/dominio/datas'
 import {
+  TOQUE_COM_OUTRO_CONTEUDO, erroDaIdentificacaoDoToque, lerInstanteComFuso, mesmoToque,
+} from '@sinctea/compartilhado/dominio/toque'
+import {
   LOCAL_PADRAO, SO_CANCELA_AGENDADA, SO_QUEM_CONDUZ_CANCELA, agendamentoPreenchido, conflitoDeHorario, conflitoDoDia,
   diaDoAgendamento, quandoEmManaus, recusaDoInicio, validarAgendamento,
 } from '@sinctea/compartilhado/dominio/agenda'
@@ -462,19 +465,32 @@ export const sessoesMock: ServicoSessao = {
     return nova
   }),
 
-  registrarAtividade: (sessaoId, objetivoId, resultado) => responder(() => {
+  registrarAtividade: (sessaoId, objetivoId, resultado, toque) => responder(() => {
     const sessao = exigirConducao(sessaoId)
+    // O reenvio do mesmo toque devolve o que ja estava gravado (item 22), mesmo
+    // que a sessao ja tenha mudado: ele foi aceito quando chegou da primeira vez.
+    const gravado = toque && banco.sessoes.flatMap((s) => s.registros.map((r) => ({ ...r, sessaoId: s.id })))
+      .find((r) => r.id === toque.id)
+    if (gravado && toque) {
+      if (!mesmoToque(gravado, { sessaoId, objetivoId, resultado, ocorridoEm: toque.ocorridoEm })) {
+        throw new ErroServico('CONFLITO', TOQUE_COM_OUTRO_CONTEUDO)
+      }
+      const { sessaoId: _daSessao, ...registro } = gravado
+      return registro
+    }
     exigirEmAndamento(sessao)
     const plano = banco.planos.find((p) => p.pacienteId === sessao.pacienteId)
     if (!plano?.objetivos.some((o) => o.id === objetivoId)) {
       throw new ErroServico('VALIDACAO', 'O objetivo não pertence ao plano deste paciente.')
     }
+    const agora = relogio.agora()
+    if (toque) exigirValido(erroDaIdentificacaoDoToque(toque, sessao.inicio, agora))
     const registro = {
-      id: gerarId('ra'),
+      id: toque?.id ?? gerarId('ra'),
       objetivoId,
       ordem: sessao.registros.length + 1,
       resultado,
-      ocorridoEm: relogio.agora().toISOString(),
+      ocorridoEm: toque ? lerInstanteComFuso(toque.ocorridoEm)!.toISOString() : agora.toISOString(),
     }
     sessao.registros.push(registro)
     return registro

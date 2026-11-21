@@ -416,6 +416,16 @@ export interface RegistroAtividade {
   ocorridoEm: DataIso
 }
 
+/**
+ * O que o aparelho da ao toque antes de envia-lo (item 22): o id, que o
+ * servidor grava como o id do registro, e o instante do relogio do aparelho.
+ * O reenvio com o mesmo id e o mesmo conteudo devolve o registro ja gravado.
+ */
+export interface IdentificacaoDoToque {
+  id: string
+  ocorridoEm: DataIso
+}
+
 /** Estado de sincronizacao do registro feito sem conexao. */
 export type StatusSync = 'PENDENTE' | 'SINCRONIZADO'
 

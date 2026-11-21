@@ -97,8 +97,8 @@ export const servicosApi: Servicos = {
     agendar: (pacienteId, dados) => r('POST', `/pacientes/${id(pacienteId)}/agendamentos`, dados),
     cancelar: (sessaoId) => r('POST', `/sessoes/${id(sessaoId)}/cancelamento`),
     iniciar: (pacienteId, sessaoAgendadaId) => r('POST', '/sessoes', { pacienteId, sessaoAgendadaId }),
-    registrarAtividade: (sessaoId, objetivoId, resultado) =>
-      r('POST', `/sessoes/${id(sessaoId)}/registros`, { objetivoId, resultado }),
+    registrarAtividade: (sessaoId, objetivoId, resultado, toque) =>
+      r('POST', `/sessoes/${id(sessaoId)}/registros`, { objetivoId, resultado, ...(toque ?? {}) }),
     desfazerUltimoRegistro: (sessaoId) => r('DELETE', `/sessoes/${id(sessaoId)}/registros/ultimo`),
     pausar: (sessaoId) => r('POST', `/sessoes/${id(sessaoId)}/pausa`),
     encerrar: (sessaoId, evolucao) => r('POST', `/sessoes/${id(sessaoId)}/encerramento`, { evolucao }),

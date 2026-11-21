@@ -3,7 +3,7 @@ import type {
   CartaoEstrategia,
   ConsentimentoConcedido, ConsentimentoDetalhe, ContaCriada, ConvitePublico, Desempenho, Escola,
   EvolucaoObjetivo, ExecucaoAtividadeCasa, FiltroAgenda, FiltroAuditoria, FiltroOcorrencia, FiltroPaciente,
-  FiltroPaginacao, FiltroSessao, FiltroUsuario, FilhoResumo, ItemAgenda, LinkPrimeiroAcesso, NovaAtividadeCasa, NovoAgendamento,
+  FiltroPaginacao, FiltroSessao, FiltroUsuario, FilhoResumo, IdentificacaoDoToque, ItemAgenda, LinkPrimeiroAcesso, NovaAtividadeCasa, NovoAgendamento,
   NovaOcorrenciaComportamental, NovaOcorrenciaEscolar, NovoConsentimento, NovoObjetivo, EdicaoObjetivo,
   NovoPaciente, NovoPlano, NovoResponsavel, EdicaoResponsavel, ResponsavelCadastrado, ResponsavelNaFicha, DadosCartao, NovaEscola, Objetivo, ObjetivoAcessivel, OcorrenciaComportamental, OcorrenciaEscolar,
   ConteudoRelatorio, DadosProfissionais, MotivoAtencao, Pagina, PacienteDetalhe, PacienteResumo, PedidoRelatorio,
@@ -154,7 +154,13 @@ export interface ServicoSessao {
    * nao, cria uma sessao nova. O numero nasce aqui.
    */
   iniciar(pacienteId: string, sessaoAgendadaId?: string): Promise<Sessao>
-  registrarAtividade(sessaoId: string, objetivoId: string, resultado: Resultado): Promise<RegistroAtividade>
+  /**
+   * O toque da tela 7. Com a identificacao (item 22), o registro e gravado
+   * com o id do aparelho, e o reenvio do mesmo toque devolve o que ja estava
+   * gravado; o instante nao pode estar no futuro nem antes do inicio da
+   * sessao, com 5 minutos de tolerancia de relogio.
+   */
+  registrarAtividade(sessaoId: string, objetivoId: string, resultado: Resultado, toque?: IdentificacaoDoToque): Promise<RegistroAtividade>
   desfazerUltimoRegistro(sessaoId: string): Promise<Sessao>
   pausar(sessaoId: string): Promise<Sessao>
   /** Encerrar exige a evolucao da sessao, escrita pelo profissional (validarEvolucao). */
