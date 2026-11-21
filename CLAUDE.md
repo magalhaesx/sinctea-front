@@ -31,8 +31,8 @@ Orientadora: Profa. Luana Leal · Entrega final: 23/11/2026
 ## 1. O que o sistema é
 
 Sistema de informação web para gestão e acompanhamento terapêutico de pessoas
-com Transtorno do Espectro Autista, em contexto multidisciplinar. Previsto como
-PWA, com registro de sessão offline (`docs/07`, seção 3A).
+com Transtorno do Espectro Autista, em contexto multidisciplinar. É uma PWA, e
+registra os toques da sessão sem conexão (item 22; `docs/07`, seção 3A).
 
 O diferencial não é a clínica: é a **continuidade entre os três ambientes** em que
 a pessoa vive — clínica, casa e escola. O sistema não faz diagnóstico e não
@@ -208,10 +208,10 @@ Atualizado em 18/10/2026, lendo o código — não a memória.
   simulada que aplica controle de acesso e auditoria; o cliente da API, que
   não aplica regra nenhuma. A versão publicada usa só a API, e o mock fica
   fora do pacote; no desenvolvimento, `VITE_API_URL` escolhe entre as duas
-- **697 testes em 58 arquivos, nos três pacotes**, rodados por um único
+- **726 testes em 61 arquivos, nos três pacotes**, rodados por um único
   `npm test` na raiz, sem passo manual. O principal ainda é
   `src/servicos/mock/regrasInviolaveis.test.ts`, que verifica as regras
-  invioláveis na camada de dados, e não na tela. Os 338 do servidor rodam contra
+  invioláveis na camada de dados, e não na tela. Os 348 do servidor rodam contra
   um PostgreSQL 17 de verdade
 - **As seis regras verificadas** em `docs/06`: para cada teste citado, a regra foi
   quebrada de propósito para confirmar que ele falha, e as quebras que não
@@ -372,7 +372,7 @@ em produção (o antigo passo B5) foi cancelada. No código, hoje:
   depois ele é o login da pessoa — conferido antes e na própria gravação. O
   e-mail fica em minúsculas e único, e o de uma conta da equipe ou da escola é
   recusado. `ALTERACAO` com o `valorAnterior` só do que mudou. Quem responde
-  legalmente não se edita (afirmação 3, abaixo). Testes em
+  legalmente não se edita (afirmação 2, abaixo). Testes em
   `servidor/test/responsavel.test.ts`
 - **Item 8, parte 2 — link para nova senha do responsável** (decisão de
   18/10, que muda a de 16/10). Depois que o responsável definiu a senha, só a
@@ -643,6 +643,29 @@ em produção (o antigo passo B5) foi cancelada. No código, hoje:
   ambiente saiu do rodapé do app e, com ele, da folha impressa do relatório
   (tela 10b), em 29/10/2026, por decisão do Lucas; o `AvisoAmbiente` foi
   removido, e `src/publicacao.test.ts` confere que o texto não está no pacote
+- **Item 22 — o registro de sessão sem conexão: PWA e fila no aparelho.** Os
+  toques do "Como foi esta tentativa?" (tela 7) passam todos pela fila de
+  `src/fila/`, com ou sem conexão: o toque ganha no aparelho um UUID v7 e o
+  instante, é gravado no IndexedDB — só `id`, `usuarioId`, `sessaoId`,
+  `objetivoId`, `resultado` e `ocorridoEm` — e só sai da fila quando o servidor
+  confirma. Um por vez, em ordem, por conta (Web Locks entre abas); a falha de
+  rede deixa o toque, a recusa definitiva o tira e aparece nas telas 3 e 7
+  (*"N toques não foram aceitos: {motivo}"*). O servidor aceita o id e o
+  instante do aparelho e é idempotente: o mesmo id com o mesmo conteúdo devolve
+  o gravado, sem segunda criação na trilha; com outro, `CONFLITO`; o instante
+  não passa de agora nem fica antes do início, com 5 minutos de tolerância; a
+  ordem é a de chegada, com a sessão travada. A tela 7 conta e mede com os
+  toques guardados marcados; iniciar, pausar, encerrar e a ocorrência ABC
+  precisam de conexão e da fila vazia; "Sair" com fila confirma. A tela 3 conta
+  a fila da conta na versão publicada, e `listarPendentesDeSincronizacao` saiu
+  do contrato: o pendente só existe no aparelho. O `sw.js` é gerado no build
+  (`pwa/trabalhador.ts`) com a lista exata dos arquivos do app e nunca guarda
+  resposta da API; a versão nova espera o "Atualizar"; o servidor entrega o
+  `sw.js`, o manifesto e a página com `no-cache`. A fonte saiu do Google Fonts
+  para o pacote (`@fontsource/atkinson-hyperlegible`). O ícone é provisório, o
+  "S" de SINCTEA (`scripts/gerar-icones.py`): o logotipo ainda não existe.
+  Testes em `servidor/test/toques.test.ts` e `src/fila/fila.test.ts`, quebras
+  no `docs/06`
 - `npm run criar-administrador -w @sinctea/servidor -- .env.producao --nome
   "Nome Completo" --email voce@exemplo.com` cria o primeiro administrador:
   nome e e-mail vêm da linha de comando, e só a senha é pedida, escondida e duas
@@ -684,8 +707,7 @@ a API no caminho principal, o *trigger* da auditoria, o papel que não é dono e
 argon2id.
 
 Depois de 19/10, sem data: o
-envio de e-mail, com a recuperação de senha sem passar pela clínica; a remoção completa de `servicos/mock`; o offline reduzido ao registro de
-sessão (`docs/07`, seção 3A); e a Etapa 13, de 16/11 a 23/11 — artigo, slides,
+envio de e-mail, com a recuperação de senha sem passar pela clínica; a remoção completa de `servicos/mock`; e a Etapa 13, de 16/11 a 23/11 — artigo, slides,
 vídeo e ensaio.
 
 Duas decisões aguardam a orientadora, e as datas acima serão revistas quando ela
@@ -703,16 +725,17 @@ Enquanto não se resolverem, não devem ser afirmadas na defesa:
    entidade de registro funcional que não existe em nenhuma das 22 classes. Ou a
    entidade entra no modelo, ou a justificativa é reescrita. A decisão está com a
    orientadora (`docs/08`, decisão 2).
-2. **O sistema não funciona sem rede.** O registro de sessão offline está
-   previsto (`docs/07`, seção 3A): manifesto e *service worker* para instalar
-   como PWA, fila no IndexedDB e chave de idempotência gerada no aparelho. Até
-   ser construído, não há manifesto nem *service worker*. O registro de sessão
-   (tela 7) mostra o estado da conexão e marca como pendente o que ainda não
-   subiu, mas a fila de sincronização não existe.
-3. **Quem responde legalmente não se corrige.** Na edição do responsável
+2. **Quem responde legalmente não se corrige.** Na edição do responsável
    (item 8), o `responsavelLegal` do vínculo não se edita: a resposta dada no
    cadastro fica como está, e não há, no sistema, como corrigi-la. Limite
    declarado em 18/10.
+
+O sistema sem rede saiu desta lista em 21/11/2026 (item 22), com o limite
+exato: só os toques do "Como foi esta tentativa?" funcionam sem conexão, e só
+com a tela da sessão já aberta; iniciar, pausar, encerrar e a ocorrência ABC
+precisam de conexão; reabrir o app sem conexão abre pelo *service worker*, mas
+não registra — a sessão não tem cópia no aparelho, de propósito, e a tela diz
+que os toques guardados sobem quando a conexão voltar.
 
 O professor sem recuperação de senha saiu desta lista em 25/10/2026: a
 administração gera o link para nova senha dele, com motivo (item 13), como a
