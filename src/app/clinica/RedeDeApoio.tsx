@@ -4,7 +4,7 @@ import { Botao } from '../../ui/Botao'
 import { Campo } from '../../ui/Campo'
 import { Cartao } from '../../ui/Cartao'
 import { Etiqueta } from '../../ui/Etiqueta'
-import { LinkDePrimeiroAcesso } from '../../componentes/LinkDePrimeiroAcesso'
+import { LinkDePrimeiroAcesso, foiPorEmail } from '../../componentes/LinkDePrimeiroAcesso'
 import { usarSessao } from '../../contexto/Sessao'
 import { MOTIVO_NOVA_SENHA_MAXIMO } from '@sinctea/compartilhado/dominio/regras'
 import { ErroServico, servicos, type FinalidadeAcesso, type LinkPrimeiroAcesso, type PacienteDetalhe } from '../../servicos'
@@ -71,7 +71,10 @@ export function RedeDeApoio({ paciente, aoMudar }: { paciente: PacienteDetalhe; 
       setDados(VAZIO)
       setAberto(false)
       if (primeiroAcesso) {
-        setAviso(`${responsavel.nome} entrou na rede de apoio. Entregue o link abaixo: é por ele que a pessoa define a senha.`)
+        // Item 23: com o link no e-mail, o aviso nao pede para entregar.
+        setAviso(foiPorEmail(primeiroAcesso)
+          ? `${responsavel.nome} entrou na rede de apoio.`
+          : `${responsavel.nome} entrou na rede de apoio. Entregue o link abaixo: é por ele que a pessoa define a senha.`)
         setLink({ nome: responsavel.nome, link: primeiroAcesso })
       } else {
         setAviso(`${responsavel.nome} entrou na rede de apoio. A conta já existia e já entra no sistema: nenhum link foi gerado.`)

@@ -19,6 +19,10 @@ import { LayoutAcesso } from './LayoutAcesso'
  *
  * Mesmo desenho da tela 2 (convite do professor): o nome e o e-mail da conta
  * aparecem antes do formulario, para a pessoa reconhecer que o link e dela.
+ *
+ * Item 23: o mesmo endereco serve ao link de recuperacao, que a propria
+ * pessoa pede em "Esqueci minha senha" e vale 1 hora. Vencido ou usado, a tela
+ * manda pedir outro, com o link para a tela 1 ja aberta no pedido.
  */
 
 const RECUSA: Record<Exclude<PrimeiroAcessoPublico['situacao'], 'VALIDO'>, { titulo: string; texto: string }> = {
@@ -96,7 +100,18 @@ export function PrimeiroAcesso() {
           <EstadoErro erro={estado.erro} oQue="este link" aoTentarDeNovo={() => setTentativa((t) => t + 1)} />
         )}
 
-        {estado.tipo === 'pronto' && estado.acesso.situacao !== 'VALIDO' && (
+        {estado.tipo === 'pronto' && estado.acesso.situacao !== 'VALIDO' && estado.acesso.finalidade === 'RECUPERACAO' && (
+          <>
+            <Titulo>Este link não vale mais</Titulo>
+            {/* A frase de LINK_DE_RECUPERACAO_QUE_NAO_VALE, com o pedido como link. */}
+            <p className="max-w-[65ch] text-tinta2">
+              Peça outro em{' '}
+              <Link to="/app/entrar?esqueci" className="font-bold text-cli-ink underline">Esqueci minha senha</Link>.
+            </p>
+          </>
+        )}
+
+        {estado.tipo === 'pronto' && estado.acesso.situacao !== 'VALIDO' && estado.acesso.finalidade !== 'RECUPERACAO' && (
           <>
             <Titulo>{RECUSA[estado.acesso.situacao].titulo}</Titulo>
             <p className="max-w-[65ch] text-tinta2">{RECUSA[estado.acesso.situacao].texto}</p>
@@ -110,6 +125,11 @@ export function PrimeiroAcesso() {
               // Item 8: o link que a coordenacao gerou para a nova senha.
               <Titulo sub={`Conta de ${estado.acesso.nome} (${estado.acesso.email}). Ao salvar, a senha anterior deixa de valer e as sessões abertas se encerram.`}>
                 Escolher uma nova senha
+              </Titulo>
+            ) : estado.acesso.finalidade === 'RECUPERACAO' ? (
+              // Item 23: o link que a propria pessoa pediu em "Esqueci minha senha".
+              <Titulo sub={`Conta de ${estado.acesso.nome} (${estado.acesso.email}). Ao salvar, a senha anterior deixa de valer e as sessões abertas se encerram.`}>
+                Definir nova senha
               </Titulo>
             ) : (
               <Titulo sub={`A conta de ${estado.acesso.nome} (${estado.acesso.email}) está pronta. Falta só a sua senha.`}>
@@ -145,7 +165,7 @@ export function PrimeiroAcesso() {
               </Campo>
 
               <Botao type="submit" disabled={enviando}>
-                {enviando ? 'Salvando…' : estado.acesso.finalidade === 'NOVA_SENHA' ? 'Salvar a nova senha e entrar' : 'Definir senha e entrar'}
+                {enviando ? 'Salvando…' : estado.acesso.finalidade === 'PRIMEIRO_ACESSO' ? 'Definir senha e entrar' : 'Salvar a nova senha e entrar'}
               </Botao>
             </form>
           </>

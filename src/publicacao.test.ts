@@ -64,6 +64,20 @@ describe('a versao publicada', () => {
     expect(pacote).not.toContain('/sessoes/pendentes')
   })
 
+  it('leva o "Esqueci minha senha" e os links por e-mail do item 23: as telas 1, 5, 14 e 23', () => {
+    for (const texto of [
+      'Esqueci minha senha', '/auth/nova-senha', 'Enviar o link',
+      'Se houver uma conta com esse e-mail, enviamos um link para definir uma nova senha. Ele vale por 1 hora.',
+      'Definir nova senha', 'Este link não vale mais', 'Peça outro em', '/app/entrar?esqueci',
+      'Enviamos o link para ', 'Se a pessoa não receber, copie e entregue.',
+      'Não conseguimos enviar o e-mail agora. Copie o link e entregue à pessoa.',
+    ]) {
+      expect(pacote, texto).toContain(texto)
+    }
+    // A ajuda de antes, que mandava pedir a clinica, saiu.
+    expect(pacote).not.toContain('ainda não redefine senha sozinha')
+  })
+
   it('e uma PWA: o manifesto com nome, inicio no app, standalone e os tres icones', () => {
     expect(pagina).toContain('<link rel="manifest" href="./manifest.webmanifest"')
     const manifesto = JSON.parse(readFileSync(join(pasta, 'manifest.webmanifest'), 'utf8'))

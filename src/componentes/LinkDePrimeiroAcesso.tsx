@@ -1,14 +1,25 @@
 import { useRef, useState } from 'react'
+import { SE_A_PESSOA_NAO_RECEBER, textoDoEnvio } from '@sinctea/compartilhado/dominio/recuperacao'
+import { Aviso } from '../ui/Aviso'
 import { Botao } from '../ui/Botao'
 import { Cartao } from '../ui/Cartao'
 import type { FinalidadeAcesso, LinkPrimeiroAcesso } from '../servicos'
 
 /**
  * O link de primeiro acesso, como quem cadastra o recebe (docs/07, secao 0,
- * lacuna 1). Nao ha servidor de e-mail: quem cadastra entrega o link a pessoa,
- * que define a propria senha por ele. O token aparece aqui uma vez — o
- * servidor guarda so o resumo, e nao o mostra de novo.
+ * lacuna 1). O token aparece aqui uma vez — o servidor guarda so o resumo, e
+ * nao o mostra de novo.
+ *
+ * Desde o item 23, o servidor tambem manda o link por e-mail, e a resposta diz
+ * se foi. Enviado, a tela diz para onde, e o "Copiar link" fica, para quando a
+ * pessoa nao recebe. Falhou, a tela pede para copiar e entregar. Com o envio
+ * desligado, fica como antes: quem cadastra entrega o link.
  */
+
+/** O link chegou ao servico de e-mail: o aviso da tela nao pede para entregar. */
+export function foiPorEmail(link: LinkPrimeiroAcesso): boolean {
+  return link.envio.situacao === 'ENVIADO'
+}
 
 /** O endereco completo do link, no mesmo lugar em que o sistema esta aberto. */
 export function enderecoDoPrimeiroAcesso(token: string): string {
@@ -37,26 +48,29 @@ export function LinkDePrimeiroAcesso({ nome, link, finalidade = 'PRIMEIRO_ACESSO
     }
   }
 
+  const envio = textoDoEnvio(link.envio)
+  const enviado = link.envio.situacao === 'ENVIADO'
+  const paraQue = finalidade === 'NOVA_SENHA'
+    ? 'é por ele que a pessoa escolhe a nova senha — ninguém mais a conhece. Ao ser usado, a senha anterior deixa de valer e as sessões abertas se encerram.'
+    : 'é por ele que a pessoa define a própria senha — ninguém mais a conhece.'
+  const validadeEAviso = `Vale até ${validade} e uma única vez. Ele não aparece de novo: se perder, gere outro.`
+
   return (
     <Cartao>
-      {finalidade === 'NOVA_SENHA' ? (
-        <>
-          <h3 className="text-base font-bold">Link para nova senha de {nome}</h3>
-          <p className="mt-1 max-w-[65ch] text-sm text-tinta2">
-            Entregue este link a {nome}: é por ele que a pessoa escolhe a nova senha — ninguém mais a
-            conhece. Ao ser usado, a senha anterior deixa de valer e as sessões abertas se encerram. Vale
-            até {validade} e uma única vez. Ele não aparece de novo: se perder, gere outro.
-          </p>
-        </>
-      ) : (
-        <>
-          <h3 className="text-base font-bold">Link de primeiro acesso de {nome}</h3>
-          <p className="mt-1 max-w-[65ch] text-sm text-tinta2">
-            Entregue este link a {nome}: é por ele que a pessoa define a própria senha — ninguém mais
-            a conhece. Vale até {validade} e uma única vez. Ele não aparece de novo: se perder, gere outro.
-          </p>
-        </>
+      <h3 className="text-base font-bold">
+        {finalidade === 'NOVA_SENHA' ? `Link para nova senha de ${nome}` : `Link de primeiro acesso de ${nome}`}
+      </h3>
+      {enviado && envio && (
+        <p className="mt-1 font-bold text-tinta"><span aria-hidden="true">✓ </span>{envio}</p>
       )}
+      {link.envio.situacao === 'FALHOU' && envio && (
+        <div className="mt-2"><Aviso tom="at">{envio}</Aviso></div>
+      )}
+      <p className="texto-corrido mt-1 text-sm text-tinta2">
+        {enviado
+          ? `${SE_A_PESSOA_NAO_RECEBER} É${paraQue.slice(1)} ${validadeEAviso}`
+          : `Entregue este link a ${nome}: ${paraQue} ${validadeEAviso}`}
+      </p>
       <div className="mt-3 flex flex-col gap-2 sm:flex-row">
         <label htmlFor="link-primeiro-acesso" className="sr-only">
           {finalidade === 'NOVA_SENHA' ? 'Link para nova senha' : 'Link de primeiro acesso'}

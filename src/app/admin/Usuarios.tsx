@@ -13,7 +13,7 @@ import { EstadoVazio } from '../../ui/EstadoVazio'
 import { Paginacao } from '../../ui/Paginacao'
 import { Tabela, type Coluna } from '../../ui/Tabela'
 import { NOME_DO_PERFIL } from '../perfis'
-import { LinkDePrimeiroAcesso } from '../../componentes/LinkDePrimeiroAcesso'
+import { LinkDePrimeiroAcesso, foiPorEmail } from '../../componentes/LinkDePrimeiroAcesso'
 import { usarSessao } from '../../contexto/Sessao'
 import { emData } from '@sinctea/compartilhado/dominio/datas'
 import { MOTIVO_NOVA_SENHA_MAXIMO } from '@sinctea/compartilhado/dominio/regras'
@@ -173,7 +173,10 @@ export function Usuarios() {
       setConvite(VAZIO)
       // Sem servidor de e-mail, nao se finge que algo foi enviado: o link e
       // entregue por quem cadastrou.
-      setAviso(`Conta criada para ${usuario.email}. Entregue o link abaixo a ${usuario.nome}.`)
+      // Item 23: com o link no e-mail, o aviso nao pede para entregar.
+      setAviso(foiPorEmail(primeiroAcesso)
+        ? `Conta criada para ${usuario.email}.`
+        : `Conta criada para ${usuario.email}. Entregue o link abaixo a ${usuario.nome}.`)
       setLink({ nome: usuario.nome, link: primeiroAcesso })
       focarAviso.current = true
       recarregar()
