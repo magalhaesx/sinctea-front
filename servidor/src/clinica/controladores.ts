@@ -1,8 +1,9 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, Post, Put, Query, Req } from '@nestjs/common'
 import type {
-  CartaoEstrategia, NivelSuporte, Objetivo, OcorrenciaComportamental, Origem, PacienteDetalhe, Pagina, PlanoTerapeutico,
-  RegistroAtividade, ResponsavelCadastrado, Sessao, SituacaoPlano, SituacaoSessao,
+  CartaoEstrategia, LinkPrimeiroAcesso, NivelSuporte, Objetivo, OcorrenciaComportamental, Origem, PacienteDetalhe, Pagina,
+  PlanoTerapeutico, RegistroAtividade, ResponsavelCadastrado, Sessao, SituacaoPlano, SituacaoSessao,
 } from '@sinctea/compartilhado'
+import { envioNaTrilha } from '../email/na-trilha.js'
 import { quandoEmManaus } from '@sinctea/compartilhado/dominio/agenda'
 import { emDataCivil } from '@sinctea/compartilhado/dominio/datas'
 import { jsonCanonico } from '@sinctea/compartilhado/dominio/hash'
@@ -98,7 +99,7 @@ export class ControladorPacientes {
     detalhe: (_q, r) => {
       const { responsavel: v, primeiroAcesso } = r as ResponsavelCadastrado
       return `Responsável na rede de apoio: ${v.nome} (${v.parentesco}${v.responsavelLegal ? ', responsável legal' : ''}).` +
-        (primeiroAcesso ? ' Link de primeiro acesso gerado.' : '')
+        (primeiroAcesso ? ` Link de primeiro acesso gerado.${envioNaTrilha(primeiroAcesso.envio)}` : '')
     },
   })
   cadastrarResponsavel(@Req() req: RequisicaoHttp, @Param('id') id: string, @Body() corpo: Record<string, unknown> | undefined) {
@@ -109,7 +110,8 @@ export class ControladorPacientes {
   @HttpCode(200)
   @Auditar({
     entidade: 'Usuario', acao: 'ALTERACAO', pacienteId: deParametro, idEntidade: { parametro: 'responsavelId' },
-    detalhe: 'Novo link de primeiro acesso do responsável; o anterior deixou de valer.',
+    detalhe: (_q, r) => 'Novo link de primeiro acesso do responsável; o anterior deixou de valer.' +
+      envioNaTrilha((r as LinkPrimeiroAcesso).envio),
   })
   novoLinkDoResponsavel(@Req() req: RequisicaoHttp, @Param('id') id: string, @Param('responsavelId') responsavelId: string) {
     return this.pacientes.novoLinkDoResponsavel(sessaoDe(req), id, responsavelId)
@@ -124,8 +126,9 @@ export class ControladorPacientes {
   @Perfis('COORDENADOR')
   @Auditar({
     entidade: 'Usuario', acao: 'ALTERACAO', pacienteId: deParametro, idEntidade: { parametro: 'responsavelId' },
-    detalhe: (req) => 'Link para nova senha do responsável, gerado pela coordenação; o anterior deixou de valer. ' +
-      `Motivo: ${textoOuVazio((req.body as { motivo?: unknown } | undefined)?.motivo)}`,
+    detalhe: (req, r) => 'Link para nova senha do responsável, gerado pela coordenação; o anterior deixou de valer. ' +
+      `Motivo: ${textoOuVazio((req.body as { motivo?: unknown } | undefined)?.motivo)}` +
+      envioNaTrilha((r as LinkPrimeiroAcesso).envio),
   })
   linkNovaSenhaDoResponsavel(
     @Req() req: RequisicaoHttp, @Param('id') id: string, @Param('responsavelId') responsavelId: string,

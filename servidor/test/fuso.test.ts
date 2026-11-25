@@ -1,5 +1,5 @@
 import 'reflect-metadata'
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
 import type { INestApplication } from '@nestjs/common'
@@ -159,6 +159,9 @@ describe('GET /api/saude confere o fuso da sessao', () => {
     await admin.$executeRawUnsafe(`ALTER DATABASE "${banco}" SET timezone TO 'UTC'`)
     const r = await saude()
     expect(r.status).toBe(200)
-    expect(r.corpo).toMatchObject({ situacao: 'no ar', banco: { migracao: '20261116120000_fuso_do_banco' } })
+    // A ultima da pasta: a fuso_do_banco foi a ultima ate o item 23.
+    const ultima = readdirSync(join(PASTA_DO_SERVIDOR, 'prisma', 'migracoes'), { withFileTypes: true })
+      .filter((d) => d.isDirectory()).map((d) => d.name).sort().at(-1)
+    expect(r.corpo).toMatchObject({ situacao: 'no ar', banco: { migracao: ultima } })
   })
 })

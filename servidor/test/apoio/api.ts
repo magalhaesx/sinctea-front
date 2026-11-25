@@ -1,6 +1,6 @@
 import 'reflect-metadata'
 import { expect } from 'vitest'
-import type { INestApplication } from '@nestjs/common'
+import type { INestApplication, LoggerService } from '@nestjs/common'
 import type { Perfil } from '@sinctea/compartilhado'
 import { uuidV7 } from '../../prisma/semente/uuid7.js'
 import { hashDaSenha } from '../../src/autenticacao/senhas.js'
@@ -30,14 +30,17 @@ export interface OpcoesDoPedido { corpo?: unknown; cookie?: string; aba?: number
 
 export interface Api {
   aplicacao: INestApplication
+  /** http://127.0.0.1:porta, sem o /api: para o pedido que precisa de cabecalho proprio (item 23). */
+  endereco: string
   pedir(metodo: string, caminho: string, opcoes?: OpcoesDoPedido): Promise<Resposta>
   entrar(email: string, senha?: string): Promise<string>
   fechar(): Promise<void>
 }
 
-export async function subirApi(urlDoBanco: string): Promise<Api> {
+/** Com `logger`, o teste le o que o servidor escreveria no log (item 23: a chave nunca aparece). */
+export async function subirApi(urlDoBanco: string, opcoes: { logger?: LoggerService } = {}): Promise<Api> {
   process.env.DATABASE_URL = urlDoBanco
-  const aplicacao = await criarAplicacao({ logger: false })
+  const aplicacao = await criarAplicacao({ logger: opcoes.logger ?? false })
   await aplicacao.listen(0, '127.0.0.1')
   const endereco = await aplicacao.getUrl()
 
@@ -67,7 +70,7 @@ export async function subirApi(urlDoBanco: string): Promise<Api> {
     return cookieDaSessao(r)
   }
 
-  return { aplicacao, pedir, entrar, fechar: () => aplicacao.close() }
+  return { aplicacao, endereco, pedir, entrar, fechar: () => aplicacao.close() }
 }
 
 /** "sinctea_sessao_N=valor" do Set-Cookie, pronto para o cabecalho Cookie. */

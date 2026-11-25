@@ -1,7 +1,9 @@
 import { Body, Controller, Get, HttpCode, Param, Post, Put, Query, Req, Res } from '@nestjs/common'
 import type {
-  AcaoAuditoria, ContaCriada, DadosProfissionais, DataCivil, Pagina, Perfil, RegistroAdministrativo, Usuario,
+  AcaoAuditoria, ContaCriada, DadosProfissionais, DataCivil, LinkPrimeiroAcesso, Pagina, Perfil,
+  RegistroAdministrativo, Usuario,
 } from '@sinctea/compartilhado'
+import { envioNaTrilha } from '../email/na-trilha.js'
 import { Auditar, Perfis, SemDadoDoPaciente } from '../acesso/metadados.js'
 import { lerBooleano, lerPaginacao, lerTexto } from '../http/paginacao.js'
 import type { RequisicaoHttp, RespostaHttp } from '../http/tipos-http.js'
@@ -49,7 +51,8 @@ export class ControladorUsuarios {
     // O token nunca entra na trilha: so que o link foi gerado.
     detalhe: (_req, r) => {
       const { usuario } = r as ContaCriada
-      return `Conta criada para ${usuario.email} (${usuario.perfis.join(', ')}). Link de primeiro acesso gerado.`
+      return `Conta criada para ${usuario.email} (${usuario.perfis.join(', ')}). Link de primeiro acesso gerado.` +
+        envioNaTrilha((r as ContaCriada).primeiroAcesso.envio)
     },
   })
   convidar(@Body() corpo: Record<string, unknown> | undefined) {
@@ -111,7 +114,8 @@ export class ControladorUsuarios {
   @Perfis('ADMINISTRADOR')
   @Auditar({
     entidade: 'Usuario', acao: 'ALTERACAO', idEntidade: { parametro: 'id' },
-    detalhe: 'Novo link de primeiro acesso gerado; o anterior deixou de valer.',
+    detalhe: (_req, r) => 'Novo link de primeiro acesso gerado; o anterior deixou de valer.' +
+      envioNaTrilha((r as LinkPrimeiroAcesso).envio),
   })
   novoLinkDeAcesso(@Param('id') id: string) {
     return this.usuarios.novoLinkDeAcesso(id)
@@ -123,8 +127,9 @@ export class ControladorUsuarios {
   @Perfis('ADMINISTRADOR')
   @Auditar({
     entidade: 'Usuario', acao: 'ALTERACAO', idEntidade: { parametro: 'id' },
-    detalhe: (req) => 'Link para nova senha gerado pela administração; o anterior deixou de valer. ' +
-      `Motivo: ${textoOuVazio((req.body as { motivo?: unknown } | undefined)?.motivo)}`,
+    detalhe: (req, r) => 'Link para nova senha gerado pela administração; o anterior deixou de valer. ' +
+      `Motivo: ${textoOuVazio((req.body as { motivo?: unknown } | undefined)?.motivo)}` +
+      envioNaTrilha((r as LinkPrimeiroAcesso).envio),
   })
   linkNovaSenha(@Req() req: RequisicaoHttp, @Param('id') id: string, @Body() corpo: { motivo?: unknown } | undefined) {
     return this.usuarios.linkNovaSenha(req.sinctea!.sessao!, id, corpo?.motivo)

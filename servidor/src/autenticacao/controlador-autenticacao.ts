@@ -3,6 +3,7 @@ import { ErroServico, type ContaAberta, type PrimeiroAcessoPublico, type SessaoU
 import { Publico, SemDadoDoPaciente } from '../acesso/metadados.js'
 import type { RequisicaoHttp, RespostaHttp } from '../http/tipos-http.js'
 import { ServicoAutenticacao } from './servico-autenticacao.js'
+import { ServicoRecuperacao, type FimDaResposta } from './servico-recuperacao.js'
 import { ServicoSessoes, vagaDaRequisicao } from './servico-sessoes.js'
 
 /**
@@ -15,6 +16,7 @@ export class ControladorAutenticacao {
   constructor(
     private readonly autenticacao: ServicoAutenticacao,
     private readonly sessoes: ServicoSessoes,
+    private readonly recuperacao: ServicoRecuperacao,
   ) {}
 
   @Post('entrar')
@@ -89,6 +91,24 @@ export class ControladorAutenticacao {
   @SemDadoDoPaciente('Usuario')
   entrarDemonstracao(): never {
     throw new ErroServico('NAO_ENCONTRADO', 'A entrada de demonstração não existe no sistema real.')
+  }
+
+  /**
+   * Item 23: "Esqueci minha senha". Sempre 202, sem corpo, e na hora: o pedido
+   * so e examinado depois que a resposta saiu. A tela mostra
+   * RESPOSTA_DA_RECUPERACAO, exista a conta ou nao. A trilha registra o pedido
+   * na fila, e nao aqui: a rota nao toca dado do paciente.
+   */
+  @Post('nova-senha')
+  @HttpCode(202)
+  @Publico()
+  @SemDadoDoPaciente('RecuperacaoDeSenha')
+  pedirNovaSenha(
+    @Req() requisicao: RequisicaoHttp,
+    @Body() corpo: { email?: unknown } | undefined,
+    @Res({ passthrough: true }) resposta: RespostaHttp,
+  ): void {
+    this.recuperacao.depoisDaResposta(resposta as RespostaHttp & FimDaResposta, corpo?.email, requisicao.ip ?? null)
   }
 
   @Get('primeiro-acesso/:token')

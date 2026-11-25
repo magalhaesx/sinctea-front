@@ -151,11 +151,12 @@ export class ServicoPacientes {
       })
     })
     // Conta que ja entra no sistema nao recebe link: a senha dela continua dela.
+    // Item 23: o link tambem vai por e-mail, so com o nome do responsavel —
+    // nada do paciente, nem o nome da crianca.
     const pendente = vinculo.responsavel.usuario.ultimoAcessoEm === null
-    const link = pendente ? await this.autenticacao.gerarAcessoInicial(vinculo.responsavelId) : null
     return {
       responsavel: paraResponsavelNaFicha(vinculo),
-      primeiroAcesso: link && { token: link.token, expiraEm: link.expiraEm.toISOString() },
+      primeiroAcesso: pendente ? await this.autenticacao.gerarEEnviarLink(vinculo.responsavel.usuario) : null,
     }
   }
 
@@ -174,8 +175,7 @@ export class ServicoPacientes {
     if (vinculo.responsavel.usuario.ultimoAcessoEm !== null) {
       throw new ErroServico('CONFLITO', 'Esta pessoa já definiu a senha. O link para nova senha é com a coordenação, com o motivo.')
     }
-    const link = await this.autenticacao.gerarAcessoInicial(vinculo.responsavelId)
-    return { token: link.token, expiraEm: link.expiraEm.toISOString() }
+    return this.autenticacao.gerarEEnviarLink(vinculo.responsavel.usuario)
   }
 
   /**
@@ -205,8 +205,7 @@ export class ServicoPacientes {
     }
     const erroMotivo = erroDoMotivoDaNovaSenha(typeof motivo === 'string' ? motivo : '')
     if (erroMotivo) throw new ErroServico('VALIDACAO', erroMotivo, { motivo: erroMotivo })
-    const link = await this.autenticacao.gerarAcessoInicial(usuario.id, { geradoPorId: sessao.usuario.id })
-    return { token: link.token, expiraEm: link.expiraEm.toISOString() }
+    return this.autenticacao.gerarEEnviarLink(usuario, { finalidade: 'NOVA_SENHA', geradoPorId: sessao.usuario.id })
   }
 
   /**

@@ -95,8 +95,8 @@ export class ServicoUsuarios {
       } })
       return criado
     })
-    const link = await this.autenticacao.gerarAcessoInicial(usuario.id)
-    return { usuario: paraUsuario(usuario), primeiroAcesso: { token: link.token, expiraEm: link.expiraEm.toISOString() } }
+    // Item 23: o link tambem vai por e-mail; a resposta diz se foi.
+    return { usuario: paraUsuario(usuario), primeiroAcesso: await this.autenticacao.gerarEEnviarLink(usuario) }
   }
 
   /**
@@ -112,8 +112,7 @@ export class ServicoUsuarios {
     if (usuario.ultimoAcessoEm !== null) {
       throw new ErroServico('CONFLITO', 'Esta pessoa já definiu a senha. Use o link para nova senha, com o motivo.')
     }
-    const link = await this.autenticacao.gerarAcessoInicial(usuario.id)
-    return { token: link.token, expiraEm: link.expiraEm.toISOString() }
+    return this.autenticacao.gerarEEnviarLink(usuario)
   }
 
   /**
@@ -137,8 +136,7 @@ export class ServicoUsuarios {
     }
     const erroMotivo = erroDoMotivoDaNovaSenha(typeof motivo === 'string' ? motivo : '')
     if (erroMotivo) throw new ErroServico('VALIDACAO', erroMotivo, { motivo: erroMotivo })
-    const link = await this.autenticacao.gerarAcessoInicial(usuario.id, { geradoPorId: sessao.usuario.id })
-    return { token: link.token, expiraEm: link.expiraEm.toISOString() }
+    return this.autenticacao.gerarEEnviarLink(usuario, { finalidade: 'NOVA_SENHA', geradoPorId: sessao.usuario.id })
   }
 
   async alterarPerfis(sessao: SessaoServidor, usuarioId: string, perfis: unknown): Promise<ComAnterior<Usuario>> {
