@@ -208,10 +208,10 @@ Atualizado em 18/10/2026, lendo o código — não a memória.
   simulada que aplica controle de acesso e auditoria; o cliente da API, que
   não aplica regra nenhuma. A versão publicada usa só a API, e o mock fica
   fora do pacote; no desenvolvimento, `VITE_API_URL` escolhe entre as duas
-- **726 testes em 61 arquivos, nos três pacotes**, rodados por um único
+- **778 testes em 66 arquivos, nos três pacotes**, rodados por um único
   `npm test` na raiz, sem passo manual. O principal ainda é
   `src/servicos/mock/regrasInviolaveis.test.ts`, que verifica as regras
-  invioláveis na camada de dados, e não na tela. Os 348 do servidor rodam contra
+  invioláveis na camada de dados, e não na tela. Os 388 do servidor rodam contra
   um PostgreSQL 17 de verdade
 - **As seis regras verificadas** em `docs/06`: para cada teste citado, a regra foi
   quebrada de propósito para confirmar que ele falha, e as quebras que não
@@ -666,6 +666,33 @@ em produção (o antigo passo B5) foi cancelada. No código, hoje:
   "S" de SINCTEA (`scripts/gerar-icones.py`): o logotipo ainda não existe.
   Testes em `servidor/test/toques.test.ts` e `src/fila/fila.test.ts`, quebras
   no `docs/06`
+- **Item 23 — envio de e-mail pelo Resend: "Esqueci minha senha" e os links
+  por e-mail.** O módulo `servidor/src/email/` tem um transporte só, `POST` na
+  API do Resend por fetch, sem SDK, com 10 s de tempo limite. Sem
+  `RESEND_API_KEY`, fora de produção, a mensagem fica na memória e nunca sai;
+  em produção, o servidor sobe, avisa no log que o envio está desligado, e a
+  tela mostra o link para copiar, como antes. O link sai de `URL_PUBLICA`,
+  nunca do Host do pedido. O e-mail leva só o nome da pessoa, para que serve, o
+  link, a validade e o *"Se você não esperava este e-mail, ignore."*: nenhum
+  dado de paciente, e o nome do sistema só na sigla. A chave fica numa closure
+  do transporte, fora de log, erro e resposta; tempo esgotado, 4xx e 5xx viram
+  `FALHOU`, vão para a trilha, e a tela oferece o link. `POST
+  /api/auth/nova-senha` responde sempre 202 sem corpo, e o pedido só é
+  examinado depois que a resposta saiu. Só a conta ativa que já definiu a senha
+  recebe o link de recuperação — finalidade `RECUPERACAO`, migração
+  `recuperacao_de_senha` —: 1 hora, uso único, invalida os links anteriores,
+  derruba as sessões, sem o aviso da clínica, e depois de usado manda a
+  confirmação, como o link de nova senha que a clínica gera. Os limites são
+  contados na trilha (`RecuperacaoDeSenha`), e não em memória: 3 pedidos por
+  conta e 10 por origem por hora, e 50 links por dia na clínica; o pedido de
+  e-mail sem conta fica na trilha sem o e-mail. Os links de primeiro acesso e
+  de nova senha das telas 5 e 14 também vão por e-mail, e a tela diz para onde
+  (`textoDoEnvio`, em `compartilhado/src/dominio/recuperacao.ts`). Tela 1: o
+  "Esqueci minha senha" abre o campo, e a resposta é uma só; tela 23: "Definir
+  nova senha" e *"Este link não vale mais. Peça outro em Esqueci minha
+  senha."*. O convite escolar continua sem e-mail. Testes em
+  `servidor/test/recuperacao.test.ts`, `envio.test.ts` e `email.test.ts`,
+  quebras no `docs/06`
 - `npm run criar-administrador -w @sinctea/servidor -- .env.producao --nome
   "Nome Completo" --email voce@exemplo.com` cria o primeiro administrador:
   nome e e-mail vêm da linha de comando, e só a senha é pedida, escondida e duas
@@ -706,9 +733,10 @@ Não se corta, nem com pressa: as regras 1, 2, 3, 5 e 6 provadas por teste contr
 a API no caminho principal, o *trigger* da auditoria, o papel que não é dono e o
 argon2id.
 
-Depois de 19/10, sem data: o
-envio de e-mail, com a recuperação de senha sem passar pela clínica; a remoção completa de `servicos/mock`; e a Etapa 13, de 16/11 a 23/11 — artigo, slides,
-vídeo e ensaio.
+Depois de 19/10, sem data: a remoção completa de `servicos/mock`; e a Etapa 13,
+de 16/11 a 23/11 — artigo, slides, vídeo e ensaio. O envio de e-mail, com a
+recuperação de senha sem passar pela clínica, saiu desta lista em 25/11/2026
+(item 23).
 
 Duas decisões aguardam a orientadora, e as datas acima serão revistas quando ela
 responder: a data final (23/11 ou 30/11) e a Trilha de Autonomia (`docs/08`).
@@ -739,8 +767,8 @@ que os toques guardados sobem quando a conexão voltar.
 
 O professor sem recuperação de senha saiu desta lista em 25/10/2026: a
 administração gera o link para nova senha dele, com motivo (item 13), como a
-coordenação gera o do responsável (item 8). Sem envio de e-mail, o link passa
-pela mão de quem o gera.
+coordenação gera o do responsável (item 8). Desde o item 23, o link também vai
+por e-mail, e o professor pode pedir o dele em "Esqueci minha senha".
 
 O endereço do Render saiu desta lista em 17/10/2026: o B6 conferiu no ar `/`,
 `/api/saude` com a última migração e o 404 em JSON (tag `etapa-9`). O

@@ -298,6 +298,24 @@ describe('os limites, todos com a mesma resposta', () => {
       recuperacao.agora = () => new Date()
     }
   })
+
+  it('o teto conta os links gerados, e nao os pedidos recusados: 60 pedidos sem conta no dia nao impedem o envio', async () => {
+    // Daqui a seis dias, longe dos 50 do teste anterior: 60 recusas, uma por minuto.
+    const la = Date.now() + 6 * 86_400_000
+    await prisma.registroAuditoria.createMany({ data: Array.from({ length: 60 }, (_, i) => ({
+      ocorridoEm: new Date(la - i * 60_000), acao: 'ACESSO_NEGADO' as const, entidade: 'RecuperacaoDeSenha',
+      origem: 'SISTEMA' as const, detalhe: 'Recusa simulada pelo teste do teto da clínica.',
+    })) })
+    try {
+      recuperacao.agora = () => new Date(la + 60_000)
+      expect((await pedirNovaSenha('contadia@teste.example')).status).toBe(202)
+      await ocioso()
+    } finally {
+      recuperacao.agora = () => new Date()
+    }
+    expect(caixaPara('contadia@teste.example')).toHaveLength(2)
+    expect((await pedidos({ idEntidade: u.contadia })).at(-1)).toMatchObject({ acao: 'CRIACAO' })
+  })
 })
 
 describe('o link do e-mail sai de URL_PUBLICA, nunca do pedido', () => {
