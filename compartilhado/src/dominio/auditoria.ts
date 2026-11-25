@@ -31,7 +31,7 @@ export function origemDoPerfil(perfil: Perfil | null): RegistroAuditoria['origem
  * delas com recorte por paciente grava o `pacienteId` junto, e o registro sai
  * da trilha administrativa.
  */
-export const ENTIDADES_ADMINISTRATIVAS = ['Usuario', 'Profissional', 'Escola', 'RegistroAuditoria'] as const
+export const ENTIDADES_ADMINISTRATIVAS = ['Usuario', 'Profissional', 'Escola', 'RegistroAuditoria', 'RecuperacaoDeSenha'] as const
 
 /**
  * Item 13b: na trilha administrativa, o registro de escola feito por um
@@ -130,7 +130,7 @@ export const ENTIDADES_AUDITADAS = [
   'Paciente', 'VinculoFamiliar', 'Responsavel', 'PlanoTerapeutico', 'Objetivo', 'CartaoEstrategia', 'Sessao',
   'RegistroAtividade', 'OcorrenciaComportamental', 'OcorrenciaEscolar', 'AtividadeCasa', 'ExecucaoAtividadeCasa',
   'Consentimento', 'ConviteEscolar', 'VinculoEscolar', 'Escola', 'RelatorioEvolucao', 'Indicadores', 'Usuario',
-  'Profissional', 'RegistroAuditoria',
+  'Profissional', 'RegistroAuditoria', 'RecuperacaoDeSenha',
 ] as const
 
 /**
@@ -160,6 +160,7 @@ export const NOME_DA_ENTIDADE: Record<(typeof ENTIDADES_AUDITADAS)[number], stri
   Usuario: 'Conta de usuário',
   Profissional: 'Dados profissionais',
   RegistroAuditoria: 'Registro de auditoria',
+  RecuperacaoDeSenha: 'Pedido de nova senha',
 }
 
 /** O nome por extenso; o que nao esta na lista sai com o nome tecnico, e nao some. */

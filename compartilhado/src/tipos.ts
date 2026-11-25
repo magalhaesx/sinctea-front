@@ -159,14 +159,17 @@ export interface AvisoDeRedefinicao {
 export type SituacaoPrimeiroAcesso = 'VALIDO' | 'USADO' | 'EXPIRADO' | 'INEXISTENTE'
 
 /**
- * O mesmo link serve ao primeiro acesso e a nova senha do responsavel, que so
- * a coordenacao gera, com motivo (item 8).
+ * O mesmo link serve ao primeiro acesso, a nova senha que a clinica gera, com
+ * motivo (itens 8 e 13), e a recuperacao que a propria pessoa pede pelo
+ * "Esqueci minha senha", que vale 1 hora (item 23).
  */
-export type FinalidadeAcesso = 'PRIMEIRO_ACESSO' | 'NOVA_SENHA'
+export type FinalidadeAcesso = 'PRIMEIRO_ACESSO' | 'NOVA_SENHA' | 'RECUPERACAO'
 
 /**
  * O que a tela do link mostra antes da senha: so o nome e o e-mail da conta,
- * para a pessoa reconhecer que o link e dela. Fora de VALIDO, os dois sao nulos.
+ * para a pessoa reconhecer que o link e dela. Fora de VALIDO, os dois sao nulos;
+ * a finalidade vem sempre que o link existe, para a tela dizer o que fazer com
+ * o link que nao vale mais.
  */
 export interface PrimeiroAcessoPublico {
   situacao: SituacaoPrimeiroAcesso
@@ -177,12 +180,27 @@ export interface PrimeiroAcessoPublico {
 }
 
 /**
+ * O envio do link por e-mail (item 23). ENVIADO: o servico de e-mail aceitou a
+ * mensagem. FALHOU: tentou e nao conseguiu. DESLIGADO: o servidor esta sem
+ * envio configurado. Em qualquer caso, a tela mostra o link para copiar.
+ */
+export type SituacaoDoEnvio = 'ENVIADO' | 'FALHOU' | 'DESLIGADO'
+
+export interface EnvioDoLink {
+  situacao: SituacaoDoEnvio
+  /** O e-mail da pessoa, para a tela dizer para onde foi. */
+  para: string
+}
+
+/**
  * O link que quem cadastra entrega a pessoa. O token sai uma vez, nesta
- * resposta: o banco guarda so o resumo dele, e ninguem o le de volta.
+ * resposta: o banco guarda so o resumo dele, e ninguem o le de volta. Desde o
+ * item 23, ele tambem vai por e-mail; o envio diz se foi.
  */
 export interface LinkPrimeiroAcesso {
   token: string
   expiraEm: DataIso
+  envio: EnvioDoLink
 }
 
 /** Conta criada por quem cadastra: o usuario e o link do primeiro acesso dele. */

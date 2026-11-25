@@ -55,4 +55,6 @@ export const autenticacaoMock: ServicoAutenticacao = {
     throw new ErroServico('NAO_ENCONTRADO', 'Este link não existe.')
   }),
   darCienciaDaNovaSenha: () => responder(() => paraSessaoUsuario(exigirSessao())),
+  // O mock nao manda e-mail: a resposta e a mesma de sempre, e nada mais acontece (item 23).
+  pedirNovaSenha: () => responder(() => undefined),
 }

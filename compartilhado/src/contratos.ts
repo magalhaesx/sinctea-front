@@ -45,6 +45,12 @@ export interface ServicoAutenticacao {
   concluirPrimeiroAcesso(token: string, senha: string): Promise<SessaoUsuario>
   /** A pessoa leu o aviso de que a senha foi redefinida pela clinica (item 8). */
   darCienciaDaNovaSenha(): Promise<SessaoUsuario>
+  /**
+   * "Esqueci minha senha" (item 23): pede um link de recuperacao para o
+   * e-mail. A resposta e sempre a mesma, exista a conta ou nao, e o envio
+   * acontece depois dela: a tela mostra RESPOSTA_DA_RECUPERACAO.
+   */
+  pedirNovaSenha(email: string): Promise<void>
 }
 
 export interface ServicoPaciente {

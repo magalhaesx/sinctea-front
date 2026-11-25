@@ -159,7 +159,7 @@ export const pacientesMock: ServicoPaciente = {
     })
     return {
       responsavel: { ...vinculo, nome: responsavel.nome, email, telefone: responsavel.telefone, primeiroAcessoPendente: pendente },
-      primeiroAcesso: pendente ? linkDoMock() : null,
+      primeiroAcesso: pendente ? linkDoMock(email) : null,
     }
   }),
 
@@ -172,7 +172,7 @@ export const pacientesMock: ServicoPaciente = {
       throw new ErroServico('CONFLITO', 'Esta pessoa já definiu a senha. O link para nova senha é com a coordenação, com o motivo.')
     }
     auditar(sessao, { acao: 'ALTERACAO', entidade: 'Usuario', idEntidade: responsavel.id, pacienteId: paciente.id, detalhe: 'Novo link de primeiro acesso do responsável; o anterior deixou de valer.' })
-    return linkDoMock()
+    return linkDoMock(responsavel.email)
   }),
 
   // Item 8: as mesmas regras do servidor (servidor/src/clinica/servico-pacientes.ts).
@@ -194,7 +194,7 @@ export const pacientesMock: ServicoPaciente = {
       acao: 'ALTERACAO', entidade: 'Usuario', idEntidade: responsavel.id, pacienteId: paciente.id,
       detalhe: `Link para nova senha do responsável, gerado pela coordenação; o anterior deixou de valer. Motivo: ${motivo.trim()}`,
     })
-    return linkDoMock()
+    return linkDoMock(responsavel.email)
   }),
 
   editarResponsavel: (pacienteId, responsavelId, dados) => responder(() => {
@@ -238,8 +238,12 @@ export const pacientesMock: ServicoPaciente = {
   }),
 }
 
-function linkDoMock() {
-  return { token: `mock-${gerarId('acesso')}`, expiraEm: new Date(relogio.agora().getTime() + 72 * 3_600_000).toISOString() }
+/** O mock nao manda e-mail (item 23): o envio sai desligado, e a tela mostra so o link, como antes. */
+function linkDoMock(para: string) {
+  return {
+    token: `mock-${gerarId('acesso')}`, expiraEm: new Date(relogio.agora().getTime() + 72 * 3_600_000).toISOString(),
+    envio: { situacao: 'DESLIGADO' as const, para },
+  }
 }
 
 export const profissionaisMock: ServicoProfissional = {

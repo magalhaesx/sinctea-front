@@ -113,8 +113,12 @@ function buscarUsuario(id: string): UsuarioQualquer {
   return usuarioPorId(id) ?? naoEncontrado('Usuário')
 }
 
-function linkDoMock() {
-  return { token: `mock-${gerarId('acesso')}`, expiraEm: new Date(relogio.agora().getTime() + 72 * 3_600_000).toISOString() }
+/** O mock nao manda e-mail (item 23): o envio sai desligado, e a tela mostra so o link, como antes. */
+function linkDoMock(para: string) {
+  return {
+    token: `mock-${gerarId('acesso')}`, expiraEm: new Date(relogio.agora().getTime() + 72 * 3_600_000).toISOString(),
+    envio: { situacao: 'DESLIGADO' as const, para },
+  }
 }
 
 /** Perfis que esta tela pode conceder. Familia e escola nunca saem daqui. */
@@ -180,7 +184,7 @@ export const usuariosMock: ServicoUsuario = {
       acao: 'CRIACAO', entidade: 'Usuario', idEntidade: usuario.id,
       detalhe: `Conta criada para ${email} (${perfis.join(', ')}). Link de primeiro acesso gerado.`,
     })
-    return { usuario: publico(usuario), primeiroAcesso: linkDoMock() }
+    return { usuario: publico(usuario), primeiroAcesso: linkDoMock(usuario.email) }
   }),
 
   // As contas de demonstracao ja tem senha: o link do mock nao abre nada. O
@@ -196,7 +200,7 @@ export const usuariosMock: ServicoUsuario = {
       throw new ErroServico('CONFLITO', 'Esta pessoa já definiu a senha. Use o link para nova senha, com o motivo.')
     }
     auditar(sessao, { acao: 'ALTERACAO', entidade: 'Usuario', idEntidade: usuario.id, detalhe: 'Novo link de primeiro acesso gerado; o anterior deixou de valer.' })
-    return linkDoMock()
+    return linkDoMock(usuario.email)
   }),
 
   // Item 13: as mesmas regras do servidor (servidor/src/usuarios/servico-usuarios.ts).
@@ -216,7 +220,7 @@ export const usuariosMock: ServicoUsuario = {
       acao: 'ALTERACAO', entidade: 'Usuario', idEntidade: usuario.id,
       detalhe: `Link para nova senha gerado pela administração; o anterior deixou de valer. Motivo: ${motivo.trim()}`,
     })
-    return linkDoMock()
+    return linkDoMock(usuario.email)
   }),
 
   meusDadosProfissionais: () => responder(() => {

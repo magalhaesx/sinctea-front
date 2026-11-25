@@ -46,6 +46,7 @@ export const servicosApi: Servicos = {
     obterPrimeiroAcesso: (token) => r('GET', `/auth/primeiro-acesso/${id(token)}`),
     concluirPrimeiroAcesso: (token, senha) => naVaga(r('POST', `/auth/primeiro-acesso/${id(token)}`, { senha })),
     darCienciaDaNovaSenha: () => r('POST', '/auth/aviso-de-nova-senha'),
+    pedirNovaSenha: (email) => r('POST', '/auth/nova-senha', { email }),
   },
 
   pacientes: {
