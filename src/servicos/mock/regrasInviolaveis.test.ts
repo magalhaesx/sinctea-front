@@ -675,6 +675,25 @@ describe('regras 2 e 3 — escola so le o cartao, com consentimento', () => {
     expect(texto).not.toContain('descricaoTecnica')
     expect(texto).not.toContain('dominio')
   })
+
+  it('a trilha de autonomia (item 24): a familia e a equipe leem a mesma; a escola, nunca', async () => {
+    await entrarComo('RESPONSAVEL')
+    const daFamilia = await chamar(s.familia.obterTrilhaAutonomia('p-001'))
+    expect(daFamilia.habilidades.length).toBeGreaterThan(0)
+    expect(daFamilia.estrategias.length).toBeGreaterThan(0)
+    expect(await ultimaAuditoria()).toMatchObject({ acao: 'LEITURA_AUTORIZADA', entidade: 'TrilhaAutonomia', pacienteId: 'p-001' })
+    const texto = JSON.stringify(daFamilia)
+    for (const proibido of ['descricaoTecnica', 'dominio', 'percentual', 'nivelSuporte', 'criterio']) expect(texto).not.toContain(proibido)
+
+    await entrarComo('TERAPEUTA')
+    const daClinica = await chamar(s.pacientes.obterTrilhaAutonomia('p-001'))
+    expect({ ...daClinica, geradaEm: '' }).toEqual({ ...daFamilia, geradaEm: '' })
+
+    await entrarComo('PROFESSOR')
+    expect((await erroDe(s.pacientes.obterTrilhaAutonomia('p-001'))).codigo).toBe('ACESSO_NEGADO')
+    expect((await erroDe(s.familia.obterTrilhaAutonomia('p-001'))).codigo).toBe('ACESSO_NEGADO')
+    expect(await ultimaAuditoria()).toMatchObject({ acao: 'ACESSO_NEGADO', entidade: 'TrilhaAutonomia', perfil: 'PROFESSOR', pacienteId: 'p-001' })
+  })
 })
 
 describe('regra 4 — duas redacoes, a acessivel escrita pelo terapeuta', () => {

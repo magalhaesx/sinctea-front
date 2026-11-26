@@ -7,6 +7,7 @@ import {
   emailValido, erroDoMotivoDaNovaSenha, escolaParecida, idadeEmAnos, normalizarEmail, paraBusca, situacaoConsentimento,
 } from '@sinctea/compartilhado/dominio/regras'
 import { alcancaClinicamente, exigirPacienteClinico } from './acesso'
+import { detalheDaTrilha, trilhaDoMock } from './trilha'
 import {
   auditar, banco, exigirPerfil, exigirSessao, exigirValido, gerarId, negar, paginar, relogio, responder, todosUsuarios, usuarioPorId,
 } from './infra'
@@ -99,6 +100,14 @@ export const pacientesMock: ServicoPaciente = {
     const { sessao, paciente } = exigirPacienteClinico(id, 'Paciente')
     auditar(sessao, { acao: 'LEITURA_AUTORIZADA', entidade: 'Paciente', idEntidade: id, pacienteId: id, detalhe: 'Ficha do paciente.' })
     return detalhe(paciente)
+  }),
+
+  // A equipe do paciente e a coordenacao: a mesma resposta da familia (item 24).
+  obterTrilhaAutonomia: (id) => responder(() => {
+    const { sessao, paciente } = exigirPacienteClinico(id, 'TrilhaAutonomia')
+    const trilha = trilhaDoMock(paciente)
+    auditar(sessao, { acao: 'LEITURA_AUTORIZADA', entidade: 'TrilhaAutonomia', pacienteId: id, detalhe: detalheDaTrilha(trilha) })
+    return trilha
   }),
 
   criar: (dados) => responder(() => {

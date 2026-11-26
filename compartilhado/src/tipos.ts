@@ -804,6 +804,46 @@ export interface ObjetivoAcessivel {
   percentualAtual: number
 }
 
+// ---------------------------------------------------------------- Trilha de autonomia
+
+/** Um mes do calendario de Manaus, "AAAA-MM", sem dia, hora nem fuso. */
+export type MesCivil = string
+
+/**
+ * Trilha de autonomia (item 24; objetivo 5.6 do pre-projeto), a mesma resposta
+ * para a clinica e para a familia. Nada de autoria nova: so projecoes do que a
+ * equipe ja escreveu, no plano vigente, como foi escrito (regra 4) — nenhum
+ * texto gerado, resumido ou reescrito. Montada por montarTrilha
+ * (dominio/trilha.ts), a mesma no mock e no servidor.
+ *
+ * Deliberadamente sem nivel de suporte, diagnostico, dominio, redacao tecnica,
+ * percentual, sessao, ocorrencia ou evolucao. A escola nao le a trilha.
+ */
+export interface TrilhaAutonomia {
+  pacienteId: string
+  /** O nome como esta no cadastro. */
+  nome: string
+  /**
+   * Curriculo de Habilidades Funcionais: os objetivos DOMINADO do plano
+   * vigente, do dominio mais recente para o mais antigo.
+   */
+  habilidades: Array<{
+    /** A redacao acessivel do objetivo, escrita pelo profissional. */
+    descricaoAcessivel: string
+    /** O mes, em Manaus, em que o dominio foi confirmado: "desde novembro de 2026". */
+    desde: MesCivil
+  }>
+  /** Perfil de Suporte: os cartoes de estrategia dos objetivos do plano vigente, como foram escritos. */
+  estrategias: Array<{
+    tituloSimples: string
+    oQueFazer: string[]
+    oQueEvitar: string[]
+    sinalAlerta: string
+  }>
+  /** Quando esta leitura foi montada: a folha impressa diz "Emitida em". */
+  geradaEm: DataIso
+}
+
 // ---------------------------------------------------------------- Escola e consentimento
 
 export type EscopoAcesso = 'CARTAO_ESTRATEGIA' | 'REGISTRO_OCORRENCIA'

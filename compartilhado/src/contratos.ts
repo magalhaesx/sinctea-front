@@ -9,7 +9,7 @@ import type {
   ConteudoRelatorio, DadosProfissionais, MotivoAtencao, Pagina, PacienteDetalhe, PacienteResumo, PedidoRelatorio,
   Perfil, PessoaDaTrilha, PlanoParaValidacao, PlanoTerapeutico, PonteEscola, PrimeiroAcessoPublico, Profissional, RegistroAtividade,
   RegistroAdministrativo, RegistroDaTrilha, FiltroTrilhaAdministrativa, RelatorioEvolucao, ResumoClinica, Resultado, Sessao, SessaoUsuario,
-  SessoesPorProfissional, Usuario,
+  SessoesPorProfissional, TrilhaAutonomia, Usuario,
 } from './tipos.js'
 
 /**
@@ -81,6 +81,11 @@ export interface ServicoPaciente {
    * esta pendente.
    */
   editarResponsavel(pacienteId: string, responsavelId: string, dados: EdicaoResponsavel): Promise<ResponsavelNaFicha>
+  /**
+   * A trilha de autonomia (item 24), pela equipe do paciente e pela
+   * coordenacao. A mesma resposta da familia; a leitura entra na auditoria.
+   */
+  obterTrilhaAutonomia(pacienteId: string): Promise<TrilhaAutonomia>
 }
 
 export interface ServicoProfissional {
@@ -194,6 +199,11 @@ export interface ServicoAtividadeCasa {
 export interface ServicoFamilia {
   listarFilhos(filtro?: FiltroPaginacao): Promise<Pagina<FilhoResumo>>
   listarObjetivos(pacienteId: string, filtro?: FiltroPaginacao): Promise<Pagina<ObjetivoAcessivel>>
+  /**
+   * A trilha de autonomia (item 24), por qualquer responsavel vinculado, legal
+   * ou nao. A mesma resposta da clinica; a leitura entra na auditoria.
+   */
+  obterTrilhaAutonomia(pacienteId: string): Promise<TrilhaAutonomia>
 }
 
 export interface ServicoConsentimento {

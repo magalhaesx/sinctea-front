@@ -16,6 +16,7 @@ import {
   ehResponsavelDe, exigirPacienteClinico, exigirPacienteClinicoOuFamilia, exigirPacienteDaFamilia,
   exigirResponsavelLegal,
 } from './acesso'
+import { detalheDaTrilha, trilhaDoMock } from './trilha'
 import type { AtividadeGuardada, ExecucaoGuardada } from './dados'
 import {
   auditar, banco, exigirPerfil, exigirValido, gerarId, gravarSessao, naoEncontrado, paginar,
@@ -173,6 +174,14 @@ export const familiaMock: ServicoFamilia = {
       percentualAtual: o.percentualAtual,
     }))
     return paginar(itens, filtro)
+  }),
+
+  // Qualquer responsavel vinculado, legal ou nao: a mesma resposta da clinica (item 24).
+  obterTrilhaAutonomia: (pacienteId) => responder(() => {
+    const { sessao, paciente } = exigirPacienteDaFamilia(pacienteId, 'TrilhaAutonomia')
+    const trilha = trilhaDoMock(paciente)
+    auditar(sessao, { acao: 'LEITURA_AUTORIZADA', entidade: 'TrilhaAutonomia', pacienteId, detalhe: detalheDaTrilha(trilha) })
+    return trilha
   }),
 }
 

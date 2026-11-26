@@ -130,7 +130,7 @@ export const ENTIDADES_AUDITADAS = [
   'Paciente', 'VinculoFamiliar', 'Responsavel', 'PlanoTerapeutico', 'Objetivo', 'CartaoEstrategia', 'Sessao',
   'RegistroAtividade', 'OcorrenciaComportamental', 'OcorrenciaEscolar', 'AtividadeCasa', 'ExecucaoAtividadeCasa',
   'Consentimento', 'ConviteEscolar', 'VinculoEscolar', 'Escola', 'RelatorioEvolucao', 'Indicadores', 'Usuario',
-  'Profissional', 'RegistroAuditoria', 'RecuperacaoDeSenha',
+  'Profissional', 'RegistroAuditoria', 'RecuperacaoDeSenha', 'TrilhaAutonomia',
 ] as const
 
 /**
@@ -161,6 +161,7 @@ export const NOME_DA_ENTIDADE: Record<(typeof ENTIDADES_AUDITADAS)[number], stri
   Profissional: 'Dados profissionais',
   RegistroAuditoria: 'Registro de auditoria',
   RecuperacaoDeSenha: 'Pedido de nova senha',
+  TrilhaAutonomia: 'Trilha de autonomia',
 }
 
 /** O nome por extenso; o que nao esta na lista sai com o nome tecnico, e nao some. */

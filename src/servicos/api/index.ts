@@ -60,6 +60,7 @@ export const servicosApi: Servicos = {
       r('POST', `/pacientes/${id(pacienteId)}/responsaveis/${id(responsavelId)}/nova-senha`, { motivo }),
     editarResponsavel: (pacienteId, responsavelId, dados) =>
       r('PUT', `/pacientes/${id(pacienteId)}/responsaveis/${id(responsavelId)}`, dados),
+    obterTrilhaAutonomia: (pacienteId) => r('GET', `/pacientes/${id(pacienteId)}/trilha`),
   },
 
   profissionais: {
@@ -124,6 +125,7 @@ export const servicosApi: Servicos = {
   familia: {
     listarFilhos: (filtro) => r('GET', q('/familia/filhos', filtro)),
     listarObjetivos: (pacienteId, filtro) => r('GET', q(`/familia/filhos/${id(pacienteId)}/objetivos`, filtro)),
+    obterTrilhaAutonomia: (pacienteId) => r('GET', `/familia/filhos/${id(pacienteId)}/trilha`),
   },
 
   consentimentos: {
