@@ -34,6 +34,7 @@ import { Consentimento } from './app/familia/Consentimento'
 import { Alunos } from './app/escola/Alunos'
 import { CartaoEstrategias } from './app/escola/Cartao'
 import { Ocorrencia } from './app/escola/Ocorrencia'
+import { TrilhaDeAutonomia } from './app/TrilhaDeAutonomia'
 import { Sobre } from './paginas/Sobre'
 import { AvisoDeJanela } from './app/AvisoDeJanela'
 
@@ -69,7 +70,9 @@ const titulos: [padrao: string, titulo: string][] = [
   ['/app/clinica/pacientes/:id/evolucao', 'Evolução por objetivo'],
   ['/app/clinica/pacientes/:id/relatorio', 'Relatório de evolução'],
   ['/app/clinica/pacientes/:id/relatorio/:relatorioId', 'Relatório emitido'],
+  ['/app/clinica/pacientes/:id/trilha', 'Trilha de autonomia'],
   ['/app/familia/atividades/:id', 'Atividade em casa'],
+  ['/app/familia/filhos/:id/trilha', 'Trilha de autonomia'],
   ['/app/escola', 'Meus alunos'],
   ['/app/escola/:pacienteId', 'Cartão de estratégias'],
   ['/app/escola/:pacienteId/ocorrencia', 'Registrar ocorrência'],
@@ -141,6 +144,7 @@ export function App() {
         <Route path="clinica/pacientes/:id/evolucao" element={protegida(CLINICA, <Evolucao />)} />
         <Route path="clinica/pacientes/:id/relatorio" element={protegida(CLINICA, <Relatorio />)} />
         <Route path="clinica/pacientes/:id/relatorio/:relatorioId" element={protegida(CLINICA, <RelatorioEmitido />)} />
+        <Route path="clinica/pacientes/:id/trilha" element={protegida(CLINICA, <TrilhaDeAutonomia area="cli" />)} />
 
         <Route path="coordenacao" element={protegida(['COORDENADOR'], <PainelCoordenacao />)} />
         <Route path="coordenacao/planos" element={protegida(['COORDENADOR'], <Planos />)} />
@@ -152,6 +156,7 @@ export function App() {
         <Route path="familia" element={protegida(['RESPONSAVEL'], <PainelFamilia />)} />
         <Route path="familia/consentimento" element={protegida(['RESPONSAVEL'], <Consentimento />)} />
         <Route path="familia/atividades/:id" element={protegida(['RESPONSAVEL'], <Atividade />)} />
+        <Route path="familia/filhos/:id/trilha" element={protegida(['RESPONSAVEL'], <TrilhaDeAutonomia area="fam" />)} />
 
         <Route path="escola" element={protegida(['PROFESSOR'], <Alunos />)} />
         <Route path="escola/:pacienteId" element={protegida(['PROFESSOR'], <CartaoEstrategias />)} />

@@ -157,12 +157,26 @@ describe('a versao publicada', () => {
     expect(pacote).toContain('Para emitir, o paciente precisa de um plano vigente.')
   })
 
-  it('imprime o cabecalho da folha do relatorio: paciente, periodo e destinatario', () => {
+  it('imprime o cabecalho da folha do relatorio e o da trilha de autonomia: o documento vai para o papel', () => {
     // A impressao esconde todo header, que e a barra do topo; o da folha e
-    // documento, e precisa ir para o papel.
+    // documento, e precisa ir para o papel: paciente, periodo e destinatario
+    // no relatorio (item 18), nome e data na trilha (item 24).
     const impressao = estilos.match(/@media print\{(.*?\})\}/s)?.[1] ?? ''
     expect(impressao).toContain('header,nav,.nao-imprimir{display:none!important}')
-    expect(impressao).toContain('.folha-relatorio header{display:block!important}')
+    expect(impressao).toContain('.folha-relatorio header,.folha-trilha header{display:block!important}')
+  })
+
+  it('leva a trilha de autonomia do item 24: a tela 26, o botao da ficha e o link do painel da familia', () => {
+    for (const texto of [
+      '/trilha', 'Escrito pela equipe clínica. Vale para a escola, o trabalho e outros espaços do dia a dia.',
+      'Ainda não há habilidades dominadas registradas. Elas aparecem aqui quando a equipe confirma o domínio de um objetivo.',
+      'A equipe ainda não escreveu estratégias para ', ' já domina', 'Como apoiar ', 'Emitida em ', 'Sinal de alerta',
+    ]) {
+      expect(pacote, texto).toContain(texto)
+    }
+    expect(pacote).toMatch(/para:`\/app\/clinica\/pacientes\/\$\{\w+\.id\}\/trilha`[^}]*children:"Trilha de autonomia"/)
+    expect(pacote).toMatch(/to:`\/app\/familia\/filhos\/\$\{\w+\.id\}\/trilha`[^}]*children:"Trilha de autonomia"/)
+    expect(pacote).toContain('/familia/filhos/${')
   })
 
   it('justifica o texto corrido do item 20, com hifenizacao em portugues e 65 caracteres por linha', () => {

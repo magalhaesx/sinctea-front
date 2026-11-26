@@ -232,6 +232,14 @@ export function PainelFamilia() {
                     ))}
                   </ul>
                 )}
+
+                {/* Item 24: o que ja domina e como apoiar, para levar a outros
+                    espacos. Vale para qualquer responsavel vinculado. */}
+                <p>
+                  <Link to={`/app/familia/filhos/${filho.id}/trilha`} className="inline-flex min-h-11 items-center font-bold text-fam-ink underline">
+                    Trilha de autonomia
+                  </Link>
+                </p>
               </section>
 
               <section aria-labelledby="h-atividades" className="flex flex-col gap-3">

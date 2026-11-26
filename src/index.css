@@ -85,18 +85,27 @@ body {
   hyphens: manual;
 }
 
-/* Impressao: o que vai para o papel e a folha do relatorio (tela 10). O PDF
-   sai daqui, pelo proprio navegador — nao ha back-end para guardar arquivo. */
+/* O que so existe no papel: o titulo da folha da trilha de autonomia (tela 26),
+   que na tela ja e o h1 da pagina, logo acima dela. */
+.so-no-papel { display: none; }
+
+/* Impressao: o que vai para o papel e a folha do relatorio (tela 10) e a da
+   trilha de autonomia (tela 26). O PDF sai daqui, pelo proprio navegador — nao
+   ha back-end para guardar arquivo. */
 @media print {
   body { background: #fff; }
+
+  .so-no-papel { display: block !important; }
 
   /* Cromo do produto: barra do topo, gaveta do menu, trilha de navegacao e os
      controles da tela. Nada disso pertence ao documento. */
   header, nav, .nao-imprimir { display: none !important; }
 
   /* O cabecalho da folha e documento, e nao cromo: paciente, periodo e
-     destinatario vao para o papel. Mais especifico, vence a regra acima. */
-  .folha-relatorio header { display: block !important; }
+     destinatario vao para o papel. Mais especifico, vence a regra acima. A
+     folha da trilha de autonomia (tela 26) leva o nome e a data do mesmo jeito. */
+  .folha-relatorio header,
+  .folha-trilha header { display: block !important; }
 
   main {
     padding: 0 !important;
@@ -107,16 +116,20 @@ body {
   /* A moldura do prototipo nao faz sentido no papel. */
   #conteudo > div > div { border: 0 !important; border-radius: 0 !important; }
 
-  .folha-relatorio {
+  .folha-relatorio,
+  .folha-trilha {
     border: 0;
     padding: 0;
     background: #fff;
   }
 
-  /* Objetivo cortado entre duas paginas atrapalha a leitura do documento. */
+  /* Objetivo cortado entre duas paginas atrapalha a leitura do documento. Na
+     trilha, a estrategia vai inteira para uma pagina: titulo e os tres blocos. */
   .folha-relatorio li,
   .folha-relatorio section,
-  .folha-relatorio footer { break-inside: avoid; }
+  .folha-relatorio footer,
+  .folha-trilha li,
+  .folha-trilha .estrategia { break-inside: avoid; }
 }
 
 /* Modo de alto contraste — preferencia oferecida pelo proprio produto */
