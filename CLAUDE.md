@@ -3,7 +3,7 @@
 Trabalho de Conclusão de Curso · Sistemas de Informação (Noturno) · Centro
 Universitário FAMETRO
 Eduardo da Cruz Monteiro (2382960) · Lucas Magalhães Pinto (2394090)
-Orientadora: Profa. Luana Leal · Entrega final: 23/11/2026
+Orientadora: Profa. Luana Leal · Data final: banca em 14/12/2026
 
 > **Leia este arquivo inteiro antes de escrever código.** Ele contém regras que não
 > podem ser inferidas do código, e várias têm consequência legal.
@@ -200,18 +200,18 @@ Atualizado em 18/10/2026, lendo o código — não a memória.
   (item 19c); o dicionário registra também a configuração do banco
   (TimeZone=UTC). Não se editam à mão: mudou o esquema, geram-se de novo
 - Documento de IHC e UX/UI com avaliação heurística e conformidade
-- **As 22 telas existem e falam com a camada de serviços**, e a tela 25,
-  trilha administrativa (item 13), em 25 rotas do produto, mais `/sobre` e a vitrine `/dev/estados`, que só existe no servidor de
+- **As 22 telas existem e falam com a camada de serviços**, e as telas 25,
+  trilha administrativa (item 13), e 26, trilha de autonomia (item 24), em 27 rotas do produto, mais `/sobre` e a vitrine `/dev/estados`, que só existe no servidor de
   desenvolvimento. Nenhuma tela lê dado fixo: `src/dados` foi removido, e o teste
   de arquitetura impede que volte. A tela 20, ajuda, é texto fixo por natureza
 - **Camada de serviços**: `compartilhado/src/contratos.ts` com 16 serviços; implementação
   simulada que aplica controle de acesso e auditoria; o cliente da API, que
   não aplica regra nenhuma. A versão publicada usa só a API, e o mock fica
   fora do pacote; no desenvolvimento, `VITE_API_URL` escolhe entre as duas
-- **778 testes em 66 arquivos, nos três pacotes**, rodados por um único
+- **803 testes em 69 arquivos, nos três pacotes**, rodados por um único
   `npm test` na raiz, sem passo manual. O principal ainda é
   `src/servicos/mock/regrasInviolaveis.test.ts`, que verifica as regras
-  invioláveis na camada de dados, e não na tela. Os 388 do servidor rodam contra
+  invioláveis na camada de dados, e não na tela. Os 398 do servidor rodam contra
   um PostgreSQL 17 de verdade
 - **As seis regras verificadas** em `docs/06`: para cada teste citado, a regra foi
   quebrada de propósito para confirmar que ele falha, e as quebras que não
@@ -372,7 +372,7 @@ em produção (o antigo passo B5) foi cancelada. No código, hoje:
   depois ele é o login da pessoa — conferido antes e na própria gravação. O
   e-mail fica em minúsculas e único, e o de uma conta da equipe ou da escola é
   recusado. `ALTERACAO` com o `valorAnterior` só do que mudou. Quem responde
-  legalmente não se edita (afirmação 2, abaixo). Testes em
+  legalmente não se edita (afirmação 1, abaixo). Testes em
   `servidor/test/responsavel.test.ts`
 - **Item 8, parte 2 — link para nova senha do responsável** (decisão de
   18/10, que muda a de 16/10). Depois que o responsável definiu a senha, só a
@@ -693,6 +693,32 @@ em produção (o antigo passo B5) foi cancelada. No código, hoje:
   senha."*. O convite escolar continua sem e-mail. Testes em
   `servidor/test/recuperacao.test.ts`, `envio.test.ts` e `email.test.ts`,
   quebras no `docs/06`
+- **Item 24 — a Trilha de Autonomia mínima** (objetivo 5.6 do pré-projeto;
+  decisão do Lucas em 26/11/2026). A versão mínima do `docs/08`: nenhuma
+  autoria nova, só projeções do que a equipe já escreveu no plano vigente, e a
+  regra 4 inteira — nada gerado, resumido nem reescrito; o texto sai byte a
+  byte. Um tipo só, `TrilhaAutonomia`, montado por `montarTrilha`
+  (`compartilhado/src/dominio/trilha.ts`), o mesmo no mock e no servidor:
+  *"Habilidades que {nome} já domina"* — os objetivos `DOMINADO` com
+  `dominadoEm`, na redação acessível, com *"desde {mês de ano}"* no calendário
+  de Manaus, do mais recente para o mais antigo — e *"Como apoiar {nome}"* —
+  os cartões de estratégia dos objetivos do plano vigente, como foram escritos.
+  Sem domínio, redação técnica, percentual, nível de suporte, diagnóstico,
+  sessão, ocorrência nem evolução. `GET /api/pacientes/:id/trilha`, da equipe
+  do paciente e da coordenação, e `GET /api/familia/filhos/:id/trilha`, de
+  qualquer responsável vinculado, legal ou não, com a mesma resposta
+  (`servidor/src/trilha/`); a escola, a administração e quem não tem vínculo
+  ouvem `ACESSO_NEGADO`, na trilha com o paciente, e cada leitura deixa uma
+  `LEITURA_AUTORIZADA` com o paciente, na entidade `TrilhaAutonomia`. Sem
+  migração. A tela 26, um componente só nas duas áreas
+  (`src/app/TrilhaDeAutonomia.tsx` e `src/componentes/FolhaTrilha.tsx`): o
+  botão "Trilha de autonomia" na ficha (tela 5) e o link no painel da família
+  (tela 15), para o filho escolhido; "Imprimir" leva só a folha — nome,
+  *"Emitida em {data}"*, o subtítulo fixo e as duas partes —, como a do
+  relatório (tela 10b). O caso de uso novo é *Consultar a trilha de
+  autonomia*; a caixa o numera UC22, que já é a lista de alunos do professor
+  (regra 2), e o número fica com o Cowork. Testes em
+  `servidor/test/trilha.test.ts`, quebras no `docs/06`
 - `npm run criar-administrador -w @sinctea/servidor -- .env.producao --nome
   "Nome Completo" --email voce@exemplo.com` cria o primeiro administrador:
   nome e e-mail vêm da linha de comando, e só a senha é pedida, escondida e duas
@@ -738,8 +764,9 @@ de 16/11 a 23/11 — artigo, slides, vídeo e ensaio. O envio de e-mail, com a
 recuperação de senha sem passar pela clínica, saiu desta lista em 25/11/2026
 (item 23).
 
-Duas decisões aguardam a orientadora, e as datas acima serão revistas quando ela
-responder: a data final (23/11 ou 30/11) e a Trilha de Autonomia (`docs/08`).
+As duas decisões que aguardavam a orientadora foram tomadas pelo Lucas em
+26/11/2026: a data final passa a ser a banca, em 14/12/2026, e a Trilha de
+Autonomia entra na versão mínima do `docs/08` (item 24).
 
 As entregas de documentação do pré-projeto — matriz de rastreabilidade, BPMN, C4
 e estados do Objetivo — não vivem neste repositório; o estado de cada uma está no
@@ -749,14 +776,16 @@ e estados do Objetivo — não vivem neste repositório; o estado de cada uma es
 
 Enquanto não se resolverem, não devem ser afirmadas na defesa:
 
-1. **A meta 8.5 da ODS 8 não tem sustentação no modelo.** Ela depende de uma
-   entidade de registro funcional que não existe em nenhuma das 22 classes. Ou a
-   entidade entra no modelo, ou a justificativa é reescrita. A decisão está com a
-   orientadora (`docs/08`, decisão 2).
-2. **Quem responde legalmente não se corrige.** Na edição do responsável
+1. **Quem responde legalmente não se corrige.** Na edição do responsável
    (item 8), o `responsavelLegal` do vínculo não se edita: a resposta dada no
    cadastro fica como está, e não há, no sistema, como corrigi-la. Limite
    declarado em 18/10.
+
+A meta 8.5 da ODS 8 saiu desta lista em 26/11/2026 (item 24), com o limite
+exato: a trilha de autonomia é uma projeção mínima do que a equipe já escreveu —
+as habilidades dominadas do plano vigente, na redação acessível, e os cartões de
+estratégia —, sem entidade de registro funcional. O sistema não registra
+experiência de trabalho, e nenhuma das 22 classes mudou.
 
 O sistema sem rede saiu desta lista em 21/11/2026 (item 22), com o limite
 exato: só os toques do "Como foi esta tentativa?" funcionam sem conexão, e só
@@ -819,9 +848,8 @@ que nenhum deles mudou. O diagrama de classes não muda por causa disso: a vers�
 viaja dentro do próprio `hashTermo`.
 
 **Pendências conhecidas do modelo**
-- Não existe entidade de registro funcional (ver a afirmação 1 acima)
-- Trilha de Autonomia: movida para trabalhos futuros em setembro; a decisão
-  voltou à orientadora (`docs/08`)
+- Não existe entidade de registro funcional: a trilha de autonomia (item 24)
+  é projeção do que já existe, e a meta 8.5 fica no limite declarado acima
 - `usuario.email` é único com diferença de maiúsculas: `Ana@x` e `ana@x` seriam
   duas contas. Na Etapa 10, o login normaliza para minúsculas, e a unicidade
   passa a valer sobre `lower(email)`

@@ -164,6 +164,9 @@ describe('a versao publicada', () => {
     const impressao = estilos.match(/@media print\{(.*?\})\}/s)?.[1] ?? ''
     expect(impressao).toContain('header,nav,.nao-imprimir{display:none!important}')
     expect(impressao).toContain('.folha-relatorio header,.folha-trilha header{display:block!important}')
+    // O titulo da folha da trilha so existe no papel: na tela, ja e o h1 da pagina.
+    expect(impressao).toContain('.so-no-papel{display:block!important}')
+    expect(estilos.replace(/@media print\{.*?\}\}/gs, '')).toContain('.so-no-papel{display:none}')
   })
 
   it('leva a trilha de autonomia do item 24: a tela 26, o botao da ficha e o link do painel da familia', () => {
