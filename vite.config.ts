@@ -56,5 +56,28 @@ export default defineConfig({
       'compartilhado',
       'servidor',
     ],
+    // Item 25: "npm run test:cobertura". Com projetos, a cobertura e uma so,
+    // configurada aqui. O limite de 60% (linhas e ramos) vale no dominio do
+    // compartilhado e nos modulos do servidor que aplicam as seis regras:
+    // acesso, consentimento (familia), escola, auditoria e autenticacao. O
+    // resto e medido e informado, sem limite.
+    coverage: {
+      provider: 'v8',
+      // Sem isto, o arquivo que nenhum teste carrega (as telas, por exemplo)
+      // aparecia com uma linha so, coberta: 100% em vez de 0%.
+      experimentalAstAwareRemapping: true,
+      reportsDirectory: 'relatorios/cobertura',
+      reporter: ['text-summary', 'html', 'json-summary'],
+      include: ['src/**/*.{ts,tsx}', 'compartilhado/src/**/*.ts', 'servidor/src/**/*.ts', 'servidor/prisma/**/*.ts'],
+      exclude: ['**/*.test.{ts,tsx}', '**/*.d.ts', 'servidor/src/gerado/**', 'src/main.tsx'],
+      thresholds: {
+        'compartilhado/src/dominio/**': { lines: 60, branches: 60 },
+        'servidor/src/acesso/**': { lines: 60, branches: 60 },
+        'servidor/src/familia/**': { lines: 60, branches: 60 },
+        'servidor/src/escola/**': { lines: 60, branches: 60 },
+        'servidor/src/auditoria/**': { lines: 60, branches: 60 },
+        'servidor/src/autenticacao/**': { lines: 60, branches: 60 },
+      },
+    },
   },
 })

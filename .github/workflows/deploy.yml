@@ -50,7 +50,17 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm test
+      # Os tres pacotes e a verificacao que os atravessa (a fila offline contra o
+      # servidor), com a cobertura (item 25): o vitest reprova abaixo de 60% de
+      # linhas ou de ramos nas regras criticas, e o resumo vai para o log.
+      - run: npm run test:cobertura
+      - name: Guardar o relatorio de cobertura
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: cobertura
+          path: relatorios/cobertura
+          if-no-files-found: ignore
       - run: npm run build
       - run: npm run build:servidor
 
