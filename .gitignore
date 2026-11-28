@@ -15,3 +15,7 @@ servidor/src/gerado/
 # O SQL do papel da aplicacao, com a senha de verdade. O modelo versionado e
 # servidor/prisma/papel-aplicacao.exemplo.sql.
 servidor/prisma/papel-aplicacao.sql
+
+# Item 25: os relatorios da verificacao automatica (cobertura, Playwright,
+# Lighthouse). No CI, viram artefatos do run.
+relatorios/

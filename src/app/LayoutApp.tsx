@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent }
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { BarraPreferencias } from '../componentes/BarraPreferencias'
 import { Botao } from '../ui/Botao'
+import { PularParaOConteudo } from '../ui/PularParaOConteudo'
 import { usarSessao } from '../contexto/Sessao'
 import { usarPendentes } from '../fila'
 import type { Perfil } from '../servicos'
@@ -170,7 +171,7 @@ export function LayoutApp() {
   return (
     <div className="min-h-screen">
       <div ref={atras} className="flex min-h-screen flex-col">
-        <a className="pular" href="#conteudo">Pular para o conteúdo</a>
+        <PularParaOConteudo />
 
         <header className="flex items-center justify-between gap-3 border-b border-cromo-linha px-3 py-2.5 sm:px-5">
           <div className="flex min-w-0 items-center gap-2.5">

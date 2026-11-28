@@ -76,8 +76,61 @@ jobs:
           test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/api/inexistente)" = 404
           curl -s http://localhost:8080/api/inexistente | grep -q '"statusCode":404'
 
+  # Item 25: o pacote de producao no navegador, sobre um banco descartavel deste
+  # job, com os dados ficticios da semente (verificacao/servidor.mjs). A semente
+  # nunca toca o Neon: aqui nao ha segredo nenhum.
+  navegador:
+    runs-on: ubuntu-24.04
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: sinctea
+          POSTGRES_PASSWORD: sinctea
+          POSTGRES_DB: sinctea
+          POSTGRES_INITDB_ARGS: --encoding=UTF8 --locale=C
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U sinctea"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+
+    env:
+      URL_ADMIN_VERIFICACAO: postgresql://sinctea:sinctea@localhost:5432/sinctea
+
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm run build:servidor
+      - name: Instalar o Chromium do Playwright
+        run: npx playwright install --with-deps chromium
+
+      # Reprova com violacao "critical" ou "serious" do axe (WCAG 2.2 AA), em
+      # todas as rotas de cada perfil, em 1280 e 375 px, com e sem alto
+      # contraste e texto maior; e com os fluxos de teclado.
+      - name: Acessibilidade e teclado (Playwright e axe)
+        run: npm run verificar:navegador
+
+      - name: Guardar os relatorios do navegador
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: navegador
+          path: |
+            relatorios/playwright
+            relatorios/playwright-resultados
+          if-no-files-found: ignore
+
   migrar:
-    needs: verificar
+    needs: [verificar, navegador]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     steps:

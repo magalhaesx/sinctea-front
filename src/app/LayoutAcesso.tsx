@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { BarraPreferencias } from '../componentes/BarraPreferencias'
+import { PularParaOConteudo } from '../ui/PularParaOConteudo'
 
 /**
  * Moldura das telas de acesso (entrar e aceite de convite): sem menu, porque
@@ -13,7 +14,7 @@ import { BarraPreferencias } from '../componentes/BarraPreferencias'
 export function LayoutAcesso({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col">
-      <a className="pular" href="#conteudo">Pular para o conteúdo</a>
+      <PularParaOConteudo />
 
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-cromo-linha px-5 py-3">
         <div className="flex min-w-0 items-baseline gap-2.5">
