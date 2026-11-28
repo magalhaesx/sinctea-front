@@ -50,11 +50,14 @@ export default defineConfig({
   // Render serve, e o cookie de sessao funciona sem CORS.
   server: { proxy: { '/api': 'http://localhost:3000' } },
   test: {
-    // Um "npm test" na raiz roda os tres pacotes, e e esse o comando do CI.
+    // Um "npm test" na raiz roda os tres pacotes e a verificacao que os
+    // atravessa (item 25: a fila do front contra o servidor), e e esse o
+    // comando do CI.
     projects: [
       { extends: true, test: { name: 'front', include: ['src/**/*.test.{ts,tsx}'] } },
       'compartilhado',
       'servidor',
+      'verificacao',
     ],
     // Item 25: "npm run test:cobertura". Com projetos, a cobertura e uma so,
     // configurada aqui. O limite de 60% (linhas e ramos) vale no dominio do
