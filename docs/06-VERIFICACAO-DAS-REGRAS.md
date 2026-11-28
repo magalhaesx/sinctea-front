@@ -836,3 +836,186 @@ servidor, a primeira garantia que muda de categoria é a imutabilidade.
 Cada quebra foi desfeita depois de rodar, e a migração ou o modelo do papel voltou idêntico, byte a
 byte. Como cada execução cria um banco do zero, alterar a migração vale para o
 teste seguinte sem tocar em banco nenhum já existente.
+
+---
+
+## 8. Verificação automática (item 25)
+
+Em 28/11/2026, as metas de validação do pré-projeto (`docs/08`) viraram
+verificações que rodam a cada push, no CI. Os números abaixo são do run
+46169981439 do workflow Publicar, no commit `7c36e3b`, com os três jobs verdes
+(`verificar`, `navegador` e `migrar`). Os relatórios completos ficam como
+artefatos do run: `cobertura` e `navegador` (Playwright e Lighthouse).
+
+### 8.1 Acessibilidade — meta: nenhuma violação crítica ou séria (WCAG 2.2 AA)
+
+O axe-core 4.14 (`@axe-core/playwright` 4.14.0, Playwright 1.65.1, Chromium), com
+as tags `wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa` e `wcag22aa`, sobre o pacote de
+produção servido pelo Nest de produção (`NODE_ENV=production`), num banco
+descartável do próprio job, migrado e semeado com os dados fictícios da semente
+(`verificacao/servidor.mjs`). A senha das contas fictícias é sorteada a cada
+execução e não é impressa; o Neon não entra, e o job não tem segredo nenhum.
+
+| Perfil | O que passa pelo axe |
+|---|---|
+| Sem conta | Entrar; entrar com "Esqueci minha senha" aberto; convite válido e convite que não existe; primeiro acesso válido e link que não existe; `/sobre` |
+| Profissional da clínica | Painel, pacientes, cadastrar paciente, ficha, plano, sessão a iniciar e sessão em andamento, evolução, atividades, relatório, relatório emitido, trilha de autonomia, perfil e ajuda; o menu aberto |
+| Coordenação | Indicadores, validar planos, auditoria, perfil e ajuda; o menu aberto |
+| Administração | Usuários, trilha administrativa e perfil; o menu aberto |
+| Família | Painel, autorizar a escola, atividade de casa, trilha de autonomia, perfil e ajuda; o menu aberto |
+| Escola | Meus alunos, cartão de estratégias, registrar ocorrência, perfil e ajuda; o menu aberto |
+
+Cada perfil passa em quatro variantes: 1280 px e 375 px, cada uma sem e com
+"Alto contraste" e "Texto maior" ligados. São as 28 rotas do produto (as 3 de
+acesso e as 25 de `/app`), mais `/sobre`.
+
+**Resultado: 180 varreduras, nenhuma violação de impacto nenhum** — nem crítica
+nem séria, que reprovam o CI, nem moderada ou menor, que ficariam no relatório.
+
+**Teclado**, cinco testes, sem clique: o "Pular para o conteúdo" é o primeiro foco,
+na entrada e no app, e leva o foco ao conteúdo; o menu abre pelo teclado, prende o
+foco em 40 Tab e 40 Shift+Tab, e devolve o foco ao botão pelo Esc e pelo botão de
+fechar; entrar, registrar um toque — do painel, pelo menu, até o registro no
+servidor — e autorizar o acesso da escola, até o convite, vão até o fim só com
+Tab, Shift+Tab, Enter, Espaço, setas, Esc e digitação.
+
+**Corrigido:** o "Pular para o conteúdo" não funcionava em tela nenhuma. Com o
+HashRouter, o `href="#conteudo"` trocava a rota — o `#conteudo` virava o endereço
+de uma tela que não existe, o app voltava ao início e o foco caía no corpo da
+página. `src/ui/PularParaOConteudo.tsx`, nos dois layouts, só move o foco ao
+`<main>`. O axe não acusava: o link e o alvo existem; só o teclado mostrou.
+
+**O que esta verificação não prova.** O axe acha a parte da WCAG que se confere
+por máquina; a adequação do texto alternativo, a ordem de leitura com sentido e a
+carga cognitiva continuam com a avaliação humana (`docs/08`, objetivo 5.9). Só o
+Chromium. Nenhum leitor de tela de verdade. O axe vê o estado carregado de cada
+tela, com o menu aberto à parte; mensagens de erro de formulário, confirmações e a
+gaveta de cada etapa não passam todas por ele. O zoom de 400% e a largura de 320 px
+(reflow) não foram medidos; 375 px foi.
+
+### 8.2 Cobertura — meta: 60% ou mais nas regras críticas
+
+O vitest 3.2 com o provedor v8 (`@vitest/coverage-v8` 3.2.7), nos três pacotes e na
+verificação que os atravessa, com o remapeamento pela árvore do código: o arquivo
+que nenhum teste carrega conta 0%. Sem isso, as telas apareciam com uma linha só,
+coberta, e o front passava de 86%. O CI reprova abaixo de 60% de linhas ou de
+ramos em cada recorte crítico.
+
+| Recorte | Linhas | Ramos | Arquivos |
+|---|---:|---:|---:|
+| Front (`src`) | 29,8% | 20,3% | 106 |
+| Compartilhado (`compartilhado/src`) | 99,3% | 93,0% | 17 |
+| Servidor (`servidor/src` e a semente) | 80,5% | 78,3% | 75 |
+| Todos os pacotes | 51,1% | 42,5% | 198 |
+| **Regra crítica** · domínio (`compartilhado/src/dominio`) | 99,2% | 92,9% | 14 |
+| **Regra crítica** · acesso (`servidor/src/acesso`) | 91,9% | 88,9% | 3 |
+| **Regra crítica** · consentimento (`servidor/src/familia`) | 95,8% | 80,0% | 2 |
+| **Regra crítica** · escola (`servidor/src/escola`) | 85,0% | 69,7% | 5 |
+| **Regra crítica** · auditoria (`servidor/src/auditoria`) | 79,0% | 84,8% | 5 |
+| **Regra crítica** · autenticação (`servidor/src/autenticacao`) | 88,5% | 85,1% | 8 |
+
+O front fica baixo porque as telas são verificadas no navegador (8.1), e não por
+teste de unidade: a cobertura do vitest não vê o Playwright. O que o front tem de
+lógica — a fila, o mock, as regras de tela — está nos testes.
+
+**O que esta verificação não prova.** Linha executada não é linha conferida: a
+cobertura diz o que os testes percorrem, e não o que afirmam. O que garante as
+regras são os testes citados nas seções 2 e 7, quebrados de propósito.
+
+### 8.3 Contrato da API (OpenAPI)
+
+`docs/api/openapi.json` é gerado do próprio servidor (`npm run openapi -w
+@sinctea/servidor`, com o `@nestjs/swagger` 12.1.2): 83 caminhos e 92 operações,
+cada uma com a área, os perfis que podem chamá-la ou a marca de pública, e o que
+registra na trilha, lidos das mesmas marcas que a guarda e o interceptador leem.
+Sem exemplo nenhum. `servidor/test/openapi.test.ts` reprova o CI se o arquivo
+versionado ficar diferente do gerado, se uma operação vier sem área, perfis ou
+auditoria, ou se aparecer exemplo, e-mail ou algo com cara de token.
+
+A interface do Swagger (`/api/docs`) sobe só fora de produção e de teste. O
+`@nestjs/swagger` é dependência de desenvolvimento: a imagem Docker, que instala
+só as de produção, nem o tem, e o CI confere o 404 de `/api/docs` na imagem
+rodando. O `@scarf/scarf`, que vem com ele, fica sem mandar estatística de
+instalação (`scarfSettings` no `package.json` e `SCARF_ANALYTICS` no CI).
+
+**O que esta verificação não prova.** Os corpos de pedido e de resposta não têm
+esquema: os controladores recebem `Record<string, unknown>` e validam no domínio
+do compartilhado. O documento diz quem chama e o que fica registrado, e não a
+forma de cada campo.
+
+### 8.4 Desempenho — meta: primeiro conteúdo em menos de 2 s em 3G
+
+O Lighthouse 13.6.0, na tela de entrada do pacote de produção servido pelo Nest de
+produção, com o celular emulado e o perfil 3G do próprio Lighthouse
+(`mobileRegular3G`: 300 ms de ida e volta, 700 kbit/s, CPU 4 vezes mais lenta), pelo
+método simulado. Só relatório: não reprova o CI.
+
+| Medida (CI, Linux) | Valor |
+|---|---:|
+| Primeiro conteúdo (FCP) | 1.805 ms |
+| Maior conteúdo (LCP) | 1.805 ms |
+| Speed Index | 1.805 ms |
+| Tempo de bloqueio (TBT) | 8 ms |
+| Nota de desempenho | 98 |
+
+**Dentro da meta.** Na máquina de desenvolvimento (Windows), 1.803 ms.
+
+**O que esta verificação não prova.** É medida de laboratório, simulada, de uma
+tela só, e não de uso real. O servidor local não comprime as respostas; o que a
+borda do Render fizer não entra na medida. A tela de entrada é a mais leve; as da
+clínica, depois de entrar, não foram medidas.
+
+### 8.5 Offline — meta: 100% de 20 sessões sincronizadas, sem perda nem duplicação
+
+`verificacao/offline/sincronizacao.test.ts`, o quarto projeto do `npm test`: a fila
+do aparelho de verdade (`src/fila`) contra o servidor de verdade, num banco
+descartável. A rede é de mentira, com semente fixa (20261128): a cada pedido, cai
+com 20% de chance e volta com 40%; no ar, perde a resposta depois de o servidor
+gravar com 15%. Duas abas da mesma conta, cada uma com a sua vaga, dividem o
+IndexedDB (`fake-indexeddb`) e a trava, e no meio da execução uma delas fecha e
+abre de novo. A tela manda enviar depois de cada toque, a outra aba às vezes
+também, e as duas correm ao mesmo tempo. Cada sessão só se encerra com a fila
+vazia, como na tela 7.
+
+| Medida | Valor |
+|---|---:|
+| Sessões | 20 |
+| Toques | 202 |
+| Pedidos ao servidor | 335 |
+| Com a rede caída | 92 |
+| Com a resposta perdida depois de gravar (reenviados) | 41 |
+| Aceitos | 202 |
+
+**Resultado: 100%.** Os 202 toques estão no servidor uma vez cada, na ordem em
+que foram tocados, com o objetivo, o resultado e o instante do aparelho; uma
+criação por toque na trilha; as 20 sessões encerradas; a fila vazia e sem recusa.
+Os números se repetem a cada execução.
+
+**O que esta verificação não prova.** O IndexedDB é o `fake-indexeddb`, e a trava
+é a da memória, a mesma para as duas abas: o caminho do navegador
+(`travaDoNavegador`, com o Web Locks, e o IndexedDB de verdade) não passa por
+este teste. A rede falha na chamada, e não no pacote. A tela 7 não toca: o toque
+pela tela é o do teste de teclado (8.1), com conexão.
+
+### 8.6 Quebras do item 25
+
+| Quebra | Testes que falharam |
+|---|---|
+| axe: o botão do menu sem nome acessível | 1: a varredura da coordenação |
+| axe: o texto secundário com contraste baixo (`--color-tinta2` em `#a3b1b4`) | 1: idem |
+| Teclado: o "Pular para o conteúdo" trocando a rota, como antes | 1 |
+| Teclado: a gaveta sem prender o foco | 1 |
+| OpenAPI: a rota muda e o documento não | 2: o documento desatualizado e a operação da trilha que sumiu |
+| OpenAPI: a interface do Swagger também em produção | 1 |
+| OpenAPI: um contato com e-mail no documento | 2: o documento desatualizado e o e-mail |
+| Offline: o servidor ignora o id do aparelho | 1: os reenvios gravam de novo |
+| Offline: a fila apaga o toque antes de o servidor confirmar | 1: a rede caída perde o toque |
+| Offline: a fila envia o último toque primeiro | 1: a ordem |
+| Cobertura: o limite dos ramos da escola em 75%, acima dos 69,7% medidos | O run reprova: *Coverage for branches (69.74%) does not meet "servidor/src/escola/\*\*" threshold (75%)* |
+
+As quatro do navegador rodaram duas vezes. Na primeira, três trocas não
+compilavam — o TypeScript recusa função e parâmetro sem uso, o build parava e o
+teste rodava sobre o pacote anterior — e o filtro do Playwright não achava o teste
+da coordenação. Refeitas com trocas que compilam e o filtro certo, as quatro
+derrubaram o teste, e os mesmos testes passam sobre o pacote correto. Cada quebra
+foi desfeita depois de rodar, e o pacote, recompilado.

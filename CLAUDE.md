@@ -201,26 +201,29 @@ Atualizado em 18/10/2026, lendo o código — não a memória.
   (TimeZone=UTC). Não se editam à mão: mudou o esquema, geram-se de novo
 - Documento de IHC e UX/UI com avaliação heurística e conformidade
 - **As 22 telas existem e falam com a camada de serviços**, e as telas 25,
-  trilha administrativa (item 13), e 26, trilha de autonomia (item 24), em 27 rotas do produto, mais `/sobre` e a vitrine `/dev/estados`, que só existe no servidor de
+  trilha administrativa (item 13), e 26, trilha de autonomia (item 24), em 28 rotas do produto (as 3 de acesso e as 25 de `/app`), mais `/sobre` e a vitrine `/dev/estados`, que só existe no servidor de
   desenvolvimento. Nenhuma tela lê dado fixo: `src/dados` foi removido, e o teste
   de arquitetura impede que volte. A tela 20, ajuda, é texto fixo por natureza
 - **Camada de serviços**: `compartilhado/src/contratos.ts` com 16 serviços; implementação
   simulada que aplica controle de acesso e auditoria; o cliente da API, que
   não aplica regra nenhuma. A versão publicada usa só a API, e o mock fica
   fora do pacote; no desenvolvimento, `VITE_API_URL` escolhe entre as duas
-- **803 testes em 69 arquivos, nos três pacotes**, rodados por um único
-  `npm test` na raiz, sem passo manual. O principal ainda é
+- **809 testes em 71 arquivos, nos três pacotes e na verificação que os
+  atravessa** (`verificacao/`), rodados por um único `npm test` na raiz, sem
+  passo manual. O principal ainda é
   `src/servicos/mock/regrasInviolaveis.test.ts`, que verifica as regras
-  invioláveis na camada de dados, e não na tela. Os 398 do servidor rodam contra
-  um PostgreSQL 17 de verdade
+  invioláveis na camada de dados, e não na tela. Os 403 do servidor rodam contra
+  um PostgreSQL 17 de verdade. No navegador, mais 29, com o Playwright: 24 do axe
+  e 5 de teclado (item 25)
 - **As seis regras verificadas** em `docs/06`: para cada teste citado, a regra foi
   quebrada de propósito para confirmar que ele falha, e as quebras que não
   derrubaram teste nenhum estão registradas
 - Termo de consentimento versionado, com resumo verificável (abaixo)
 - Em push na main, o workflow Publicar (`deploy.yml`) testa contra o
-  PostgreSQL 17, constrói a imagem Docker, põe a imagem para rodar e só então
-  migra o banco, com o papel dono. Não publica mais no GitHub Pages. Em pull
-  request, `verificar.yml` roda testes e build
+  PostgreSQL 17, com a cobertura, constrói a imagem Docker, põe a imagem para
+  rodar e, com o job `navegador` também verde — o axe, o teclado e o Lighthouse
+  (item 25) —, só então migra o banco, com o papel dono. Não publica mais no
+  GitHub Pages. Em pull request, `verificar.yml` roda os mesmos dois jobs
 - Uma tag por etapa fechada: `entrega-2026-09-14`, `etapa-6`, `etapa-7`, `etapa-8`,
   `etapa-9`
 
@@ -719,6 +722,32 @@ em produção (o antigo passo B5) foi cancelada. No código, hoje:
   autonomia*; a caixa o numera UC22, que já é a lista de alunos do professor
   (regra 2), e o número fica com o Cowork. Testes em
   `servidor/test/trilha.test.ts`, quebras no `docs/06`
+- **Item 25 — a verificação automática** (as metas de validação do `docs/08`;
+  números no `docs/06`, seção 8). **Acessibilidade:** o axe (WCAG 2.2 AA:
+  `wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa`, `wcag22aa`) com o Playwright, em
+  todas as rotas de cada perfil, com o menu aberto, em 1280 e 375 px, com e sem
+  alto contraste e texto maior — 180 varreduras, nenhuma violação; o CI reprova
+  com crítica ou séria. O pacote de produção, servido pelo Nest de produção, num
+  banco descartável do job com a semente fictícia (`verificacao/servidor.mjs`),
+  com a senha sorteada a cada execução: a semente nunca toca o Neon. Teclado: o
+  "Pular para o conteúdo" é o primeiro foco, o menu prende e devolve o foco, e
+  entrar, registrar um toque e autorizar a escola vão até o fim só com teclado.
+  Corrigido: com o HashRouter, o `href="#conteudo"` trocava a rota e o foco caía
+  no corpo da página (`src/ui/PularParaOConteudo.tsx`). **Cobertura:** v8, com o
+  remapeamento pela árvore do código, e o CI reprova abaixo de 60% de linhas ou
+  de ramos no domínio do compartilhado e em `acesso`, `familia`, `escola`,
+  `auditoria` e `autenticacao` do servidor; o menor recorte crítico é a escola,
+  com 69,7% dos ramos. **OpenAPI:** `docs/api/openapi.json`, gerado do código
+  (`npm run openapi -w @sinctea/servidor`), com os perfis e a auditoria de cada
+  operação, sem exemplo; `servidor/test/openapi.test.ts` reprova o arquivo
+  desatualizado. O Swagger (`/api/docs`) só fora de produção e de teste, e o
+  `@nestjs/swagger` é dependência de desenvolvimento: a imagem nem o tem.
+  **Desempenho:** o Lighthouse na tela de entrada, em 3G simulado, só relatório:
+  FCP 1.805 ms e LCP 1.805 ms no CI. **Offline:** 20 sessões, 202 toques, com a
+  rede caindo e voltando ao acaso (semente fixa) e duas abas da mesma conta —
+  cada toque no servidor uma vez, na ordem, e a fila vazia
+  (`verificacao/offline/`). Os testes que atravessam os pacotes moram em
+  `verificacao/`, fora deles: o teste de arquitetura proíbe um importar o outro
 - `npm run criar-administrador -w @sinctea/servidor -- .env.producao --nome
   "Nome Completo" --email voce@exemplo.com` cria o primeiro administrador:
   nome e e-mail vêm da linha de comando, e só a senha é pedida, escondida e duas
