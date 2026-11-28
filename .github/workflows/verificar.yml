@@ -109,6 +109,12 @@ jobs:
       - name: Acessibilidade e teclado (Playwright e axe)
         run: npm run verificar:navegador
 
+      # So relatorio: a meta e o primeiro conteudo em menos de 2 s em 3G.
+      - name: Desempenho (Lighthouse, so relatorio)
+        if: always()
+        continue-on-error: true
+        run: npm run verificar:desempenho
+
       - name: Guardar os relatorios do navegador
         if: always()
         uses: actions/upload-artifact@v7
@@ -117,4 +123,5 @@ jobs:
           path: |
             relatorios/playwright
             relatorios/playwright-resultados
+            relatorios/lighthouse
           if-no-files-found: ignore
