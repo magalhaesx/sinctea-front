@@ -4,6 +4,9 @@
   "version": "0.1.0",
   "type": "module",
   "description": "Front-end do SINCTEA — Sistema Integrado de Continuidade Terapeutica no TEA",
+  "scarfSettings": {
+    "enabled": false
+  },
   "workspaces": [
     "compartilhado",
     "servidor"

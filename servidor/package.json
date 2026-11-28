@@ -17,6 +17,8 @@
     "criar-administrador": "node dist/src/comandos/criar-administrador.js",
     "prezerar-banco": "npm run build",
     "zerar-banco": "node dist/src/comandos/zerar-banco.js",
+    "preopenapi": "npm run build",
+    "openapi": "node dist/src/comandos/openapi.js",
     "preconferir-papel": "npm run build",
     "conferir-papel": "node dist/src/comandos/conferir-papel.js",
     "test": "vitest run"
@@ -33,6 +35,7 @@
     "rxjs": "^7.8.2"
   },
   "devDependencies": {
+    "@nestjs/swagger": "12.1.2",
     "@swc/core": "1.16.18",
     "@types/node": "^22.10.0",
     "embedded-postgres": "17.10.0-beta.17",

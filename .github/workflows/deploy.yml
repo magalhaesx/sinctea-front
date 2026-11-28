@@ -13,6 +13,11 @@ on:
 permissions:
   contents: read
 
+# O swagger-ui-dist (do @nestjs/swagger, so de desenvolvimento) traz o
+# @scarf/scarf, que manda estatistica de instalacao para fora. Aqui, nao.
+env:
+  SCARF_ANALYTICS: 'false'
+
 # Migracao pela metade nao pode ser cancelada por um push seguinte: os runs
 # entram em fila.
 concurrency:
@@ -85,6 +90,8 @@ jobs:
           curl -sf http://localhost:8080/api/saude | grep -q "\"migracao\":\"$ultima\""
           test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/api/inexistente)" = 404
           curl -s http://localhost:8080/api/inexistente | grep -q '"statusCode":404'
+          # Item 25: a interface do Swagger nunca vai ao ar.
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/api/docs)" = 404
 
   # Item 25: o pacote de producao no navegador, sobre um banco descartavel deste
   # job, com os dados ficticios da semente (verificacao/servidor.mjs). A semente

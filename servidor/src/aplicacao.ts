@@ -55,5 +55,17 @@ export async function criarAplicacao(opcoes: NestApplicationOptions = {}): Promi
       },
     })
   }
+
+  // Item 25: a interface do Swagger, so no desenvolvimento — nunca em producao
+  // (na imagem Docker o pacote nem existe) nem nos testes.
+  if (!['production', 'test'].includes(process.env.NODE_ENV ?? '')) {
+    try {
+      const { montarDocumentacaoInterativa } = await import('./documentacao/interativa.js')
+      const { VERSAO_DO_SERVIDOR } = await import('./documentacao/versao.js')
+      montarDocumentacaoInterativa(aplicacao, VERSAO_DO_SERVIDOR)
+    } catch {
+      // Sem as dependencias de desenvolvimento, so a API: a documentacao e um extra.
+    }
+  }
   return aplicacao
 }

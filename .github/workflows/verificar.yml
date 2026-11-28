@@ -10,6 +10,11 @@ on:
 permissions:
   contents: read
 
+# O swagger-ui-dist (do @nestjs/swagger, so de desenvolvimento) traz o
+# @scarf/scarf, que manda estatistica de instalacao para fora. Aqui, nao.
+env:
+  SCARF_ANALYTICS: 'false'
+
 jobs:
   verificar:
     # Versao fixa, e nao ubuntu-latest: o latest muda de sistema no meio do

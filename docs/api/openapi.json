@@ -1,0 +1,2435 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/api/saude": {
+      "get": {
+        "operationId": "ControladorSaude.verificar",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Saúde"
+        ],
+        "security": [],
+        "description": "Pública: não pede sessão. Não toca dado do paciente; só a negativa entra na trilha (entidade Saude)."
+      }
+    },
+    "/api/auditoria": {
+      "get": {
+        "operationId": "ControladorAuditoria.listar",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Registro de auditoria"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: COORDENADOR. Registra LEITURA_AUTORIZADA na entidade RegistroAuditoria; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/auditoria/pessoas": {
+      "get": {
+        "operationId": "ControladorAuditoria.listarPessoas",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Registro de auditoria"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: COORDENADOR. Não toca dado do paciente; só a negativa entra na trilha (entidade RegistroAuditoria)."
+      }
+    },
+    "/api/auditoria/exportacao": {
+      "get": {
+        "operationId": "ControladorAuditoria.exportar",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Registro de auditoria"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: COORDENADOR. Registra LEITURA_AUTORIZADA na entidade RegistroAuditoria; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/auth/entrar": {
+      "post": {
+        "operationId": "ControladorAutenticacao.entrar",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Autenticação"
+        ],
+        "security": [],
+        "description": "Pública: não pede sessão. Não toca dado do paciente; só a negativa entra na trilha (entidade Usuario)."
+      }
+    },
+    "/api/auth/sessao": {
+      "get": {
+        "operationId": "ControladorAutenticacao.sessaoAtual",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Autenticação"
+        ],
+        "security": [],
+        "description": "Pública: não pede sessão. Não toca dado do paciente; só a negativa entra na trilha (entidade Usuario)."
+      }
+    },
+    "/api/auth/contas-abertas": {
+      "get": {
+        "operationId": "ControladorAutenticacao.contasAbertas",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Autenticação"
+        ],
+        "security": [],
+        "description": "Pública: não pede sessão. Não toca dado do paciente; só a negativa entra na trilha (entidade Usuario)."
+      }
+    },
+    "/api/auth/perfil": {
+      "post": {
+        "operationId": "ControladorAutenticacao.trocarPerfil",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Autenticação"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Qualquer perfil com sessão. Não toca dado do paciente; só a negativa entra na trilha (entidade Usuario)."
+      }
+    },
+    "/api/auth/aviso-de-nova-senha": {
+      "post": {
+        "operationId": "ControladorAutenticacao.darCienciaDaNovaSenha",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Autenticação"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Qualquer perfil com sessão. Não toca dado do paciente; só a negativa entra na trilha (entidade Usuario)."
+      }
+    },
+    "/api/auth/sair": {
+      "post": {
+        "operationId": "ControladorAutenticacao.sair",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Autenticação"
+        ],
+        "security": [],
+        "description": "Pública: não pede sessão. Não toca dado do paciente; só a negativa entra na trilha (entidade Usuario)."
+      }
+    },
+    "/api/auth/demonstracao": {
+      "post": {
+        "operationId": "ControladorAutenticacao.entrarDemonstracao",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Autenticação"
+        ],
+        "security": [],
+        "description": "Pública: não pede sessão. Não toca dado do paciente; só a negativa entra na trilha (entidade Usuario)."
+      }
+    },
+    "/api/auth/nova-senha": {
+      "post": {
+        "operationId": "ControladorAutenticacao.pedirNovaSenha",
+        "parameters": [],
+        "responses": {
+          "202": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Autenticação"
+        ],
+        "security": [],
+        "description": "Pública: não pede sessão. Não toca dado do paciente; só a negativa entra na trilha (entidade RecuperacaoDeSenha)."
+      }
+    },
+    "/api/auth/primeiro-acesso/{token}": {
+      "get": {
+        "operationId": "ControladorAutenticacao.obterPrimeiroAcesso",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Autenticação"
+        ],
+        "security": [],
+        "description": "Pública: não pede sessão. Não toca dado do paciente; só a negativa entra na trilha (entidade Usuario)."
+      },
+      "post": {
+        "operationId": "ControladorAutenticacao.concluirPrimeiroAcesso",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Autenticação"
+        ],
+        "security": [],
+        "description": "Pública: não pede sessão. Não toca dado do paciente; só a negativa entra na trilha (entidade Usuario)."
+      }
+    },
+    "/api/usuarios": {
+      "get": {
+        "operationId": "ControladorUsuarios.listar",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Usuários e perfis"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: ADMINISTRADOR. Não toca dado do paciente; só a negativa entra na trilha (entidade Usuario)."
+      },
+      "post": {
+        "operationId": "ControladorUsuarios.convidar",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Usuários e perfis"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: ADMINISTRADOR. Registra CRIACAO na entidade Usuario; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/usuarios/eu/dados-profissionais": {
+      "get": {
+        "operationId": "ControladorUsuarios.meusDadosProfissionais",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Usuários e perfis"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Qualquer perfil com sessão. Não toca dado do paciente; só a negativa entra na trilha (entidade Usuario)."
+      },
+      "put": {
+        "operationId": "ControladorUsuarios.atualizarMeusDadosProfissionais",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Usuários e perfis"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Qualquer perfil com sessão. Registra ALTERACAO na entidade Profissional; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/usuarios/{id}/perfis": {
+      "put": {
+        "operationId": "ControladorUsuarios.alterarPerfis",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Usuários e perfis"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: ADMINISTRADOR. Registra ALTERACAO na entidade Usuario; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/usuarios/{id}/desativacao": {
+      "post": {
+        "operationId": "ControladorUsuarios.desativar",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Usuários e perfis"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: ADMINISTRADOR. Registra ALTERACAO na entidade Usuario; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/usuarios/{id}/reativacao": {
+      "post": {
+        "operationId": "ControladorUsuarios.reativar",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Usuários e perfis"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: ADMINISTRADOR. Registra ALTERACAO na entidade Usuario; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/usuarios/{id}/acesso-inicial": {
+      "post": {
+        "operationId": "ControladorUsuarios.novoLinkDeAcesso",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Usuários e perfis"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: ADMINISTRADOR. Registra ALTERACAO na entidade Usuario; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/usuarios/{id}/nova-senha": {
+      "post": {
+        "operationId": "ControladorUsuarios.linkNovaSenha",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Usuários e perfis"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: ADMINISTRADOR. Registra ALTERACAO na entidade Usuario; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/profissionais": {
+      "get": {
+        "operationId": "ControladorProfissionais.listar",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Usuários e perfis"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: TERAPEUTA, COORDENADOR, ADMINISTRADOR. Não toca dado do paciente; só a negativa entra na trilha (entidade Profissional)."
+      }
+    },
+    "/api/admin/trilha": {
+      "get": {
+        "operationId": "ControladorTrilhaAdministrativa.listar",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Trilha administrativa"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: ADMINISTRADOR. Registra LEITURA_AUTORIZADA na entidade RegistroAuditoria; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/pacientes": {
+      "get": {
+        "operationId": "ControladorPacientes.listar",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Pacientes"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: TERAPEUTA, COORDENADOR. Registra LEITURA_AUTORIZADA na entidade Paciente; a negativa entra como ACESSO_NEGADO."
+      },
+      "post": {
+        "operationId": "ControladorPacientes.criar",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Pacientes"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: TERAPEUTA, COORDENADOR. Registra CRIACAO na entidade Paciente, com o paciente; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/pacientes/{id}": {
+      "get": {
+        "operationId": "ControladorPacientes.obter",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Pacientes"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: TERAPEUTA, COORDENADOR. Registra LEITURA_AUTORIZADA na entidade Paciente, com o paciente; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/pacientes/{id}/responsaveis": {
+      "post": {
+        "operationId": "ControladorPacientes.cadastrarResponsavel",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Pacientes"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: TERAPEUTA, COORDENADOR. Registra CRIACAO na entidade VinculoFamiliar, com o paciente; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/pacientes/{id}/responsaveis/{responsavelId}/acesso-inicial": {
+      "post": {
+        "operationId": "ControladorPacientes.novoLinkDoResponsavel",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "responsavelId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Pacientes"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: TERAPEUTA, COORDENADOR. Registra ALTERACAO na entidade Usuario, com o paciente; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/pacientes/{id}/responsaveis/{responsavelId}/nova-senha": {
+      "post": {
+        "operationId": "ControladorPacientes.linkNovaSenhaDoResponsavel",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "responsavelId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Pacientes"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: COORDENADOR. Registra ALTERACAO na entidade Usuario, com o paciente; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/pacientes/{id}/responsaveis/{responsavelId}": {
+      "put": {
+        "operationId": "ControladorPacientes.editarResponsavel",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "responsavelId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Pacientes"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: TERAPEUTA, COORDENADOR. Registra ALTERACAO na entidade Responsavel, com o paciente; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/pacientes/{id}/plano": {
+      "get": {
+        "operationId": "ControladorPacientes.obterPlano",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Pacientes"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: TERAPEUTA, COORDENADOR. Registra LEITURA_AUTORIZADA na entidade PlanoTerapeutico, com o paciente; a negativa entra como ACESSO_NEGADO."
+      },
+      "post": {
+        "operationId": "ControladorPacientes.criarPlano",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Pacientes"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: TERAPEUTA, COORDENADOR. Registra CRIACAO na entidade PlanoTerapeutico, com o paciente; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/pacientes/{id}/ocorrencias": {
+      "get": {
+        "operationId": "ControladorPacientes.listarOcorrencias",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Pacientes"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: TERAPEUTA, COORDENADOR. Registra LEITURA_AUTORIZADA na entidade OcorrenciaComportamental, com o paciente; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/pacientes/{id}/proximas-sessoes": {
+      "get": {
+        "operationId": "ControladorPacientes.listarProximas",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Pacientes"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: TERAPEUTA, COORDENADOR. Registra LEITURA_AUTORIZADA na entidade Sessao, com o paciente; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/pacientes/{id}/agendamentos": {
+      "post": {
+        "operationId": "ControladorPacientes.agendar",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Pacientes"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: TERAPEUTA, COORDENADOR. Registra CRIACAO na entidade Sessao, com o paciente; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/pacientes/{id}/sessoes": {
+      "get": {
+        "operationId": "ControladorPacientes.listarSessoes",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Pacientes"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: TERAPEUTA, COORDENADOR. Registra LEITURA_AUTORIZADA na entidade Sessao, com o paciente; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/planos/{id}/objetivos": {
+      "post": {
+        "operationId": "ControladorPlanos.adicionarObjetivo",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Plano e objetivos"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: TERAPEUTA, COORDENADOR. Registra CRIACAO na entidade Objetivo; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/objetivos/{id}": {
+      "put": {
+        "operationId": "ControladorPlanos.editarObjetivo",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Plano e objetivos"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: TERAPEUTA, COORDENADOR. Registra ALTERACAO na entidade Objetivo; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/planos/{id}/datas": {
+      "put": {
+        "operationId": "ControladorPlanos.editarDatas",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Plano e objetivos"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: TERAPEUTA, COORDENADOR. Registra ALTERACAO na entidade PlanoTerapeutico; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/planos/{id}/envio": {
+      "post": {
+        "operationId": "ControladorPlanos.enviar",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Plano e objetivos"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: TERAPEUTA, COORDENADOR. Registra ALTERACAO na entidade PlanoTerapeutico, com o paciente; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/planos/aguardando-validacao": {
+      "get": {
+        "operationId": "ControladorPlanos.listarAguardando",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Plano e objetivos"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: COORDENADOR. Registra LEITURA_AUTORIZADA na entidade PlanoTerapeutico; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/planos/{id}/aprovacao": {
+      "post": {
+        "operationId": "ControladorPlanos.aprovar",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Plano e objetivos"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: COORDENADOR. Registra ALTERACAO na entidade PlanoTerapeutico, com o paciente; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/planos/{id}/devolucao": {
+      "post": {
+        "operationId": "ControladorPlanos.devolver",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Plano e objetivos"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: COORDENADOR. Registra ALTERACAO na entidade PlanoTerapeutico, com o paciente; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/objetivos/{id}/dominio": {
+      "post": {
+        "operationId": "ControladorPlanos.confirmarDominio",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Plano e objetivos"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: TERAPEUTA, COORDENADOR. Registra ALTERACAO na entidade Objetivo; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/objetivos/{id}/evolucao": {
+      "get": {
+        "operationId": "ControladorPlanos.obterEvolucao",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Plano e objetivos"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: TERAPEUTA, COORDENADOR. Registra LEITURA_AUTORIZADA na entidade Objetivo; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/objetivos/{id}/cartoes": {
+      "get": {
+        "operationId": "ControladorPlanos.listarCartoes",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Plano e objetivos"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: TERAPEUTA, COORDENADOR. Registra LEITURA_AUTORIZADA na entidade CartaoEstrategia; a negativa entra como ACESSO_NEGADO."
+      },
+      "post": {
+        "operationId": "ControladorPlanos.criarCartao",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Plano e objetivos"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: TERAPEUTA, COORDENADOR. Registra CRIACAO na entidade CartaoEstrategia; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/cartoes/{id}": {
+      "put": {
+        "operationId": "ControladorPlanos.editarCartao",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Plano e objetivos"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: TERAPEUTA, COORDENADOR. Registra ALTERACAO na entidade CartaoEstrategia; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/sessoes/{id}": {
+      "get": {
+        "operationId": "ControladorSessoes.obter",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Sessões"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: TERAPEUTA, COORDENADOR. Registra LEITURA_AUTORIZADA na entidade Sessao, com o paciente; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/sessoes": {
+      "post": {
+        "operationId": "ControladorSessoes.iniciar",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Sessões"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: TERAPEUTA, COORDENADOR. Registra CRIACAO na entidade Sessao, com o paciente; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/sessoes/{id}/cancelamento": {
+      "post": {
+        "operationId": "ControladorSessoes.cancelar",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Sessões"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: TERAPEUTA, COORDENADOR. Registra ALTERACAO na entidade Sessao; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/sessoes/{id}/registros": {
+      "post": {
+        "operationId": "ControladorSessoes.registrar",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Sessões"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: TERAPEUTA, COORDENADOR. Registra CRIACAO na entidade RegistroAtividade; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/sessoes/{id}/registros/ultimo": {
+      "delete": {
+        "operationId": "ControladorSessoes.desfazer",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Sessões"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: TERAPEUTA, COORDENADOR. Registra ALTERACAO na entidade Sessao, com o paciente; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/sessoes/{id}/pausa": {
+      "post": {
+        "operationId": "ControladorSessoes.pausar",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Sessões"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: TERAPEUTA, COORDENADOR. Registra ALTERACAO na entidade Sessao, com o paciente; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/sessoes/{id}/encerramento": {
+      "post": {
+        "operationId": "ControladorSessoes.encerrar",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Sessões"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: TERAPEUTA, COORDENADOR. Registra ALTERACAO na entidade Sessao, com o paciente; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/sessoes/{id}/ocorrencias": {
+      "post": {
+        "operationId": "ControladorSessoes.registrarOcorrencia",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Sessões"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: TERAPEUTA, COORDENADOR. Registra CRIACAO na entidade OcorrenciaComportamental; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/agenda": {
+      "get": {
+        "operationId": "ControladorAgenda.listar",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Agenda"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: TERAPEUTA, COORDENADOR. Registra LEITURA_AUTORIZADA na entidade Sessao; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/ocorrencias/avisos-escola": {
+      "get": {
+        "operationId": "ControladorOcorrencias.listarAvisos",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Eventos comportamentais"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: TERAPEUTA, COORDENADOR. Registra LEITURA_AUTORIZADA na entidade OcorrenciaEscolar; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/ocorrencias/{id}/leitura-clinica": {
+      "post": {
+        "operationId": "ControladorOcorrencias.registrarLeitura",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Eventos comportamentais"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: TERAPEUTA, COORDENADOR. Registra ALTERACAO na entidade OcorrenciaComportamental; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/familia/filhos": {
+      "get": {
+        "operationId": "ControladorFamilia.listarFilhos",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Família"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: RESPONSAVEL. Registra LEITURA_AUTORIZADA na entidade Paciente; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/familia/filhos/{id}/objetivos": {
+      "get": {
+        "operationId": "ControladorFamilia.listarObjetivos",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Família"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: RESPONSAVEL. Registra LEITURA_AUTORIZADA na entidade Objetivo, com o paciente; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/pacientes/{id}/consentimentos": {
+      "get": {
+        "operationId": "ControladorConsentimentos.listar",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Consentimento"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: TERAPEUTA, COORDENADOR, RESPONSAVEL. Registra LEITURA_AUTORIZADA na entidade Consentimento, com o paciente; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/consentimentos": {
+      "post": {
+        "operationId": "ControladorConsentimentos.conceder",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Consentimento"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: RESPONSAVEL. Registra CONCESSAO_ACESSO na entidade Consentimento; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/consentimentos/{id}/convites": {
+      "post": {
+        "operationId": "ControladorConsentimentos.reemitir",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Consentimento"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: RESPONSAVEL. Registra CRIACAO na entidade ConviteEscolar; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/consentimentos/{id}/revogacao": {
+      "post": {
+        "operationId": "ControladorConsentimentos.revogar",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Consentimento"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: RESPONSAVEL. Registra REVOGACAO_ACESSO na entidade Consentimento; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/escolas": {
+      "get": {
+        "operationId": "ControladorEscolas.listar",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Escolas"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: TERAPEUTA, COORDENADOR, ADMINISTRADOR, RESPONSAVEL. Não toca dado do paciente; só a negativa entra na trilha (entidade Escola)."
+      },
+      "post": {
+        "operationId": "ControladorEscolas.cadastrar",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Escolas"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: RESPONSAVEL. Registra CRIACAO na entidade Escola; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/escolas/parecidas": {
+      "get": {
+        "operationId": "ControladorEscolas.parecidas",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Escolas"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: RESPONSAVEL. Não toca dado do paciente; só a negativa entra na trilha (entidade Escola)."
+      }
+    },
+    "/api/convites/{token}": {
+      "get": {
+        "operationId": "ControladorConvites.obter",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Convite escolar"
+        ],
+        "security": [],
+        "description": "Pública: não pede sessão. Registra LEITURA_AUTORIZADA na entidade ConviteEscolar; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/convites/{token}/aceite": {
+      "post": {
+        "operationId": "ControladorConvites.aceitar",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Convite escolar"
+        ],
+        "security": [],
+        "description": "Pública: não pede sessão. Registra CONCESSAO_ACESSO na entidade VinculoEscolar; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/escola/alunos": {
+      "get": {
+        "operationId": "ControladorAreaEscola.listarAlunos",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Área da escola"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: PROFESSOR. Registra LEITURA_AUTORIZADA na entidade VinculoEscolar; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/escola/alunos/{id}/cartao": {
+      "get": {
+        "operationId": "ControladorAreaEscola.obterCartao",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Área da escola"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: PROFESSOR. Registra LEITURA_AUTORIZADA na entidade CartaoEstrategia, com o paciente; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/escola/alunos/{id}/ocorrencias": {
+      "post": {
+        "operationId": "ControladorAreaEscola.registrar",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Área da escola"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: PROFESSOR. Registra CRIACAO na entidade OcorrenciaEscolar, com o paciente; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/escola/ocorrencias/{id}": {
+      "put": {
+        "operationId": "ControladorAreaEscola.corrigir",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Área da escola"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: PROFESSOR. Registra ALTERACAO na entidade OcorrenciaEscolar; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/pacientes/{id}/atividades": {
+      "get": {
+        "operationId": "ControladorAtividades.listar",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Atividades de casa"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: TERAPEUTA, COORDENADOR, RESPONSAVEL. Registra LEITURA_AUTORIZADA na entidade AtividadeCasa, com o paciente; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/atividades/{id}": {
+      "get": {
+        "operationId": "ControladorAtividades.obter",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Atividades de casa"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: TERAPEUTA, COORDENADOR, RESPONSAVEL. Registra LEITURA_AUTORIZADA na entidade AtividadeCasa, com o paciente; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/atividades": {
+      "post": {
+        "operationId": "ControladorAtividades.prescrever",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Atividades de casa"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: TERAPEUTA, COORDENADOR. Registra CRIACAO na entidade AtividadeCasa, com o paciente; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/atividades/{id}/encerramento": {
+      "post": {
+        "operationId": "ControladorAtividades.encerrar",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Atividades de casa"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: TERAPEUTA, COORDENADOR. Registra ALTERACAO na entidade AtividadeCasa, com o paciente; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/atividades/{id}/execucoes": {
+      "post": {
+        "operationId": "ControladorAtividades.registrar",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Atividades de casa"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: RESPONSAVEL. Registra CRIACAO na entidade ExecucaoAtividadeCasa; a negativa entra como ACESSO_NEGADO."
+      },
+      "get": {
+        "operationId": "ControladorAtividades.listarExecucoes",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Atividades de casa"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: TERAPEUTA, COORDENADOR, RESPONSAVEL. Registra LEITURA_AUTORIZADA na entidade ExecucaoAtividadeCasa; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/pacientes/{id}/relatorios/previa": {
+      "post": {
+        "operationId": "ControladorRelatorios.previsualizar",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Relatório de evolução"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: TERAPEUTA, COORDENADOR. Registra LEITURA_AUTORIZADA na entidade RelatorioEvolucao, com o paciente; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/pacientes/{id}/relatorios": {
+      "post": {
+        "operationId": "ControladorRelatorios.emitir",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Relatório de evolução"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: TERAPEUTA, COORDENADOR. Registra CRIACAO na entidade RelatorioEvolucao, com o paciente; a negativa entra como ACESSO_NEGADO."
+      },
+      "get": {
+        "operationId": "ControladorRelatorios.listar",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Relatório de evolução"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: TERAPEUTA, COORDENADOR. Registra LEITURA_AUTORIZADA na entidade RelatorioEvolucao, com o paciente; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/relatorios/{id}": {
+      "get": {
+        "operationId": "ControladorRelatorios.obter",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Relatório de evolução"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: TERAPEUTA, COORDENADOR. Registra LEITURA_AUTORIZADA na entidade RelatorioEvolucao; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/indicadores/resumo": {
+      "get": {
+        "operationId": "ControladorIndicadores.resumo",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Indicadores"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: COORDENADOR. Não toca dado do paciente; só a negativa entra na trilha (entidade Indicadores)."
+      }
+    },
+    "/api/indicadores/alertas/{motivo}": {
+      "get": {
+        "operationId": "ControladorIndicadores.alertas",
+        "parameters": [
+          {
+            "name": "motivo",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Indicadores"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: COORDENADOR. Registra LEITURA_AUTORIZADA na entidade Indicadores; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/indicadores/sessoes-por-profissional": {
+      "get": {
+        "operationId": "ControladorIndicadores.sessoesPorProfissional",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Indicadores"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: COORDENADOR. Não toca dado do paciente; só a negativa entra na trilha (entidade Indicadores)."
+      }
+    },
+    "/api/indicadores/ponte-escola": {
+      "get": {
+        "operationId": "ControladorIndicadores.ponteEscola",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Indicadores"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: COORDENADOR. Não toca dado do paciente; só a negativa entra na trilha (entidade Indicadores)."
+      }
+    },
+    "/api/pacientes/{id}/trilha": {
+      "get": {
+        "operationId": "ControladorTrilha.daClinica",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Trilha de autonomia"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: TERAPEUTA, COORDENADOR. Registra LEITURA_AUTORIZADA na entidade TrilhaAutonomia, com o paciente; a negativa entra como ACESSO_NEGADO."
+      }
+    },
+    "/api/familia/filhos/{id}/trilha": {
+      "get": {
+        "operationId": "ControladorTrilha.daFamilia",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso."
+          }
+        },
+        "tags": [
+          "Trilha de autonomia"
+        ],
+        "security": [
+          {
+            "sessao": [],
+            "aba": []
+          }
+        ],
+        "description": "Perfis: RESPONSAVEL. Registra LEITURA_AUTORIZADA na entidade TrilhaAutonomia, com o paciente; a negativa entra como ACESSO_NEGADO."
+      }
+    }
+  },
+  "info": {
+    "title": "SINCTEA — API",
+    "description": "API do SINCTEA — Sistema Integrado de Continuidade Terapêutica no TEA. Trabalho de Conclusão de Curso,\nSistemas de Informação, Centro Universitário FAMETRO.\n\nA sessão de login é um cookie httpOnly, Secure e SameSite=Lax por vaga do navegador (`sinctea_sessao_1` a\n`sinctea_sessao_5`), e cada aba diz a sua vaga no cabeçalho `X-Sinctea-Aba` (item 9).\n\nToda rota que lê ou escreve dado do paciente é registrada na trilha de auditoria pelo interceptador, e toda\nnegativa pelo filtro de erros (regra 6). A descrição de cada operação diz os perfis que podem chamá-la e o que\nela registra. O alcance do perfil (a equipe do paciente, o vínculo da família, o consentimento vigente da\nescola) é conferido no serviço, a cada chamada.\n\nErros saem como `{ codigo, mensagem, campos, motivo? }`: VALIDACAO 422, NAO_AUTENTICADO 401, ACESSO_NEGADO\n403, NAO_ENCONTRADO 404, CONFLITO 409, LIMITE_TENTATIVAS 429 e INDISPONIVEL 503.",
+    "version": "0.1.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "securitySchemes": {
+      "sessao": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "sinctea_sessao_1",
+        "description": "O cookie da vaga desta aba (sinctea_sessao_1 a sinctea_sessao_5), posto pelo servidor ao entrar."
+      },
+      "aba": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Sinctea-Aba",
+        "description": "O número da vaga desta aba, de 1 a 5 (item 9)."
+      }
+    },
+    "schemas": {}
+  }
+}
